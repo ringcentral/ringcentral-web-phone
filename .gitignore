@@ -1,1 +1,3 @@
 .idea
+*npm-debug*
+node_modules

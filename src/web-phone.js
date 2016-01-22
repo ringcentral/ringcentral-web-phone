@@ -1,14 +1,23 @@
-/**
- * angular.extend
- * $q.when
- * $q.reject
- * $q.defer
- */
-
 function delay(ms){
     return new Promise(function(resolve, reject){
         setTimeout(resolve, ms);
     });
+}
+
+function defer(){
+    var deferred = {};
+    deferred.promise = new Promise(function(resolve, reject){
+        deferred.resolve = resolve;
+        deferred.reject = reject;
+    });
+    return deferred;
+}
+
+function extend(dst, src){
+    Object.keys(src).forEach(function(k){
+        dst[k] = src[k];
+    });
+    return dst;
 }
 
 //Patching proto because of https://developers.google.com/web/updates/2015/07/mediastream-deprecations
@@ -164,7 +173,7 @@ EventEmitter.prototype.emit = function(name /*, args */) {
 };
 
 EventEmitter.prototype.on = function(name, listener) {
-    if (!angular.isArray(name)) name = [name];
+    if (!Array.isArray(name)) name = [name];
     for (var i = 0; i < name.length; i++) {
         this.handlers[name[i]] = this.handlers[name[i]] || [];
         var list = this.handlers[name[i]];
@@ -355,7 +364,7 @@ UserAgent.prototype.start = function(options) {
 
 UserAgent.prototype.reregister = function(options, reconnect) {
     var self = this, reconnect = !!reconnect;
-    options = angular.extend(self.__registerExtraOptions, options);
+    options = extend(self.__registerExtraOptions, options);
     if (!self.userAgent) {
         self.start(options);
     }
@@ -413,7 +422,7 @@ UserAgent.prototype.call = function(number, inviteOptions) {
     if (country) {
         headers.push('P-rc-country-id: ' + country);
     }
-    angular.extend(options, {
+    extend(options, {
         extraHeaders: headers
     });
     var session = this.userAgent.invite('' + number, options);
@@ -511,7 +520,7 @@ var PhoneLine = function(options) {
         },
         send: function(command, options) {
 
-            _.extend(command, options);
+            extend(command, options);
 
             var cseq = null;
 
@@ -543,10 +552,10 @@ var PhoneLine = function(options) {
                                     if (obj.response && obj.response.command === command.command) {
                                         if (obj.response.result) {
                                             if (obj.response.result.code == 0) {
-                                                deferred.resolve(obj.response.result);
+                                                resolve(obj.response.result);
                                             }
                                             else {
-                                                deferred.reject(obj.response.result);
+                                                reject(obj.response.result);
                                             }
                                         }
                                     }
@@ -615,7 +624,7 @@ var PhoneLine = function(options) {
     //Fired when ICE is starting to negotiate between the peers.
     this.session.on('connecting', function(e) {
         self.eventEmitter.emit(EVENT_NAMES.callConnecting, self, e);
-        $timeout(function() {
+        setTimeout(function() {
             if (self.session.mediaHandler.onIceCompleted !== undefined) {
                 self.session.mediaHandler.onIceCompleted(self.session);
             }
@@ -993,7 +1002,7 @@ PhoneLine.prototype.blindTransfer = function(target, options) {
                         }
                     }
 
-                    timeout = $timeout(function() {
+                    timeout = setTimeout(function() {
                         reject(new Error('Timeout: no reply'));
                         self.eventEmitter.off('SIP_NOTIFY', onNotify);
                     }, self.responseTimeout);
@@ -1270,7 +1279,7 @@ PhoneLine.prototype.hasEarlyMedia = function() {
 var __emit = EventEmitter.prototype.emit;
 EventEmitter.prototype.emit = function() {
     var self = this, args = arguments;
-    $timeout(function() {
+    setTimeout(function() {
         __emit.apply(self, args);
     });
 };
@@ -1312,7 +1321,7 @@ var service = {
         }
 
         try {
-            __registerDeferred = $q.defer();
+            __registerDeferred = defer();
             service.isRegistering = true;
             service.isRegistered = false;
 
@@ -1358,7 +1367,7 @@ var service = {
 
     reregister: function(reconnect) {
         if (service.isRegistering) return __registerDeferred;
-        __registerDeferred = $q.defer();
+        __registerDeferred = defer();
         service.isRegistering = true;
         service.ua.reregister({}, !!reconnect);
         return __registerDeferred.promise;
@@ -1378,7 +1387,7 @@ var service = {
         service.isUnregistering = true;
         service.isUnregistered = false;
 
-        __unregisterDeferred = $q.defer();
+        __unregisterDeferred = defer();
         if (__sipRegistered) {
             service.ua.stop();
         }
@@ -1396,7 +1405,7 @@ var service = {
 
     call: function(toNumber, fromNumber, country) {
         if (!__callDeferred) {
-            __callDeferred = $q.defer();
+            __callDeferred = defer();
             this.activeLine = ua.call.call(ua, toNumber, {
                 fromNumber: fromNumber,
                 country: country
@@ -1421,7 +1430,7 @@ var service = {
                     !activeLine.isOnHold() && promises.push(activeLine.setHold(true));
                 }
             });
-            $q.all(promises).then(function() {
+            Promise.all(promises).then(function() {
                 self.activeLine = line;
                 self.ua.answer(line);
             }, function(e) {
@@ -1524,7 +1533,7 @@ service.on(EVENT_NAMES.callFailed, function(call, response, cause) {
                 //This method will throw 'Connection Error', so we just remove it
                 call.session.onTransportError = function() {};
                 //Re-register after 500ms
-                $timeout(service.reregister.bind(service, true), 500);
+                setTimeout(service.reregister.bind(service, true), 500);
                 break;
         }
     }

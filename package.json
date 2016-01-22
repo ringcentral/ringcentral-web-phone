@@ -1,0 +1,14 @@
+{
+  "name": "ringcentral-web-phone",
+  "version": "0.0.1",
+  "description": "",
+  "main": "build/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "sip.js": "^0.7.2"
+  }
+}
