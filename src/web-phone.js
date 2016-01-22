@@ -1,3 +1,16 @@
+/**
+ * angular.extend
+ * $q.when
+ * $q.reject
+ * $q.defer
+ */
+
+function delay(ms){
+    return new Promise(function(resolve, reject){
+        setTimeout(resolve, ms);
+    });
+}
+
 //Patching proto because of https://developers.google.com/web/updates/2015/07/mediastream-deprecations
 var mediaStreamManagerProto = Object.create(SIP.WebRTC.MediaStreamManager.prototype, {
     'release': {
@@ -497,60 +510,65 @@ var PhoneLine = function(options) {
             takeover: {reqid: 7, command: 'takeover'}
         },
         send: function(command, options) {
-            angular.extend(command, options);
 
-            var cseq = null, deferred = $q.defer();
-            self.session.sendRequest(SIP.C.INFO, {
-                body: JSON.stringify({
-                    request: command
-                }),
-                extraHeaders: [
-                    "Content-Type: application/json;charset=utf-8"
-                ],
-                receiveResponse: function(response) {
-                    var timeout = null;
-                    if (response.status_code === 200) {
-                        cseq = response.cseq;
-                        function onInfo(request) {
-                            if (response.cseq === cseq) {
-                                var body = request && request.body || '{}';
-                                var obj;
+            _.extend(command, options);
 
-                                try {
-                                    obj = JSON.parse(body);
-                                }
-                                catch (e) {
-                                    obj = {};
-                                }
+            var cseq = null;
 
-                                if (obj.response && obj.response.command === command.command) {
-                                    if (obj.response.result) {
-                                        if (obj.response.result.code == 0) {
-                                            deferred.resolve(obj.response.result);
-                                        }
-                                        else {
-                                            deferred.reject(obj.response.result);
+            return new Promise(function(resolve, reject){
+
+                self.session.sendRequest(SIP.C.INFO, {
+                    body: JSON.stringify({
+                        request: command
+                    }),
+                    extraHeaders: [
+                        "Content-Type: application/json;charset=utf-8"
+                    ],
+                    receiveResponse: function(response) {
+                        var timeout = null;
+                        if (response.status_code === 200) {
+                            cseq = response.cseq;
+                            function onInfo(request) {
+                                if (response.cseq === cseq) {
+                                    var body = request && request.body || '{}';
+                                    var obj;
+
+                                    try {
+                                        obj = JSON.parse(body);
+                                    }
+                                    catch (e) {
+                                        obj = {};
+                                    }
+
+                                    if (obj.response && obj.response.command === command.command) {
+                                        if (obj.response.result) {
+                                            if (obj.response.result.code == 0) {
+                                                deferred.resolve(obj.response.result);
+                                            }
+                                            else {
+                                                deferred.reject(obj.response.result);
+                                            }
                                         }
                                     }
+                                    timeout && clearTimeout(timeout);
+                                    self.eventEmitter.off('SIP_INFO', onInfo);
+                                    resolve(); //FIXME What to resolve
                                 }
-                                $timeout.cancel(timeout);
-                                self.eventEmitter.off('SIP_INFO', onInfo);
                             }
+
+                            timeout = setTimeout(function() {
+                                reject(new Error('Timeout: no reply'));
+                                self.eventEmitter.off('SIP_INFO', onInfo);
+                            }, self.responseTimeout);
+                            self.eventEmitter.on('SIP_INFO', onInfo);
                         }
+                        else {
+                            reject(new Error('The INFO response status code is: ' + response.status_code + ' (waiting for 200)'));
+                        }
+                    }
+                });
 
-                        timeout = $timeout(function() {
-                            deferred.reject(new Error('Timeout: no reply'));
-                            self.eventEmitter.off('SIP_INFO', onInfo);
-                        }, self.responseTimeout);
-                        self.eventEmitter.on('SIP_INFO', onInfo);
-                    }
-                    else {
-                        deferred.reject(new Error('The INFO response status code is: ' + response.status_code + ' (waiting for 200)'));
-                    }
-                }
             });
-
-            return deferred.promise;
         }
     };
 
@@ -845,7 +863,7 @@ PhoneLine.prototype.getSession = function() {
 PhoneLine.prototype.cancel = function() {
     var session = this.getSession();
     session.terminate({statusCode: 486});
-    return $q.when();
+    return Promise.resolve(null);
 };
 
 
@@ -865,7 +883,7 @@ PhoneLine.prototype.record = function(val) {
         }
     }
     else {
-        return $q.reject(new Error('Not on call'));
+        return Promise.reject(new Error('Not on call'));
     }
 };
 
@@ -877,7 +895,7 @@ PhoneLine.prototype.flip = function(target) {
         });
     }
     else {
-        return $q.reject(new Error('Not on call'));
+        return Promise.reject(new Error('Not on call'));
     }
 };
 
@@ -886,7 +904,7 @@ PhoneLine.prototype.park = function() {
         return this.controlSender.send(this.controlSender.messages.park);
     }
     else {
-        return $q.reject(new Error('Not on call'));
+        return Promise.reject(new Error('Not on call'));
     }
 };
 
@@ -899,7 +917,7 @@ PhoneLine.prototype.sendDTMF = function(value, duration) {
     if (dtmfSender !== undefined && dtmfSender.canInsertDTMF) {
         dtmfSender.insertDTMF(value, duration);
     }
-    return $q.when();
+    return Promise.resolve(null);
 };
 
 PhoneLine.prototype.sendInfoDTMF = function(value, duration) {
@@ -908,150 +926,152 @@ PhoneLine.prototype.sendInfoDTMF = function(value, duration) {
     session.dtmf(value.toString(), {
         duration: duration
     });
-    return $q.when();
+    return Promise.resolve(null);
 };
 
 PhoneLine.prototype.blindTransfer = function(target, options) {
-    //Blind Transfer is taken from SIP.js source
+
     var session = this.session;
-    var extraHeaders = [];
-    var deferred = $q.defer();
-    var originalTarget = target;
     var self = this;
+    var extraHeaders = [];
+    var originalTarget = target;
     options = options || {};
 
-    // Check Session Status
-    if (session.status !== SIP.Session.C.STATUS_CONFIRMED) {
-        throw new SIP.Exceptions.InvalidStateError(session.status);
-    }
+    return new Promise(function(resolve, reject){
+        //Blind Transfer is taken from SIP.js source
 
-    // normalizeTarget allows instances of SIP.URI to pass through unaltered,
-    // so try to make one ahead of time
-    try {
-        target = SIP.Grammar.parse(target, 'Refer_To').uri || target;
-    } catch (e) {
-        session.logger.debug(".refer() cannot parse Refer_To from", target);
-        session.logger.debug("...falling through to normalizeTarget()");
-    }
+        // Check Session Status
+        if (session.status !== SIP.Session.C.STATUS_CONFIRMED) {
+            throw new SIP.Exceptions.InvalidStateError(session.status);
+        }
 
-    // Check target validity
-    target = session.ua.normalizeTarget(target);
-    if (!target) {
-        throw new TypeError('Invalid target: ' + originalTarget);
-    }
+        // normalizeTarget allows instances of SIP.URI to pass through unaltered,
+        // so try to make one ahead of time
+        try {
+            target = SIP.Grammar.parse(target, 'Refer_To').uri || target;
+        } catch (e) {
+            session.logger.debug(".refer() cannot parse Refer_To from", target);
+            session.logger.debug("...falling through to normalizeTarget()");
+        }
 
-    extraHeaders.push('Contact: ' + session.contact);
-    extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(session.ua));
-    extraHeaders.push('Refer-To: ' + target);
+        // Check target validity
+        target = session.ua.normalizeTarget(target);
+        if (!target) {
+            throw new TypeError('Invalid target: ' + originalTarget);
+        }
 
-    // Send the request
-    session.sendRequest(SIP.C.REFER, {
-        extraHeaders: extraHeaders,
-        body: options.body,
-        receiveResponse: function(response) {
-            var timeout = null;
-            if (response.status_code === 202) {
-                var callId = response.call_id;
+        extraHeaders.push('Contact: ' + session.contact);
+        extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(session.ua));
+        extraHeaders.push('Refer-To: ' + target);
 
-                function onNotify(request) {
-                    if (request.call_id === callId) {
-                        var body = request && request.body || '';
-                        switch (true) {
-                            case /1[0-9]{2}/.test(body):
-                                request.reply(200);
-                                break;
-                            case /2[0-9]{2}/.test(body):
-                                self.session.terminate();
-                                $timeout.cancel(timeout);
-                                self.eventEmitter.off('SIP_NOTIFY', onNotify);
-                                deferred.resolve();
-                                break;
-                            default:
-                                deferred.reject(body);
-                                break;
+        // Send the request
+        session.sendRequest(SIP.C.REFER, {
+            extraHeaders: extraHeaders,
+            body: options.body,
+            receiveResponse: function(response) {
+                var timeout = null;
+                if (response.status_code === 202) {
+                    var callId = response.call_id;
+
+                    function onNotify(request) {
+                        if (request.call_id === callId) {
+                            var body = request && request.body || '';
+                            switch (true) {
+                                case /1[0-9]{2}/.test(body):
+                                    request.reply(200);
+                                    break;
+                                case /2[0-9]{2}/.test(body):
+                                    self.session.terminate();
+                                    clearTimeout(timeout);
+                                    self.eventEmitter.off('SIP_NOTIFY', onNotify);
+                                    resolve();
+                                    break;
+                                default:
+                                    reject(body);
+                                    break;
+                            }
                         }
                     }
+
+                    timeout = $timeout(function() {
+                        reject(new Error('Timeout: no reply'));
+                        self.eventEmitter.off('SIP_NOTIFY', onNotify);
+                    }, self.responseTimeout);
+                    self.eventEmitter.on('SIP_NOTIFY', onNotify);
                 }
+                else {
+                    reject(new Error('The response status code is: ' + response.status_code + ' (waiting for 202)'));
+                }
+            }
+        });
 
-                timeout = $timeout(function() {
-                    deferred.reject(new Error('Timeout: no reply'));
-                    self.eventEmitter.off('SIP_NOTIFY', onNotify);
-                }, self.responseTimeout);
-                self.eventEmitter.on('SIP_NOTIFY', onNotify);
-            }
-            else {
-                deferred.reject(new Error('The response status code is: ' + response.status_code + ' (waiting for 202)'));
-            }
-        }
     });
-
-    return deferred.promise;
 };
 
 PhoneLine.prototype.transfer = function(target, options) {
     var self = this;
-    return (self.onHold ? $q.when() : self.setHold(true)).then(function() {
-        return $timeout(function() {
-            return self.blindTransfer(target, options);
-        }, 300);
+    return (self.onHold ? Promise.resolve(null) : self.setHold(true)).then(function(){ return delay(300); }).then(function() {
+        return self.blindTransfer(target, options);
     });
 };
 
 PhoneLine.prototype.forward = function(target, options) {
     var self = this, interval = null;
     return self.answer().then(function() {
-        var deferred = $q.defer();
-        interval = $interval(function() {
-            if (self.session.status === 12) {
-                $interval.cancel(interval);
-                self.setMute(true);
-                $timeout(function() {
-                    self.transfer(target, options);
-                    deferred.resolve();
-                }, 700);
-            }
-        }, 50);
-        return deferred.promise;
+        return new Promise(function(resolve, reject){
+            interval = setInterval(function() {
+                if (self.session.status === 12) {
+                    clearInterval(interval);
+                    self.setMute(true);
+                    setTimeout(function() {
+                        self.transfer(target, options);
+                        resolve();
+                    }, 700);
+                }
+            }, 50);
+        });
     });
 };
 
 PhoneLine.prototype.answer = function() {
-    var self = this,
-        deferred = $q.defer();
+    var self = this;
 
-    function onAnswered() {
-        deferred.resolve();
-        self.eventEmitter.off(EVENT_NAMES.callStarted, onAnswered);
-        self.eventEmitter.off(EVENT_NAMES.callFailed, onFail);
-    }
+    return new Promise(function(resolve, reject){
 
-    function onFail(e) {
-        deferred.reject(e);
-        self.eventEmitter.off(EVENT_NAMES.callStarted, onAnswered);
-        self.eventEmitter.off(EVENT_NAMES.callFailed, onFail);
-    }
+        function onAnswered() {
+            resolve();
+            self.eventEmitter.off(EVENT_NAMES.callStarted, onAnswered);
+            self.eventEmitter.off(EVENT_NAMES.callFailed, onFail);
+        }
 
-    self.eventEmitter.on(EVENT_NAMES.callStarted, onAnswered);
-    self.eventEmitter.on(EVENT_NAMES.callFailed, onFail);
+        function onFail(e) {
+            reject(e);
+            self.eventEmitter.off(EVENT_NAMES.callStarted, onAnswered);
+            self.eventEmitter.off(EVENT_NAMES.callFailed, onFail);
+        }
 
-    console.warn('emitting callProgress');
-    self.eventEmitter.emit(EVENT_NAMES.callProgress, self);
+        self.eventEmitter.on(EVENT_NAMES.callStarted, onAnswered);
+        self.eventEmitter.on(EVENT_NAMES.callFailed, onFail);
 
-    self.session.accept({
-        media: {
-            constraints: {audio: true, video: false},
-            render: {
-                local: {
-                    audio: LOCAL_AUDIO
-                },
-                remote: {
-                    audio: REMOTE_AUDIO
+        console.warn('emitting callProgress');
+        self.eventEmitter.emit(EVENT_NAMES.callProgress, self);
+
+        self.session.accept({
+            media: {
+                constraints: {audio: true, video: false},
+                render: {
+                    local: {
+                        audio: LOCAL_AUDIO
+                    },
+                    remote: {
+                        audio: REMOTE_AUDIO
+                    }
                 }
             }
-        }
+        });
+
     });
 
-    return deferred.promise;
 };
 
 PhoneLine.prototype.setMute = function(val) {
@@ -1062,7 +1082,7 @@ PhoneLine.prototype.setMute = function(val) {
     } catch (e) {
         console.error(e);
     }
-    return $q.when();
+    return Promise.resolve(null);
 };
 
 
@@ -1084,7 +1104,7 @@ PhoneLine.prototype.setMuteBoth = function(val) {
     catch (e) {
         console.error(e);
     }
-    return $q.when();
+    return Promise.resolve(null);
 };
 
 /* This is a direct and very tightly coupled code. Please, try to avoid using this method if possible */
@@ -1129,70 +1149,68 @@ PhoneLine.prototype.sendRequest = function(method, body, options) {
 //Legacy hold uses direct in-dialog messages to trick SIP.js, try to avoid using this method if possible
 PhoneLine.prototype.__legacyHold = function(val) {
     var self = this;
-
     self.onHold = !!val;
-    var deferred = $q.defer();
-    if (self.onCall && self.session.dialog) {
-        var body = self.session.mediaHandler.peerConnection.localDescription.sdp;
-        if (self.onHold) {
-            //body = body.replace(/c=IN IP4 \d+\.\d+.\d+.\d+/, "c=IN IP4 0.0.0.0");
-            body = body.replace(/a=sendrecv/, "a=sendonly");
-            self.session.mediaHandler.hold();
-            self.session.onhold('local');
+    return new Promise(function(resolve, reject){
+        if (self.onCall && self.session.dialog) {
+            var body = self.session.mediaHandler.peerConnection.localDescription.sdp;
+            if (self.onHold) {
+                //body = body.replace(/c=IN IP4 \d+\.\d+.\d+.\d+/, "c=IN IP4 0.0.0.0");
+                body = body.replace(/a=sendrecv/, "a=sendonly");
+                self.session.mediaHandler.hold();
+                self.session.onhold('local');
+            }
+            else {
+                self.session.mediaHandler.unhold();
+                self.session.onunhold('local');
+            }
+
+            self.sendRequest(SIP.C.INVITE, body, {
+                extraHeaders: [
+                    "Content-Type: application/sdp",
+                    "Contact: " + self.session.contact
+                ],
+                receiveResponse: function(response) {
+                    switch (true) {
+                        case /^1[0-9]{2}$/.test(response.status_code):
+                            break;
+                        case /^2[0-9]{2}$/.test(response.status_code):
+                            resolve();
+                            self.sendRequest(SIP.C.ACK, null, {
+                                cseq: response.cseq
+                            });
+                            break;
+                        default:
+                            reject('Status code is: ' + response.status_code);
+                            self.onHold = !self.onHold;
+                            break;
+                    }
+                }
+            });
         }
         else {
-            self.session.mediaHandler.unhold();
-            self.session.onunhold('local');
+            reject(new Error('Not on call or no dialog'));
         }
-
-        self.sendRequest(SIP.C.INVITE, body, {
-            extraHeaders: [
-                "Content-Type: application/sdp",
-                "Contact: " + self.session.contact
-            ],
-            receiveResponse: function(response) {
-                switch (true) {
-                    case /^1[0-9]{2}$/.test(response.status_code):
-                        break;
-                    case /^2[0-9]{2}$/.test(response.status_code):
-                        deferred.resolve();
-                        self.sendRequest(SIP.C.ACK, null, {
-                            cseq: response.cseq
-                        });
-                        break;
-                    default:
-                        deferred.reject('Status code is: ' + response.status_code);
-                        self.onHold = !self.onHold;
-                        break;
-                }
-            }
-        });
-    }
-    else {
-        deferred.reject(new Error('Not on call or no dialog'));
-    }
-    return deferred.promise;
+    });
 };
 
 PhoneLine.prototype.__hold = function(val) {
-    var deferred = $q.defer(), self = this;
+    var self = this;
+    return new Promise(function(resolve, reject){
+        function onSucceeded() {
+            resolve();
+            self.eventEmitter.off(EVENT_NAMES.callReinviteFailed, onFailed);
+        }
 
-    function onSucceeded() {
-        deferred.resolve();
-        self.eventEmitter.off(EVENT_NAMES.callReinviteFailed, onFailed);
-    }
+        function onFailed(e) {
+            reject(e);
+            self.eventEmitter.off(EVENT_NAMES.callReinviteSucceeded, onSucceeded);
+        }
 
-    function onFailed(e) {
-        deferred.reject(e);
-        self.eventEmitter.off(EVENT_NAMES.callReinviteSucceeded, onSucceeded);
-    }
+        self.eventEmitter.once(EVENT_NAMES.callReinviteSucceeded, onSucceeded);
+        self.eventEmitter.once(EVENT_NAMES.callReinviteFailed, onFailed);
 
-    self.eventEmitter.once(EVENT_NAMES.callReinviteSucceeded, onSucceeded);
-    self.eventEmitter.once(EVENT_NAMES.callReinviteFailed, onFailed);
-
-    val ? self.session.hold() : self.session.unhold();
-
-    return deferred.promise;
+        val ? self.session.hold() : self.session.unhold();
+    });
 };
 
 PhoneLine.prototype.setHold = function(val) {
@@ -1206,7 +1224,7 @@ PhoneLine.prototype.setHold = function(val) {
             self.onHold = !self.onHold;
         });
     }
-    return $q.when(promise);
+    return Promise.resolve(promise);
 };
 
 PhoneLine.prototype.isOnHold = function() {
@@ -1262,6 +1280,10 @@ var __registerDeferred, __unregisterDeferred, __callDeferred;
 var __sipRegistered = false;
 
 var service = {
+    PhoneLine: PhoneLine,
+    EventEmitter: EventEmitter,
+    UserAgent: UserAgent,
+
     activeLine: null,
 
     onMute: false,
@@ -1407,7 +1429,7 @@ var service = {
             });
         }
 
-        return $q.when();
+        return Promise.resolve(null);
     },
 
     onCall: function() {
@@ -1420,20 +1442,20 @@ var service = {
         if (!line) line = this.activeLine;
         line && this.ua.hangup(line);
         if (line === this.activeLine) this.activeLine = null;
-        return $q.when();
+        return Promise.resolve(null);
     },
 
     sendDTMF: function(value, line) {
         if (!line) line = this.activeLine;
         line && line.sendDTMF.call(line, value);
-        return $q.when();
+        return Promise.resolve(null);
     },
 
     hold: function(line) {
         if (!line) line = this.activeLine;
         line && line.setHold(true);
         if (line === this.activeLine) this.activeLine = null;
-        return $q.when();
+        return Promise.resolve(null);
     },
 
     unhold: function(line) {
@@ -1447,26 +1469,26 @@ var service = {
             line.setHold(false);
             this.activeLine = line;
         }
-        return $q.when();
+        return Promise.resolve(null);
     },
 
     mute: function(line) {
         if (!line) line = this.activeLine;
         line && line.setMute(true);
-        return $q.when();
+        return Promise.resolve(null);
     },
 
     unmute: function(line) {
         if (!line) line = this.activeLine;
         line && line.setMute(false);
-        return $q.when();
+        return Promise.resolve(null);
     },
 
     transfer: function(line, target, options) {
         if (!line) line = this.activeLine;
         line && line.transfer(target, options);
         if (line === this.activeLine) this.activeLine = null;
-        return $q.when();
+        return Promise.resolve(null);
     },
 
     events: EVENT_NAMES,
@@ -1535,8 +1557,9 @@ service.on(EVENT_NAMES.sipUnRegistered, function(e) {
     service.isUnregistering = false;
 });
 
-$window.addEventListener('unload', function() {
+window.addEventListener('unload', function() {
     service.hangup();
     service.unregister();
 });
 
+module.exports = service;
