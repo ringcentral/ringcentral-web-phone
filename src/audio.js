@@ -4,8 +4,6 @@ var EventEmitter = require('./emitter');
 module.exports = {
     play: function(url, options) {
 
-        var d = $q.defer();
-
         var emitter = new EventEmitter();
 
         var audio = new Audio();

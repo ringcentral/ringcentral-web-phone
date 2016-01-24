@@ -1,6 +1,8 @@
 module.exports = {
     api: {
-        phoneParser: function(){}
+        phoneParser: function(numbers){
+            return Promise.resolve(numbers);
+        }
     },
     sip: {
         register: function(transport) {

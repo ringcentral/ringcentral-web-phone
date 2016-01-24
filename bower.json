@@ -1,0 +1,25 @@
+{
+  "name": "ringcentral-web-phone",
+  "version": "0.0.1",
+  "homepage": "https://github.com/kirill-konshin/web-phone",
+  "authors": [
+    "Kirill Konshin <kirill.konshin@gmail.com>"
+  ],
+  "main": "build/ringcentral-web-phone.js",
+  "moduleType": [
+    "amd",
+    "globals",
+    "node"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "ringcentral": "~2.0.3"
+  }
+}

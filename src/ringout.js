@@ -4,44 +4,6 @@ var settingsService = require('./settingsService');
 var rcPlatform = require('./platform');
 var utils = require('./utils');
 
-var log = logging("ringout");
-
-var __inProgress = false;
-
-function subscribeToCallMonitoringEvents() {
-    callMonitor.execute(function(cm) {
-        cm.on(cm.events.ringoutUpdateError, function() {
-            //TODO
-        });
-        cm.on(cm.events.ringoutUpdated, function(rng) {
-            __inProgress = rng.status && rng.status.callStatus === 'InProgress';
-        });
-    });
-}
-
-$rootScope.$watch(function() {
-    return rcSIPUA.onCall()
-}, function(val) {
-    __inProgress = val;
-});
-
-subscribeToCallMonitoringEvents();
-
-callMonitor.onDestroyed(subscribeToCallMonitoringEvents);
-
-var RINGOUTS_MODES = {
-    ringout: 'ringout',
-    webphone: 'webphone',
-    webphoneIncoming: 'webphoneIncoming'
-};
-
-function startRingoutCall(toNumber, fromNumber, promptToPress) {
-    log('Ringout call to ' + toNumber + ' from ' + fromNumber);
-    callMonitor.execute(function(cm) {
-        cm.startRingout(fromNumber, toNumber, promptToPress);
-    });
-}
-
 function startWebCall(toNumber, fromNumber) {
     log('SIP call to', toNumber, 'from', fromNumber);
     var countryId = null;
@@ -54,18 +16,12 @@ function startWebCall(toNumber, fromNumber) {
     })
 }
 
-function setCurrentMode(mode) {
-    service.currentMode = mode;
-}
-
-var __switchModePromise = null;
-
 var service = {
     start: function(toNo, fromNo, promptToPress) {
         var self = this;
         var normalizedToNumber = utils.normalizeNumberForParser(toNo);
         var normalizedFromNumber = utils.normalizeNumberForParser(fromNo);
-        var countryCode = settingsService.get().countryCode || 'US';
+        var countryCode = settingsService.countryCode || 'US';
 
         return rcPlatform.api.phoneParser([normalizedToNumber, normalizedFromNumber], {country: countryCode}).then(function(parsedNumbers) {
             var toNumber = /^\*/.test(normalizedToNumber) ? normalizedToNumber : parsedNumbers[0],

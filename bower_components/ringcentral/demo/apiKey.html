@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Core &mdash; RingCentral&trade; Platform</title>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="common.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+</head>
+<body>
+
+<div class="container">
+
+    <h1>
+        <a href="index.html" id="logo"></a>
+    </h1>
+
+    <hr>
+
+    <form class="panel panel-default form-horizontal" onSubmit="save()" role="form">
+
+        <div class="panel-heading"><h1 class="panel-title">Application Key</h1></div>
+
+        <div class="panel-body">
+
+            <div class="form-group">
+                <label for="appKey" class="col-xs-2 control-label">APP Key</label>
+
+                <div class="col-xs-10">
+                    <input type="text" class="form-control" id="appKey" placeholder="APP Key" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="appSecret" class="col-xs-2 control-label">APP Secret</label>
+
+                <div class="col-xs-10">
+                    <input type="text" class="form-control" id="appSecret" placeholder="App Secret" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="server" class="col-xs-2 control-label">Server</label>
+
+                <div class="col-xs-10">
+                    <input type="text" class="form-control" id="server" placeholder="https://platform.ringcentral.com" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <p id="isTokenValid" class="col-xs-offset-2 col-xs-10 form-control-static text-danger">
+                    <span class="glyphicon glyphicon-warning-sign"></span>
+                    You are currently logged in, access token will be revoked so you will be logged out.
+                </p>
+            </div>
+
+        </div>
+
+        <div class="panel-footer text-center">
+            <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-ok"></span> Save</button>
+            <a class="btn btn-link" href="index.html">Cancel</a>
+        </div>
+
+    </form>
+
+    <hr>
+
+    <p class="text-center text-muted">
+        &copy; 1999 &ndash; <span id="date"></span> RingCentral&trade;, Inc. All rights reserved.
+        <script> document.getElementById('date').innerHTML = (new Date()).getFullYear().toString(); </script>
+    </p>
+
+</div>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/fetch/0.9.0/fetch.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.33.0/es6-shim.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pubnub/3.7.7/pubnub.js"></script>
+<script src="../build/ringcentral.js" type="text/javascript"></script>
+<script type="text/javascript">
+
+    var form = document.getElementsByTagName('form')[0],
+            isTokenValid = document.getElementById('isTokenValid'),
+            appKeyField = document.getElementById('appKey'),
+            appSecretField = document.getElementById('appSecret'),
+            serverField = document.getElementById('server');
+
+    function app() {
+
+        var rcsdk = new RingCentral.SDK({
+                    server: localStorage.getItem('ringcentral-demo-server') || RingCentral.SDK.server.sandbox,
+                    appKey: localStorage.getItem('ringcentral-demo-appKey'),
+                    appSecret: localStorage.getItem('ringcentral-demo-appSecret')
+                }),
+                platform = rcsdk.platform();
+
+        isTokenValid.style.display = platform.auth().accessTokenValid() ? '' : 'none';
+
+        appKeyField.value = platform._appKey;
+        appSecretField.value = platform._appSecret;
+        serverField.value = platform._server;
+
+    }
+
+    function save() {
+
+        localStorage.setItem('ringcentral-demo-server', (serverField.value).trim());
+        localStorage.setItem('ringcentral-demo-appKey', (appKeyField.value).trim());
+        localStorage.setItem('ringcentral-demo-appSecret', (appSecretField.value).trim());
+
+        app();
+
+    }
+
+    app();
+
+</script>
+
+</body>
+</html>

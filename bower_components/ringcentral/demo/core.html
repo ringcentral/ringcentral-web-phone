@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Core &mdash; RingCentral&trade; Platform</title>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="common.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <script type="text/javascript">
+        window.fetch = null; // force to use polyfill
+    </script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/fetch/0.9.0/fetch.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.33.0/es6-shim.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pubnub/3.7.7/pubnub.js"></script>
+    <script src="../build/ringcentral.js" type="text/javascript"></script>
+    <script type="text/javascript">
+
+        window.addEventListener('load', function() {
+
+            var appKey = localStorage.getItem('ringcentral-demo-appKey'),
+                    appSecret = localStorage.getItem('ringcentral-demo-appSecret'),
+                    server = localStorage.getItem('ringcentral-demo-server'),
+                    rcsdk = new RingCentral.SDK({server: server, appKey: appKey, appSecret: appSecret}),
+                    platform = rcsdk.platform();
+
+            function showExtension() {
+
+                document.getElementById('login').style.display = 'none';
+                document.getElementById('extension').style.display = 'block';
+
+                var activeCalls = 0,
+                        logDiv = document.getElementById('extension-presence-log'),
+                        callDiv = document.getElementById('extension-call-log');
+
+                function getExtension(cb) {
+
+                    platform.get('/account/~/extension/~')
+                            .then(function(ajax) {
+                                cb(ajax.json());
+                            })
+                            .catch(function(e) {
+                                console.error(e);
+                            });
+
+                }
+
+                function getPresence(cb) {
+
+                    platform.get('/account/~/extension/~/presence', {query: {detailedTelephonyState: true}})
+                            .then(function(ajax) {
+                                cb(ajax.json());
+                            }).catch(function(e) {
+                                console.error(e);
+                            });
+
+                }
+
+                function getCallLog(cb) {
+
+                    platform.get('/account/~/extension/~/call-log')
+                            .then(function(data) {
+                                cb(data.json().records);
+                            })
+                            .catch(function(e) {
+                                console.error(e);
+                            });
+
+                }
+
+                function getPresenceSubscription(event, cb) {
+
+                    var subscription = rcsdk.createSubscription();
+
+                    subscription.on(subscription.events.notification, function(msg) {
+                        cb(msg.body);
+                    });
+
+                    subscription
+                            .register({
+                                events: [event]
+                            })
+                            .then(function(ajax) {
+                                console.log('Subscribed', ajax);
+                            })
+                            .catch(function(e) {
+                                console.error(e);
+                            });
+
+                }
+
+                function presenceUpdate(presence) {
+
+                    var activeCall = presence.activeCalls && presence.activeCalls.length ? presence.activeCalls[presence.activeCalls.length - 1] : null;
+
+                    logDiv.innerHTML += '<hr><div style="font-size: 11px">' + JSON.stringify(presence) + '</div>';
+                    if (activeCall) logDiv.innerHTML += '<div><strong>' + activeCall.direction + ' call from ' + activeCall.from + ' to ' + activeCall.to + ' is ' + presence.telephonyStatus + '</strong></div>';
+
+                    activeCalls = (presence.telephonyStatus == 'NoCall' || !activeCall) ? 0 : presence.activeCalls.length;
+
+                    getCallLog(function(records) {
+
+                        var html = [];
+                        records.forEach(function(call) {
+                            html.push('<div>' + call.direction + ' ' + call.type + ' ' + call.action + ' - From ' + call.from.phoneNumber + ' to ' + call.to.phoneNumber + ' - ' + call.result + '</div>');
+                        });
+
+                        callDiv.innerHTML = html.join('');
+
+                    });
+
+                }
+
+                getExtension(function(extension) {
+
+                    logDiv.innerHTML = '';
+                    callDiv.innerHTML = '';
+                    document.getElementById('extension-info').innerHTML = '<strong>' + extension.id + ' ' + extension.extensionNumber + ' ' + extension.name + '</strong>';
+
+                    getPresence(function(presence) {
+
+                        presenceUpdate(presence);
+                        getPresenceSubscription('/account/~/extension/~/presence?detailedTelephonyState=true', presenceUpdate);
+
+                    });
+
+                });
+
+            }
+
+            function showLogin() {
+
+                document.getElementById('extension').style.display = 'none';
+                document.getElementById('login').style.display = 'block';
+
+                document.getElementById('login-submit').addEventListener('click', function() {
+
+                    platform
+                            .login({
+                                username: document.getElementById('login-username').value,
+                                extension: document.getElementById('login-extension').value,
+                                password: document.getElementById('login-password').value
+                            })
+                            .then(showExtension).catch(function(e) {
+
+                                alert(e.message || e.description || 'Server cannot authorize user');
+                                console.error(e.stack);
+
+                            });
+
+                });
+
+            }
+
+            document.getElementById('extension-info-logout').addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                platform.logout();
+            });
+
+            platform.on(platform.events.logoutSuccess, function() {
+                showLogin();
+            });
+
+            document.getElementById('login-username').value = localStorage.getItem('ringcentral-demo-login-username');
+            document.getElementById('login-password').value = localStorage.getItem('ringcentral-demo-login-password');
+            document.getElementById('login-extension').value = localStorage.getItem('ringcentral-demo-login-extension');
+
+            platform.loggedIn().then(function(res){
+                if (res) {
+                    showExtension();
+                } else {
+                    showLogin();
+                }
+            });
+
+        });
+
+    </script>
+    <style type="text/css">
+
+        .screen {
+            display: none;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>
+        <a href="index.html" id="logo"></a>
+    </h1>
+
+    <hr>
+
+    <div class="form-horizontal screen" id="login">
+
+        <div class="form-group">
+            <label for="login-username" class="col-xs-2 control-label">Username</label>
+
+            <div class="col-xs-10">
+                <input type="text" class="form-control" id="login-username">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="login-extension" class="col-xs-2 control-label">Extension</label>
+
+            <div class="col-xs-10">
+                <input type="text" class="form-control" id="login-extension">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="login-password" class="col-xs-2 control-label">Password</label>
+
+            <div class="col-xs-10">
+                <input type="password" class="form-control" id="login-password">
+            </div>
+        </div>
+
+        <div class="form-group">
+
+            <div class="col-xs-10 col-xs-offset-2">
+                <button id="login-submit" type="button" class="btn btn-primary">Submit</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="extension" class="screen">
+        <p>
+            <button type="button" class="btn btn-danger" id="extension-info-logout">Logout</button>
+        </p>
+        <div id="extension-info"></div>
+        <div id="extension-call-log"></div>
+        <div id="extension-presence-log"></div>
+    </div>
+
+    <hr>
+
+    <p class="text-center text-muted">
+        &copy; 1999 &ndash; <span id="date"></span> RingCentral&trade;, Inc. All rights reserved.
+        <script> document.getElementById('date').innerHTML = (new Date()).getFullYear().toString(); </script>
+    </p>
+
+</div>
+
+</body>
+</html>

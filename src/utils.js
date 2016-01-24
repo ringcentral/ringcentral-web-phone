@@ -298,7 +298,7 @@ module.exports = {
     },
 
     pushIntoAnotherArray: function(fromArr, toArr, limit) {
-        if (!angular.isArray(toArr) || !angular.isArray(fromArr)) return angular.copy(fromArr);
+        if (!Array.isArray(toArr) || !Array.isArray(fromArr)) return this.copy(fromArr);
         if (!limit) limit = fromArr.length;
 
         var from = toArr.length, to = toArr.length + limit;

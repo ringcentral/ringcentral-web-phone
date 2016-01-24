@@ -710,7 +710,7 @@ var PhoneLine = function(options) {
     }
 
     //Monkey patching oniceconnectionstatechange because SIP.js 0.6.x does not have this event
-    var onStateChange = this.session.mediaHandler.peerConnection.oniceconnectionstatechange || angular.noop,
+    var onStateChange = this.session.mediaHandler.peerConnection.oniceconnectionstatechange || function(){},
         __doubleCompleted = false;
     this.session.mediaHandler.peerConnection.oniceconnectionstatechange = function() {
         //this === peerConnection
@@ -1262,7 +1262,7 @@ var service = {
                 : info.wsServers;
             info.domain = info.domain || info.sipDomain;
             info.username = info.username || info.userName;
-            info.extraHeaders = angular.isArray(info.extraHeaders) ? info.extraHeaders : [];
+            info.extraHeaders = Array.isArray(info.extraHeaders) ? info.extraHeaders : [];
 
             var options = {
                 wsServers: info.wsServers,
@@ -1273,7 +1273,7 @@ var service = {
                 stunServers: info.stunServers || ['stun:74.125.194.127:19302'],
                 turnServers: [],
                 log: {
-                    level: 3
+                    level: 1 //FIXME LOG LEVEL 3
                 },
                 domain: info.domain,
                 autostart: false,   //turn off autostart on UA creation

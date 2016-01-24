@@ -69,10 +69,11 @@ rcSIPUA.on([rcSIPUA.events.callStarted, rcSIPUA.events.callRejected, rcSIPUA.eve
 function normalize(number) {
     //FIXME Platform usage
     var countryCode = settingsService.countryCode;
-    return rcPlatform.api.phoneParser([utils.normalizeNumberForParser(number)], {country: countryCode})
-        .then(function(parsedNumbers) {
-            return parsedNumbers[0] || number;
-        });
+    //return rcPlatform.api.phoneParser([utils.normalizeNumberForParser(number)], {country: countryCode})
+    //    .then(function(parsedNumbers) {
+    //        return parsedNumbers[0] || number;
+    //    });
+    return Promise.resolve(number);
 }
 
 function Call(call, type, inbound) {

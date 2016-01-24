@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SSO &mdash; RingCentral&trade; Platform</title>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="../common.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+</head>
+<body>
+
+<div class="container">
+
+    <h1>
+        <a href="../index.html" id="logo"></a>
+    </h1>
+
+    <div class="alert alert-warning" role="alert">
+
+        <p><strong>If login form does not appear &mdash;
+            <a href="../apiKey.html">Change API ERVER & APPLICATION KEY / SECRET</a>.</strong></p>
+
+        <p>In order to use this demo your application must have:</p>
+
+        <ol>
+            <li>Appropriate <strong>GRANT_TYPE</strong> permissions</li>
+            <li><strong>REDIRECT_URI</strong> that strictly matches this one
+                <strong><a href="#" id="redirectUri"></a></strong></li>
+        </ol>
+
+    </div>
+
+    <hr>
+
+    <div class="panel panel-default">
+        <div class="panel-heading">Login Form @ RingCentral</div>
+        <div class="panel-body">
+            <iframe name="sso" id="sso" style="width: 100%; height: 500px; border: 0" src="redirect.html"></iframe>
+        </div>
+    </div>
+
+    <hr>
+
+    <p class="text-center text-muted">
+        &copy; 1999 &ndash; <span id="date"></span> RingCentral&trade;, Inc. All rights reserved.
+        <script> document.getElementById('date').innerHTML = (new Date()).getFullYear().toString(); </script>
+    </p>
+
+</div>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/fetch/0.9.0/fetch.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.33.0/es6-shim.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pubnub/3.7.7/pubnub.js"></script>
+<script src="../../build/ringcentral.js" type="text/javascript"></script>
+<script type="text/javascript">
+
+    var REDIRECT_URI = decodeURIComponent(window.location.href.split('sso', 1) + 'sso/redirect.html'),
+            rcsdk = new RingCentral.SDK({
+                server: localStorage.getItem('ringcentral-demo-server') || RingCentral.SDK.server.sandbox,
+                appKey: localStorage.getItem('ringcentral-demo-appKey'),
+                appSecret: localStorage.getItem('ringcentral-demo-appSecret')
+            }),
+            platform = rcsdk.platform();
+
+    if (!platform._appSecret || !platform._appKey || !platform._server) {
+        location.assign('../apiKey.html');
+    }
+
+    document.getElementById('redirectUri').innerText = REDIRECT_URI;
+    document.getElementById('redirectUri').href = REDIRECT_URI;
+
+    function authorize(options) {
+
+        try {
+
+            var qs = platform.parseAuthRedirectUrl(window.frames.sso.location.search);
+
+            if (!qs.code) return;
+
+            qs.redirectUri = REDIRECT_URI;
+
+            console.log('About to authorize with the following stuff', qs);
+
+            platform
+                    .login(qs)
+                    .then(function(res) {
+                        console.log('Auth response', res.json);
+                        alert('Auth success, demo ends here');
+                    })
+                    .catch(function(e) {
+                        alert('Token error\n\n' + e.message);
+                    });
+
+        } catch (e) {
+            alert('Auth error\n\n' + e.message);
+        }
+
+    }
+
+    function openSSO() {
+
+        var url = platform.authUrl({
+            redirectUri: REDIRECT_URI,
+            prompt: 'login sso',
+            display: 'touch'
+        });
+
+        window.open(url, 'sso');
+
+    }
+
+    openSSO();
+
+</script>
+
+
+</body>
+</html>
