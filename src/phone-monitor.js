@@ -126,6 +126,9 @@ function Call(call, type, inbound) {
     this.flip = function(target) {
         normalize(target).then(function(n) { call.flip(n); });
     };
+    this.clone = function(){
+        return new Call(call, type, inbound); //FIXME utils.copy
+    };
 }
 
 rcSIPUA.on(rcSIPUA.events.outgoingCall, function(call) {
@@ -249,8 +252,8 @@ function update(forceStart) {
         for (var id in inboundCalls)if (inboundCalls[id].callStatus == 'NoCall')delete inboundCalls[id];
     }
 
-    for (var id in outboundCalls)_outboundCalls.push(utils.copy(outboundCalls[id]));
-    for (var id in inboundCalls)_inboundCalls.push(utils.copy(inboundCalls[id]));
+    for (var id in outboundCalls)_outboundCalls.push(outboundCalls[id].clone());
+    for (var id in inboundCalls)_inboundCalls.push(inboundCalls[id].clone());
 
     eventScope.emit('update', {"inboundCalls": _inboundCalls, "outboundCalls": _outboundCalls});
 }
@@ -258,5 +261,5 @@ function update(forceStart) {
 module.exports = {
     "onStop": function(listener) { if (typeof listener == 'function')eventScope.on('stop', listener); },
     "onStart": function(listener) { if (typeof listener == 'function')eventScope.on('start', listener); },
-    "onUpdate": function(listener) { if (typeof listener == 'function')eventScope.on('update', function(e, d) { listener(d); }); }
+    "onUpdate": function(listener) { if (typeof listener == 'function')eventScope.on('update', function(d) { listener(d); }); }
 };

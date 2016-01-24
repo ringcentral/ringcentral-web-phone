@@ -11,7 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "ringcentral": "^2.0.1",
-    "sip.js": "^0.7.2"
+    "sip.js": "0.6.4"
   },
   "devDependencies": {
     "json-loader": "^0.5.4",

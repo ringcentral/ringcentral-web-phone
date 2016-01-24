@@ -80,7 +80,7 @@ function registerSIP(checkFlags, transport) {
 function app() {
     console.log('Sip Registered');
     webPhone.monitor.onUpdate(function() {
-        //console.log('Monitor update', arguments);
+        console.log('Monitor update', arguments);
         document.getElementById('monitor').innerText = JSON.stringify(arguments, null, 2);
     });
 }
