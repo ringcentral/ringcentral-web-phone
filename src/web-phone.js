@@ -1,24 +1,11 @@
-function delay(ms){
-    return new Promise(function(resolve, reject){
-        setTimeout(resolve, ms);
-    });
-}
+var SIP = require('sip.js');
+var EventEmitter = require('./emitter');
+var utils = require('./utils');
 
-function defer(){
-    var deferred = {};
-    deferred.promise = new Promise(function(resolve, reject){
-        deferred.resolve = resolve;
-        deferred.reject = reject;
-    });
-    return deferred;
-}
-
-function extend(dst, src){
-    Object.keys(src).forEach(function(k){
-        dst[k] = src[k];
-    });
-    return dst;
-}
+var delay = utils.delay;
+var defer = utils.defer;
+var extend = utils.extend;
+var uuid = utils.uuid;
 
 //Patching proto because of https://developers.google.com/web/updates/2015/07/mediastream-deprecations
 var mediaStreamManagerProto = Object.create(SIP.WebRTC.MediaStreamManager.prototype, {
@@ -43,14 +30,7 @@ var mediaStreamManagerProto = Object.create(SIP.WebRTC.MediaStreamManager.protot
 
 SIP.WebRTC.MediaStreamManager.prototype = mediaStreamManagerProto;
 
-//generate uuid
-function uuid() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
-}
-
+//FIXME Unused
 //cross-browser mediaStream attaching
 //https://github.com/HenrikJoreteg/attachMediaStream
 function attachMediaStream(stream, el, options) {
@@ -153,56 +133,7 @@ document.body.appendChild(REMOTE_AUDIO);
 LOCAL_AUDIO.volume = 0;
 
 //-----------------------------------------
-var EventEmitter = function() {
-    this.handlers = {};
-};
 
-EventEmitter.prototype.emit = function(name /*, args */) {
-    var self = this, args = Array.prototype.slice.call(arguments, 1);
-    if (name in this.handlers) {
-        var list = this.handlers[name];
-        for (var i = 0; i < list.length; i++) {
-            setTimeout(executeListener(list[i]), 0);
-        }
-    }
-    function executeListener(listener) {
-        return function() {
-            listener.apply(self, args);
-        }
-    }
-};
-
-EventEmitter.prototype.on = function(name, listener) {
-    if (!Array.isArray(name)) name = [name];
-    for (var i = 0; i < name.length; i++) {
-        this.handlers[name[i]] = this.handlers[name[i]] || [];
-        var list = this.handlers[name[i]];
-        list.push(listener);
-    }
-};
-
-EventEmitter.prototype.off = function(name, listener) {
-    this.handlers[name] = this.handlers[name] || [];
-    var index = this.handlers[name].indexOf(listener);
-    if (index !== -1) {
-        this.handlers[name].splice(index, 1);
-    }
-};
-
-EventEmitter.prototype.once = function(name, listener) {
-    var self = this;
-
-    function listenOnce() {
-        listener.apply(this, arguments);
-        self.off(name, listenOnce);
-    }
-
-    self.on(name, listenOnce);
-};
-//-----------------------------------------
-
-
-//-----------------------------------------
 var UserAgent = function(options) {
     this.eventEmitter = new EventEmitter();
     this.sipConfig = options ? (options.sipConfig || {}) : ({});

@@ -1,14 +1,19 @@
 //angular.module( 'activeCallMonitor' ).factory( 'webphoneCallMonitor', function( $rootScope, $timeout, rcSIPUA, audio, customAlert, utils, settingsService, rcPlatform, DEFAULT_CALL_STATUS )
-
 'use strict';
 
-var eventScope = $rootScope.$new(true);
+var EventEmitter = require('./emitter');
+var rcSIPUA = require('./web-phone');
+var settingsService = require('./settingsService');
+var utils = require('./utils');
+var audio = require('./audio');
+var rcPlatform = require('./platform');
+
+var eventScope = new EventEmitter();
 
 var inboundCalls = {};
 var outboundCalls = {};
 
 var activeCallsCount = 0;
-
 
 /*
  Sound handling
@@ -62,7 +67,8 @@ rcSIPUA.on([rcSIPUA.events.callStarted, rcSIPUA.events.callRejected, rcSIPUA.eve
 /* --------------------- */
 
 function normalize(number) {
-    var countryCode = settingsService.get().countryCode || 'US';
+    //FIXME Platform usage
+    var countryCode = settingsService.countryCode;
     return rcPlatform.api.phoneParser([utils.normalizeNumberForParser(number)], {country: countryCode})
         .then(function(parsedNumbers) {
             return parsedNumbers[0] || number;
@@ -175,7 +181,7 @@ rcSIPUA.on(rcSIPUA.events.callFailed, function(call) {
     if (outboundCalls[sessionId])outboundCalls[sessionId].callStatus = 'NoCall';
     if (inboundCalls[sessionId])inboundCalls[sessionId].callStatus = 'NoCall';
     update();
-    $timeout(update.bind(this, true), 1500);
+    setTimeout(update.bind(this, true), 1500);
 });
 
 rcSIPUA.on(rcSIPUA.events.callEnded, function(call) {
@@ -183,7 +189,7 @@ rcSIPUA.on(rcSIPUA.events.callEnded, function(call) {
     if (outboundCalls[sessionId])outboundCalls[sessionId].callStatus = 'NoCall';
     if (inboundCalls[sessionId])inboundCalls[sessionId].callStatus = 'NoCall';
     update();
-    $timeout(update.bind(this, true), 1500);
+    setTimeout(update.bind(this, true), 1500);
 });
 
 rcSIPUA.on(rcSIPUA.events.callFailed, function(call, e, cause) {
@@ -195,7 +201,7 @@ rcSIPUA.on(rcSIPUA.events.callFailed, function(call, e, cause) {
         rcSIPUA.reasons['486']	//486 Busy Here is considered failure by
     ];
     if (goodCauses.indexOf(cause) === -1) {
-        customAlert.alert((e && e.data && e.data.cause || cause || 'Unknown'), 'SIP Error: ');
+        alert('SIP Error: \n\n' + (e && e.data && e.data.cause || cause || 'Unknown')); //FIXME Alert
     }
 });
 
@@ -213,7 +219,7 @@ rcSIPUA.on(rcSIPUA.events.callReplaced, function(newCall, oldCall) {
 
 rcSIPUA.on(rcSIPUA.events.sipRegistrationFailed, function(e) {
     var reason = e && e.reason_phrase || 'Unknown';
-    customAlert.alert(reason, 'SIP Registration Error: ');
+    alert('SIP Registration Error: \n\n' + reason); //FIXME Alert
 });
 
 
@@ -222,14 +228,15 @@ function update(forceStart) {
     var start = false;
     var stop = false;
 
+    //FIXME Unsafe
     for (var id in outboundCalls)if (outboundCalls[id].callStatus != 'NoCall')_activeCallsCount++;
     for (var id in inboundCalls)if (inboundCalls[id].callStatus != 'NoCall')_activeCallsCount++;
 
     if (_activeCallsCount === 0 && activeCallsCount !== 0)stop = true;
     if (_activeCallsCount !== 0 && activeCallsCount === 0)start = true;
 
-    if (stop)eventScope.$broadcast('ringoutCallMonitor.stop');
-    if (start)eventScope.$broadcast('ringoutCallMonitor.start');
+    if (stop)eventScope.emit('stop');
+    if (start)eventScope.emit('start');
 
     activeCallsCount = _activeCallsCount;
 
@@ -241,14 +248,14 @@ function update(forceStart) {
         for (var id in inboundCalls)if (inboundCalls[id].callStatus == 'NoCall')delete inboundCalls[id];
     }
 
-    for (var id in outboundCalls)_outboundCalls.push(angular.copy(outboundCalls[id]));
-    for (var id in inboundCalls)_inboundCalls.push(angular.copy(inboundCalls[id]));
+    for (var id in outboundCalls)_outboundCalls.push(utils.copy(outboundCalls[id]));
+    for (var id in inboundCalls)_inboundCalls.push(utils.copy(inboundCalls[id]));
 
-    eventScope.$broadcast('ringoutCallMonitor.update', {"inboundCalls": _inboundCalls, "outboundCalls": _outboundCalls});
+    eventScope.emit('update', {"inboundCalls": _inboundCalls, "outboundCalls": _outboundCalls});
 }
 
 module.exports = {
-    "onStop": function(listener) { if (typeof listener == 'function')eventScope.$on('ringoutCallMonitor.stop', listener); },
-    "onStart": function(listener) { if (typeof listener == 'function')eventScope.$on('ringoutCallMonitor.start', listener); },
-    "onUpdate": function(listener) { if (typeof listener == 'function')eventScope.$on('ringoutCallMonitor.update', function(e, d) { listener(d); }); }
+    "onStop": function(listener) { if (typeof listener == 'function')eventScope.on('stop', listener); },
+    "onStart": function(listener) { if (typeof listener == 'function')eventScope.on('start', listener); },
+    "onUpdate": function(listener) { if (typeof listener == 'function')eventScope.on('update', function(e, d) { listener(d); }); }
 };

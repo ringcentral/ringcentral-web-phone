@@ -1,4 +1,8 @@
 //.factory("ringout", function($rootScope, $q, callMonitor, utils, logging, rcCore, rcPlatform, rcSIPUA, appstorage, settingsService, getLocaleString, $locale) { 'use strict';
+var rcSIPUA = require('./web-phone');
+var settingsService = require('./settingsService');
+var rcPlatform = require('./platform');
+var utils = require('./utils');
 
 var log = logging("ringout");
 
@@ -127,15 +131,15 @@ var service = {
                     data = data.sipInfo[0];
                 }
                 else {
-                    throw new Error(getLocaleString('STRINGS.ERROR.sipOutboundNotAvailable'));
+                    throw new Error('ERROR.sipOutboundNotAvailable'); //FIXME Better error reporting...
                 }
 
                 var headers = [];
-                var endpointId = appstorage.getData('endpointId') || '';
+                var endpointId = settingsService.endpointId || '';
                 if (endpointId) {
                     headers.push('P-rc-endpoint-id: ' + endpointId);
                 }
-                angular.extend(data, {
+                utils.extend(data, {
                     extraHeaders: headers
                 });
                 return rcSIPUA.register(data).catch(function(e) {
@@ -145,11 +149,11 @@ var service = {
                                   ? new Error('SIP Error: ' + e.data)
                                   : new Error('SIP Error: ' + (e || 'Unknown error'));
                     console.error('SIP Error: ' + ((e && e.data) || e));
-                    return $q.reject(err);
+                    return Promise.reject(err);
                 })
             }).catch(function(e) {
                 console.error(e);
-                return $q.reject(e);
+                return Promise.reject(e);
             });
         }
 

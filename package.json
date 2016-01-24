@@ -4,11 +4,17 @@
   "description": "",
   "main": "build/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "webpack": "./node_modules/.bin/webpack --display-modules --progress --colors --bail"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "ringcentral": "^2.0.1",
     "sip.js": "^0.7.2"
+  },
+  "devDependencies": {
+    "json-loader": "^0.5.4",
+    "webpack": "^1.12.12"
   }
 }
