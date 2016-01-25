@@ -914,6 +914,7 @@ PhoneLine.prototype.flip = function(target) {
     }
 };
 
+//FIXME
 PhoneLine.prototype.park = function() {
     if (this.onCall) {
         return this.controlSender.send(this.controlSender.messages.park);

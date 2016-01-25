@@ -5,10 +5,54 @@
 </head>
 <body>
 
-<h1>Monitor</h1>
-<pre id="monitor"></pre>
+
+
+
+<input type="submit" value="Register Sip Configurations" onclick="register();">
+<input type="submit" value="UnRegister Sip Configurations" onclick="unregisterSip();">
+<input type="submit" value="ForceDisconnect Sip Connection" onclick="forceDisconnectSip();">
+
+<br>
+<br>
+
+<label>To Phone Number</label><input type="text" id="tonumber" />
+
+<input type="submit" value="Call" onclick="startCall(tonumber.value);">
+
+<input type="submit" value="Disconnect Call" onclick="disconnect();">
+
+<input type="submit" value="Hold" onclick="hold();">
+
+<input type="submit" value="Unhold" onclick="unhold();">
+
+<input type="submit" value="Mute" onclick="mute();">
+
+<input type="submit" value="UnMute" onclick="unmute();">
+
+<br>
+<br>
+
+<input type="submit" value="Accept incoming Call" onclick="answerIncomingCall();">
+<script>
+    window.setInterval(update(),1000);
+</script>
+<h1>Call Duration</h1>
+<pre id="duration" on></pre>
+
+
 <hr>
 
+<h1>Monitor</h1>
+<pre id="monitor"></pre>
+
+
+
+<script>
+    window.localStorage.setItem("webPhoneLogin",webPhoneLogin.value);
+    window.localStorage.setItem("webPhonePassword",webPhonePassword.value);
+    window.localStorage.setItem("webPhoneAppKey",webPhoneAppKey.value);
+    window.localStorage.setItem("webPhoneAppSecret",webPhoneAppSecret.value);
+</script>
 <script src="../bower_components/pubnub/web/pubnub.js" type="text/javascript"></script>
 <!--<script src="../bower_components/es6-promise/promise.js" type="text/javascript"></script>-->
 <!--<script src="../bower_components/fetch/fetch.js" type="text/javascript"></script>-->
