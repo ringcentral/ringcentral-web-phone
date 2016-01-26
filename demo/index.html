@@ -5,19 +5,27 @@
 </head>
 <body>
 
+<br><br>
+
+<label>apikey</label><input type="text" id="apikey" /><br><br>
+<label>apisecret</label><input type="text" id="apisecret" /><br><br>
+<label>username</label><input type="text" id="fromnumber" /><br><br>
+<label>extension</label><input type="text" id="extension" /><br><br>
+<label>password</label><input type="password" id="password" /><br><br>
+
+<br><br>
 
 
-
-<input type="submit" value="Register Sip Configurations" onclick="register();">
-<input type="submit" value="UnRegister Sip Configurations" onclick="unregisterSip();">
+<input type="submit" value="Register Sip Configurations" onclick="register(apikey.value,apisecret.value,fromnumber.value,password.value);"><br><br>
+<input type="submit" value="UnRegister Sip Configurations" onclick="unregisterSip();"><br><br>
 <input type="submit" value="ForceDisconnect Sip Connection" onclick="forceDisconnectSip();">
 
 <br>
 <br>
 
-<label>To Phone Number</label><input type="text" id="tonumber" />
+<input type="text" id="tonumber" /> <br><br>
 
-<input type="submit" value="Call" onclick="startCall(tonumber.value);">
+<input type="submit" value="Call" onclick="startCall(tonumber.value,fromnumber.value);">
 
 <input type="submit" value="Disconnect Call" onclick="disconnect();">
 
@@ -47,12 +55,7 @@
 
 
 
-<script>
-    window.localStorage.setItem("webPhoneLogin",webPhoneLogin.value);
-    window.localStorage.setItem("webPhonePassword",webPhonePassword.value);
-    window.localStorage.setItem("webPhoneAppKey",webPhoneAppKey.value);
-    window.localStorage.setItem("webPhoneAppSecret",webPhoneAppSecret.value);
-</script>
+
 <script src="../bower_components/pubnub/web/pubnub.js" type="text/javascript"></script>
 <!--<script src="../bower_components/es6-promise/promise.js" type="text/javascript"></script>-->
 <!--<script src="../bower_components/fetch/fetch.js" type="text/javascript"></script>-->

@@ -1,3 +1,7 @@
+//Fixme We need to split this file into 3-4 modules -- User Agent, Phone-Line, Event-Emitter, Service
+
+
+
 var SIP = require('sip.js');
 var EventEmitter = require('./emitter');
 var utils = require('./utils');
@@ -29,6 +33,8 @@ var mediaStreamManagerProto = Object.create(SIP.WebRTC.MediaStreamManager.protot
 });
 
 SIP.WebRTC.MediaStreamManager.prototype = mediaStreamManagerProto;
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 //FIXME Unused
 //cross-browser mediaStream attaching
@@ -80,6 +86,8 @@ function attachMediaStream(stream, el, options) {
     return element;
 }
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 var EVENT_NAMES = {
     'message': 'message',
     'sipConnecting': 'sipConnecting',
@@ -113,6 +121,8 @@ var EVENT_NAMES = {
     'callReinviteFailed': 'callReinviteFailed'
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 /*
  * We create audio containers here
  * Sorry for DOM manipulations inside a service, but it is for the good :)
@@ -132,7 +142,7 @@ document.body.appendChild(LOCAL_AUDIO);
 document.body.appendChild(REMOTE_AUDIO);
 LOCAL_AUDIO.volume = 0;
 
-//-----------------------------------------
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 var UserAgent = function(options) {
     this.eventEmitter = new EventEmitter();
@@ -145,6 +155,7 @@ var UserAgent = function(options) {
     checkConfig.apply(this);
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 UserAgent.prototype.setSIPConfig = function(config) {
     var wsServers = config.wsServers,
@@ -165,6 +176,8 @@ UserAgent.prototype.setSIPConfig = function(config) {
     checkConfig.apply(this);
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 UserAgent.prototype.__createLine = function(session, type) {
     var self = this;
     session.data.id = uuid();
@@ -178,16 +191,18 @@ UserAgent.prototype.__createLine = function(session, type) {
     });
     self.__clearInactiveLines();
     self.lines[session.data.id] = line;
-
     window.line = line;
-
     return line;
 };
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 UserAgent.prototype.getActiveLines = function() {
     this.__clearInactiveLines();
     return this.lines;
 };
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 UserAgent.prototype.getActiveLinesArray = function() {
     var lines = this.getActiveLines();
@@ -200,11 +215,15 @@ UserAgent.prototype.getActiveLinesArray = function() {
     return arr;
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 UserAgent.prototype.getIncomingLinesArray = function() {
     return this.getActiveLinesArray().filter(function(el) {
         return el.isIncoming();
     });
 };
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 UserAgent.prototype.__clearInactiveLines = function() {
     for (var id in this.lines) {
@@ -216,7 +235,11 @@ UserAgent.prototype.__clearInactiveLines = function() {
     }
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 var __disconnectCount = 0;
+
+
 UserAgent.prototype.start = function(options) {
     var self = this;
 
@@ -293,6 +316,8 @@ UserAgent.prototype.start = function(options) {
     initUA();
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 UserAgent.prototype.reregister = function(options, reconnect) {
     var self = this, reconnect = !!reconnect;
     options = extend(self.__registerExtraOptions, options);
@@ -314,6 +339,7 @@ UserAgent.prototype.reregister = function(options, reconnect) {
     }
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 UserAgent.prototype.stop = function() {
     if (this.userAgent instanceof SIP.UA) {
@@ -322,6 +348,7 @@ UserAgent.prototype.stop = function() {
     }
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 UserAgent.prototype.call = function(number, inviteOptions) {
     var self = this;
@@ -362,10 +389,13 @@ UserAgent.prototype.call = function(number, inviteOptions) {
     return line;
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 UserAgent.prototype.answer = function(line) {
     return line && line.answer();
 };
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 
 UserAgent.prototype.hangup = function(line) {
@@ -375,10 +405,15 @@ UserAgent.prototype.hangup = function(line) {
     }
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 UserAgent.prototype.on = function(eventName, cb) {
     this.eventEmitter.on(eventName, cb);
     return this;
 };
+
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 function checkConfig() {
     // set mootools expands to non-enumerables under ES5
@@ -391,14 +426,20 @@ function checkConfig() {
     for (key in this.sipConfig.wsServers) this.sipConfig.wsServers.hasOwnProperty(key) || Object.defineProperty(Array.prototype, key, enums);
 }
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 UserAgent.prototype.isConnected = function() {
     return !!(this.userAgent && this.userAgent.transport && this.userAgent.transport.connected);
 };
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 UserAgent.prototype.isConnecting = function() {
     //websocket.readyState === CONNECTING (0)
     return !this.isConnected() && !!(this.userAgent && this.userAgent.transport && this.userAgent.transport.ws && this.userAgent.transport.ws.readyState === 0);
 };
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 UserAgent.prototype.forceDisconnect = function() {
     console.warn(this.isConnecting(), this.isConnected())
@@ -408,10 +449,10 @@ UserAgent.prototype.forceDisconnect = function() {
         this.userAgent = null;
     }
 };
-//-----------------------------------------
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
 
-//-----------------------------------------
 var index = 0;
 
 var PhoneLine = function(options) {
@@ -512,6 +553,8 @@ var PhoneLine = function(options) {
         }
     };
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     var __receiveRequest = this.session.receiveRequest;
     this.session.receiveRequest = function(request) {
         switch (request.method) {
@@ -552,6 +595,8 @@ var PhoneLine = function(options) {
         return __receiveRequest.apply(self.session, arguments);
     };
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     //Fired when ICE is starting to negotiate between the peers.
     this.session.on('connecting', function(e) {
         self.eventEmitter.emit(EVENT_NAMES.callConnecting, self, e);
@@ -566,6 +611,9 @@ var PhoneLine = function(options) {
     });
 
     this.__hasEarlyMedia = false;
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
 
     //Monkey patching for handling early media and to delay ACKs
     var __receiveInviteReponse = this.session.receiveInviteResponse,
@@ -613,6 +661,8 @@ var PhoneLine = function(options) {
         return __receiveInviteReponse.apply(sessionSelf, args);
     };
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     //Fired each time a provisional (100-199) response is received.
     this.session.on('progress', function(e) {
         self.onCall = true;
@@ -648,6 +698,8 @@ var PhoneLine = function(options) {
         }
     });
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     //Fired each time a successful final (200-299) response is received.
     this.session.on('accepted', function(e) {
         if (self.accepted === true) return;
@@ -657,12 +709,16 @@ var PhoneLine = function(options) {
         self.eventEmitter.emit(EVENT_NAMES.callStarted, self, e);
     });
 
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     function onEnd() {
         self.onCall = false;
         self.timeCallStarted = null;
         self.accepted = true;
     }
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
     //Fired each time an unsuccessful final (300-699) response is
     //this will emit failed event
     this.session.on('rejected', function(e) {
@@ -672,17 +728,23 @@ var PhoneLine = function(options) {
         //self.eventEmitter.emit(EVENT_NAMES.callTerminated, self, e);
     });
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     //Fired when the session was canceled by the client
     this.session.on('cancel', function(e) {
         onEnd();
         self.eventEmitter.emit(EVENT_NAMES.callEnded, self, e);
     });
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     //Fired when a BYE is sent
     this.session.on('bye', function(e) {
         onEnd();
         self.eventEmitter.emit(EVENT_NAMES.callEnded, self, e);
     });
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     //Fired when the request fails, whether due to an unsuccessful final response or due to timeout, transport, or other error
     this.session.on('failed', function(response, cause) {
@@ -698,16 +760,23 @@ var PhoneLine = function(options) {
         }
     });
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     this.session.on('terminated', function(response, cause) {
         onEnd();
         self.eventEmitter.emit(EVENT_NAMES.callTerminated, self, response, cause);
     });
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     function terminateCallOnDisconnected(reason) {
         self.session.terminated(null, reason || SIP.C.causes.CONNECTION_ERROR);
         onEnd();
         self.eventEmitter.emit(EVENT_NAMES.callFailed, self, null, 'Connection error');
     }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+//FIXME: Explore if it can be replaced with ref: http://sipjs.com/api/0.7.0/mediaHandler/
 
     //Monkey patching oniceconnectionstatechange because SIP.js 0.6.x does not have this event
     var onStateChange = this.session.mediaHandler.peerConnection.oniceconnectionstatechange || function(){},
@@ -738,6 +807,8 @@ var PhoneLine = function(options) {
         }
     };
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     var __ignoreReinviteDuplicates = false;
 
     //Monkey patching sendReinvite for better Hold handling
@@ -758,6 +829,8 @@ var PhoneLine = function(options) {
         return res;
     };
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     //Monkey patching receiveReinviteResponse to ignore duplicates which may break Hold/Unhold
     var __receiveReinviteResponse = this.session.receiveReinviteResponse;
     this.session.receiveReinviteResponse = function(response) {
@@ -773,6 +846,8 @@ var PhoneLine = function(options) {
         return __receiveReinviteResponse.apply(this, arguments);
     };
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     //defining if the session is incoming or outgoing
     if (this.type === PhoneLine.types.incoming) {
         this.contact.name = this.session.request.from.displayName;
@@ -785,20 +860,26 @@ var PhoneLine = function(options) {
     }
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 PhoneLine.types = {
     incoming: 'incoming',
     outgoing: 'outgoing'
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 PhoneLine.prototype.getId = function() {
     return this.session.data.id;
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 PhoneLine.prototype.getSession = function() {
     return this.session;
 };
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 PhoneLine.prototype.cancel = function() {
     var session = this.getSession();
@@ -806,6 +887,7 @@ PhoneLine.prototype.cancel = function() {
     return Promise.resolve(null);
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 PhoneLine.prototype.record = function(val) {
     var self = this;
@@ -826,6 +908,8 @@ PhoneLine.prototype.record = function(val) {
         return Promise.reject(new Error('Not on call'));
     }
 };
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 PhoneLine.prototype.flip = function(target) {
     if (!target) return;
@@ -848,6 +932,8 @@ PhoneLine.prototype.park = function() {
     }
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+// Explore ref: http://sipjs.com/api/0.6.0/session/#dtmftone-options
 
 PhoneLine.prototype.sendDTMF = function(value, duration) {
     duration = parseInt(duration) || 1000;
@@ -868,6 +954,8 @@ PhoneLine.prototype.sendInfoDTMF = function(value, duration) {
     });
     return Promise.resolve(null);
 };
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 PhoneLine.prototype.blindTransfer = function(target, options) {
 
@@ -948,12 +1036,16 @@ PhoneLine.prototype.blindTransfer = function(target, options) {
     });
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 PhoneLine.prototype.transfer = function(target, options) {
     var self = this;
     return (self.onHold ? Promise.resolve(null) : self.setHold(true)).then(function(){ return delay(300); }).then(function() {
         return self.blindTransfer(target, options);
     });
 };
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 PhoneLine.prototype.forward = function(target, options) {
     var self = this, interval = null;
@@ -972,6 +1064,10 @@ PhoneLine.prototype.forward = function(target, options) {
         });
     });
 };
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+//ref: http://sipjs.com/api/0.6.0/session/#acceptoptions
+//make var option = {}
 
 PhoneLine.prototype.answer = function() {
     var self = this;
@@ -1014,6 +1110,10 @@ PhoneLine.prototype.answer = function() {
 
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+//FIXME: Use SIPJS mute() and unmute() ref: http://sipjs.com/api/0.7.0/session/#muteoptions
+
 PhoneLine.prototype.setMute = function(val) {
     this.muted = !!val;
     try {
@@ -1025,6 +1125,9 @@ PhoneLine.prototype.setMute = function(val) {
     return Promise.resolve(null);
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+//FIXME: Use SIPJS mute() and unmute() ref: http://sipjs.com/api/0.7.0/session/#muteoptions
 
 function setStreamMute(stream, val) {
     var tracks = stream.getAudioTracks();
@@ -1033,6 +1136,9 @@ function setStreamMute(stream, val) {
     }
 }
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+////FIXME: Use SIPJS mute() and unmute() ref: http://sipjs.com/api/0.7.0/session/#muteoptions
 
 PhoneLine.prototype.setMuteBoth = function(val) {
     this.bothMuted = !!val;
@@ -1046,6 +1152,10 @@ PhoneLine.prototype.setMuteBoth = function(val) {
     }
     return Promise.resolve(null);
 };
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+//FIXME: Explore send() ref: http://sipjs.com/api/0.7.0/transport/#sendmsg
 
 /* This is a direct and very tightly coupled code. Please, try to avoid using this method if possible */
 PhoneLine.prototype.sendRequest = function(method, body, options) {
@@ -1085,6 +1195,13 @@ PhoneLine.prototype.sendRequest = function(method, body, options) {
         }
     }, self.session.ua).send();
 };
+
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+//FIXME: should be replaced with __hold()
+//This can be removed
+
 
 //Legacy hold uses direct in-dialog messages to trick SIP.js, try to avoid using this method if possible
 PhoneLine.prototype.__legacyHold = function(val) {
@@ -1133,6 +1250,9 @@ PhoneLine.prototype.__legacyHold = function(val) {
     });
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+
 PhoneLine.prototype.__hold = function(val) {
     var self = this;
     return new Promise(function(resolve, reject){
@@ -1153,6 +1273,8 @@ PhoneLine.prototype.__hold = function(val) {
     });
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 PhoneLine.prototype.setHold = function(val) {
     var promise;
     var self = this;
@@ -1167,21 +1289,31 @@ PhoneLine.prototype.setHold = function(val) {
     return Promise.resolve(promise);
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 PhoneLine.prototype.isOnHold = function() {
     return this.onHold;
 };
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 PhoneLine.prototype.isOnMute = function() {
     return this.muted || this.bothMuted;
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 PhoneLine.prototype.isOnRecord = function() {
     return this.onRecord;
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 PhoneLine.prototype.getContact = function() {
     return this.contact;
 };
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 PhoneLine.prototype.getCallDuration = function() {
     if (this.timeCallStarted) {
@@ -1192,18 +1324,26 @@ PhoneLine.prototype.getCallDuration = function() {
     }
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 PhoneLine.prototype.isIncoming = function() {
     return this.session.mediaHandler.peerConnection.signalingState !== "closed"
            && !this.session.startTime;
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 PhoneLine.prototype.isClosed = function() {
     return this.session.status === SIP.Session.C.STATUS_CANCELED || this.session.status === SIP.Session.C.STATUS_TERMINATED;
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 PhoneLine.prototype.hasEarlyMedia = function() {
     return this.__hasEarlyMedia;
 };
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 
 //monkey patching emit for assuring that $apply is called
@@ -1214,6 +1354,8 @@ EventEmitter.prototype.emit = function() {
         __emit.apply(self, args);
     });
 };
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 var ua = new UserAgent();
 var __registerDeferred, __unregisterDeferred, __callDeferred;
@@ -1239,6 +1381,8 @@ var service = {
     isRegistered: false,
     isRegistering: false,
     isUnregistering: false,
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     register: function(info) {
         if (service.isRegistered) {
@@ -1296,6 +1440,8 @@ var service = {
         return __registerDeferred.promise;
     },
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     reregister: function(reconnect) {
         if (service.isRegistering) return __registerDeferred;
         __registerDeferred = defer();
@@ -1303,6 +1449,8 @@ var service = {
         service.ua.reregister({}, !!reconnect);
         return __registerDeferred.promise;
     },
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     unregister: function() {
         if (service.isRegistering) {
@@ -1330,9 +1478,13 @@ var service = {
         });
     },
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     forceDisconnect: function() {
         service.ua.forceDisconnect();
     },
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     call: function(toNumber, fromNumber, country) {
         if (!__callDeferred) {
@@ -1344,6 +1496,8 @@ var service = {
         }
         return __callDeferred;
     },
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     answer: function(line) {
         var incomingLines = this.ua.getIncomingLinesArray();
@@ -1372,11 +1526,15 @@ var service = {
         return Promise.resolve(null);
     },
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     onCall: function() {
         return this.ua.getActiveLinesArray().filter(function(line) {
                 return line.onCall;
             }).length > 0;
     },
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     hangup: function(line) {
         if (!line) line = this.activeLine;
@@ -1385,11 +1543,18 @@ var service = {
         return Promise.resolve(null);
     },
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    //FIXME: Check if we can replace this with  SIPJS dtmf(tone,[options]) ref: http://sipjs.com/api/0.7.0/session/#dtmftone-options
     sendDTMF: function(value, line) {
         if (!line) line = this.activeLine;
         line && line.sendDTMF.call(line, value);
         return Promise.resolve(null);
     },
+
+
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     hold: function(line) {
         if (!line) line = this.activeLine;
@@ -1397,6 +1562,8 @@ var service = {
         if (line === this.activeLine) this.activeLine = null;
         return Promise.resolve(null);
     },
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     unhold: function(line) {
         if (!line) line = this.activeLine;
@@ -1412,11 +1579,17 @@ var service = {
         return Promise.resolve(null);
     },
 
+
+    ////FIXME: Use SIPJS mute() and unmute() ref:http://sipjs.com/api/0.7.0/session/#muteoptions
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     mute: function(line) {
         if (!line) line = this.activeLine;
         line && line.setMute(true);
         return Promise.resolve(null);
     },
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     unmute: function(line) {
         if (!line) line = this.activeLine;
@@ -1424,12 +1597,23 @@ var service = {
         return Promise.resolve(null);
     },
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    //Phone-line->transfer->blindTransfer
     transfer: function(line, target, options) {
-        if (!line) line = this.activeLine;
+
+        if (!line)
+            line = this.activeLine;
+
         line && line.transfer(target, options);
-        if (line === this.activeLine) this.activeLine = null;
+
+        if (line === this.activeLine)
+            this.activeLine = null;
+
         return Promise.resolve(null);
     },
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     events: EVENT_NAMES,
 
@@ -1437,9 +1621,17 @@ var service = {
     reasons: SIP.C.REASON_PHRASE
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+//naming convention: incoming or sipincoming?
+
 service.on(EVENT_NAMES.sipIncomingCall, function(line) {
     service.ua.eventEmitter.emit(EVENT_NAMES.incomingCall, line);
 });
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+//naming convention: outgoing or sipoutgoing?
 
 service.on(EVENT_NAMES.outgoingCall, function(line) {
     if (this.activeLine && !this.activeLine.isOnHold()) {
@@ -1449,12 +1641,22 @@ service.on(EVENT_NAMES.outgoingCall, function(line) {
     __callDeferred = null;
 });
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+//naming convention: call or line?
+
 service.on([EVENT_NAMES.callEnded, EVENT_NAMES.callFailed], function(call) {
     //delete activeLine property if the call has ended on the other side
     if (call && service.activeLine && call === service.activeLine) {
         service.activeLine = null;
     }
 });
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+/**
+ * On Call Failed due to 503 Invite Connection error reconnect the call
+ */
 
 service.on(EVENT_NAMES.callFailed, function(call, response, cause) {
     if (response) {
@@ -1470,6 +1672,13 @@ service.on(EVENT_NAMES.callFailed, function(call, response, cause) {
     }
 });
 
+
+/*
+ * Setting flags for SIP Registration process
+ */
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 service.on(EVENT_NAMES.sipRegistered, function(e) {
     __sipRegistered = true;
     __registerDeferred && __registerDeferred.resolve(e);
@@ -1478,6 +1687,8 @@ service.on(EVENT_NAMES.sipRegistered, function(e) {
     service.isUnregistering = false;
     service.isUnregistered = false;
 });
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 service.on([EVENT_NAMES.sipRegistrationFailed, EVENT_NAMES.sipConnectionFailed], function(e) {
     __sipRegistered = false;
@@ -1488,6 +1699,8 @@ service.on([EVENT_NAMES.sipRegistrationFailed, EVENT_NAMES.sipConnectionFailed],
     service.isUnregistered = false;
 });
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 service.on(EVENT_NAMES.sipUnRegistered, function(e) {
     __sipRegistered = false;
     __unregisterDeferred && __unregisterDeferred.resolve(e);
@@ -1497,9 +1710,13 @@ service.on(EVENT_NAMES.sipUnRegistered, function(e) {
     service.isUnregistering = false;
 });
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 window.addEventListener('unload', function() {
     service.hangup();
     service.unregister();
 });
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 module.exports = service;

@@ -4,22 +4,12 @@ var webPhone = RingCentral.WebPhone;
 localStorage.webPhoneUUID = localStorage.webPhoneUUID || webPhone.utils.uuid();
 
 
-window.localStorage.setItem("webPhoneLogin",webPhoneLogin);
-window.localStorage.setItem("webPhonePassword",webPhonePassword);
-window.localStorage.setItem("webPhoneAppKey",webPhoneAppKey);
-window.localStorage.setItem("webPhoneAppSecret",webPhoneAppSecret);
 
-
-var sdk = new RingCentral.SDK({
-    appKey: localStorage.webPhoneAppKey,
-    appSecret: localStorage.webPhoneAppSecret,
-    server: RingCentral.SDK.server.sandbox
-});
-
-var platform = sdk.platform();
+var platform ;
 
 function startCall(toNumber, fromNumber) {
     fromNumber = fromNumber || localStorage.webPhoneLogin;
+
     console.log('SIP call to', toNumber, 'from', fromNumber);
     var countryId = null;
     platform
@@ -142,9 +132,9 @@ function registerSIP(checkFlags, transport) {
 
 
 
-//function update() {
-//    document.getElementById('duration').innerText = line.getCallDuration();//   line.getCallDuration();
-//}
+function update() {
+    document.getElementById('duration').innerText = line.getCallDuration();//   line.getCallDuration();
+}
 
 
 
@@ -162,12 +152,20 @@ function app() {
 
 
 
-function register(){
+function register(apikey,apisecret,username,password){
+
+    var sdk = new RingCentral.SDK({
+        appKey: apikey, //localStorage.webPhoneAppKey,
+        appSecret: apisecret,//localStorage.webPhoneAppSecret,
+        server: RingCentral.SDK.server.sandbox
+    });
+
+    platform = sdk.platform();
 
     platform
         .login({
-            username: localStorage.webPhoneLogin,
-            password: localStorage.webPhonePassword
+            username: username,// localStorage.webPhoneLogin,
+            password: password// localStorage.webPhonePassword
         })
         .then(function () {
             return registerSIP();
