@@ -2,6 +2,7 @@ var error = console.error;
 var EventEmitter = require('./emitter');
 
 module.exports = {
+
     play: function(url, options) {
 
         var emitter = new EventEmitter();

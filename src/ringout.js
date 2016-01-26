@@ -1,8 +1,14 @@
+
+//FIXME: Need to be removed?
+
+
 //.factory("ringout", function($rootScope, $q, callMonitor, utils, logging, rcCore, rcPlatform, rcSIPUA, appstorage, settingsService, getLocaleString, $locale) { 'use strict';
 var rcSIPUA = require('./web-phone');
 var settingsService = require('./settingsService');
 var rcPlatform = require('./platform');
 var utils = require('./utils');
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 function startWebCall(toNumber, fromNumber) {
     log('SIP call to', toNumber, 'from', fromNumber);
@@ -15,6 +21,8 @@ function startWebCall(toNumber, fromNumber) {
         rcSIPUA.call(toNumber, fromNumber, countryId);
     })
 }
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 var service = {
     start: function(toNo, fromNo, promptToPress) {
@@ -78,6 +86,8 @@ var service = {
 
         self.modeChangeInProgress = true;
         self.changingToMode = mode;
+
+
 
         function registerSIP(checkFlags) {
             return rcPlatform.sip.register().then(function(data) {
@@ -150,12 +160,16 @@ var service = {
     modeChangeInProgress: false
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 //As SIP.js always sends REGISTER messages, it may fail during the working process
 rcSIPUA.on([rcSIPUA.events.sipRegistrationFailed, rcSIPUA.events.sipUnRegistered], function(e) {
     $rootScope.$broadcast('app:ringout:modeChangeStarted');
     setCurrentMode(service.modes.ringout);
     $rootScope.$broadcast('app:ringout:modeChangeCompleted');
 });
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 //Registration also may happen outside of this code
 rcSIPUA.on(rcSIPUA.events.sipRegistered, function() {
@@ -165,5 +179,7 @@ rcSIPUA.on(rcSIPUA.events.sipRegistered, function() {
         $rootScope.$broadcast('app:ringout:modeChangeCompleted');
     }
 });
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 module.exports = service;

@@ -2,6 +2,8 @@ var EventEmitter = function() {
     this.handlers = {};
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 EventEmitter.prototype.emit = function(name /*, args */) {
     var self = this, args = Array.prototype.slice.call(arguments, 1);
     if (name in this.handlers) {
@@ -17,6 +19,8 @@ EventEmitter.prototype.emit = function(name /*, args */) {
     }
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 EventEmitter.prototype.on = function(name, listener) {
     if (!Array.isArray(name)) name = [name];
     for (var i = 0; i < name.length; i++) {
@@ -26,6 +30,8 @@ EventEmitter.prototype.on = function(name, listener) {
     }
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 EventEmitter.prototype.off = function(name, listener) {
     this.handlers[name] = this.handlers[name] || [];
     var index = this.handlers[name].indexOf(listener);
@@ -34,6 +40,7 @@ EventEmitter.prototype.off = function(name, listener) {
     }
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
 EventEmitter.prototype.once = function(name, listener) {
     var self = this;
 
@@ -44,5 +51,7 @@ EventEmitter.prototype.once = function(name, listener) {
 
     self.on(name, listenOnce);
 };
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 module.exports = EventEmitter;
