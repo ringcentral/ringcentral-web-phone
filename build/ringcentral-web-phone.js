@@ -82,6 +82,9 @@ var defer = utils.defer;
 var extend = utils.extend;
 var uuid = utils.uuid;
 
+
+
+
 //Patching proto because of https://developers.google.com/web/updates/2015/07/mediastream-deprecations
 var mediaStreamManagerProto = Object.create(SIP.WebRTC.MediaStreamManager.prototype, {
     'release': {
@@ -103,57 +106,58 @@ var mediaStreamManagerProto = Object.create(SIP.WebRTC.MediaStreamManager.protot
     }
 });
 
+
 SIP.WebRTC.MediaStreamManager.prototype = mediaStreamManagerProto;
 
-//FIXME Unused
+//FIXME Unused - if needed could be replaced by sipJS function attachMediaStream(element, stream)
 //cross-browser mediaStream attaching
 //https://github.com/HenrikJoreteg/attachMediaStream
-function attachMediaStream(stream, el, options) {
-    var item;
-    var URL = window.URL;
-    var element = el;
-    var opts = {
-        autoplay: true,
-        mirror: false,
-        muted: false,
-        audio: false
-    };
-
-    if (options) {
-        for (item in options) {
-            opts[item] = options[item];
-        }
-    }
-
-    if (!element) {
-        element = document.createElement(opts.audio ? 'audio' : 'video');
-    } else if (element.tagName.toLowerCase() === 'audio') {
-        opts.audio = true;
-    }
-
-    if (opts.autoplay) element.autoplay = 'autoplay';
-    if (opts.muted) element.muted = true;
-    if (!opts.audio && opts.mirror) {
-        ['', 'moz', 'webkit', 'o', 'ms'].forEach(function(prefix) {
-            var styleName = prefix ? prefix + 'Transform' : 'transform';
-            element.style[styleName] = 'scaleX(-1)';
-        });
-    }
-
-    // this first one should work most everywhere now
-    // but we have a few fallbacks just in case.
-    if (URL && URL.createObjectURL) {
-        element.src = URL.createObjectURL(stream);
-    } else if (element.srcObject) {
-        element.srcObject = stream;
-    } else if (element.mozSrcObject) {
-        element.mozSrcObject = stream;
-    } else {
-        return false;
-    }
-
-    return element;
-}
+//function attachMediaStream(stream, el, options) {
+//    var item;
+//    var URL = window.URL;
+//    var element = el;
+//    var opts = {
+//        autoplay: true,
+//        mirror: false,
+//        muted: false,
+//        audio: false
+//    };
+//
+//    if (options) {
+//        for (item in options) {
+//            opts[item] = options[item];
+//        }
+//    }
+//
+//    if (!element) {
+//        element = document.createElement(opts.audio ? 'audio' : 'video');
+//    } else if (element.tagName.toLowerCase() === 'audio') {
+//        opts.audio = true;
+//    }
+//
+//    if (opts.autoplay) element.autoplay = 'autoplay';
+//    if (opts.muted) element.muted = true;
+//    if (!opts.audio && opts.mirror) {
+//        ['', 'moz', 'webkit', 'o', 'ms'].forEach(function(prefix) {
+//            var styleName = prefix ? prefix + 'Transform' : 'transform';
+//            element.style[styleName] = 'scaleX(-1)';
+//        });
+//    }
+//
+//    // this first one should work most everywhere now
+//    // but we have a few fallbacks just in case.
+//    if (URL && URL.createObjectURL) {
+//        element.src = URL.createObjectURL(stream);
+//    } else if (element.srcObject) {
+//        element.srcObject = stream;
+//    } else if (element.mozSrcObject) {
+//        element.mozSrcObject = stream;
+//    } else {
+//        return false;
+//    }
+//
+//    return element;
+//}
 
 var EVENT_NAMES = {
     'message': 'message',
@@ -185,7 +189,9 @@ var EVENT_NAMES = {
     'ICEFailed': 'ICEFailed',
     'ICEDisconnected': 'ICEDisconnected',
     'callReinviteSucceeded': 'callReinviteSucceeded',
-    'callReinviteFailed': 'callReinviteFailed'
+    'callReinviteFailed': 'callReinviteFailed',
+    'ICEChecking': 'ICEChecking',
+    'ICEClosed': 'ICEClosed'
 };
 
 /*
@@ -218,10 +224,15 @@ var UserAgent = function(options) {
     this.RTCPeerConnection = undefined;
     this.RTCSessionDescription = undefined;
     checkConfig.apply(this);
+
 };
+
+//tested everything on UA.
 
 
 UserAgent.prototype.setSIPConfig = function(config) {
+
+    console.warn('Configuring SIP\n');
     var wsServers = config.wsServers,
         useSecureConnection = (document.location.protocol == 'https:');
 
@@ -251,9 +262,10 @@ UserAgent.prototype.__createLine = function(session, type) {
         eventEmitter: self.eventEmitter,
         type: type
     });
+
+    console.warn('Creating new line. Sip RTC session started');
     self.__clearInactiveLines();
     self.lines[session.data.id] = line;
-
     window.line = line;
 
     return line;
@@ -265,6 +277,7 @@ UserAgent.prototype.getActiveLines = function() {
 };
 
 UserAgent.prototype.getActiveLinesArray = function() {
+
     var lines = this.getActiveLines();
     var arr = [];
     for (var id in lines) {
@@ -282,6 +295,7 @@ UserAgent.prototype.getIncomingLinesArray = function() {
 };
 
 UserAgent.prototype.__clearInactiveLines = function() {
+    console.warn('clearing inactive lines');
     for (var id in this.lines) {
         if (this.lines.hasOwnProperty(id)) {
             if (this.lines[id].isClosed()) {
@@ -309,6 +323,7 @@ UserAgent.prototype.start = function(options) {
                 self.userAgent.register({
                     extraHeaders: options.extraHeaders || []
                 });
+                console.log('Sip Connected\n');
             });
             self.userAgent.on('disconnected', function(e) {
                 if (++__disconnectCount >= (self.sipConfig.retryCount || 3)) {
@@ -317,20 +332,25 @@ UserAgent.prototype.start = function(options) {
                     self.eventEmitter.emit(EVENT_NAMES.sipConnectionFailed, new Error("Unable to connect to the WS server: exceeded number of attempts"));
                 }
                 self.eventEmitter.emit(EVENT_NAMES.sipDisconnected, e);
+                console.log('Sip Disconnected\n');
             });
             self.userAgent.on('registered', function(e) {
+                console.log('Sip Registered\n');
                 self.eventEmitter.emit(EVENT_NAMES.sipRegistered, e);
+
             });
             self.userAgent.on('unregistered', function(e) {
+                console.log('Sip UnRegistered\n');
                 self.eventEmitter.emit(EVENT_NAMES.sipUnRegistered, e);
             });
             self.userAgent.on('registrationFailed', function(e) {
+                console.log('Sip registerstration failed\n');
                 self.eventEmitter.emit(EVENT_NAMES.sipRegistrationFailed, e);
             });
             //happens when call is incoming
             self.userAgent.on('invite', function(session) {
+                console.log('Invite Recieved for incoming call \n');
                 var newLine;
-
                 if (session && session.request && session.request.hasHeader('replaces')) {
                     var replaces = session.request.getHeader('replaces').split(';'),
                         callId = replaces[0],
@@ -364,11 +384,11 @@ UserAgent.prototype.start = function(options) {
         self.userAgent.registerContext.onTransportConnected = function() {};
         self.userAgent.start();
     }
-
     initUA();
 };
 
 UserAgent.prototype.reregister = function(options, reconnect) {
+    console.log('Sip Reregistered\n');
     var self = this, reconnect = !!reconnect;
     options = extend(self.__registerExtraOptions, options);
     if (!self.userAgent) {
@@ -434,6 +454,7 @@ UserAgent.prototype.call = function(number, inviteOptions) {
     var session = this.userAgent.invite('' + number, options);
     var line = self.__createLine(session, PhoneLine.types.outgoing);
     this.eventEmitter.emit(EVENT_NAMES.outgoingCall, line);
+    console.warn('outgoing call... ');
     return line;
 };
 
@@ -476,7 +497,7 @@ UserAgent.prototype.isConnecting = function() {
 };
 
 UserAgent.prototype.forceDisconnect = function() {
-    console.warn(this.isConnecting(), this.isConnected())
+    console.warn(this.isConnecting(), this.isConnected());
     if (this.isConnecting() || this.isConnected()) {
         this.userAgent.transport.disconnect();
         this.userAgent.stop();
@@ -513,6 +534,10 @@ var PhoneLine = function(options) {
 
     this.responseTimeout = 10000;
 
+
+    //tested callparkm start/stop recording, callflip
+    //barge, whisper,takeover not implemented -- for barge dtmf code is *83
+    //dtmf for start-stop recording *9 doesnt work on softphone (desktop and mobile) and webrtc
     this.controlSender = {
         messages: {
             park: {reqid: 1, command: 'callpark'},
@@ -526,10 +551,10 @@ var PhoneLine = function(options) {
         },
         send: function(command, options) {
 
-            extend(command, options);
+            //commented to have a look at it and fix if needed
+            //extend(command, options);
 
             var cseq = null;
-
             return new Promise(function(resolve, reject){
 
                 self.session.sendRequest(SIP.C.INFO, {
@@ -587,6 +612,8 @@ var PhoneLine = function(options) {
         }
     };
 
+
+    //not used
     var __receiveRequest = this.session.receiveRequest;
     this.session.receiveRequest = function(request) {
         switch (request.method) {
@@ -626,6 +653,10 @@ var PhoneLine = function(options) {
         }
         return __receiveRequest.apply(self.session, arguments);
     };
+
+
+    //session emits connecting, progress, accepted rejected, bye, failed and terminated events for sip based commu...
+
 
     //Fired when ICE is starting to negotiate between the peers.
     this.session.on('connecting', function(e) {
@@ -792,7 +823,16 @@ var PhoneLine = function(options) {
         var state = this.iceConnectionState;
         onStateChange.apply(this, arguments);
 
+        console.warn('Media handler state change to: '+state)
+
         switch (state) {
+            //checking,completed,closed  ref: http://sipjs.com/api/0.7.0/mediaHandler/
+
+
+
+            case 'checking':
+                self.eventEmitter.emit(EVENT_NAMES.ICEChecking, self);
+                break;
             case 'connected':
                 self.eventEmitter.emit(EVENT_NAMES.ICEConnected, self);
                 break;
@@ -802,6 +842,10 @@ var PhoneLine = function(options) {
                     self.eventEmitter.emit(EVENT_NAMES.ICECompleted, self);
                     __doubleCompleted = true;
                 }
+                break;
+            case 'closed':
+                //terminateCallOnDisconnected();
+                self.eventEmitter.emit(EVENT_NAMES.ICEClosed, self);
                 break;
             case 'disconnected':
                 terminateCallOnDisconnected();
@@ -818,6 +862,7 @@ var PhoneLine = function(options) {
     //Monkey patching sendReinvite for better Hold handling
     var __sendReinvite = this.session.sendReinvite;
     this.session.sendReinvite = function() {
+        console.warn('Sending reinvite');
         __ignoreReinviteDuplicates = false;
         var res = __sendReinvite.apply(this, arguments);
         var __reinviteSucceeded = this.reinviteSucceeded,
@@ -836,6 +881,7 @@ var PhoneLine = function(options) {
     //Monkey patching receiveReinviteResponse to ignore duplicates which may break Hold/Unhold
     var __receiveReinviteResponse = this.session.receiveReinviteResponse;
     this.session.receiveReinviteResponse = function(response) {
+        console.warn('Recieveing reinvite response');
         switch (true) {
             case /^2[0-9]{2}$/.test(response.status_code):
                 if (__ignoreReinviteDuplicates) {
@@ -881,13 +927,16 @@ PhoneLine.prototype.cancel = function() {
     return Promise.resolve(null);
 };
 
-
+//fix: pending promise status
+        //val = true or false
 PhoneLine.prototype.record = function(val) {
     var self = this;
     if (self.onCall) {
         var message = !!val
             ? self.controlSender.messages.startRecord
             : self.controlSender.messages.stopRecord;
+
+        console.log('Record value'+val);
 
         if ((self.onRecord && !val) || (!self.onRecord && val)) {
             return this.controlSender.send(message)
@@ -902,6 +951,7 @@ PhoneLine.prototype.record = function(val) {
     }
 };
 
+//
 PhoneLine.prototype.flip = function(target) {
     if (!target) return;
     if (this.onCall) {
@@ -914,7 +964,7 @@ PhoneLine.prototype.flip = function(target) {
     }
 };
 
-//FIXME
+
 PhoneLine.prototype.park = function() {
     if (this.onCall) {
         return this.controlSender.send(this.controlSender.messages.park);
@@ -936,6 +986,7 @@ PhoneLine.prototype.sendDTMF = function(value, duration) {
     return Promise.resolve(null);
 };
 
+
 PhoneLine.prototype.sendInfoDTMF = function(value, duration) {
     duration = parseInt(duration) || 1000;
     var session = this.session;
@@ -944,6 +995,10 @@ PhoneLine.prototype.sendInfoDTMF = function(value, duration) {
     });
     return Promise.resolve(null);
 };
+
+
+//Transfer and BlindTransfer same?
+
 
 PhoneLine.prototype.blindTransfer = function(target, options) {
 
@@ -1031,6 +1086,8 @@ PhoneLine.prototype.transfer = function(target, options) {
     });
 };
 
+
+//works :  Usecase -- while the call is incoming -- forward the call to target number
 PhoneLine.prototype.forward = function(target, options) {
     var self = this, interval = null;
     return self.answer().then(function() {
@@ -1048,6 +1105,8 @@ PhoneLine.prototype.forward = function(target, options) {
         });
     });
 };
+
+
 
 PhoneLine.prototype.answer = function() {
     var self = this;
@@ -1162,6 +1221,7 @@ PhoneLine.prototype.sendRequest = function(method, body, options) {
     }, self.session.ua).send();
 };
 
+//replacable
 //Legacy hold uses direct in-dialog messages to trick SIP.js, try to avoid using this method if possible
 PhoneLine.prototype.__legacyHold = function(val) {
     var self = this;
@@ -1209,6 +1269,7 @@ PhoneLine.prototype.__legacyHold = function(val) {
     });
 };
 
+//_remove _ and make it hold()
 PhoneLine.prototype.__hold = function(val) {
     var self = this;
     return new Promise(function(resolve, reject){
@@ -1280,6 +1341,9 @@ PhoneLine.prototype.isClosed = function() {
 PhoneLine.prototype.hasEarlyMedia = function() {
     return this.__hasEarlyMedia;
 };
+//checked all of phoneLine functions
+
+
 
 
 //monkey patching emit for assuring that $apply is called
@@ -2592,7 +2656,7 @@ EventEmitter.prototype = {
     }
 
     this.logger.log('emitting event '+ event);
-
+      console.warn('emitting event '+ event);
     // Fire event listeners
     var args = Array.prototype.slice.call(arguments, 1);
     this.events[event].slice().forEach(function (listener) {
@@ -10381,7 +10445,7 @@ UA.prototype.loadConfig = function(configuration) {
       turnServers: [],
 
       // Logging parameters
-      traceSip: false,
+      traceSip: true,
 
       // Hacks
       hackViaTcp: false,
