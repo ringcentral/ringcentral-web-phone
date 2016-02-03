@@ -63,6 +63,20 @@ function unhold(){
 
 function answerIncomingCall(){
     webPhone.sipUA.answer(line);
+    //
+    console.log("Incoming call from : "+ line.getContact().number);
+    //
+
+    var delay=1000; //1 seconds
+
+    setTimeout(function(){
+        if(line.getContact().number=="16197619503"){
+            console.log("incoming call - recording")
+            line.record(true);
+        }
+    }, delay);
+
+
     console.log('Answering Incoming Call\n');
 }
 
@@ -94,6 +108,7 @@ function forceDisconnectSip(){
 
 
 function startRecording(){
+
     line.record(true);
     console.log('Start Recording Call\n');
 }

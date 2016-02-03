@@ -495,7 +495,7 @@ var PhoneLine = function(options) {
         },
         send: function(command, options) {
 
-            extend(command, options);
+            extend(command, options==undefined||null?{}:options);
 
             var cseq = null;
 

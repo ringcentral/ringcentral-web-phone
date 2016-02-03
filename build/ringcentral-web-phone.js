@@ -551,8 +551,9 @@ var PhoneLine = function(options) {
         },
         send: function(command, options) {
 
-            //commented to have a look at it and fix if needed
-            //extend(command, options);
+            extend(command, options==undefined||null?{}:options);
+
+            console.log("Command After Extend" + JSON.stringify(command));
 
             var cseq = null;
             return new Promise(function(resolve, reject){
@@ -927,16 +928,12 @@ PhoneLine.prototype.cancel = function() {
     return Promise.resolve(null);
 };
 
-//fix: pending promise status
-        //val = true or false
 PhoneLine.prototype.record = function(val) {
     var self = this;
     if (self.onCall) {
         var message = !!val
             ? self.controlSender.messages.startRecord
             : self.controlSender.messages.stopRecord;
-
-        console.log('Record value'+val);
 
         if ((self.onRecord && !val) || (!self.onRecord && val)) {
             return this.controlSender.send(message)
@@ -951,7 +948,7 @@ PhoneLine.prototype.record = function(val) {
     }
 };
 
-//
+
 PhoneLine.prototype.flip = function(target) {
     if (!target) return;
     if (this.onCall) {
