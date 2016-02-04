@@ -495,7 +495,8 @@ var PhoneLine = function(options) {
         },
         send: function(command, options) {
 
-            extend(command, options==undefined||null?{}:options);
+            options = options || {};
+            extend(command, options);
 
             var cseq = null;
 
@@ -853,11 +854,12 @@ var PhoneLine = function(options) {
 
     //defining if the session is incoming or outgoing
     if (this.type === PhoneLine.types.incoming) {
-        this.contact.name = this.session.request.from.displayName;
+        this.contact.name = this.session.request.from.uri.displayName;
         this.contact.number = this.session.request.from.uri.user;
+
     } else {
         if (this.type === PhoneLine.types.outgoing) {
-            this.contact.name = this.session.request.to.displayName;
+            this.contact.name = this.session.request.to.uri.displayName;
             this.contact.number = this.session.request.to.uri.user;
         }
     }
