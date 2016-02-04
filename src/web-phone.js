@@ -116,6 +116,8 @@ var EVENT_NAMES = {
     'ICEConnected': 'ICEConnected',
     'ICECompleted': 'ICECompleted',
     'ICEFailed': 'ICEFailed',
+    'ICEChecking': 'ICEChecking',
+    'ICEClosed': 'ICEClosed',
     'ICEDisconnected': 'ICEDisconnected',
     'callReinviteSucceeded': 'callReinviteSucceeded',
     'callReinviteFailed': 'callReinviteFailed'
@@ -247,6 +249,7 @@ UserAgent.prototype.start = function(options) {
         self.stop();
         if (self.userAgent instanceof SIP.UA) {
             self.userAgent.loadConfig(self.sipConfig);
+            self.userAgent.traceSip=true;
         }
         else {
             self.userAgent = new SIP.UA(self.sipConfig);
@@ -492,7 +495,7 @@ var PhoneLine = function(options) {
         },
         send: function(command, options) {
 
-            extend(command, options);
+            extend(command, options==undefined||null?{}:options);
 
             var cseq = null;
 
