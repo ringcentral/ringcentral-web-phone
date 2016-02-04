@@ -11,8 +11,8 @@ $ git clone https://github.com/vyshakhbabji/web-phone-1.git
 $ cd web-phone
 $ npm install
 $ sudo npm install http-server -g //skip this if you have http-server installed
-$ cd demo
 $ http-server
+Click on  (drwxr-xr-x)		demo/ 
 ```
 
 Open /web-phone/demo/index.html in the browser.
