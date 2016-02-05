@@ -551,7 +551,8 @@ var PhoneLine = function(options) {
         },
         send: function(command, options) {
 
-            extend(command, options==undefined||null?{}:options);
+            options = options || {};
+            extend(command, options);
 
             console.log("Command After Extend" + JSON.stringify(command));
 
@@ -614,7 +615,7 @@ var PhoneLine = function(options) {
     };
 
 
-    //not used
+
     var __receiveRequest = this.session.receiveRequest;
     this.session.receiveRequest = function(request) {
         switch (request.method) {
@@ -897,8 +898,12 @@ var PhoneLine = function(options) {
 
     //defining if the session is incoming or outgoing
     if (this.type === PhoneLine.types.incoming) {
+
+    //    console.log("Complete Contact info:"+ JSON.stringify(this.session.request.from));
+
         this.contact.name = this.session.request.from.displayName;
         this.contact.number = this.session.request.from.uri.user;
+        console.log("country"+ this.session.request.from.uri);
     } else {
         if (this.type === PhoneLine.types.outgoing) {
             this.contact.name = this.session.request.to.displayName;
