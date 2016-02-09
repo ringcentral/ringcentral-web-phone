@@ -54,4 +54,16 @@ EventEmitter.prototype.once = function(name, listener) {
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+//FIXME Remove Angular-specific
+//monkey patching emit for assuring that $apply is called
+var __emit = EventEmitter.prototype.emit;
+EventEmitter.prototype.emit = function() {
+    var self = this, args = arguments;
+    setTimeout(function() {
+        __emit.apply(self, args);
+    });
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 module.exports = EventEmitter;

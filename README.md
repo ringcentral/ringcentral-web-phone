@@ -1,3 +1,46 @@
+# Usage
+
+```html
+<script src=".../ringcentral-bundle.js" type="text/javascript"></script>
+<script src=".../ringcentral-web-phone.js" type="text/javascript"></script>
+```
+
+```js
+var webphone = RingCentral.WebPhone;
+
+var sdk = new RingCentral.SDK({
+    appKey: '...',
+    appSecret: '...',
+    server: RingCentral.SDK.server.production // or .sandbox
+});
+
+var platform = sdk.platform();
+
+platform
+    .login({
+        username: '...',
+        password: '...'
+    })
+    .then(function() {
+    
+        return platform
+            .post('/client-info/sip-provision', {
+                sipInfo: [{
+                    transport: transport
+                }]
+            })
+            .then(function(res) {
+                return webPhone.registerSIP(res.json());
+            });
+        
+    })
+    .then(function(){
+    
+        // YOUR CODE
+    
+    });
+```
+
 ## Development
 
 ### Demo App

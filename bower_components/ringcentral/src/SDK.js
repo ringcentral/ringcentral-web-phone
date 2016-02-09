@@ -22,7 +22,7 @@ import CachedSubscription from './subscription/CachedSubscription';
 
 class SDK {
 
-    static version = '2.0.3';
+    static version = '2.0.4';
 
     static server = {
         sandbox: 'https://platform.devtest.ringcentral.com',

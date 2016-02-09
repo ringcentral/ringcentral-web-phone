@@ -534,7 +534,7 @@ function handleError(e) {
 function create(unsavedRingout) {
 
     platform
-        .post('/account/~/extension/~/ringout', {body: unsavedRingout})
+        .post('/account/~/extension/~/ringout', unsavedRingout)
         .then(function(response) {
     
             ringout = response.json();
@@ -692,13 +692,11 @@ In order to send an SMS using the API, simply make a POST request to `/account/~
 ```js
 rcsdk.platform()
     .post('/account/~/extension/~/sms', {
-        body: {
-            from: {phoneNumber:'+12223334444'}, // Your sms-enabled phone number
-            to: [
-                {phoneNumber:'+15556667777'} // Second party's phone number
-            ],
-            text: 'Message content'
-        }
+        from: {phoneNumber:'+12223334444'}, // Your sms-enabled phone number
+        to: [
+            {phoneNumber:'+15556667777'} // Second party's phone number
+        ],
+        text: 'Message content'
     })
     .then(function(response) {
         alert('Success: ' + response.json().id);
@@ -739,7 +737,7 @@ for (var i = 0, file; file = fileField.files[i]; ++i) {
 formData.append('attachment', new File(['some plain text']), 'text.txt', {type: 'application/octet-stream'});
 
 // Send the fax
-rcsdk.platform().post('/account/~/extension/~/fax', {body: formData});
+rcsdk.platform().post('/account/~/extension/~/fax', formData);
 ```
 
 Further reading:
@@ -777,7 +775,7 @@ formData.append('attachment', new Buffer('some plain text'), 'text.txt', {type: 
 formData.append('attachment', require('fs').createReadStream('/foo/bar.jpg'));
 
 // Send the fax
-rcsdk.platform().post('/account/~/extension/~/fax', {body: formData});
+rcsdk.platform().post('/account/~/extension/~/fax', formData);
 ```
 
 Further reading:

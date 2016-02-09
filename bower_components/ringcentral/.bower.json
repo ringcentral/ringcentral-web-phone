@@ -8,6 +8,10 @@
     "!build/ringcentral.js.map",
     "!build/ringcentral.min.js",
     "!build/ringcentral.min.js.map",
+    "!build/ringcentral-bundle.js",
+    "!build/ringcentral-bundle.js.map",
+    "!build/ringcentral-bundle.min.js",
+    "!build/ringcentral-bundle.min.js.map",
     "!demo/**/*",
     "!docs/**/*",
     "!src/**/*"
@@ -39,16 +43,15 @@
     "type": "git",
     "url": "git://github.com/ringcentral/ringcentral-js.git"
   },
-  "version": "2.0.3",
+  "version": "2.0.4",
   "homepage": "https://github.com/ringcentral/ringcentral-js",
-  "_release": "2.0.3",
+  "_release": "2.0.4",
   "_resolution": {
     "type": "version",
-    "tag": "2.0.3",
-    "commit": "2ef3ff51dbcd2325d521db3f9cb908320b93f413"
+    "tag": "2.0.4",
+    "commit": "addb6160de62c674ea99b38d47c3be9014c8b9d4"
   },
   "_source": "git://github.com/ringcentral/ringcentral-js.git",
   "_target": "~2.0.3",
-  "_originalSource": "ringcentral",
-  "_direct": true
+  "_originalSource": "ringcentral"
 }

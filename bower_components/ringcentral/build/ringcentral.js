@@ -862,7 +862,7 @@ var SDK = (function () {
     return SDK;
 })();
 
-SDK.version = '2.0.3';
+SDK.version = '2.0.4';
 SDK.server = {
     sandbox: 'https://platform.devtest.ringcentral.com',
     production: 'https://platform.ringcentral.com'

@@ -61,29 +61,18 @@ module.exports = __webpack_require__(1);
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
-module.exports = {
-    sipUA: __webpack_require__(2),
-    EventEmitter: __webpack_require__(36),
-    monitor: __webpack_require__(39),
-    //ringout: require('./ringout'),
-    utils: __webpack_require__(37)
-};
+var SIP = __webpack_require__(2);
+var EventEmitter = __webpack_require__(35);
+var UserAgent = __webpack_require__(36);
+var PhoneLine = __webpack_require__(37);
+var AudioHelper = __webpack_require__(41);
+var defer = __webpack_require__(38).defer;
+var uuid = __webpack_require__(38).uuid;
+var extend = __webpack_require__(38).extend;
+var EVENT_NAMES = __webpack_require__(39);
 
-/***/ },
-/* 2 */
-/***/ function(module, exports, __webpack_require__) {
-
-var SIP = __webpack_require__(3);
-var EventEmitter = __webpack_require__(36);
-var utils = __webpack_require__(37);
-
-var delay = utils.delay;
-var defer = utils.defer;
-var extend = utils.extend;
-var uuid = utils.uuid;
-
-
-
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 //Patching proto because of https://developers.google.com/web/updates/2015/07/mediastream-deprecations
 var mediaStreamManagerProto = Object.create(SIP.WebRTC.MediaStreamManager.prototype, {
@@ -106,1265 +95,27 @@ var mediaStreamManagerProto = Object.create(SIP.WebRTC.MediaStreamManager.protot
     }
 });
 
-
 SIP.WebRTC.MediaStreamManager.prototype = mediaStreamManagerProto;
 
-//FIXME Unused - if needed could be replaced by sipJS function attachMediaStream(element, stream)
-//cross-browser mediaStream attaching
-//https://github.com/HenrikJoreteg/attachMediaStream
-//function attachMediaStream(stream, el, options) {
-//    var item;
-//    var URL = window.URL;
-//    var element = el;
-//    var opts = {
-//        autoplay: true,
-//        mirror: false,
-//        muted: false,
-//        audio: false
-//    };
-//
-//    if (options) {
-//        for (item in options) {
-//            opts[item] = options[item];
-//        }
-//    }
-//
-//    if (!element) {
-//        element = document.createElement(opts.audio ? 'audio' : 'video');
-//    } else if (element.tagName.toLowerCase() === 'audio') {
-//        opts.audio = true;
-//    }
-//
-//    if (opts.autoplay) element.autoplay = 'autoplay';
-//    if (opts.muted) element.muted = true;
-//    if (!opts.audio && opts.mirror) {
-//        ['', 'moz', 'webkit', 'o', 'ms'].forEach(function(prefix) {
-//            var styleName = prefix ? prefix + 'Transform' : 'transform';
-//            element.style[styleName] = 'scaleX(-1)';
-//        });
-//    }
-//
-//    // this first one should work most everywhere now
-//    // but we have a few fallbacks just in case.
-//    if (URL && URL.createObjectURL) {
-//        element.src = URL.createObjectURL(stream);
-//    } else if (element.srcObject) {
-//        element.srcObject = stream;
-//    } else if (element.mozSrcObject) {
-//        element.mozSrcObject = stream;
-//    } else {
-//        return false;
-//    }
-//
-//    return element;
-//}
-
-var EVENT_NAMES = {
-    'message': 'message',
-    'sipConnecting': 'sipConnecting',
-    'sipConnected': 'sipConnected',
-    'sipDisconnected': 'sipDisconnected',
-    'sipRegistered': 'sipRegistered',
-    'sipUnRegistered': 'sipUnregistered',
-    'sipRegistrationFailed': 'sipRegistrationFailed',
-    'incomingCall': 'incomingCall',                     //when incoming call is received
-    'sipIncomingCall': 'sipIncomingCall',               //same as incomingCall
-    'outgoingCall': 'outgoingCall',                     //when the outbound call is initiated
-    'callConnecting': 'callConnecting',                 //when ICE gathering is started
-    'callProgress': 'callProgress',                     //when 1xx provisional message is received (outbound only) or call is accepted, but ACK is still not sent (inbound only)
-    'callStarted': 'callStarted',                       //when ACK is sent
-    'callRejected': 'callRejected',                     //when the call is rejected by its party
-    'callEnded': 'callEnded',                           //when the call had ended without errors (BYE)
-    'callTerminated': 'callTerminated',                 //when the media is terminated, UNSTABLE in SIP.js 0.6.x
-    'callFailed': 'callFailed',                         //when the call is failed because of many different reasons (connection issues, 4xx errors, etc.)
-    'callHold': 'callHold',                             //when the call is put on hold
-    'callUnhold': 'callUnhold',                         //when the call is unholded
-    'callMute': 'callMute',                             //when the call is muted
-    'callUnmute': 'callUnmute',                         //when the call is unmuted
-    'callReplaced': 'callReplaced',                     //when the call has been replaced by an incoming invite
-    'sipRTCSession': 'sipRTCSession',
-    'sipConnectionFailed': 'sipConnectionFailed',
-    'ICEConnected': 'ICEConnected',
-    'ICECompleted': 'ICECompleted',
-    'ICEFailed': 'ICEFailed',
-    'ICEDisconnected': 'ICEDisconnected',
-    'callReinviteSucceeded': 'callReinviteSucceeded',
-    'callReinviteFailed': 'callReinviteFailed',
-    'ICEChecking': 'ICEChecking',
-    'ICEClosed': 'ICEClosed'
-};
-
-/*
- * We create audio containers here
- * Sorry for DOM manipulations inside a service, but it is for the good :)
- */
-var LOCAL_AUDIO = document.createElement('video'),
-    REMOTE_AUDIO = document.createElement('video'),
-    LOCAL_AUDIO_ID = 'local_' + uuid(),
-    REMOTE_AUDIO_ID = 'remote_' + uuid();
-LOCAL_AUDIO.setAttribute('id', LOCAL_AUDIO_ID);
-LOCAL_AUDIO.setAttribute('autoplay', 'true');
-LOCAL_AUDIO.setAttribute('hidden', 'true');
-LOCAL_AUDIO.setAttribute('muted', '');
-REMOTE_AUDIO.setAttribute('id', REMOTE_AUDIO_ID);
-REMOTE_AUDIO.setAttribute('autoplay', 'true');
-REMOTE_AUDIO.setAttribute('hidden', 'true');
-document.body.appendChild(LOCAL_AUDIO);
-document.body.appendChild(REMOTE_AUDIO);
-LOCAL_AUDIO.volume = 0;
-
-//-----------------------------------------
-
-var UserAgent = function(options) {
-    this.eventEmitter = new EventEmitter();
-    this.sipConfig = options ? (options.sipConfig || {}) : ({});
-    this.lines = {};
-    this.userAgent = undefined;
-    this.getUserMedia = undefined;
-    this.RTCPeerConnection = undefined;
-    this.RTCSessionDescription = undefined;
-    checkConfig.apply(this);
-
-};
-
-//tested everything on UA.
-
-
-UserAgent.prototype.setSIPConfig = function(config) {
-
-    console.warn('Configuring SIP\n');
-    var wsServers = config.wsServers,
-        useSecureConnection = (document.location.protocol == 'https:');
-
-    for (var i = 0; i < wsServers.length; i++) {
-        if (
-            (useSecureConnection && /^wss:/.test(wsServers[i]))
-            ||
-            (!useSecureConnection && /^ws:/.test(wsServers[i]))
-        ) {
-            config.wsServers = [wsServers[i]];
-            break;
-        }
-    }
-
-    this.sipConfig = config;
-    checkConfig.apply(this);
-};
-
-UserAgent.prototype.__createLine = function(session, type) {
-    var self = this;
-    session.data.id = uuid();
-    self.eventEmitter.emit(EVENT_NAMES.sipRTCSession, session);
-    var line = new PhoneLine({
-        session: session,
-        userAgent: self,
-        instanceId: self.sipConfig.authorizationUser,
-        eventEmitter: self.eventEmitter,
-        type: type
-    });
-
-    console.warn('Creating new line. Sip RTC session started');
-    self.__clearInactiveLines();
-    self.lines[session.data.id] = line;
-    window.line = line;
-
-    return line;
-};
-
-UserAgent.prototype.getActiveLines = function() {
-    this.__clearInactiveLines();
-    return this.lines;
-};
-
-UserAgent.prototype.getActiveLinesArray = function() {
-
-    var lines = this.getActiveLines();
-    var arr = [];
-    for (var id in lines) {
-        if (lines.hasOwnProperty(id)) {
-            arr.push(lines[id]);
-        }
-    }
-    return arr;
-};
-
-UserAgent.prototype.getIncomingLinesArray = function() {
-    return this.getActiveLinesArray().filter(function(el) {
-        return el.isIncoming();
-    });
-};
-
-UserAgent.prototype.__clearInactiveLines = function() {
-    console.warn('clearing inactive lines');
-    for (var id in this.lines) {
-        if (this.lines.hasOwnProperty(id)) {
-            if (this.lines[id].isClosed()) {
-                delete this.lines[id];
-            }
-        }
-    }
-};
-
-var __disconnectCount = 0;
-UserAgent.prototype.start = function(options) {
-    var self = this;
-
-    function initUA() {
-        self.stop();
-        if (self.userAgent instanceof SIP.UA) {
-            self.userAgent.loadConfig(self.sipConfig);
-        }
-        else {
-            self.userAgent = new SIP.UA(self.sipConfig);
-            self.__registerExtraOptions = options || {};
-            self.userAgent.on('connected', function(e) {
-                __disconnectCount = 0;
-                self.eventEmitter.emit(EVENT_NAMES.sipConnected, e);
-                self.userAgent.register({
-                    extraHeaders: options.extraHeaders || []
-                });
-                console.log('Sip Connected\n');
-            });
-            self.userAgent.on('disconnected', function(e) {
-                if (++__disconnectCount >= (self.sipConfig.retryCount || 3)) {
-                    __disconnectCount = 0;
-                    self.stop();
-                    self.eventEmitter.emit(EVENT_NAMES.sipConnectionFailed, new Error("Unable to connect to the WS server: exceeded number of attempts"));
-                }
-                self.eventEmitter.emit(EVENT_NAMES.sipDisconnected, e);
-                console.log('Sip Disconnected\n');
-            });
-            self.userAgent.on('registered', function(e) {
-                console.log('Sip Registered\n');
-                self.eventEmitter.emit(EVENT_NAMES.sipRegistered, e);
-
-            });
-            self.userAgent.on('unregistered', function(e) {
-                console.log('Sip UnRegistered\n');
-                self.eventEmitter.emit(EVENT_NAMES.sipUnRegistered, e);
-            });
-            self.userAgent.on('registrationFailed', function(e) {
-                console.log('Sip registerstration failed\n');
-                self.eventEmitter.emit(EVENT_NAMES.sipRegistrationFailed, e);
-            });
-            //happens when call is incoming
-            self.userAgent.on('invite', function(session) {
-                console.log('Invite Recieved for incoming call \n');
-                var newLine;
-                if (session && session.request && session.request.hasHeader('replaces')) {
-                    var replaces = session.request.getHeader('replaces').split(';'),
-                        callId = replaces[0],
-                        lines = self.getActiveLinesArray(),
-                        foundLine = null;
-                    for (var i = 0; i < lines.length; i++) {
-                        if (lines[i].session.request.call_id) {
-                            if (callId === lines[i].session.request.call_id) {
-                                foundLine = lines[i];
-                                break;
-                            }
-                        }
-                    }
-
-                    if (foundLine) {
-                        var originalSessionId = foundLine.getId();
-                        newLine = self.__createLine(session, PhoneLine.types.incoming);
-                        newLine.answer().then(function() {
-                            self.eventEmitter.emit(EVENT_NAMES.callReplaced, newLine, foundLine);
-                            foundLine.cancel();
-                        });
-                    }
-                }
-                else {
-                    newLine = self.__createLine(session, PhoneLine.types.incoming);
-                    self.eventEmitter.emit(EVENT_NAMES.sipIncomingCall, newLine);
-                }
-            });
-        }
-        //noop on transport connected (this will cause unwanted REGISTER)
-        self.userAgent.registerContext.onTransportConnected = function() {};
-        self.userAgent.start();
-    }
-    initUA();
-};
-
-UserAgent.prototype.reregister = function(options, reconnect) {
-    console.log('Sip Reregistered\n');
-    var self = this, reconnect = !!reconnect;
-    options = extend(self.__registerExtraOptions, options);
-    if (!self.userAgent) {
-        self.start(options);
-    }
-    if (!reconnect) {
-        self.userAgent.register(options);
-    }
-    else {
-        if (!self.isConnected()) {
-            self.stop();
-            self.start(options);
-        }
-        else {
-            //This will be treated as abrupt disconnection and SIP.js will try to reconnect the WS
-            self.userAgent.transport.ws.close();
-        }
-    }
-};
-
-
-UserAgent.prototype.stop = function() {
-    if (this.userAgent instanceof SIP.UA) {
-        this.userAgent.stop();
-        this.userAgent = null;
-    }
-};
-
-
-UserAgent.prototype.call = function(number, inviteOptions) {
-    var self = this;
-    var options = {
-        media: {
-            constraints: {audio: true, video: false},
-            render: {
-                local: {
-                    audio: LOCAL_AUDIO
-                },
-                remote: {
-                    audio: REMOTE_AUDIO
-                }
-            }
-        },
-        RTCConstraints: {
-            "optional": [
-                {'DtlsSrtpKeyAgreement': 'true'}
-            ]
-        }
-    };
-    var fromNumber = inviteOptions.fromNumber;
-    var country = inviteOptions.country;
-
-    var headers = [];
-    if (fromNumber) {
-        headers.push('P-Asserted-Identity: sip:' + fromNumber + '@' + this.sipConfig.domain);
-    }
-    if (country) {
-        headers.push('P-rc-country-id: ' + country);
-    }
-    extend(options, {
-        extraHeaders: headers
-    });
-    var session = this.userAgent.invite('' + number, options);
-    var line = self.__createLine(session, PhoneLine.types.outgoing);
-    this.eventEmitter.emit(EVENT_NAMES.outgoingCall, line);
-    console.warn('outgoing call... ');
-    return line;
-};
-
-
-UserAgent.prototype.answer = function(line) {
-    return line && line.answer();
-};
-
-
-UserAgent.prototype.hangup = function(line) {
-    if (line) {
-        line.cancel();
-        delete this.lines[line.getId()];
-    }
-};
-
-UserAgent.prototype.on = function(eventName, cb) {
-    this.eventEmitter.on(eventName, cb);
-    return this;
-};
-
-function checkConfig() {
-    // set mootools expands to non-enumerables under ES5
-    if (typeof this.sipConfig.wsServers === 'string') {
-        this.sipConfig.wsServers = [
-            {ws_uri: this.sipConfig.wsServers}
-        ];
-    }
-    var key, enums = {enumerable: false};
-    for (key in this.sipConfig.wsServers) this.sipConfig.wsServers.hasOwnProperty(key) || Object.defineProperty(Array.prototype, key, enums);
-}
-
-UserAgent.prototype.isConnected = function() {
-    return !!(this.userAgent && this.userAgent.transport && this.userAgent.transport.connected);
-};
-
-UserAgent.prototype.isConnecting = function() {
-    //websocket.readyState === CONNECTING (0)
-    return !this.isConnected() && !!(this.userAgent && this.userAgent.transport && this.userAgent.transport.ws && this.userAgent.transport.ws.readyState === 0);
-};
-
-UserAgent.prototype.forceDisconnect = function() {
-    console.warn(this.isConnecting(), this.isConnected());
-    if (this.isConnecting() || this.isConnected()) {
-        this.userAgent.transport.disconnect();
-        this.userAgent.stop();
-        this.userAgent = null;
-    }
-};
-//-----------------------------------------
-
-
-//-----------------------------------------
-var index = 0;
-
-var PhoneLine = function(options) {
-    var self = this;
-
-    this.index = index++;
-
-    this.session = options.session;
-    this.userAgent = options.userAgent;
-    this.eventEmitter = options.eventEmitter;
-    this.instanceId = options.instanceId;
-    this.sessionId = this.session && this.session.id;
-
-    this.onCall = false;
-    this.onRecord = false;
-    this.contact = {};
-    this.muted = false;
-    this.bothMuted = false;
-    this.onHold = false;
-    this.timeCallStarted = null;
-
-    this.accepted = false;
-    this.type = options.type;
-
-    this.responseTimeout = 10000;
-
-
-    //tested callparkm start/stop recording, callflip
-    //barge, whisper,takeover not implemented -- for barge dtmf code is *83
-    //dtmf for start-stop recording *9 doesnt work on softphone (desktop and mobile) and webrtc
-    this.controlSender = {
-        messages: {
-            park: {reqid: 1, command: 'callpark'},
-            startRecord: {reqid: 2, command: 'startcallrecord'},
-            stopRecord: {reqid: 3, command: 'stopcallrecord'},
-            flip: {reqid: 3, command: 'callflip', target: ''},
-            monitor: {reqid: 4, command: 'monitor'},
-            barge: {reqid: 5, command: 'barge'},
-            whisper: {reqid: 6, command: 'whisper'},
-            takeover: {reqid: 7, command: 'takeover'}
-        },
-        send: function(command, options) {
-
-            options = options || {};
-            extend(command, options);
-
-            console.log("Command After Extend" + JSON.stringify(command));
-
-            var cseq = null;
-            return new Promise(function(resolve, reject){
-
-                self.session.sendRequest(SIP.C.INFO, {
-                    body: JSON.stringify({
-                        request: command
-                    }),
-                    extraHeaders: [
-                        "Content-Type: application/json;charset=utf-8"
-                    ],
-                    receiveResponse: function(response) {
-                        var timeout = null;
-                        if (response.status_code === 200) {
-                            cseq = response.cseq;
-                            function onInfo(request) {
-                                if (response.cseq === cseq) {
-                                    var body = request && request.body || '{}';
-                                    var obj;
-
-                                    try {
-                                        obj = JSON.parse(body);
-                                    }
-                                    catch (e) {
-                                        obj = {};
-                                    }
-
-                                    if (obj.response && obj.response.command === command.command) {
-                                        if (obj.response.result) {
-                                            if (obj.response.result.code == 0) {
-                                                resolve(obj.response.result);
-                                            }
-                                            else {
-                                                reject(obj.response.result);
-                                            }
-                                        }
-                                    }
-                                    timeout && clearTimeout(timeout);
-                                    self.eventEmitter.off('SIP_INFO', onInfo);
-                                    resolve(); //FIXME What to resolve
-                                }
-                            }
-
-                            timeout = setTimeout(function() {
-                                reject(new Error('Timeout: no reply'));
-                                self.eventEmitter.off('SIP_INFO', onInfo);
-                            }, self.responseTimeout);
-                            self.eventEmitter.on('SIP_INFO', onInfo);
-                        }
-                        else {
-                            reject(new Error('The INFO response status code is: ' + response.status_code + ' (waiting for 200)'));
-                        }
-                    }
-                });
-
-            });
-        }
-    };
-
-
-
-    var __receiveRequest = this.session.receiveRequest;
-    this.session.receiveRequest = function(request) {
-        switch (request.method) {
-            case SIP.C.INFO:
-                self.eventEmitter.emit('SIP_INFO', request);
-                //SIP.js does not support application/json content type, so we monkey override its behaviour in this case
-                if (this.status === SIP.Session.C.STATUS_CONFIRMED || this.status === SIP.Session.C.STATUS_WAITING_FOR_ACK) {
-                    var contentType = request.getHeader('content-type');
-                    if (contentType.match(/^application\/json/i)) {
-                        request.reply(200);
-                        return this;
-                    }
-                }
-                break;
-            //Refresh invite should not be rejected with 488
-            case SIP.C.INVITE:
-                var session = this;
-                if (session.status === SIP.Session.C.STATUS_CONFIRMED) {
-                    if (request.call_id && session.dialog && session.dialog.id && request.call_id == session.dialog.id.call_id) {
-                        //TODO: check that SDP did not change
-                        session.logger.log('re-INVITE received');
-                        var localSDP = session.mediaHandler.peerConnection.localDescription.sdp;
-                        request.reply(200, null, ['Contact: ' + self.contact], localSDP, function() {
-                            session.status = SIP.Session.C.STATUS_WAITING_FOR_ACK;
-                            session.setInvite2xxTimer(request, localSDP);
-                            session.setACKTimer();
-                        });
-                        return session;
-                    }
-                    //else will be rejected with 488 by SIP.js
-                }
-                break;
-            //We need to analize NOTIFY messages sometimes, so we fire an event
-            case SIP.C.NOTIFY:
-                self.eventEmitter.emit('SIP_NOTIFY', request);
-                break;
-        }
-        return __receiveRequest.apply(self.session, arguments);
-    };
-
-
-    //session emits connecting, progress, accepted rejected, bye, failed and terminated events for sip based commu...
-
-
-    //Fired when ICE is starting to negotiate between the peers.
-    this.session.on('connecting', function(e) {
-        self.eventEmitter.emit(EVENT_NAMES.callConnecting, self, e);
-        setTimeout(function() {
-            if (self.session.mediaHandler.onIceCompleted !== undefined) {
-                self.session.mediaHandler.onIceCompleted(self.session);
-            }
-            else {
-                self.session.mediaHandler.callOnIceCompleted = true;
-            }
-        }, self.userAgent.sipConfig['iceGatheringTimeout'] || 3000);
-    });
-
-    this.__hasEarlyMedia = false;
-
-    //Monkey patching for handling early media and to delay ACKs
-    var __receiveInviteReponse = this.session.receiveInviteResponse,
-        __waitingForIce = false;
-    this.session.receiveResponse = this.session.receiveInviteResponse = function(response) {
-        var sessionSelf = this, args = arguments;
-        switch (true) {
-            case (/^1[0-9]{2}$/.test(response.status_code)):
-                //Let's not allow the library to send PRACK
-                if (self.hasEarlyMedia()) {
-                    this.emit('progress', response);
-                    return;
-                }
-                break;
-            case /^(2[0-9]{2})|(4\d{2})$/.test(response.status_code):
-                if (!self.hasEarlyMedia()) break;
-
-                //Let's check the ICE connection state
-                if (self.session.mediaHandler.peerConnection.iceConnectionState === 'completed' && !__waitingForIce) {
-                    __waitingForIce = false;
-                    //if ICE is connected, then let the library to handle the ACK
-                    break;
-                }
-                else {
-                    //If ICE is not connected, then we should send ACK after it has been connected
-                    if (!__waitingForIce) {
-                        self.eventEmitter.once(EVENT_NAMES.ICECompleted, function() {
-                            //let the library handle the ACK after ICE connection is completed
-                            __waitingForIce = false;
-                            __receiveInviteReponse.apply(sessionSelf, args);
-                        });
-
-                        self.eventEmitter.once(EVENT_NAMES.ICEFailed, function() {
-                            //handle the ICE Failed situation
-                            __waitingForIce = false;
-                            self.session.acceptAndTerminate(response, null, 'ICE Connection Failed');
-                        });
-
-                        __waitingForIce = true;
-                    }
-                    return;
-                }
-                break;
-        }
-        return __receiveInviteReponse.apply(sessionSelf, args);
-    };
-
-    //Fired each time a provisional (100-199) response is received.
-    this.session.on('progress', function(e) {
-        self.onCall = true;
-
-        //Early media is supported by SIP.js library
-        //But in case it is sent without 100rel support we play it manually
-        //STATUS_EARLY_MEDIA === 11, it will be set by SIP.js if 100rel is supported
-        if (self.session.status !== SIP.Session.C.STATUS_EARLY_MEDIA && e.status_code === 183 && typeof(e.body) === 'string' && e.body.indexOf('\n') !== -1) {
-            var session = self.session,
-                response = e;
-
-            if (session.hasOffer) {
-                if (!session.createDialog(response, 'UAC')) {
-                    return;
-                }
-                session.hasAnswer = true;
-                session.mediaHandler.setDescription(
-                    response.body,
-                    function() {
-                        session.dialog.pracked.push(response.getHeader('rseq'));
-                        session.status = SIP.Session.C.STATUS_EARLY_MEDIA;
-                        session.mute();
-                        self.__hasEarlyMedia = true;
-                        self.eventEmitter.emit(EVENT_NAMES.callProgress, self, e);
-                    },
-                    function(e) {
-                        session.logger.warn(e);
-                        session.acceptAndTerminate(response, 488, 'Not Acceptable Here');
-                        session.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
-                    }
-                );
-            }
-        }
-    });
-
-    //Fired each time a successful final (200-299) response is received.
-    this.session.on('accepted', function(e) {
-        if (self.accepted === true) return;
-        self.onCall = true;
-        self.accepted = true;
-        self.timeCallStarted = new Date();
-        self.eventEmitter.emit(EVENT_NAMES.callStarted, self, e);
-    });
-
-    function onEnd() {
-        self.onCall = false;
-        self.timeCallStarted = null;
-        self.accepted = true;
-    }
-
-    //Fired each time an unsuccessful final (300-699) response is
-    //this will emit failed event
-    this.session.on('rejected', function(e) {
-        onEnd();
-        self.eventEmitter.emit(EVENT_NAMES.callRejected, self, e);
-        //terminated is not called by SIP.js when the call is rejected
-        //self.eventEmitter.emit(EVENT_NAMES.callTerminated, self, e);
-    });
-
-    //Fired when the session was canceled by the client
-    this.session.on('cancel', function(e) {
-        onEnd();
-        self.eventEmitter.emit(EVENT_NAMES.callEnded, self, e);
-    });
-
-    //Fired when a BYE is sent
-    this.session.on('bye', function(e) {
-        onEnd();
-        self.eventEmitter.emit(EVENT_NAMES.callEnded, self, e);
-    });
-
-    //Fired when the request fails, whether due to an unsuccessful final response or due to timeout, transport, or other error
-    this.session.on('failed', function(response, cause) {
-        this.terminated(null, cause);
-        onEnd();
-        self.eventEmitter.emit(EVENT_NAMES.callFailed, self, response, cause);
-        //SIP.js 0.6.x does not call terminated event sometimes, so we call it ourselves
-        if (cause === service.causes.REQUEST_TIMEOUT) {
-            //this === session
-            if (this.status !== SIP.Session.C.STATUS_CONFIRMED) {
-                this.terminated(null, SIP.C.causes.REQUEST_TIMEOUT);
-            }
-        }
-    });
-
-    this.session.on('terminated', function(response, cause) {
-        onEnd();
-        self.eventEmitter.emit(EVENT_NAMES.callTerminated, self, response, cause);
-    });
-
-    function terminateCallOnDisconnected(reason) {
-        self.session.terminated(null, reason || SIP.C.causes.CONNECTION_ERROR);
-        onEnd();
-        self.eventEmitter.emit(EVENT_NAMES.callFailed, self, null, 'Connection error');
-    }
-
-    //Monkey patching oniceconnectionstatechange because SIP.js 0.6.x does not have this event
-    var onStateChange = this.session.mediaHandler.peerConnection.oniceconnectionstatechange || function(){},
-        __doubleCompleted = false;
-    this.session.mediaHandler.peerConnection.oniceconnectionstatechange = function() {
-        //this === peerConnection
-        var state = this.iceConnectionState;
-        onStateChange.apply(this, arguments);
-
-        console.warn('Media handler state change to: '+state)
-
-        switch (state) {
-            //checking,completed,closed  ref: http://sipjs.com/api/0.7.0/mediaHandler/
-
-
-
-            case 'checking':
-                self.eventEmitter.emit(EVENT_NAMES.ICEChecking, self);
-                break;
-            case 'connected':
-                self.eventEmitter.emit(EVENT_NAMES.ICEConnected, self);
-                break;
-            case 'completed':
-                //this may be called twice, see: https://code.google.com/p/chromium/issues/detail?id=371804
-                if (!__doubleCompleted) {
-                    self.eventEmitter.emit(EVENT_NAMES.ICECompleted, self);
-                    __doubleCompleted = true;
-                }
-                break;
-            case 'closed':
-                //terminateCallOnDisconnected();
-                self.eventEmitter.emit(EVENT_NAMES.ICEClosed, self);
-                break;
-            case 'disconnected':
-                terminateCallOnDisconnected();
-                self.eventEmitter.emit(EVENT_NAMES.ICEDisconnected, self);
-                break;
-            case 'failed':
-                self.eventEmitter.emit(EVENT_NAMES.ICEFailed, self);
-                break;
-        }
-    };
-
-    var __ignoreReinviteDuplicates = false;
-
-    //Monkey patching sendReinvite for better Hold handling
-    var __sendReinvite = this.session.sendReinvite;
-    this.session.sendReinvite = function() {
-        console.warn('Sending reinvite');
-        __ignoreReinviteDuplicates = false;
-        var res = __sendReinvite.apply(this, arguments);
-        var __reinviteSucceeded = this.reinviteSucceeded,
-            __reinviteFailed = this.reinviteFailed;
-        this.reinviteSucceeded = function() {
-            self.eventEmitter.emit(EVENT_NAMES.callReinviteSucceeded, self);
-            return __reinviteSucceeded.apply(this, []);
-        };
-        this.reinviteFailed = function() {
-            self.eventEmitter.emit(EVENT_NAMES.callReinviteFailed, self);
-            return __reinviteFailed.apply(this, []);
-        };
-        return res;
-    };
-
-    //Monkey patching receiveReinviteResponse to ignore duplicates which may break Hold/Unhold
-    var __receiveReinviteResponse = this.session.receiveReinviteResponse;
-    this.session.receiveReinviteResponse = function(response) {
-        console.warn('Recieveing reinvite response');
-        switch (true) {
-            case /^2[0-9]{2}$/.test(response.status_code):
-                if (__ignoreReinviteDuplicates) {
-                    this.sendRequest(SIP.C.ACK, {cseq: response.cseq});
-                    return;
-                }
-                __ignoreReinviteDuplicates = true;
-                break;
-        }
-        return __receiveReinviteResponse.apply(this, arguments);
-    };
-
-    //defining if the session is incoming or outgoing
-    if (this.type === PhoneLine.types.incoming) {
-
-    //    console.log("Complete Contact info:"+ JSON.stringify(this.session.request.from));
-
-        this.contact.name = this.session.request.from.displayName;
-        this.contact.number = this.session.request.from.uri.user;
-        console.log("country"+ this.session.request.from.uri);
-    } else {
-        if (this.type === PhoneLine.types.outgoing) {
-            this.contact.name = this.session.request.to.displayName;
-            this.contact.number = this.session.request.to.uri.user;
-        }
-    }
-};
-
-PhoneLine.types = {
-    incoming: 'incoming',
-    outgoing: 'outgoing'
-};
-
-
-PhoneLine.prototype.getId = function() {
-    return this.session.data.id;
-};
-
-
-PhoneLine.prototype.getSession = function() {
-    return this.session;
-};
-
-PhoneLine.prototype.cancel = function() {
-    var session = this.getSession();
-    session.terminate({statusCode: 486});
-    return Promise.resolve(null);
-};
-
-PhoneLine.prototype.record = function(val) {
-    var self = this;
-    if (self.onCall) {
-        var message = !!val
-            ? self.controlSender.messages.startRecord
-            : self.controlSender.messages.stopRecord;
-
-        if ((self.onRecord && !val) || (!self.onRecord && val)) {
-            return this.controlSender.send(message)
-                .then(function(data) {
-                    self.onRecord = !!val;
-                    return data;
-                });
-        }
-    }
-    else {
-        return Promise.reject(new Error('Not on call'));
-    }
-};
-
-
-PhoneLine.prototype.flip = function(target) {
-    if (!target) return;
-    if (this.onCall) {
-        return this.controlSender.send(this.controlSender.messages.flip, {
-            target: target
-        });
-    }
-    else {
-        return Promise.reject(new Error('Not on call'));
-    }
-};
-
-
-PhoneLine.prototype.park = function() {
-    if (this.onCall) {
-        return this.controlSender.send(this.controlSender.messages.park);
-    }
-    else {
-        return Promise.reject(new Error('Not on call'));
-    }
-};
-
-
-PhoneLine.prototype.sendDTMF = function(value, duration) {
-    duration = parseInt(duration) || 1000;
-    var peer = this.session.mediaHandler.peerConnection;
-    var stream = this.session.getLocalStreams()[0];
-    var dtmfSender = peer.createDTMFSender(stream.getAudioTracks()[0]);
-    if (dtmfSender !== undefined && dtmfSender.canInsertDTMF) {
-        dtmfSender.insertDTMF(value, duration);
-    }
-    return Promise.resolve(null);
-};
-
-
-PhoneLine.prototype.sendInfoDTMF = function(value, duration) {
-    duration = parseInt(duration) || 1000;
-    var session = this.session;
-    session.dtmf(value.toString(), {
-        duration: duration
-    });
-    return Promise.resolve(null);
-};
-
-
-//Transfer and BlindTransfer same?
-
-
-PhoneLine.prototype.blindTransfer = function(target, options) {
-
-    var session = this.session;
-    var self = this;
-    var extraHeaders = [];
-    var originalTarget = target;
-    options = options || {};
-
-    return new Promise(function(resolve, reject){
-        //Blind Transfer is taken from SIP.js source
-
-        // Check Session Status
-        if (session.status !== SIP.Session.C.STATUS_CONFIRMED) {
-            throw new SIP.Exceptions.InvalidStateError(session.status);
-        }
-
-        // normalizeTarget allows instances of SIP.URI to pass through unaltered,
-        // so try to make one ahead of time
-        try {
-            target = SIP.Grammar.parse(target, 'Refer_To').uri || target;
-        } catch (e) {
-            session.logger.debug(".refer() cannot parse Refer_To from", target);
-            session.logger.debug("...falling through to normalizeTarget()");
-        }
-
-        // Check target validity
-        target = session.ua.normalizeTarget(target);
-        if (!target) {
-            throw new TypeError('Invalid target: ' + originalTarget);
-        }
-
-        extraHeaders.push('Contact: ' + session.contact);
-        extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(session.ua));
-        extraHeaders.push('Refer-To: ' + target);
-
-        // Send the request
-        session.sendRequest(SIP.C.REFER, {
-            extraHeaders: extraHeaders,
-            body: options.body,
-            receiveResponse: function(response) {
-                var timeout = null;
-                if (response.status_code === 202) {
-                    var callId = response.call_id;
-
-                    function onNotify(request) {
-                        if (request.call_id === callId) {
-                            var body = request && request.body || '';
-                            switch (true) {
-                                case /1[0-9]{2}/.test(body):
-                                    request.reply(200);
-                                    break;
-                                case /2[0-9]{2}/.test(body):
-                                    self.session.terminate();
-                                    clearTimeout(timeout);
-                                    self.eventEmitter.off('SIP_NOTIFY', onNotify);
-                                    resolve();
-                                    break;
-                                default:
-                                    reject(body);
-                                    break;
-                            }
-                        }
-                    }
-
-                    timeout = setTimeout(function() {
-                        reject(new Error('Timeout: no reply'));
-                        self.eventEmitter.off('SIP_NOTIFY', onNotify);
-                    }, self.responseTimeout);
-                    self.eventEmitter.on('SIP_NOTIFY', onNotify);
-                }
-                else {
-                    reject(new Error('The response status code is: ' + response.status_code + ' (waiting for 202)'));
-                }
-            }
-        });
-
-    });
-};
-
-PhoneLine.prototype.transfer = function(target, options) {
-    var self = this;
-    return (self.onHold ? Promise.resolve(null) : self.setHold(true)).then(function(){ return delay(300); }).then(function() {
-        return self.blindTransfer(target, options);
-    });
-};
-
-
-//works :  Usecase -- while the call is incoming -- forward the call to target number
-PhoneLine.prototype.forward = function(target, options) {
-    var self = this, interval = null;
-    return self.answer().then(function() {
-        return new Promise(function(resolve, reject){
-            interval = setInterval(function() {
-                if (self.session.status === 12) {
-                    clearInterval(interval);
-                    self.setMute(true);
-                    setTimeout(function() {
-                        self.transfer(target, options);
-                        resolve();
-                    }, 700);
-                }
-            }, 50);
-        });
-    });
-};
-
-
-
-PhoneLine.prototype.answer = function() {
-    var self = this;
-
-    return new Promise(function(resolve, reject){
-
-        function onAnswered() {
-            resolve();
-            self.eventEmitter.off(EVENT_NAMES.callStarted, onAnswered);
-            self.eventEmitter.off(EVENT_NAMES.callFailed, onFail);
-        }
-
-        function onFail(e) {
-            reject(e);
-            self.eventEmitter.off(EVENT_NAMES.callStarted, onAnswered);
-            self.eventEmitter.off(EVENT_NAMES.callFailed, onFail);
-        }
-
-        self.eventEmitter.on(EVENT_NAMES.callStarted, onAnswered);
-        self.eventEmitter.on(EVENT_NAMES.callFailed, onFail);
-
-        console.warn('emitting callProgress');
-        self.eventEmitter.emit(EVENT_NAMES.callProgress, self);
-
-        self.session.accept({
-            media: {
-                constraints: {audio: true, video: false},
-                render: {
-                    local: {
-                        audio: LOCAL_AUDIO
-                    },
-                    remote: {
-                        audio: REMOTE_AUDIO
-                    }
-                }
-            }
-        });
-
-    });
-
-};
-
-PhoneLine.prototype.setMute = function(val) {
-    this.muted = !!val;
-    try {
-        setStreamMute(this.session.getLocalStreams()[0], this.muted);
-        val ? this.eventEmitter.emit(EVENT_NAMES.callMute, this) : this.eventEmitter.emit(EVENT_NAMES.callUnmute, this);
-    } catch (e) {
-        console.error(e);
-    }
-    return Promise.resolve(null);
-};
-
-
-function setStreamMute(stream, val) {
-    var tracks = stream.getAudioTracks();
-    for (var i = 0; i < tracks.length; i++) {
-        tracks[i].enabled = !val;
-    }
-}
-
-
-PhoneLine.prototype.setMuteBoth = function(val) {
-    this.bothMuted = !!val;
-    try {
-        setStreamMute(this.session.getLocalStreams()[0], this.bothMuted);
-        setStreamMute(this.session.getRemoteStreams()[0], this.bothMuted);
-        val ? this.eventEmitter.emit(EVENT_NAMES.callMute, this) : this.eventEmitter.emit(EVENT_NAMES.callUnmute, this);
-    }
-    catch (e) {
-        console.error(e);
-    }
-    return Promise.resolve(null);
-};
-
-/* This is a direct and very tightly coupled code. Please, try to avoid using this method if possible */
-PhoneLine.prototype.sendRequest = function(method, body, options) {
-    var self = this;
-    options = options || {};
-
-    if (!this.session.dialog) return;
-
-    var request = new SIP.OutgoingRequest(
-        method,
-        self.session.dialog.remote_target,
-        self.session.ua,
-        {
-            cseq: options.cseq || (self.session.dialog.local_seqnum += 1),
-            call_id: self.session.dialog.id.call_id,
-            from_uri: self.session.dialog.local_uri,
-            from_tag: self.session.dialog.id.local_tag,
-            to_uri: self.session.dialog.remote_uri,
-            to_tag: self.session.dialog.id.remote_tag,
-            route_set: self.session.dialog.route_set,
-            statusCode: options.statusCode,
-            reasonPhrase: options.reasonPhrase
-        },
-        options.extraHeaders || [],
-        body || undefined
-    );
-
-    new SIP.RequestSender({
-        request: request,
-        onRequestTimeout: function() {
-            self.session.onRequestTimeout();
-        },
-        onTransportError: function() {
-            self.session.onTransportError();
-        },
-        receiveResponse: options.receiveResponse || function(response) {
-        }
-    }, self.session.ua).send();
-};
-
-//replacable
-//Legacy hold uses direct in-dialog messages to trick SIP.js, try to avoid using this method if possible
-PhoneLine.prototype.__legacyHold = function(val) {
-    var self = this;
-    self.onHold = !!val;
-    return new Promise(function(resolve, reject){
-        if (self.onCall && self.session.dialog) {
-            var body = self.session.mediaHandler.peerConnection.localDescription.sdp;
-            if (self.onHold) {
-                //body = body.replace(/c=IN IP4 \d+\.\d+.\d+.\d+/, "c=IN IP4 0.0.0.0");
-                body = body.replace(/a=sendrecv/, "a=sendonly");
-                self.session.mediaHandler.hold();
-                self.session.onhold('local');
-            }
-            else {
-                self.session.mediaHandler.unhold();
-                self.session.onunhold('local');
-            }
-
-            self.sendRequest(SIP.C.INVITE, body, {
-                extraHeaders: [
-                    "Content-Type: application/sdp",
-                    "Contact: " + self.session.contact
-                ],
-                receiveResponse: function(response) {
-                    switch (true) {
-                        case /^1[0-9]{2}$/.test(response.status_code):
-                            break;
-                        case /^2[0-9]{2}$/.test(response.status_code):
-                            resolve();
-                            self.sendRequest(SIP.C.ACK, null, {
-                                cseq: response.cseq
-                            });
-                            break;
-                        default:
-                            reject('Status code is: ' + response.status_code);
-                            self.onHold = !self.onHold;
-                            break;
-                    }
-                }
-            });
-        }
-        else {
-            reject(new Error('Not on call or no dialog'));
-        }
-    });
-};
-
-//_remove _ and make it hold()
-PhoneLine.prototype.__hold = function(val) {
-    var self = this;
-    return new Promise(function(resolve, reject){
-        function onSucceeded() {
-            resolve();
-            self.eventEmitter.off(EVENT_NAMES.callReinviteFailed, onFailed);
-        }
-
-        function onFailed(e) {
-            reject(e);
-            self.eventEmitter.off(EVENT_NAMES.callReinviteSucceeded, onSucceeded);
-        }
-
-        self.eventEmitter.once(EVENT_NAMES.callReinviteSucceeded, onSucceeded);
-        self.eventEmitter.once(EVENT_NAMES.callReinviteFailed, onFailed);
-
-        val ? self.session.hold() : self.session.unhold();
-    });
-};
-
-PhoneLine.prototype.setHold = function(val) {
-    var promise;
-    var self = this;
-    this.onHold = !!val;
-    if (this.onCall) {
-        promise = self.__hold(val).then(function() {
-            val ? self.eventEmitter.emit(EVENT_NAMES.callHold, self) : self.eventEmitter.emit(EVENT_NAMES.callUnhold, self);
-        }, function(e) {
-            self.onHold = !self.onHold;
-        });
-    }
-    return Promise.resolve(promise);
-};
-
-PhoneLine.prototype.isOnHold = function() {
-    return this.onHold;
-};
-
-PhoneLine.prototype.isOnMute = function() {
-    return this.muted || this.bothMuted;
-};
-
-PhoneLine.prototype.isOnRecord = function() {
-    return this.onRecord;
-};
-
-PhoneLine.prototype.getContact = function() {
-    return this.contact;
-};
-
-PhoneLine.prototype.getCallDuration = function() {
-    if (this.timeCallStarted) {
-        return (new Date()).getTime() - this.timeCallStarted.getTime();
-    }
-    else {
-        return 0;
-    }
-};
-
-PhoneLine.prototype.isIncoming = function() {
-    return this.session.mediaHandler.peerConnection.signalingState !== "closed"
-           && !this.session.startTime;
-};
-
-PhoneLine.prototype.isClosed = function() {
-    return this.session.status === SIP.Session.C.STATUS_CANCELED || this.session.status === SIP.Session.C.STATUS_TERMINATED;
-};
-
-PhoneLine.prototype.hasEarlyMedia = function() {
-    return this.__hasEarlyMedia;
-};
-//checked all of phoneLine functions
-
-
-
-
-//monkey patching emit for assuring that $apply is called
-var __emit = EventEmitter.prototype.emit;
-EventEmitter.prototype.emit = function() {
-    var self = this, args = arguments;
-    setTimeout(function() {
-        __emit.apply(self, args);
-    });
-};
+/*--------------------------------------------------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 var ua = new UserAgent();
 var __registerDeferred, __unregisterDeferred, __callDeferred;
 var __sipRegistered = false;
 
 var service = {
+
+    version: '0.1.0',
+
     PhoneLine: PhoneLine,
     EventEmitter: EventEmitter,
     UserAgent: UserAgent,
+    AudioHelper: AudioHelper,
+
+    createAudioHelper: function(options) {
+        return new AudioHelper(this, options);
+    },
 
     activeLine: null,
 
@@ -1382,7 +133,37 @@ var service = {
     isRegistering: false,
     isUnregistering: false,
 
-    register: function(info) {
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    register: function(info, checkFlags) {
+
+        // console.log("Sip Data"+JSON.stringify(data));
+
+        if (!checkFlags || (
+            typeof(info.sipFlags) === 'object' &&
+            //checking for undefined for platform v7.3, which doesn't support this flag
+            (info.sipFlags.outboundCallsEnabled === undefined || info.sipFlags.outboundCallsEnabled === true))
+        ) {
+
+            // console.log('SIP Provision data', data+'\n');
+            info = info.sipInfo[0];
+
+        } else {
+            throw new Error('ERROR.sipOutboundNotAvailable'); //FIXME Better error reporting...
+        }
+
+        localStorage['rc-webPhone-uuid'] = localStorage['rc-webPhone-uuid'] || uuid();
+
+        var headers = [];
+        var endpointId = localStorage['rc-webPhone-uuid'];
+        if (endpointId) {
+            headers.push('P-rc-endpoint-id: ' + endpointId);
+        }
+
+        extend(info, {
+            extraHeaders: headers
+        });
+
         if (service.isRegistered) {
             console.warn('Already registered, please unregister the UA first');
             return __registerDeferred.promise;
@@ -1438,6 +219,8 @@ var service = {
         return __registerDeferred.promise;
     },
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     reregister: function(reconnect) {
         if (service.isRegistering) return __registerDeferred;
         __registerDeferred = defer();
@@ -1445,6 +228,8 @@ var service = {
         service.ua.reregister({}, !!reconnect);
         return __registerDeferred.promise;
     },
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     unregister: function() {
         if (service.isRegistering) {
@@ -1472,9 +257,13 @@ var service = {
         });
     },
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     forceDisconnect: function() {
         service.ua.forceDisconnect();
     },
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     call: function(toNumber, fromNumber, country) {
         if (!__callDeferred) {
@@ -1486,6 +275,8 @@ var service = {
         }
         return __callDeferred;
     },
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     answer: function(line) {
         var incomingLines = this.ua.getIncomingLinesArray();
@@ -1514,11 +305,15 @@ var service = {
         return Promise.resolve(null);
     },
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     onCall: function() {
         return this.ua.getActiveLinesArray().filter(function(line) {
                 return line.onCall;
             }).length > 0;
     },
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     hangup: function(line) {
         if (!line) line = this.activeLine;
@@ -1527,11 +322,17 @@ var service = {
         return Promise.resolve(null);
     },
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    //FIXME: Check if we can replace this with  SIPJS dtmf(tone,[options]) ref: http://sipjs.com/api/0.7.0/session/#dtmftone-options
     sendDTMF: function(value, line) {
         if (!line) line = this.activeLine;
         line && line.sendDTMF.call(line, value);
         return Promise.resolve(null);
     },
+
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     hold: function(line) {
         if (!line) line = this.activeLine;
@@ -1539,6 +340,8 @@ var service = {
         if (line === this.activeLine) this.activeLine = null;
         return Promise.resolve(null);
     },
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     unhold: function(line) {
         if (!line) line = this.activeLine;
@@ -1554,11 +357,17 @@ var service = {
         return Promise.resolve(null);
     },
 
+
+    ////FIXME: Use SIPJS mute() and unmute() ref:http://sipjs.com/api/0.7.0/session/#muteoptions
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     mute: function(line) {
         if (!line) line = this.activeLine;
         line && line.setMute(true);
         return Promise.resolve(null);
     },
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     unmute: function(line) {
         if (!line) line = this.activeLine;
@@ -1566,22 +375,42 @@ var service = {
         return Promise.resolve(null);
     },
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    //Phone-line->transfer->blindTransfer
     transfer: function(line, target, options) {
-        if (!line) line = this.activeLine;
+
+        if (!line)
+            line = this.activeLine;
+
         line && line.transfer(target, options);
-        if (line === this.activeLine) this.activeLine = null;
+
+        if (line === this.activeLine)
+            this.activeLine = null;
+
         return Promise.resolve(null);
     },
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     events: EVENT_NAMES,
 
     causes: SIP.C.causes,
     reasons: SIP.C.REASON_PHRASE
+
 };
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+//naming convention: incoming or sipincoming?
 
 service.on(EVENT_NAMES.sipIncomingCall, function(line) {
     service.ua.eventEmitter.emit(EVENT_NAMES.incomingCall, line);
 });
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+//naming convention: outgoing or sipoutgoing?
 
 service.on(EVENT_NAMES.outgoingCall, function(line) {
     if (this.activeLine && !this.activeLine.isOnHold()) {
@@ -1591,12 +420,22 @@ service.on(EVENT_NAMES.outgoingCall, function(line) {
     __callDeferred = null;
 });
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+//naming convention: call or line?
+
 service.on([EVENT_NAMES.callEnded, EVENT_NAMES.callFailed], function(call) {
     //delete activeLine property if the call has ended on the other side
     if (call && service.activeLine && call === service.activeLine) {
         service.activeLine = null;
     }
 });
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+/**
+ * On Call Failed due to 503 Invite Connection error reconnect the call
+ */
 
 service.on(EVENT_NAMES.callFailed, function(call, response, cause) {
     if (response) {
@@ -1612,6 +451,13 @@ service.on(EVENT_NAMES.callFailed, function(call, response, cause) {
     }
 });
 
+
+/*
+ * Setting flags for SIP Registration process
+ */
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 service.on(EVENT_NAMES.sipRegistered, function(e) {
     __sipRegistered = true;
     __registerDeferred && __registerDeferred.resolve(e);
@@ -1620,6 +466,8 @@ service.on(EVENT_NAMES.sipRegistered, function(e) {
     service.isUnregistering = false;
     service.isUnregistered = false;
 });
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 service.on([EVENT_NAMES.sipRegistrationFailed, EVENT_NAMES.sipConnectionFailed], function(e) {
     __sipRegistered = false;
@@ -1630,6 +478,8 @@ service.on([EVENT_NAMES.sipRegistrationFailed, EVENT_NAMES.sipConnectionFailed],
     service.isUnregistered = false;
 });
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 service.on(EVENT_NAMES.sipUnRegistered, function(e) {
     __sipRegistered = false;
     __unregisterDeferred && __unregisterDeferred.resolve(e);
@@ -1639,15 +489,19 @@ service.on(EVENT_NAMES.sipUnRegistered, function(e) {
     service.isUnregistering = false;
 });
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 window.addEventListener('unload', function() {
     service.hangup();
     service.unregister();
 });
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 module.exports = service;
 
 /***/ },
-/* 3 */
+/* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global) {/**
@@ -1659,7 +513,7 @@ module.exports = (function(window) {
 
   var SIP = {};
 
-  var pkg = __webpack_require__(4);
+  var pkg = __webpack_require__(3);
 
   Object.defineProperties(SIP, {
     version: {
@@ -1670,37 +524,37 @@ module.exports = (function(window) {
     }
   });
 
-  __webpack_require__(5)(SIP);
-  var Logger = __webpack_require__(6);
-  SIP.LoggerFactory = __webpack_require__(7)(window, Logger);
-  __webpack_require__(8)(SIP);
-  SIP.C = __webpack_require__(9)(SIP.name, SIP.version);
-  SIP.Exceptions = __webpack_require__(10);
-  SIP.Timers = __webpack_require__(11)(window);
-  __webpack_require__(12)(SIP, window);
+  __webpack_require__(4)(SIP);
+  var Logger = __webpack_require__(5);
+  SIP.LoggerFactory = __webpack_require__(6)(window, Logger);
+  __webpack_require__(7)(SIP);
+  SIP.C = __webpack_require__(8)(SIP.name, SIP.version);
+  SIP.Exceptions = __webpack_require__(9);
+  SIP.Timers = __webpack_require__(10)(window);
+  __webpack_require__(11)(SIP, window);
+  __webpack_require__(12)(SIP);
   __webpack_require__(13)(SIP);
   __webpack_require__(14)(SIP);
   __webpack_require__(15)(SIP);
-  __webpack_require__(16)(SIP);
-  __webpack_require__(17)(SIP, window);
-  var DialogRequestSender = __webpack_require__(18)(SIP, window);
-  __webpack_require__(19)(SIP, DialogRequestSender);
-  __webpack_require__(20)(SIP);
-  __webpack_require__(21)(SIP, window);
-  SIP.MediaHandler = __webpack_require__(22)(SIP.EventEmitter);
+  __webpack_require__(16)(SIP, window);
+  var DialogRequestSender = __webpack_require__(17)(SIP, window);
+  __webpack_require__(18)(SIP, DialogRequestSender);
+  __webpack_require__(19)(SIP);
+  __webpack_require__(20)(SIP, window);
+  SIP.MediaHandler = __webpack_require__(21)(SIP.EventEmitter);
+  __webpack_require__(22)(SIP);
   __webpack_require__(23)(SIP);
-  __webpack_require__(24)(SIP);
-  var SessionDTMF = __webpack_require__(25)(SIP);
-  __webpack_require__(26)(SIP, window, SessionDTMF);
-  __webpack_require__(27)(SIP, window);
-  var WebRTCMediaHandler = __webpack_require__(28)(SIP);
-  var WebRTCMediaStreamManager = __webpack_require__(29)(SIP);
-  SIP.WebRTC = __webpack_require__(30)(SIP.Utils, window, WebRTCMediaHandler, WebRTCMediaStreamManager);
-  __webpack_require__(31)(SIP, window);
-  SIP.Hacks = __webpack_require__(32)(SIP);
-  __webpack_require__(33)(SIP);
-  SIP.DigestAuthentication = __webpack_require__(34)(SIP.Utils);
-  SIP.Grammar = __webpack_require__(35)(SIP);
+  var SessionDTMF = __webpack_require__(24)(SIP);
+  __webpack_require__(25)(SIP, window, SessionDTMF);
+  __webpack_require__(26)(SIP, window);
+  var WebRTCMediaHandler = __webpack_require__(27)(SIP);
+  var WebRTCMediaStreamManager = __webpack_require__(28)(SIP);
+  SIP.WebRTC = __webpack_require__(29)(SIP.Utils, window, WebRTCMediaHandler, WebRTCMediaStreamManager);
+  __webpack_require__(30)(SIP, window);
+  SIP.Hacks = __webpack_require__(31)(SIP);
+  __webpack_require__(32)(SIP);
+  SIP.DigestAuthentication = __webpack_require__(33)(SIP.Utils);
+  SIP.Grammar = __webpack_require__(34)(SIP);
 
   return SIP;
 })((typeof window !== 'undefined') ? window : global);
@@ -1708,7 +562,7 @@ module.exports = (function(window) {
 /* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 4 */
+/* 3 */
 /***/ function(module, exports) {
 
 module.exports = {
@@ -1791,7 +645,7 @@ module.exports = {
 };
 
 /***/ },
-/* 5 */
+/* 4 */
 /***/ function(module, exports) {
 
 /* WEBPACK VAR INJECTION */(function(global) {/**
@@ -2280,7 +1134,7 @@ SIP.Utils = Utils;
 /* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 6 */
+/* 5 */
 /***/ function(module, exports) {
 
 
@@ -2314,7 +1168,7 @@ return Logger;
 
 
 /***/ },
-/* 7 */
+/* 6 */
 /***/ function(module, exports) {
 
 
@@ -2473,7 +1327,7 @@ return LoggerFactory;
 
 
 /***/ },
-/* 8 */
+/* 7 */
 /***/ function(module, exports) {
 
 /**
@@ -2658,7 +1512,7 @@ EventEmitter.prototype = {
     }
 
     this.logger.log('emitting event '+ event);
-      console.warn('emitting event '+ event);
+
     // Fire event listeners
     var args = Array.prototype.slice.call(arguments, 1);
     this.events[event].slice().forEach(function (listener) {
@@ -2687,7 +1541,7 @@ SIP.Event = Event;
 
 
 /***/ },
-/* 9 */
+/* 8 */
 /***/ function(module, exports) {
 
 /**
@@ -2853,7 +1707,7 @@ return {
 
 
 /***/ },
-/* 10 */
+/* 9 */
 /***/ function(module, exports) {
 
 /**
@@ -2911,7 +1765,7 @@ module.exports = {
 
 
 /***/ },
-/* 11 */
+/* 10 */
 /***/ function(module, exports) {
 
 /**
@@ -2957,7 +1811,7 @@ module.exports = function (timers) {
 
 
 /***/ },
-/* 12 */
+/* 11 */
 /***/ function(module, exports) {
 
 /**
@@ -3259,7 +2113,7 @@ SIP.Transport = Transport;
 
 
 /***/ },
-/* 13 */
+/* 12 */
 /***/ function(module, exports) {
 
 /**
@@ -3525,7 +2379,7 @@ SIP.Parser = Parser;
 
 
 /***/ },
-/* 14 */
+/* 13 */
 /***/ function(module, exports) {
 
 /**
@@ -4083,7 +2937,7 @@ SIP.IncomingResponse = IncomingResponse;
 
 
 /***/ },
-/* 15 */
+/* 14 */
 /***/ function(module, exports) {
 
 /**
@@ -4290,7 +3144,7 @@ SIP.URI = URI;
 
 
 /***/ },
-/* 16 */
+/* 15 */
 /***/ function(module, exports) {
 
 /**
@@ -4392,7 +3246,7 @@ SIP.NameAddrHeader = NameAddrHeader;
 
 
 /***/ },
-/* 17 */
+/* 16 */
 /***/ function(module, exports) {
 
 /**
@@ -5116,7 +3970,7 @@ SIP.Transactions = {
 
 
 /***/ },
-/* 18 */
+/* 17 */
 /***/ function(module, exports) {
 
 
@@ -5215,7 +4069,7 @@ return RequestSender;
 
 
 /***/ },
-/* 19 */
+/* 18 */
 /***/ function(module, exports) {
 
 /**
@@ -5475,7 +4329,7 @@ SIP.Dialog = Dialog;
 
 
 /***/ },
-/* 20 */
+/* 19 */
 /***/ function(module, exports) {
 
 
@@ -5619,7 +4473,7 @@ SIP.RequestSender = RequestSender;
 
 
 /***/ },
-/* 21 */
+/* 20 */
 /***/ function(module, exports) {
 
 module.exports = function (SIP) {
@@ -5902,7 +4756,7 @@ SIP.RegisterContext = RegisterContext;
 
 
 /***/ },
-/* 22 */
+/* 21 */
 /***/ function(module, exports) {
 
 /**
@@ -5958,7 +4812,7 @@ return MediaHandler;
 
 
 /***/ },
-/* 23 */
+/* 22 */
 /***/ function(module, exports) {
 
 module.exports = function (SIP) {
@@ -6078,7 +4932,7 @@ SIP.ClientContext = ClientContext;
 
 
 /***/ },
-/* 24 */
+/* 23 */
 /***/ function(module, exports) {
 
 module.exports = function (SIP) {
@@ -6199,7 +5053,7 @@ SIP.ServerContext = ServerContext;
 
 
 /***/ },
-/* 25 */
+/* 24 */
 /***/ function(module, exports) {
 
 /**
@@ -6388,7 +5242,7 @@ return DTMF;
 
 
 /***/ },
-/* 26 */
+/* 25 */
 /***/ function(module, exports) {
 
 module.exports = function (SIP, window, DTMF) {
@@ -8554,7 +7408,7 @@ SIP.InviteClientContext = InviteClientContext;
 
 
 /***/ },
-/* 27 */
+/* 26 */
 /***/ function(module, exports) {
 
 
@@ -8848,7 +7702,7 @@ SIP.Subscription.prototype = {
 
 
 /***/ },
-/* 28 */
+/* 27 */
 /***/ function(module, exports) {
 
 /**
@@ -9360,7 +8214,7 @@ return MediaHandler;
 
 
 /***/ },
-/* 29 */
+/* 28 */
 /***/ function(module, exports) {
 
 /**
@@ -9509,7 +8363,7 @@ return MediaStreamManager;
 
 
 /***/ },
-/* 30 */
+/* 29 */
 /***/ function(module, exports) {
 
 /**
@@ -9551,7 +8405,7 @@ return WebRTC;
 
 
 /***/ },
-/* 31 */
+/* 30 */
 /***/ function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global) {/**
@@ -10447,7 +9301,7 @@ UA.prototype.loadConfig = function(configuration) {
       turnServers: [],
 
       // Logging parameters
-      traceSip: true,
+      traceSip: false,
 
       // Hacks
       hackViaTcp: false,
@@ -11043,7 +9897,7 @@ SIP.UA = UA;
 /* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 32 */
+/* 31 */
 /***/ function(module, exports) {
 
 /**
@@ -11172,7 +10026,7 @@ return Hacks;
 
 
 /***/ },
-/* 33 */
+/* 32 */
 /***/ function(module, exports) {
 
 /**
@@ -11405,7 +10259,7 @@ SIP.sanityCheck = sanityCheck;
 
 
 /***/ },
-/* 34 */
+/* 33 */
 /***/ function(module, exports) {
 
 
@@ -11579,7 +10433,7 @@ return DigestAuthentication;
 
 
 /***/ },
-/* 35 */
+/* 34 */
 /***/ function(module, exports) {
 
 /* jshint ignore:start */
@@ -12875,12 +11729,14 @@ module.exports = function(SIP) {
 
 
 /***/ },
-/* 36 */
+/* 35 */
 /***/ function(module, exports) {
 
 var EventEmitter = function() {
     this.handlers = {};
 };
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 EventEmitter.prototype.emit = function(name /*, args */) {
     var self = this, args = Array.prototype.slice.call(arguments, 1);
@@ -12897,6 +11753,8 @@ EventEmitter.prototype.emit = function(name /*, args */) {
     }
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 EventEmitter.prototype.on = function(name, listener) {
     if (!Array.isArray(name)) name = [name];
     for (var i = 0; i < name.length; i++) {
@@ -12906,6 +11764,8 @@ EventEmitter.prototype.on = function(name, listener) {
     }
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 EventEmitter.prototype.off = function(name, listener) {
     this.handlers[name] = this.handlers[name] || [];
     var index = this.handlers[name].indexOf(listener);
@@ -12914,6 +11774,7 @@ EventEmitter.prototype.off = function(name, listener) {
     }
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
 EventEmitter.prototype.once = function(name, listener) {
     var self = this;
 
@@ -12925,31 +11786,1268 @@ EventEmitter.prototype.once = function(name, listener) {
     self.on(name, listenOnce);
 };
 
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+//FIXME Remove Angular-specific
+//monkey patching emit for assuring that $apply is called
+var __emit = EventEmitter.prototype.emit;
+EventEmitter.prototype.emit = function() {
+    var self = this, args = arguments;
+    setTimeout(function() {
+        __emit.apply(self, args);
+    });
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 module.exports = EventEmitter;
+
+/***/ },
+/* 36 */
+/***/ function(module, exports, __webpack_require__) {
+
+//Fixme We need to split this file into 3-4 modules -- User Agent, Phone-Line, Event-Emitter, Service
+
+var SIP = __webpack_require__(2);
+var EventEmitter = __webpack_require__(35);
+var PhoneLine = __webpack_require__(37);
+var utils = __webpack_require__(38);
+
+var extend = utils.extend;
+var uuid = utils.uuid;
+
+var EVENT_NAMES = __webpack_require__(39);
+var dom = __webpack_require__(40);
+var LOCAL_AUDIO = dom.LOCAL_AUDIO;
+var REMOTE_AUDIO = dom.REMOTE_AUDIO;
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+var UserAgent = function(options) {
+    this.eventEmitter = new EventEmitter();
+    this.sipConfig = options ? (options.sipConfig || {}) : ({});
+    this.lines = {};
+    this.userAgent = undefined;
+    this.getUserMedia = undefined;
+    this.RTCPeerConnection = undefined;
+    this.RTCSessionDescription = undefined;
+    checkConfig.apply(this);
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+UserAgent.prototype.setSIPConfig = function(config) {
+    var wsServers = config.wsServers,
+        useSecureConnection = (document.location.protocol == 'https:');
+
+    for (var i = 0; i < wsServers.length; i++) {
+        if (
+            (useSecureConnection && /^wss:/.test(wsServers[i]))
+            ||
+            (!useSecureConnection && /^ws:/.test(wsServers[i]))
+        ) {
+            config.wsServers = [wsServers[i]];
+            break;
+        }
+    }
+
+    this.sipConfig = config;
+    checkConfig.apply(this);
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+UserAgent.prototype.__createLine = function(session, type) {
+    var self = this;
+    session.data.id = uuid();
+    self.eventEmitter.emit(EVENT_NAMES.sipRTCSession, session);
+    var line = new PhoneLine({
+        session: session,
+        userAgent: self,
+        instanceId: self.sipConfig.authorizationUser,
+        eventEmitter: self.eventEmitter,
+        type: type
+    });
+    self.__clearInactiveLines();
+    self.lines[session.data.id] = line;
+    window.line = line;
+    return line;
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+UserAgent.prototype.getActiveLines = function() {
+    this.__clearInactiveLines();
+    return this.lines;
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+UserAgent.prototype.getActiveLinesArray = function() {
+    var lines = this.getActiveLines();
+    var arr = [];
+    for (var id in lines) {
+        if (lines.hasOwnProperty(id)) {
+            arr.push(lines[id]);
+        }
+    }
+    return arr;
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+UserAgent.prototype.getIncomingLinesArray = function() {
+    return this.getActiveLinesArray().filter(function(el) {
+        return el.isIncoming();
+    });
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+UserAgent.prototype.__clearInactiveLines = function() {
+    for (var id in this.lines) {
+        if (this.lines.hasOwnProperty(id)) {
+            if (this.lines[id].isClosed()) {
+                delete this.lines[id];
+            }
+        }
+    }
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+var __disconnectCount = 0;
+
+
+UserAgent.prototype.start = function(options) {
+    var self = this;
+
+    function initUA() {
+        self.stop();
+        if (self.userAgent instanceof SIP.UA) {
+            self.userAgent.loadConfig(self.sipConfig);
+            self.userAgent.traceSip=true;
+        }
+        else {
+            self.userAgent = new SIP.UA(self.sipConfig);
+            self.__registerExtraOptions = options || {};
+            self.userAgent.on('connected', function(e) {
+                __disconnectCount = 0;
+                self.eventEmitter.emit(EVENT_NAMES.sipConnected, e);
+                self.userAgent.register({
+                    extraHeaders: options.extraHeaders || []
+                });
+            });
+            self.userAgent.on('disconnected', function(e) {
+                if (++__disconnectCount >= (self.sipConfig.retryCount || 3)) {
+                    __disconnectCount = 0;
+                    self.stop();
+                    self.eventEmitter.emit(EVENT_NAMES.sipConnectionFailed, new Error("Unable to connect to the WS server: exceeded number of attempts"));
+                }
+                self.eventEmitter.emit(EVENT_NAMES.sipDisconnected, e);
+            });
+            self.userAgent.on('registered', function(e) {
+                self.eventEmitter.emit(EVENT_NAMES.sipRegistered, e);
+            });
+            self.userAgent.on('unregistered', function(e) {
+                self.eventEmitter.emit(EVENT_NAMES.sipUnRegistered, e);
+            });
+            self.userAgent.on('registrationFailed', function(e) {
+                self.eventEmitter.emit(EVENT_NAMES.sipRegistrationFailed, e);
+            });
+            //happens when call is incoming
+            self.userAgent.on('invite', function(session) {
+                var newLine;
+
+                if (session && session.request && session.request.hasHeader('replaces')) {
+                    var replaces = session.request.getHeader('replaces').split(';'),
+                        callId = replaces[0],
+                        lines = self.getActiveLinesArray(),
+                        foundLine = null;
+                    for (var i = 0; i < lines.length; i++) {
+                        if (lines[i].session.request.call_id) {
+                            if (callId === lines[i].session.request.call_id) {
+                                foundLine = lines[i];
+                                break;
+                            }
+                        }
+                    }
+
+                    if (foundLine) {
+                        var originalSessionId = foundLine.getId();
+                        newLine = self.__createLine(session, PhoneLine.types.incoming);
+                        newLine.answer().then(function() {
+                            self.eventEmitter.emit(EVENT_NAMES.callReplaced, newLine, foundLine);
+                            foundLine.cancel();
+                        });
+                    }
+                }
+                else {
+                    newLine = self.__createLine(session, PhoneLine.types.incoming);
+                    self.eventEmitter.emit(EVENT_NAMES.sipIncomingCall, newLine);
+                }
+            });
+        }
+        //noop on transport connected (this will cause unwanted REGISTER)
+        self.userAgent.registerContext.onTransportConnected = function() {};
+        self.userAgent.start();
+    }
+
+    initUA();
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+UserAgent.prototype.reregister = function(options, reconnect) {
+    var self = this, reconnect = !!reconnect;
+    options = extend(self.__registerExtraOptions, options);
+    if (!self.userAgent) {
+        self.start(options);
+    }
+    if (!reconnect) {
+        self.userAgent.register(options);
+    }
+    else {
+        if (!self.isConnected()) {
+            self.stop();
+            self.start(options);
+        }
+        else {
+            //This will be treated as abrupt disconnection and SIP.js will try to reconnect the WS
+            self.userAgent.transport.ws.close();
+        }
+    }
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+UserAgent.prototype.stop = function() {
+    if (this.userAgent instanceof SIP.UA) {
+        this.userAgent.stop();
+        this.userAgent = null;
+    }
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+UserAgent.prototype.call = function(number, inviteOptions) {
+    var self = this;
+    var options = {
+        media: {
+            constraints: {audio: true, video: false},
+            render: {
+                local: {
+                    audio: LOCAL_AUDIO
+                },
+                remote: {
+                    audio: REMOTE_AUDIO
+                }
+            }
+        },
+        RTCConstraints: {
+            "optional": [
+                {'DtlsSrtpKeyAgreement': 'true'}
+            ]
+        }
+    };
+    var fromNumber = inviteOptions.fromNumber;
+    var country = inviteOptions.country;
+
+    var headers = [];
+    if (fromNumber) {
+        headers.push('P-Asserted-Identity: sip:' + fromNumber + '@' + this.sipConfig.domain);
+    }
+    if (country) {
+        headers.push('P-rc-country-id: ' + country);
+    }
+    extend(options, {
+        extraHeaders: headers
+    });
+    var session = this.userAgent.invite('' + number, options);
+    var line = self.__createLine(session, PhoneLine.types.outgoing);
+    this.eventEmitter.emit(EVENT_NAMES.outgoingCall, line);
+    return line;
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+UserAgent.prototype.answer = function(line) {
+    return line && line.answer();
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+
+UserAgent.prototype.hangup = function(line) {
+    if (line) {
+        line.cancel();
+        delete this.lines[line.getId()];
+    }
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+UserAgent.prototype.on = function(eventName, cb) {
+    this.eventEmitter.on(eventName, cb);
+    return this;
+};
+
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+function checkConfig() {
+    // set mootools expands to non-enumerables under ES5
+    if (typeof this.sipConfig.wsServers === 'string') {
+        this.sipConfig.wsServers = [
+            {ws_uri: this.sipConfig.wsServers}
+        ];
+    }
+    var key, enums = {enumerable: false};
+    for (key in this.sipConfig.wsServers) this.sipConfig.wsServers.hasOwnProperty(key) || Object.defineProperty(Array.prototype, key, enums);
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+UserAgent.prototype.isConnected = function() {
+    return !!(this.userAgent && this.userAgent.transport && this.userAgent.transport.connected);
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+UserAgent.prototype.isConnecting = function() {
+    //websocket.readyState === CONNECTING (0)
+    return !this.isConnected() && !!(this.userAgent && this.userAgent.transport && this.userAgent.transport.ws && this.userAgent.transport.ws.readyState === 0);
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+UserAgent.prototype.forceDisconnect = function() {
+    console.warn(this.isConnecting(), this.isConnected())
+    if (this.isConnecting() || this.isConnected()) {
+        this.userAgent.transport.disconnect();
+        this.userAgent.stop();
+        this.userAgent = null;
+    }
+};
+
+module.exports = UserAgent;
 
 /***/ },
 /* 37 */
 /***/ function(module, exports, __webpack_require__) {
 
-var BLOCKED_NUMBERS_US_CA = ['211', '311', '411', '511', '611', '711', '811', '911', '933', '\\+?1?6505551212', '\\+?1?3033812041'];
+var SIP = __webpack_require__(2);
+var utils = __webpack_require__(38);
+var EVENT_NAMES = __webpack_require__(39);
+var dom = __webpack_require__(40);
+var LOCAL_AUDIO = dom.LOCAL_AUDIO;
+var REMOTE_AUDIO = dom.REMOTE_AUDIO;
 
-var BLOCKED_NUMBERS_UK = ['101', '118***', '100', '111', '999', '112', '18002', '18000', '123', '116111', '116123', '155', '116***', '(\\+?440?|0)9*********', '(\\+?440?|0)?8001111', '(\\+?440?|0)?8454647'];
+var delay = utils.delay;
+var extend = utils.extend;
 
-var settings = __webpack_require__(38);
+var index = 0;
 
-var BLOCKED_NUMBERS_US_CA_REGEX = [];
-BLOCKED_NUMBERS_US_CA.forEach(function(el) {
-    BLOCKED_NUMBERS_US_CA_REGEX.push(new RegExp('^' + el.replace(/\*/g, '\\d') + '$'));
-});
+var PhoneLine = function(options) {
+    var self = this;
 
-var BLOCKED_NUMBERS_UK_REGEX = [];
-BLOCKED_NUMBERS_UK.forEach(function(el) {
-    BLOCKED_NUMBERS_UK_REGEX.push(new RegExp('^' + el.replace(/\*/g, '\\d') + '$'));
-});
+    this.index = index++;
+
+    this.session = options.session;
+    this.userAgent = options.userAgent;
+    this.eventEmitter = options.eventEmitter;
+    this.instanceId = options.instanceId;
+    this.sessionId = this.session && this.session.id;
+
+    this.onCall = false;
+    this.onRecord = false;
+    this.contact = {};
+    this.muted = false;
+    this.bothMuted = false;
+    this.onHold = false;
+    this.timeCallStarted = null;
+
+    this.accepted = false;
+    this.type = options.type;
+
+    this.responseTimeout = 10000;
+
+    this.controlSender = {
+        messages: {
+            park: {reqid: 1, command: 'callpark'},
+            startRecord: {reqid: 2, command: 'startcallrecord'},
+            stopRecord: {reqid: 3, command: 'stopcallrecord'},
+            flip: {reqid: 3, command: 'callflip', target: ''},
+            monitor: {reqid: 4, command: 'monitor'},
+            barge: {reqid: 5, command: 'barge'},
+            whisper: {reqid: 6, command: 'whisper'},
+            takeover: {reqid: 7, command: 'takeover'}
+        },
+        send: function(command, options) {
+
+            options = options || {};
+            extend(command, options);
+
+            var cseq = null;
+
+            return new Promise(function(resolve, reject){
+
+                self.session.sendRequest(SIP.C.INFO, {
+                    body: JSON.stringify({
+                        request: command
+                    }),
+                    extraHeaders: [
+                        "Content-Type: application/json;charset=utf-8"
+                    ],
+                    receiveResponse: function(response) {
+                        var timeout = null;
+                        if (response.status_code === 200) {
+                            cseq = response.cseq;
+                            function onInfo(request) {
+                                if (response.cseq === cseq) {
+                                    var body = request && request.body || '{}';
+                                    var obj;
+
+                                    try {
+                                        obj = JSON.parse(body);
+                                    }
+                                    catch (e) {
+                                        obj = {};
+                                    }
+
+                                    if (obj.response && obj.response.command === command.command) {
+                                        if (obj.response.result) {
+                                            if (obj.response.result.code == 0) {
+                                                resolve(obj.response.result);
+                                            }
+                                            else {
+                                                reject(obj.response.result);
+                                            }
+                                        }
+                                    }
+                                    timeout && clearTimeout(timeout);
+                                    self.eventEmitter.off('SIP_INFO', onInfo);
+                                    resolve(); //FIXME What to resolve
+                                }
+                            }
+
+                            timeout = setTimeout(function() {
+                                reject(new Error('Timeout: no reply'));
+                                self.eventEmitter.off('SIP_INFO', onInfo);
+                            }, self.responseTimeout);
+                            self.eventEmitter.on('SIP_INFO', onInfo);
+                        }
+                        else {
+                            reject(new Error('The INFO response status code is: ' + response.status_code + ' (waiting for 200)'));
+                        }
+                    }
+                });
+
+            });
+        }
+    };
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    var __receiveRequest = this.session.receiveRequest;
+    this.session.receiveRequest = function(request) {
+        switch (request.method) {
+            case SIP.C.INFO:
+                self.eventEmitter.emit('SIP_INFO', request);
+                //SIP.js does not support application/json content type, so we monkey override its behaviour in this case
+                if (this.status === SIP.Session.C.STATUS_CONFIRMED || this.status === SIP.Session.C.STATUS_WAITING_FOR_ACK) {
+                    var contentType = request.getHeader('content-type');
+                    if (contentType.match(/^application\/json/i)) {
+                        request.reply(200);
+                        return this;
+                    }
+                }
+                break;
+            //Refresh invite should not be rejected with 488
+            case SIP.C.INVITE:
+                var session = this;
+                if (session.status === SIP.Session.C.STATUS_CONFIRMED) {
+                    if (request.call_id && session.dialog && session.dialog.id && request.call_id == session.dialog.id.call_id) {
+                        //TODO: check that SDP did not change
+                        session.logger.log('re-INVITE received');
+                        var localSDP = session.mediaHandler.peerConnection.localDescription.sdp;
+                        request.reply(200, null, ['Contact: ' + self.contact], localSDP, function() {
+                            session.status = SIP.Session.C.STATUS_WAITING_FOR_ACK;
+                            session.setInvite2xxTimer(request, localSDP);
+                            session.setACKTimer();
+                        });
+                        return session;
+                    }
+                    //else will be rejected with 488 by SIP.js
+                }
+                break;
+            //We need to analize NOTIFY messages sometimes, so we fire an event
+            case SIP.C.NOTIFY:
+                self.eventEmitter.emit('SIP_NOTIFY', request);
+                break;
+        }
+        return __receiveRequest.apply(self.session, arguments);
+    };
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    //Fired when ICE is starting to negotiate between the peers.
+    this.session.on('connecting', function(e) {
+        self.eventEmitter.emit(EVENT_NAMES.callConnecting, self, e);
+        setTimeout(function() {
+            if (self.session.mediaHandler.onIceCompleted !== undefined) {
+                self.session.mediaHandler.onIceCompleted(self.session);
+            }
+            else {
+                self.session.mediaHandler.callOnIceCompleted = true;
+            }
+        }, self.userAgent.sipConfig['iceGatheringTimeout'] || 3000);
+    });
+
+    this.__hasEarlyMedia = false;
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+
+    //Monkey patching for handling early media and to delay ACKs
+    var __receiveInviteReponse = this.session.receiveInviteResponse,
+        __waitingForIce = false;
+    this.session.receiveResponse = this.session.receiveInviteResponse = function(response) {
+        var sessionSelf = this, args = arguments;
+        switch (true) {
+            case (/^1[0-9]{2}$/.test(response.status_code)):
+                //Let's not allow the library to send PRACK
+                if (self.hasEarlyMedia()) {
+                    this.emit('progress', response);
+                    return;
+                }
+                break;
+            case /^(2[0-9]{2})|(4\d{2})$/.test(response.status_code):
+                if (!self.hasEarlyMedia()) break;
+
+                //Let's check the ICE connection state
+                if (self.session.mediaHandler.peerConnection.iceConnectionState === 'completed' && !__waitingForIce) {
+                    __waitingForIce = false;
+                    //if ICE is connected, then let the library to handle the ACK
+                    break;
+                }
+                else {
+                    //If ICE is not connected, then we should send ACK after it has been connected
+                    if (!__waitingForIce) {
+                        self.eventEmitter.once(EVENT_NAMES.ICECompleted, function() {
+                            //let the library handle the ACK after ICE connection is completed
+                            __waitingForIce = false;
+                            __receiveInviteReponse.apply(sessionSelf, args);
+                        });
+
+                        self.eventEmitter.once(EVENT_NAMES.ICEFailed, function() {
+                            //handle the ICE Failed situation
+                            __waitingForIce = false;
+                            self.session.acceptAndTerminate(response, null, 'ICE Connection Failed');
+                        });
+
+                        __waitingForIce = true;
+                    }
+                    return;
+                }
+                break;
+        }
+        return __receiveInviteReponse.apply(sessionSelf, args);
+    };
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    //Fired each time a provisional (100-199) response is received.
+    this.session.on('progress', function(e) {
+        self.onCall = true;
+
+        //Early media is supported by SIP.js library
+        //But in case it is sent without 100rel support we play it manually
+        //STATUS_EARLY_MEDIA === 11, it will be set by SIP.js if 100rel is supported
+        if (self.session.status !== SIP.Session.C.STATUS_EARLY_MEDIA && e.status_code === 183 && typeof(e.body) === 'string' && e.body.indexOf('\n') !== -1) {
+            var session = self.session,
+                response = e;
+
+            if (session.hasOffer) {
+                if (!session.createDialog(response, 'UAC')) {
+                    return;
+                }
+                session.hasAnswer = true;
+                session.mediaHandler.setDescription(
+                    response.body,
+                    function() {
+                        session.dialog.pracked.push(response.getHeader('rseq'));
+                        session.status = SIP.Session.C.STATUS_EARLY_MEDIA;
+                        session.mute();
+                        self.__hasEarlyMedia = true;
+                        self.eventEmitter.emit(EVENT_NAMES.callProgress, self, e);
+                    },
+                    function(e) {
+                        session.logger.warn(e);
+                        session.acceptAndTerminate(response, 488, 'Not Acceptable Here');
+                        session.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+                    }
+                );
+            }
+        }
+    });
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    //Fired each time a successful final (200-299) response is received.
+    this.session.on('accepted', function(e) {
+        if (self.accepted === true) return;
+        self.onCall = true;
+        self.accepted = true;
+        self.timeCallStarted = new Date();
+        self.eventEmitter.emit(EVENT_NAMES.callStarted, self, e);
+    });
+
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    function onEnd() {
+        self.onCall = false;
+        self.timeCallStarted = null;
+        self.accepted = true;
+    }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+    //Fired each time an unsuccessful final (300-699) response is
+    //this will emit failed event
+    this.session.on('rejected', function(e) {
+        onEnd();
+        self.eventEmitter.emit(EVENT_NAMES.callRejected, self, e);
+        //terminated is not called by SIP.js when the call is rejected
+        //self.eventEmitter.emit(EVENT_NAMES.callTerminated, self, e);
+    });
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    //Fired when the session was canceled by the client
+    this.session.on('cancel', function(e) {
+        onEnd();
+        self.eventEmitter.emit(EVENT_NAMES.callEnded, self, e);
+    });
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    //Fired when a BYE is sent
+    this.session.on('bye', function(e) {
+        onEnd();
+        self.eventEmitter.emit(EVENT_NAMES.callEnded, self, e);
+    });
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    //Fired when the request fails, whether due to an unsuccessful final response or due to timeout, transport, or other error
+    this.session.on('failed', function(response, cause) {
+        this.terminated(null, cause);
+        onEnd();
+        self.eventEmitter.emit(EVENT_NAMES.callFailed, self, response, cause);
+        //SIP.js 0.6.x does not call terminated event sometimes, so we call it ourselves
+        if (cause === service.causes.REQUEST_TIMEOUT) {
+            //this === session
+            if (this.status !== SIP.Session.C.STATUS_CONFIRMED) {
+                this.terminated(null, SIP.C.causes.REQUEST_TIMEOUT);
+            }
+        }
+    });
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    this.session.on('terminated', function(response, cause) {
+        onEnd();
+        self.eventEmitter.emit(EVENT_NAMES.callTerminated, self, response, cause);
+    });
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    function terminateCallOnDisconnected(reason) {
+        self.session.terminated(null, reason || SIP.C.causes.CONNECTION_ERROR);
+        onEnd();
+        self.eventEmitter.emit(EVENT_NAMES.callFailed, self, null, 'Connection error');
+    }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+//FIXME: Explore if it can be replaced with ref: http://sipjs.com/api/0.7.0/mediaHandler/
+
+    //Monkey patching oniceconnectionstatechange because SIP.js 0.6.x does not have this event
+    var onStateChange = this.session.mediaHandler.peerConnection.oniceconnectionstatechange || function(){},
+        __doubleCompleted = false;
+    this.session.mediaHandler.peerConnection.oniceconnectionstatechange = function() {
+        //this === peerConnection
+        var state = this.iceConnectionState;
+        onStateChange.apply(this, arguments);
+
+        switch (state) {
+            case 'connected':
+                self.eventEmitter.emit(EVENT_NAMES.ICEConnected, self);
+                break;
+            case 'completed':
+                //this may be called twice, see: https://code.google.com/p/chromium/issues/detail?id=371804
+                if (!__doubleCompleted) {
+                    self.eventEmitter.emit(EVENT_NAMES.ICECompleted, self);
+                    __doubleCompleted = true;
+                }
+                break;
+            case 'disconnected':
+                terminateCallOnDisconnected();
+                self.eventEmitter.emit(EVENT_NAMES.ICEDisconnected, self);
+                break;
+            case 'failed':
+                self.eventEmitter.emit(EVENT_NAMES.ICEFailed, self);
+                break;
+        }
+    };
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    var __ignoreReinviteDuplicates = false;
+
+    //Monkey patching sendReinvite for better Hold handling
+    var __sendReinvite = this.session.sendReinvite;
+    this.session.sendReinvite = function() {
+        __ignoreReinviteDuplicates = false;
+        var res = __sendReinvite.apply(this, arguments);
+        var __reinviteSucceeded = this.reinviteSucceeded,
+            __reinviteFailed = this.reinviteFailed;
+        this.reinviteSucceeded = function() {
+            self.eventEmitter.emit(EVENT_NAMES.callReinviteSucceeded, self);
+            return __reinviteSucceeded.apply(this, []);
+        };
+        this.reinviteFailed = function() {
+            self.eventEmitter.emit(EVENT_NAMES.callReinviteFailed, self);
+            return __reinviteFailed.apply(this, []);
+        };
+        return res;
+    };
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    //Monkey patching receiveReinviteResponse to ignore duplicates which may break Hold/Unhold
+    var __receiveReinviteResponse = this.session.receiveReinviteResponse;
+    this.session.receiveReinviteResponse = function(response) {
+        switch (true) {
+            case /^2[0-9]{2}$/.test(response.status_code):
+                if (__ignoreReinviteDuplicates) {
+                    this.sendRequest(SIP.C.ACK, {cseq: response.cseq});
+                    return;
+                }
+                __ignoreReinviteDuplicates = true;
+                break;
+        }
+        return __receiveReinviteResponse.apply(this, arguments);
+    };
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    //defining if the session is incoming or outgoing
+    if (this.type === PhoneLine.types.incoming) {
+        this.contact.name = this.session.request.from.uri.displayName;
+        this.contact.number = this.session.request.from.uri.user;
+
+    } else {
+        if (this.type === PhoneLine.types.outgoing) {
+            this.contact.name = this.session.request.to.uri.displayName;
+            this.contact.number = this.session.request.to.uri.user;
+        }
+    }
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+PhoneLine.types = {
+    incoming: 'incoming',
+    outgoing: 'outgoing'
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+PhoneLine.prototype.getId = function() {
+    return this.session.data.id;
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+PhoneLine.prototype.getSession = function() {
+    return this.session;
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+PhoneLine.prototype.cancel = function() {
+    var session = this.getSession();
+    session.terminate({statusCode: 486});
+    return Promise.resolve(null);
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+PhoneLine.prototype.record = function(val) {
+    var self = this;
+    if (self.onCall) {
+        var message = !!val
+            ? self.controlSender.messages.startRecord
+            : self.controlSender.messages.stopRecord;
+
+        if ((self.onRecord && !val) || (!self.onRecord && val)) {
+            return this.controlSender.send(message)
+                .then(function(data) {
+                    self.onRecord = !!val;
+                    return data;
+                });
+        }
+    }
+    else {
+        return Promise.reject(new Error('Not on call'));
+    }
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+PhoneLine.prototype.flip = function(target) {
+    if (!target) return;
+    if (this.onCall) {
+        return this.controlSender.send(this.controlSender.messages.flip, {
+            target: target
+        });
+    }
+    else {
+        return Promise.reject(new Error('Not on call'));
+    }
+};
+
+PhoneLine.prototype.park = function() {
+    if (this.onCall) {
+        return this.controlSender.send(this.controlSender.messages.park);
+    }
+    else {
+        return Promise.reject(new Error('Not on call'));
+    }
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+// Explore ref: http://sipjs.com/api/0.6.0/session/#dtmftone-options
+
+PhoneLine.prototype.sendDTMF = function(value, duration) {
+    duration = parseInt(duration) || 1000;
+    var peer = this.session.mediaHandler.peerConnection;
+    var stream = this.session.getLocalStreams()[0];
+    var dtmfSender = peer.createDTMFSender(stream.getAudioTracks()[0]);
+    if (dtmfSender !== undefined && dtmfSender.canInsertDTMF) {
+        dtmfSender.insertDTMF(value, duration);
+    }
+    return Promise.resolve(null);
+};
+
+PhoneLine.prototype.sendInfoDTMF = function(value, duration) {
+    duration = parseInt(duration) || 1000;
+    var session = this.session;
+    session.dtmf(value.toString(), {
+        duration: duration
+    });
+    return Promise.resolve(null);
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+PhoneLine.prototype.blindTransfer = function(target, options) {
+
+    var session = this.session;
+    var self = this;
+    var extraHeaders = [];
+    var originalTarget = target;
+    options = options || {};
+
+    return new Promise(function(resolve, reject){
+        //Blind Transfer is taken from SIP.js source
+
+        // Check Session Status
+        if (session.status !== SIP.Session.C.STATUS_CONFIRMED) {
+            throw new SIP.Exceptions.InvalidStateError(session.status);
+        }
+
+        // normalizeTarget allows instances of SIP.URI to pass through unaltered,
+        // so try to make one ahead of time
+        try {
+            target = SIP.Grammar.parse(target, 'Refer_To').uri || target;
+        } catch (e) {
+            session.logger.debug(".refer() cannot parse Refer_To from", target);
+            session.logger.debug("...falling through to normalizeTarget()");
+        }
+
+        // Check target validity
+        target = session.ua.normalizeTarget(target);
+        if (!target) {
+            throw new TypeError('Invalid target: ' + originalTarget);
+        }
+
+        extraHeaders.push('Contact: ' + session.contact);
+        extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(session.ua));
+        extraHeaders.push('Refer-To: ' + target);
+
+        // Send the request
+        session.sendRequest(SIP.C.REFER, {
+            extraHeaders: extraHeaders,
+            body: options.body,
+            receiveResponse: function(response) {
+                var timeout = null;
+                if (response.status_code === 202) {
+                    var callId = response.call_id;
+
+                    function onNotify(request) {
+                        if (request.call_id === callId) {
+                            var body = request && request.body || '';
+                            switch (true) {
+                                case /1[0-9]{2}/.test(body):
+                                    request.reply(200);
+                                    break;
+                                case /2[0-9]{2}/.test(body):
+                                    self.session.terminate();
+                                    clearTimeout(timeout);
+                                    self.eventEmitter.off('SIP_NOTIFY', onNotify);
+                                    resolve();
+                                    break;
+                                default:
+                                    reject(body);
+                                    break;
+                            }
+                        }
+                    }
+
+                    timeout = setTimeout(function() {
+                        reject(new Error('Timeout: no reply'));
+                        self.eventEmitter.off('SIP_NOTIFY', onNotify);
+                    }, self.responseTimeout);
+                    self.eventEmitter.on('SIP_NOTIFY', onNotify);
+                }
+                else {
+                    reject(new Error('The response status code is: ' + response.status_code + ' (waiting for 202)'));
+                }
+            }
+        });
+
+    });
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+PhoneLine.prototype.transfer = function(target, options) {
+    var self = this;
+    return (self.onHold ? Promise.resolve(null) : self.setHold(true)).then(function(){ return delay(300); }).then(function() {
+        return self.blindTransfer(target, options);
+    });
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+PhoneLine.prototype.forward = function(target, options) {
+    var self = this, interval = null;
+    return self.answer().then(function() {
+        return new Promise(function(resolve, reject){
+            interval = setInterval(function() {
+                if (self.session.status === 12) {
+                    clearInterval(interval);
+                    self.setMute(true);
+                    setTimeout(function() {
+                        self.transfer(target, options);
+                        resolve();
+                    }, 700);
+                }
+            }, 50);
+        });
+    });
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+//ref: http://sipjs.com/api/0.6.0/session/#acceptoptions
+//make var option = {}
+
+PhoneLine.prototype.answer = function() {
+    var self = this;
+
+    return new Promise(function(resolve, reject){
+
+        function onAnswered() {
+            resolve();
+            self.eventEmitter.off(EVENT_NAMES.callStarted, onAnswered);
+            self.eventEmitter.off(EVENT_NAMES.callFailed, onFail);
+        }
+
+        function onFail(e) {
+            reject(e);
+            self.eventEmitter.off(EVENT_NAMES.callStarted, onAnswered);
+            self.eventEmitter.off(EVENT_NAMES.callFailed, onFail);
+        }
+
+        self.eventEmitter.on(EVENT_NAMES.callStarted, onAnswered);
+        self.eventEmitter.on(EVENT_NAMES.callFailed, onFail);
+
+        console.warn('emitting callProgress');
+        self.eventEmitter.emit(EVENT_NAMES.callProgress, self);
+
+        self.session.accept({
+            media: {
+                constraints: {audio: true, video: false},
+                render: {
+                    local: {
+                        audio: LOCAL_AUDIO
+                    },
+                    remote: {
+                        audio: REMOTE_AUDIO
+                    }
+                }
+            }
+        });
+
+    });
+
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+//FIXME: Use SIPJS mute() and unmute() ref: http://sipjs.com/api/0.7.0/session/#muteoptions
+
+PhoneLine.prototype.setMute = function(val) {
+    this.muted = !!val;
+    try {
+        setStreamMute(this.session.getLocalStreams()[0], this.muted);
+        val ? this.eventEmitter.emit(EVENT_NAMES.callMute, this) : this.eventEmitter.emit(EVENT_NAMES.callUnmute, this);
+    } catch (e) {
+        console.error(e);
+    }
+    return Promise.resolve(null);
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+//FIXME: Use SIPJS mute() and unmute() ref: http://sipjs.com/api/0.7.0/session/#muteoptions
+
+function setStreamMute(stream, val) {
+    var tracks = stream.getAudioTracks();
+    for (var i = 0; i < tracks.length; i++) {
+        tracks[i].enabled = !val;
+    }
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+////FIXME: Use SIPJS mute() and unmute() ref: http://sipjs.com/api/0.7.0/session/#muteoptions
+
+PhoneLine.prototype.setMuteBoth = function(val) {
+    this.bothMuted = !!val;
+    try {
+        setStreamMute(this.session.getLocalStreams()[0], this.bothMuted);
+        setStreamMute(this.session.getRemoteStreams()[0], this.bothMuted);
+        val ? this.eventEmitter.emit(EVENT_NAMES.callMute, this) : this.eventEmitter.emit(EVENT_NAMES.callUnmute, this);
+    }
+    catch (e) {
+        console.error(e);
+    }
+    return Promise.resolve(null);
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+//FIXME: Explore send() ref: http://sipjs.com/api/0.7.0/transport/#sendmsg
+
+/* This is a direct and very tightly coupled code. Please, try to avoid using this method if possible */
+PhoneLine.prototype.sendRequest = function(method, body, options) {
+    var self = this;
+    options = options || {};
+
+    if (!this.session.dialog) return;
+
+    var request = new SIP.OutgoingRequest(
+        method,
+        self.session.dialog.remote_target,
+        self.session.ua,
+        {
+            cseq: options.cseq || (self.session.dialog.local_seqnum += 1),
+            call_id: self.session.dialog.id.call_id,
+            from_uri: self.session.dialog.local_uri,
+            from_tag: self.session.dialog.id.local_tag,
+            to_uri: self.session.dialog.remote_uri,
+            to_tag: self.session.dialog.id.remote_tag,
+            route_set: self.session.dialog.route_set,
+            statusCode: options.statusCode,
+            reasonPhrase: options.reasonPhrase
+        },
+        options.extraHeaders || [],
+        body || undefined
+    );
+
+    new SIP.RequestSender({
+        request: request,
+        onRequestTimeout: function() {
+            self.session.onRequestTimeout();
+        },
+        onTransportError: function() {
+            self.session.onTransportError();
+        },
+        receiveResponse: options.receiveResponse || function(response) {
+        }
+    }, self.session.ua).send();
+};
+
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+//FIXME: should be replaced with __hold()
+//This can be removed
+
+
+//Legacy hold uses direct in-dialog messages to trick SIP.js, try to avoid using this method if possible
+PhoneLine.prototype.__legacyHold = function(val) {
+    var self = this;
+    self.onHold = !!val;
+    return new Promise(function(resolve, reject){
+        if (self.onCall && self.session.dialog) {
+            var body = self.session.mediaHandler.peerConnection.localDescription.sdp;
+            if (self.onHold) {
+                //body = body.replace(/c=IN IP4 \d+\.\d+.\d+.\d+/, "c=IN IP4 0.0.0.0");
+                body = body.replace(/a=sendrecv/, "a=sendonly");
+                self.session.mediaHandler.hold();
+                self.session.onhold('local');
+            }
+            else {
+                self.session.mediaHandler.unhold();
+                self.session.onunhold('local');
+            }
+
+            self.sendRequest(SIP.C.INVITE, body, {
+                extraHeaders: [
+                    "Content-Type: application/sdp",
+                    "Contact: " + self.session.contact
+                ],
+                receiveResponse: function(response) {
+                    switch (true) {
+                        case /^1[0-9]{2}$/.test(response.status_code):
+                            break;
+                        case /^2[0-9]{2}$/.test(response.status_code):
+                            resolve();
+                            self.sendRequest(SIP.C.ACK, null, {
+                                cseq: response.cseq
+                            });
+                            break;
+                        default:
+                            reject('Status code is: ' + response.status_code);
+                            self.onHold = !self.onHold;
+                            break;
+                    }
+                }
+            });
+        }
+        else {
+            reject(new Error('Not on call or no dialog'));
+        }
+    });
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+
+PhoneLine.prototype.__hold = function(val) {
+    var self = this;
+    return new Promise(function(resolve, reject){
+        function onSucceeded() {
+            resolve();
+            self.eventEmitter.off(EVENT_NAMES.callReinviteFailed, onFailed);
+        }
+
+        function onFailed(e) {
+            reject(e);
+            self.eventEmitter.off(EVENT_NAMES.callReinviteSucceeded, onSucceeded);
+        }
+
+        self.eventEmitter.once(EVENT_NAMES.callReinviteSucceeded, onSucceeded);
+        self.eventEmitter.once(EVENT_NAMES.callReinviteFailed, onFailed);
+
+        val ? self.session.hold() : self.session.unhold();
+    });
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+PhoneLine.prototype.setHold = function(val) {
+    var promise;
+    var self = this;
+    this.onHold = !!val;
+    if (this.onCall) {
+        promise = self.__hold(val).then(function() {
+            val ? self.eventEmitter.emit(EVENT_NAMES.callHold, self) : self.eventEmitter.emit(EVENT_NAMES.callUnhold, self);
+        }, function(e) {
+            self.onHold = !self.onHold;
+        });
+    }
+    return Promise.resolve(promise);
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+PhoneLine.prototype.isOnHold = function() {
+    return this.onHold;
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+PhoneLine.prototype.isOnMute = function() {
+    return this.muted || this.bothMuted;
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+PhoneLine.prototype.isOnRecord = function() {
+    return this.onRecord;
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+PhoneLine.prototype.getContact = function() {
+    return this.contact;
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+PhoneLine.prototype.getCallDuration = function() {
+    if (this.timeCallStarted) {
+        return (new Date()).getTime() - this.timeCallStarted.getTime();
+    }
+    else {
+        return 0;
+    }
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+PhoneLine.prototype.isIncoming = function() {
+    return this.session.mediaHandler.peerConnection.signalingState !== "closed"
+           && !this.session.startTime;
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+PhoneLine.prototype.isClosed = function() {
+    return this.session.status === SIP.Session.C.STATUS_CANCELED || this.session.status === SIP.Session.C.STATUS_TERMINATED;
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+PhoneLine.prototype.hasEarlyMedia = function() {
+    return this.__hasEarlyMedia;
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+module.exports = PhoneLine;
+
+
+/***/ },
+/* 38 */
+/***/ function(module, exports) {
 
 module.exports = {
-
-    DEFAULT_CALL_STATUS: 'NoCall',
 
     delay: function delay(ms) {
         return new Promise(function(resolve, reject) {
@@ -12967,6 +13065,8 @@ module.exports = {
     },
 
     extend: function extend(dst, src) {
+        src = src || {};
+        dst = dst || {};
         Object.keys(src).forEach(function(k) {
             dst[k] = src[k];
         });
@@ -12982,551 +13082,47 @@ module.exports = {
             var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
             return v.toString(16);
         });
-    },
-
-    isExtensionNumber: function(number) {
-        return ('' + number).length <= 5 ? true : false;
-    },
-    /**
-     * [toDigitsOnly: remove alphabets and special character from number]
-     * @param  {[String]} number [string contain contact number]
-     * @return {[]} [number]
-     */
-    toDigitsOnly: function(number, leavePlus) {
-        if (leavePlus) {
-            number = (number + '').replace(/[^\d+]/g, '');
-        } else {
-            number = (number + '').replace(/[^\d]/g, '');
-        }
-
-        return number;
-    },
-    /**
-     * [filterNumber  : To remove '+' sign and append international prefix if not there to the number]
-     * @param  {[String]} number [string contain contact number]
-     * @return {[Integer]}        []
-     */
-    filterNumber: function(number, brand) {
-        number = number || "";
-        brand = brand || settings.brand;
-
-        number = this.toDigitsOnly(number);
-
-        if (brand === 'RCUS'
-            || brand === 'RCCA'
-            || brand === 'ATTOAH'
-            || brand === 'TELUS'
-            || brand === 'TMOB') {
-
-            if (number.substring(0, 1) !== "1" && number.length === 10) {
-                number = "1" + number;
-            }
-        } else if (brand === 'RCUK' || brand === 'BT') {
-            if (number.substring(0, 1) === '0' && (number.length === 10 || number.length === 11)) {
-                number = '44' + number.substring(1);
-            }
-            else {
-                if (number.substring(0, 2) !== "44" && number.length < 11 && number.length > 5) {
-                    number = "44" + number;
-                }
-            }
-        }
-        return number;
-    },
-
-    lettersToNumbers: function(number) {
-        number = ('' + number).toLowerCase();
-        var res = '';
-        for (var i = 0; i < number.length; i++) {
-            switch (number[i]) {
-                case 'a':
-                case 'b':
-                case 'c':
-                    res += '2';
-                    break;
-                case 'd':
-                case 'e':
-                case 'f':
-                    res += '3';
-                    break;
-                case 'g':
-                case 'h':
-                case 'i':
-                    res += '4';
-                    break;
-                case 'j':
-                case 'k':
-                case 'l':
-                    res += '5';
-                    break;
-                case 'm':
-                case 'n':
-                case 'o':
-                    res += '6';
-                    break;
-                case 'p':
-                case 'q':
-                case 'r':
-                case 's':
-                    res += '7';
-                    break;
-                case 't':
-                case 'u':
-                case 'v':
-                    res += '8';
-                    break;
-                case 'w':
-                case 'x':
-                case 'y':
-                case 'z':
-                    res += '9';
-                    break;
-                case '1':
-                case '2':
-                case '3':
-                case '4':
-                case '5':
-                case '6':
-                case '7':
-                case '8':
-                case '9':
-                case '0':
-                    res += number[i];
-                    break;
-            }
-        }
-        return res;
-    },
-    normalizeNumberForParser: function(number) {
-        if (!number)return '';
-
-        number = number.toString();
-
-        var starIndex = number.indexOf('*');
-
-        //if number starts with star, we return it as is
-        if (starIndex === 0) {
-            return number.replace(/[^\d\*\#]/g, '');
-        }
-
-        return number.replace(/[^\d\#\*]/g, '');
-    },
-    normalizeNumber: function(number) {
-        if (!number)return '';
-
-        number = '' + number;
-        var ext = '';
-
-        var starIndex = number.indexOf('*');
-
-
-        //if number starts with star, we return it as is
-        if (starIndex === 0) {
-            return number.replace(/[^\d\*\#]/g, '');
-        }
-
-        if (starIndex !== -1) {
-            var arr = number.split('*');
-            number = arr[0];
-            ext = arr[1];
-        }
-
-        number = this.toDigitsOnly(number);
-        ext = this.toDigitsOnly(ext);
-
-        if (number.length == 0)return '';
-        var brand = settings.brand;
-
-        if (brand === 'RCUS'
-            || brand === 'RCCA'
-            || brand === 'ATTOAH'
-            || brand === 'TELUS'
-            || brand === 'TMOB') {
-
-            if (number.substring(0, 1) !== "1" && number.length === 10) {
-                number = "+1" + number;
-            }
-
-            // add plus if the number is not too short
-            if (!number.match(/^\+/, number) && number.length > 9) {
-                number = "+" + number;
-            }
-        } else if (brand === 'RCUK' || brand === 'BT') {
-
-            if (number.substring(0, 2) !== "44"
-                && ((number.length === 10 && number.substring(0, 1) !== '0') //10 digits, excluded 0123456789
-                    || number.length === 9)
-            /*|| number.length === 7 && (number.substring(0, 3) === '800' || number.substring(0, 3) === '845')*/) {
-                number = "+44" + number;
-            }
-
-            // add plus if the number is not too short
-            if (!number.match(/^(\+|0)/, number) && number.length > 9) {
-                number = "+" + number;
-            }
-        }
-
-        return number + (ext ? ('*' + ext) : '');
-    },
-    formatDuration: function(duration) {
-        if (isNaN(duration)) {
-            return "";
-        }
-
-        if (typeof duration !== "number") {
-            duration = 0;
-        }
-
-        duration = Math.round(duration);
-
-        var seconds = duration % 60;
-        var minutes = Math.floor(duration / 60) % 60;
-        var hours = Math.floor(duration / 3600) % 24;
-
-        function format(value) {
-            return (value < 10) ? '0' + value : value;
-        }
-
-        var result = format(minutes) + ':' + format(seconds);
-
-        if (hours > 0) {
-            result = format(hours) + ':' + result;
-        }
-
-        return result;
-    },
-    ignoreSdkError: function(e) {
-        // TODO figure out with Kirill a better way to separate server errors and this particular error
-        return e.message === "No access token in cache";
-    },
-
-    convertNumber: function(number, compareLength) {
-        if (!number)return '';
-        var num = parseInt(compareLength);
-        compareLength = isNaN(num) ? 10 : num;
-        return number.replace(/[^\d\*#]/g, '').substr(-compareLength);
-    },
-
-    isBlockedNumber: function(number, country) {
-        var arr = [];
-        switch (country.toString().toLowerCase()) {
-            case 'us':
-            case 'ca':
-                arr = BLOCKED_NUMBERS_US_CA_REGEX;
-                break;
-            case 'gb':
-            case 'uk':
-                arr = BLOCKED_NUMBERS_UK_REGEX;
-                break;
-        }
-
-        for (var i = 0; i < arr.length; i++) {
-            var regex = arr[i];
-            if (regex.test(number)) {
-                return true;
-            }
-        }
-
-        return false;
-    },
-
-    pushIntoAnotherArray: function(fromArr, toArr, limit) {
-        if (!Array.isArray(toArr) || !Array.isArray(fromArr)) return this.copy(fromArr);
-        if (!limit) limit = fromArr.length;
-
-        var from = toArr.length, to = toArr.length + limit;
-        for (var i = from; i < to; i++) {
-            if (fromArr.length > i) {
-                toArr.push(fromArr[i]);
-            }
-            else {
-                break;
-            }
-        }
-
-        return toArr;
     }
-};
 
-/***/ },
-/* 38 */
-/***/ function(module, exports) {
-
-//TODO make it settable
-module.exports = {
-    countryCode: 'US',
-    brand: 1210,
-    endpointId: 'foo' //use UUID
 };
 
 /***/ },
 /* 39 */
-/***/ function(module, exports, __webpack_require__) {
-
-//angular.module( 'activeCallMonitor' ).factory( 'webphoneCallMonitor', function( $rootScope, $timeout, rcSIPUA, audio, customAlert, utils, settingsService, rcPlatform, DEFAULT_CALL_STATUS )
-'use strict';
-
-var EventEmitter = __webpack_require__(36);
-var rcSIPUA = __webpack_require__(2);
-var settingsService = __webpack_require__(38);
-var utils = __webpack_require__(37);
-var audio = __webpack_require__(40);
-var rcPlatform = __webpack_require__(41);
-
-var eventScope = new EventEmitter();
-
-var inboundCalls = {};
-var outboundCalls = {};
-
-var activeCallsCount = 0;
-
-/*
- Sound handling
- --------------
- */
-function __playSound(fn, url, val, volume) {
-    if (!fn.__audio) {
-        if (val) {
-            volume !== undefined && (audio.volume = volume);
-            fn.__audio = audio.play(url, {
-                loop: true
-            });
-        }
-    }
-    else {
-        if (val) {
-            fn.__audio.reset();
-        }
-        else {
-            fn.__audio.stop();
-        }
-    }
-}
-
-function playIncoming(val) {
-    __playSound(playIncoming, 'audio/incoming.ogg', val, 0.5);
-}
-
-function playOutgoing(val) {
-    __playSound(playOutgoing, 'audio/outgoing.ogg', val, 1);
-}
-
-rcSIPUA.on(rcSIPUA.events.incomingCall, function() {
-    playIncoming(true);
-});
-
-rcSIPUA.on(rcSIPUA.events.outgoingCall, function() {
-    playOutgoing(true);
-});
-
-rcSIPUA.on(rcSIPUA.events.callProgress, function(session) {
-    if (session.hasEarlyMedia()) {
-        playOutgoing(false);
-    }
-});
-
-rcSIPUA.on([rcSIPUA.events.callStarted, rcSIPUA.events.callRejected, rcSIPUA.events.callEnded, rcSIPUA.events.callFailed], function() {
-    playIncoming(false);
-    playOutgoing(false);
-});
-/* --------------------- */
-
-function normalize(number) {
-    //FIXME Platform usage
-    var countryCode = settingsService.countryCode;
-    //return rcPlatform.api.phoneParser([utils.normalizeNumberForParser(number)], {country: countryCode})
-    //    .then(function(parsedNumbers) {
-    //        return parsedNumbers[0] || number;
-    //    });
-    return Promise.resolve(number);
-}
-
-function Call(call, type, inbound) {
-    var contact = call.getContact();
-    if (inbound) {
-        this.from = contact.number;
-    }
-    else {
-        this.to = contact.number;
-    }
-    this.contactName = contact.name;
-    this.sessionId = call.sessionId;
-    this.type = type;
-
-    this.isOnRecord = function() {
-        return call.isOnRecord();
-    };
-    this.forward = function(number) {
-        normalize(number).then(function(n) { call.forward(n); });
-    };
-    this.transfer = function(number) {
-        normalize(number).then(function(n) { rcSIPUA.transfer(call, n); });
-    };
-    this.recordingDisabled = false;
-    this.record = function(value) {
-        var self = this;
-        self.recordingDisabled = true;
-        call.record(value).finally(function() {
-            self.recordingDisabled = false;
-        });
-    };
-    this.answer = function() {
-        rcSIPUA.answer(call);
-    };
-    this.hangup = function() {
-        rcSIPUA.hangup(call);
-    };
-    this.hold = function() {
-        //unmute call if it was mute before hold
-        if (call.isOnMute()) {
-            this.mute();
-        }
-        !call.isOnHold() ? rcSIPUA.hold(call) : rcSIPUA.unhold(call);
-    };
-    this.mute = function() {
-        //mute will not work if on hold
-        if (call.isOnHold()) return;
-        !call.isOnMute() ? rcSIPUA.mute(call) : rcSIPUA.unmute(call);
-    };
-    this.flip = function(target) {
-        normalize(target).then(function(n) { call.flip(n); });
-    };
-    this.clone = function(){
-        return new Call(call, type, inbound); //FIXME utils.copy
-    };
-}
-
-rcSIPUA.on(rcSIPUA.events.outgoingCall, function(call) {
-    var sessionId = call.getId();
-    outboundCalls[sessionId] = new Call(call, 'sip', false);
-    outboundCalls[sessionId].callStatus = 'Calling';
-    update();
-});
-
-rcSIPUA.on(rcSIPUA.events.incomingCall, function(call) {
-    var sessionId = call.getId();
-    inboundCalls[sessionId] = new Call(call, 'sip', true);
-    inboundCalls[sessionId].callStatus = 'Calling';
-    update();
-});
-
-rcSIPUA.on(rcSIPUA.events.callHold, function(call) {
-    var sessionId = call.getId();
-    if (outboundCalls[sessionId])outboundCalls[sessionId].callStatus = 'OnHold';
-    if (inboundCalls[sessionId])inboundCalls[sessionId].callStatus = 'OnHold';
-    update();
-});
-
-rcSIPUA.on(rcSIPUA.events.callMute, function(call) {
-    var sessionId = call.getId();
-    if (outboundCalls[sessionId])outboundCalls[sessionId].callStatus = 'OnMute';
-    if (inboundCalls[sessionId])inboundCalls[sessionId].callStatus = 'OnMute';
-    update();
-});
-
-rcSIPUA.on([rcSIPUA.events.callUnhold, rcSIPUA.events.callUnmute], function(call) {
-    var sessionId = call.getId();
-    if (outboundCalls[sessionId])outboundCalls[sessionId].callStatus = 'CallConnected';//'CalleeConnected';
-    if (inboundCalls[sessionId])inboundCalls[sessionId].callStatus = 'CallConnected';
-    update();
-});
-
-rcSIPUA.on(rcSIPUA.events.callProgress, function(call) {
-    var sessionId = call.getId();
-    if (outboundCalls[sessionId])outboundCalls[sessionId].callStatus = 'CallerConnected';
-    if (inboundCalls[sessionId])inboundCalls[sessionId].callStatus = 'CallerConnecting';
-    update();
-});
-
-rcSIPUA.on(rcSIPUA.events.callStarted, function(call) {
-    var sessionId = call.getId();
-    if (outboundCalls[sessionId])outboundCalls[sessionId].callStatus = 'CallConnected';//'CalleeConnected';
-    if (inboundCalls[sessionId])inboundCalls[sessionId].callStatus = 'CallConnected';
-    update();
-});
-
-rcSIPUA.on(rcSIPUA.events.callFailed, function(call) {
-    var sessionId = call.getId();
-    if (outboundCalls[sessionId])outboundCalls[sessionId].callStatus = 'NoCall';
-    if (inboundCalls[sessionId])inboundCalls[sessionId].callStatus = 'NoCall';
-    update();
-    setTimeout(update.bind(this, true), 1500);
-});
-
-rcSIPUA.on(rcSIPUA.events.callEnded, function(call) {
-    var sessionId = call.getId();
-    if (outboundCalls[sessionId])outboundCalls[sessionId].callStatus = 'NoCall';
-    if (inboundCalls[sessionId])inboundCalls[sessionId].callStatus = 'NoCall';
-    update();
-    setTimeout(update.bind(this, true), 1500);
-});
-
-rcSIPUA.on(rcSIPUA.events.callFailed, function(call, e, cause) {
-    var goodCauses = [
-        rcSIPUA.causes.CANCELED,
-        rcSIPUA.causes.BUSY,
-        rcSIPUA.causes.REJECTED,
-        rcSIPUA.causes.NO_ANSWER,
-        rcSIPUA.reasons['486']	//486 Busy Here is considered failure by
-    ];
-    if (goodCauses.indexOf(cause) === -1) {
-        alert('SIP Error: \n\n' + (e && e.data && e.data.cause || cause || 'Unknown')); //FIXME Alert
-    }
-});
-
-rcSIPUA.on(rcSIPUA.events.callReplaced, function(newCall, oldCall) {
-    var originalSessionId = oldCall.getId();
-    if (outboundCalls[originalSessionId]) outboundCalls[originalSessionId].callStatus = 'Replaced';
-    if (inboundCalls[originalSessionId]) inboundCalls[originalSessionId].callStatus = 'Replaced';
-
-    var newSessionId = newCall.getId();
-    inboundCalls[newSessionId] = new Call(newCall, 'sip', true);
-    inboundCalls[newSessionId].callStatus = 'CallConnected';
-
-    update();
-});
-
-rcSIPUA.on(rcSIPUA.events.sipRegistrationFailed, function(e) {
-    var reason = e && e.reason_phrase || 'Unknown';
-    alert('SIP Registration Error: \n\n' + reason); //FIXME Alert
-});
-
-
-function update(forceStart) {
-    var _activeCallsCount = 0;
-    var start = false;
-    var stop = false;
-
-    //FIXME Unsafe
-    for (var id in outboundCalls)if (outboundCalls[id].callStatus != 'NoCall')_activeCallsCount++;
-    for (var id in inboundCalls)if (inboundCalls[id].callStatus != 'NoCall')_activeCallsCount++;
-
-    if (_activeCallsCount === 0 && activeCallsCount !== 0)stop = true;
-    if (_activeCallsCount !== 0 && activeCallsCount === 0)start = true;
-
-    if (stop)eventScope.emit('stop');
-    if (start)eventScope.emit('start');
-
-    activeCallsCount = _activeCallsCount;
-
-    var _inboundCalls = [];
-    var _outboundCalls = [];
-
-    if (start || !!forceStart) {
-        for (var id in outboundCalls)if (outboundCalls[id].callStatus == 'NoCall')delete outboundCalls[id];
-        for (var id in inboundCalls)if (inboundCalls[id].callStatus == 'NoCall')delete inboundCalls[id];
-    }
-
-    for (var id in outboundCalls)_outboundCalls.push(outboundCalls[id].clone());
-    for (var id in inboundCalls)_inboundCalls.push(inboundCalls[id].clone());
-
-    eventScope.emit('update', {"inboundCalls": _inboundCalls, "outboundCalls": _outboundCalls});
-}
+/***/ function(module, exports) {
 
 module.exports = {
-    "onStop": function(listener) { if (typeof listener == 'function')eventScope.on('stop', listener); },
-    "onStart": function(listener) { if (typeof listener == 'function')eventScope.on('start', listener); },
-    "onUpdate": function(listener) { if (typeof listener == 'function')eventScope.on('update', function(d) { listener(d); }); }
+    'message': 'message',
+    'sipConnecting': 'sipConnecting',
+    'sipConnected': 'sipConnected',
+    'sipDisconnected': 'sipDisconnected',
+    'sipRegistered': 'sipRegistered',
+    'sipUnRegistered': 'sipUnregistered',
+    'sipRegistrationFailed': 'sipRegistrationFailed',
+    'incomingCall': 'incomingCall',                     //when incoming call is received
+    'sipIncomingCall': 'sipIncomingCall',               //same as incomingCall
+    'outgoingCall': 'outgoingCall',                     //when the outbound call is initiated
+    'callConnecting': 'callConnecting',                 //when ICE gathering is started
+    'callProgress': 'callProgress',                     //when 1xx provisional message is received (outbound only) or call is accepted, but ACK is still not sent (inbound only)
+    'callStarted': 'callStarted',                       //when ACK is sent
+    'callRejected': 'callRejected',                     //when the call is rejected by its party
+    'callEnded': 'callEnded',                           //when the call had ended without errors (BYE)
+    'callTerminated': 'callTerminated',                 //when the media is terminated, UNSTABLE in SIP.js 0.6.x
+    'callFailed': 'callFailed',                         //when the call is failed because of many different reasons (connection issues, 4xx errors, etc.)
+    'callHold': 'callHold',                             //when the call is put on hold
+    'callUnhold': 'callUnhold',                         //when the call is unholded
+    'callMute': 'callMute',                             //when the call is muted
+    'callUnmute': 'callUnmute',                         //when the call is unmuted
+    'callReplaced': 'callReplaced',                     //when the call has been replaced by an incoming invite
+    'sipRTCSession': 'sipRTCSession',
+    'sipConnectionFailed': 'sipConnectionFailed',
+    'ICEConnected': 'ICEConnected',
+    'ICECompleted': 'ICECompleted',
+    'ICEFailed': 'ICEFailed',
+    'ICEChecking': 'ICEChecking',
+    'ICEClosed': 'ICEClosed',
+    'ICEDisconnected': 'ICEDisconnected',
+    'callReinviteSucceeded': 'callReinviteSucceeded',
+    'callReinviteFailed': 'callReinviteFailed'
 };
 
 
@@ -13534,10 +13130,116 @@ module.exports = {
 /* 40 */
 /***/ function(module, exports, __webpack_require__) {
 
-var error = console.error;
-var EventEmitter = __webpack_require__(36);
+var uuid = __webpack_require__(38).uuid;
+
+/*
+ * We create audio containers here
+ * Sorry for DOM manipulations inside a service, but it is for the good :)
+ */
+var LOCAL_AUDIO = document.createElement('video'),
+    REMOTE_AUDIO = document.createElement('video'),
+    LOCAL_AUDIO_ID = 'local_' + uuid(),
+    REMOTE_AUDIO_ID = 'remote_' + uuid();
+
+LOCAL_AUDIO.setAttribute('id', LOCAL_AUDIO_ID);
+LOCAL_AUDIO.setAttribute('autoplay', 'true');
+LOCAL_AUDIO.setAttribute('hidden', 'true');
+LOCAL_AUDIO.setAttribute('muted', '');
+
+REMOTE_AUDIO.setAttribute('id', REMOTE_AUDIO_ID);
+REMOTE_AUDIO.setAttribute('autoplay', 'true');
+REMOTE_AUDIO.setAttribute('hidden', 'true');
+
+document.body.appendChild(LOCAL_AUDIO);
+document.body.appendChild(REMOTE_AUDIO);
+
+LOCAL_AUDIO.volume = 0;
 
 module.exports = {
+    LOCAL_AUDIO: LOCAL_AUDIO,
+    REMOTE_AUDIO: REMOTE_AUDIO,
+    LOCAL_AUDIO_ID: LOCAL_AUDIO_ID,
+    REMOTE_AUDIO_ID: REMOTE_AUDIO_ID
+};
+
+/***/ },
+/* 41 */
+/***/ function(module, exports, __webpack_require__) {
+
+'use strict';
+
+var audio = __webpack_require__(42);
+
+function AudioHelper(rcSIPUA, options) {
+
+    var self = this;
+
+    options = options || {};
+
+    this._rcSIPUA = rcSIPUA;
+    this._incoming = options.incoming || 'audio/incoming.ogg';
+    this._outgoing = options.outgoing || 'audio/outgoing.ogg';
+
+    rcSIPUA.on(rcSIPUA.events.incomingCall, function() {
+        self.playIncoming(true);
+    });
+
+    rcSIPUA.on(rcSIPUA.events.outgoingCall, function() {
+        self.playOutgoing(true);
+    });
+
+    rcSIPUA.on(rcSIPUA.events.callProgress, function(session) {
+        if (session.hasEarlyMedia()) {
+            self.playOutgoing(false);
+        }
+    });
+
+    rcSIPUA.on([rcSIPUA.events.callStarted, rcSIPUA.events.callRejected, rcSIPUA.events.callEnded, rcSIPUA.events.callFailed], function() {
+        self.playIncoming(false);
+        self.playOutgoing(false);
+    });
+
+}
+
+AudioHelper.prototype._playSound = function(url, val, volume) {
+
+    if (!this._audio) {
+        if (val) {
+            volume !== undefined && (audio.volume = volume);
+            this._audio = audio.play(url, {loop: true});
+        }
+    } else {
+        if (val) {
+            this._audio.reset();
+        }
+        else {
+            this._audio.stop();
+        }
+    }
+
+};
+
+AudioHelper.prototype.playIncoming = function(val) {
+    this._playSound(this._incoming, val, 0.5);
+};
+
+AudioHelper.prototype.playOutgoing = function(val) {
+    this._playSound(this._outgoing, val, 1);
+};
+
+module.exports = AudioHelper;
+
+
+
+/***/ },
+/* 42 */
+/***/ function(module, exports, __webpack_require__) {
+
+var error = console.error;
+var EventEmitter = __webpack_require__(35);
+
+module.exports = {
+
     play: function(url, options) {
 
         var emitter = new EventEmitter();
@@ -13610,44 +13312,6 @@ module.exports = {
 
     }
 };
-
-/***/ },
-/* 41 */
-/***/ function(module, exports) {
-
-module.exports = {
-    api: {
-        phoneParser: function(numbers){
-            return Promise.resolve(numbers);
-        }
-    },
-    sip: {
-        register: function(transport) {
-            transport = transport && typeof(transport) === 'string' ? transport : 'WSS';
-
-            /*
-                Refresh may happen while getting the provision info and the error may be returned
-                We should logout in such case
-             */
-            function onRefreshError() {
-                platform.off(platform.events.refreshError, onRefreshError);
-                loginService.logout();
-            }
-
-            platform.on(platform.events.refreshError, onRefreshError);
-
-            return f.api.post('/client-info/sip-provision', {
-                sipInfo: [{
-                    transport: transport
-                }]
-            }).then(function(data) {
-                platform.off(platform.events.refreshError, onRefreshError);
-                return data;
-            });
-        }
-    }
-
-}
 
 /***/ }
 /******/ ])
