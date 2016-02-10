@@ -100,405 +100,408 @@ SIP.WebRTC.MediaStreamManager.prototype = mediaStreamManagerProto;
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-var ua = new UserAgent();
-var __registerDeferred, __unregisterDeferred, __callDeferred;
-var __sipRegistered = false;
+/**
+ * @namespace RingCentral
+ * @param {boolean} [options.audioHelper] Automatically create audio helper
+ * @param {string} [options.uuid] Instance ID
+ * @constructor
+ */
+function WebPhone(options) {
 
-var service = {
+    options = options || {};
 
-    version: '0.1.0',
+    var service = this;
 
-    PhoneLine: PhoneLine,
-    EventEmitter: EventEmitter,
-    UserAgent: UserAgent,
-    AudioHelper: AudioHelper,
+    this.__registerDeferred = undefined;
+    this.__unregisterDeferred = undefined;
+    this.__callDeferred = undefined;
+    this.__sipRegistered = false;
 
-    createAudioHelper: function(options) {
-        return new AudioHelper(this, options);
-    },
-
-    activeLine: null,
-
-    onMute: false,
-    onHold: false,
-    onRecord: false,
-    contact: undefined,
-
-    ua: ua,
-    on: ua.on.bind(ua),
-
-    username: null,
-
-    isRegistered: false,
-    isRegistering: false,
-    isUnregistering: false,
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-    register: function(info, checkFlags) {
-
-        // console.log("Sip Data"+JSON.stringify(data));
-
-        if (!checkFlags || (
-            typeof(info.sipFlags) === 'object' &&
-            //checking for undefined for platform v7.3, which doesn't support this flag
-            (info.sipFlags.outboundCallsEnabled === undefined || info.sipFlags.outboundCallsEnabled === true))
-        ) {
-
-            // console.log('SIP Provision data', data+'\n');
-            info = info.sipInfo[0];
-
-        } else {
-            throw new Error('ERROR.sipOutboundNotAvailable'); //FIXME Better error reporting...
-        }
-
+    if (options.uuid) {
+        this.uuid = options.uuid;
+    } else {
         localStorage['rc-webPhone-uuid'] = localStorage['rc-webPhone-uuid'] || uuid();
+        this.uuid = localStorage['rc-webPhone-uuid'];
+    }
 
-        var headers = [];
-        var endpointId = localStorage['rc-webPhone-uuid'];
-        if (endpointId) {
-            headers.push('P-rc-endpoint-id: ' + endpointId);
+    this.activeLine = null;
+
+    this.onMute = false;
+    this.onHold = false;
+    this.onRecord = false;
+    this.contact = undefined;
+
+    var ua = new UserAgent();
+
+    this.ua = ua;
+    this.on = ua.on.bind(ua);
+
+    this.username = null;
+
+    this.isRegistered = false;
+    this.isRegistering = false;
+    this.isUnregistering = false;
+
+    this.events = EVENT_NAMES;
+
+    this.causes = SIP.C.causes;
+    this.reasons = SIP.C.REASON_PHRASE;
+
+    //naming convention: incoming or sipincoming?
+    service.on(EVENT_NAMES.sipIncomingCall, function(line) {
+        service.ua.eventEmitter.emit(EVENT_NAMES.incomingCall, line);
+    });
+
+    //naming convention: outgoing or sipoutgoing?
+    service.on(EVENT_NAMES.outgoingCall, function(line) {
+        if (service.activeLine && !service.activeLine.isOnHold()) {
+            service.activeLine.setHold();
         }
+        service.__callDeferred && service.__callDeferred.resolve(line);
+        service.__callDeferred = null;
+    });
 
-        extend(info, {
-            extraHeaders: headers
-        });
-
-        if (service.isRegistered) {
-            console.warn('Already registered, please unregister the UA first');
-            return __registerDeferred.promise;
+    //naming convention: call or line?
+    service.on([EVENT_NAMES.callEnded, EVENT_NAMES.callFailed], function(call) {
+        //delete activeLine property if the call has ended on the other side
+        if (call && service.activeLine && call === service.activeLine) {
+            service.activeLine = null;
         }
+    });
 
-        if (service.isRegistering) {
-            console.warn('Already registering the UA');
-            return __registerDeferred.promise;
+    // On Call Failed due to 503 Invite Connection error reconnect the call
+    service.on(EVENT_NAMES.callFailed, function(call, response, cause) {
+        if (response) {
+            switch (true) {
+                //[WRTC-424] Should reconnect the websocket if received 503 on INVITE
+                case (/^503$/.test(response.status_code)):
+                    //This method will throw 'Connection Error', so we just remove it
+                    call.session.onTransportError = function() {};
+                    //Re-register after 500ms
+                    setTimeout(service.reregister.bind(service, true), 500);
+                    break;
+            }
         }
+    });
 
-        try {
-            __registerDeferred = defer();
-            service.isRegistering = true;
-            service.isRegistered = false;
 
-            //compatability properties
-            info.wsServers = info.outboundProxy && info.transport
-                ? info.transport.toLowerCase() + '://' + info.outboundProxy
-                : info.wsServers;
-            info.domain = info.domain || info.sipDomain;
-            info.username = info.username || info.userName;
-            info.extraHeaders = Array.isArray(info.extraHeaders) ? info.extraHeaders : [];
-
-            var options = {
-                wsServers: info.wsServers,
-                uri: "sip:" + info.username + "@" + info.domain,
-                password: info.password,
-                authorizationUser: info.authorizationId,
-                traceSip: true,
-                stunServers: info.stunServers || ['stun:74.125.194.127:19302'],
-                turnServers: [],
-                log: {
-                    level: 1 //FIXME LOG LEVEL 3
-                },
-                domain: info.domain,
-                autostart: false,   //turn off autostart on UA creation
-                register: false,     //turn off auto register on UA creation,
-                iceGatheringTimeout: info.iceGatheringTimeout || 3000
-            };
-
-            service.username = info.userName;
-            service.ua.setSIPConfig(options);
-            service.ua.start({
-                extraHeaders: info.extraHeaders
-            });
-        }
-        catch (e) {
-            service.isRegistering = false;
-            service.isRegistered = false;
-            throw e;
-        }
-
-        return __registerDeferred.promise;
-    },
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-    reregister: function(reconnect) {
-        if (service.isRegistering) return __registerDeferred;
-        __registerDeferred = defer();
-        service.isRegistering = true;
-        service.ua.reregister({}, !!reconnect);
-        return __registerDeferred.promise;
-    },
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-    unregister: function() {
-        if (service.isRegistering) {
-            service.ua.forceDisconnect();
-            service.isRegistering = false;
-            service.isUnregistering = false;
-            service.isRegistered = false;
-            service.isUnregistered = true;
-        }
-
-        if (service.isUnregistered || service.isUnregistering) return __unregisterDeferred;
-
-        service.isUnregistering = true;
+    // Setting flags for SIP Registration process
+    service.on(EVENT_NAMES.sipRegistered, function(e) {
+        service.__sipRegistered = true;
+        service.__registerDeferred && service.__registerDeferred.resolve(e);
+        service.isRegistered = true;
+        service.isRegistering = false;
+        service.isUnregistering = false;
         service.isUnregistered = false;
+    });
 
-        __unregisterDeferred = defer();
-        if (__sipRegistered) {
-            service.ua.stop();
-        }
-        else {
-            __unregisterDeferred.resolve(null);
-        }
-        return __unregisterDeferred.promise.catch(function() {
-            return null;
-        });
-    },
+    service.on([EVENT_NAMES.sipRegistrationFailed, EVENT_NAMES.sipConnectionFailed], function(e) {
+        service.__sipRegistered = false;
+        service.__registerDeferred && service.__registerDeferred.reject(e);
+        service.isRegistered = false;
+        service.isRegistering = false;
+        service.isUnregistering = false;
+        service.isUnregistered = false;
+    });
 
-    /*--------------------------------------------------------------------------------------------------------------------*/
+    service.on(EVENT_NAMES.sipUnRegistered, function(e) {
+        service.__sipRegistered = false;
+        service.__unregisterDeferred && service.__unregisterDeferred.resolve(e);
+        service.isRegistered = false;
+        service.isRegistering = false;
+        service.isUnregistered = true;
+        service.isUnregistering = false;
+    });
 
-    forceDisconnect: function() {
-        service.ua.forceDisconnect();
-    },
+    window.addEventListener('unload', function() {
+        service.hangup();
+        service.unregister();
+    });
 
-    /*--------------------------------------------------------------------------------------------------------------------*/
+    this._audioHelper = null;
+    if (options.audioHelper) service.createAudioHelper();
 
-    call: function(toNumber, fromNumber, country) {
-        if (!__callDeferred) {
-            __callDeferred = defer();
-            this.activeLine = ua.call.call(ua, toNumber, {
-                fromNumber: fromNumber,
-                country: country
-            });
-        }
-        return __callDeferred;
-    },
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-    answer: function(line) {
-        var incomingLines = this.ua.getIncomingLinesArray();
-        var activeLines = this.ua.getActiveLinesArray();
-        var self = this;
-
-        if (!line) {
-            line = incomingLines.length > 0 && arr[0];
-        }
-
-        if (line) {
-            var promises = [];
-            activeLines.forEach(function(activeLine) {
-                if (activeLine !== line) {
-                    !activeLine.isOnHold() && promises.push(activeLine.setHold(true));
-                }
-            });
-            Promise.all(promises).then(function() {
-                self.activeLine = line;
-                self.ua.answer(line);
-            }, function(e) {
-                self.hangup(line);
-            });
-        }
-
-        return Promise.resolve(null);
-    },
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-    onCall: function() {
-        return this.ua.getActiveLinesArray().filter(function(line) {
-                return line.onCall;
-            }).length > 0;
-    },
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-    hangup: function(line) {
-        if (!line) line = this.activeLine;
-        line && this.ua.hangup(line);
-        if (line === this.activeLine) this.activeLine = null;
-        return Promise.resolve(null);
-    },
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-    //FIXME: Check if we can replace this with  SIPJS dtmf(tone,[options]) ref: http://sipjs.com/api/0.7.0/session/#dtmftone-options
-    sendDTMF: function(value, line) {
-        if (!line) line = this.activeLine;
-        line && line.sendDTMF.call(line, value);
-        return Promise.resolve(null);
-    },
-
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-    hold: function(line) {
-        if (!line) line = this.activeLine;
-        line && line.setHold(true);
-        if (line === this.activeLine) this.activeLine = null;
-        return Promise.resolve(null);
-    },
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-    unhold: function(line) {
-        if (!line) line = this.activeLine;
-        if (line) {
-            this.ua.getActiveLinesArray().forEach(function(activeLine) {
-                if (activeLine !== line && !activeLine.isIncoming() && !activeLine.isOnHold()) {
-                    activeLine.setHold(true);
-                }
-            });
-            line.setHold(false);
-            this.activeLine = line;
-        }
-        return Promise.resolve(null);
-    },
-
-
-    ////FIXME: Use SIPJS mute() and unmute() ref:http://sipjs.com/api/0.7.0/session/#muteoptions
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-    mute: function(line) {
-        if (!line) line = this.activeLine;
-        line && line.setMute(true);
-        return Promise.resolve(null);
-    },
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-    unmute: function(line) {
-        if (!line) line = this.activeLine;
-        line && line.setMute(false);
-        return Promise.resolve(null);
-    },
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-    //Phone-line->transfer->blindTransfer
-    transfer: function(line, target, options) {
-
-        if (!line)
-            line = this.activeLine;
-
-        line && line.transfer(target, options);
-
-        if (line === this.activeLine)
-            this.activeLine = null;
-
-        return Promise.resolve(null);
-    },
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-    events: EVENT_NAMES,
-
-    causes: SIP.C.causes,
-    reasons: SIP.C.REASON_PHRASE
-
-};
+}
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-//naming convention: incoming or sipincoming?
+WebPhone.version = '0.1.0';
 
-service.on(EVENT_NAMES.sipIncomingCall, function(line) {
-    service.ua.eventEmitter.emit(EVENT_NAMES.incomingCall, line);
-});
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-//naming convention: outgoing or sipoutgoing?
-
-service.on(EVENT_NAMES.outgoingCall, function(line) {
-    if (this.activeLine && !this.activeLine.isOnHold()) {
-        this.activeLine.setHold();
-    }
-    __callDeferred && __callDeferred.resolve(line);
-    __callDeferred = null;
-});
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-//naming convention: call or line?
-
-service.on([EVENT_NAMES.callEnded, EVENT_NAMES.callFailed], function(call) {
-    //delete activeLine property if the call has ended on the other side
-    if (call && service.activeLine && call === service.activeLine) {
-        service.activeLine = null;
-    }
-});
+WebPhone.PhoneLine = PhoneLine;
+WebPhone.EventEmitter = EventEmitter;
+WebPhone.UserAgent = UserAgent;
+WebPhone.AudioHelper = AudioHelper;
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 /**
- * On Call Failed due to 503 Invite Connection error reconnect the call
+ * @param [options]
+ * @return {AudioHelper}
  */
-
-service.on(EVENT_NAMES.callFailed, function(call, response, cause) {
-    if (response) {
-        switch (true) {
-            //[WRTC-424] Should reconnect the websocket if received 503 on INVITE
-            case (/^503$/.test(response.status_code)):
-                //This method will throw 'Connection Error', so we just remove it
-                call.session.onTransportError = function() {};
-                //Re-register after 500ms
-                setTimeout(service.reregister.bind(service, true), 500);
-                break;
-        }
+WebPhone.prototype.createAudioHelper = function(options) {
+    if (!this._audioHelper) {
+        console.log('Helper Created');
+        this._audioHelper = new AudioHelper(this, options);
     }
-});
-
-
-/*
- * Setting flags for SIP Registration process
- */
+    return this._audioHelper;
+};
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-service.on(EVENT_NAMES.sipRegistered, function(e) {
-    __sipRegistered = true;
-    __registerDeferred && __registerDeferred.resolve(e);
-    service.isRegistered = true;
-    service.isRegistering = false;
-    service.isUnregistering = false;
+WebPhone.prototype.register = function(info, checkFlags) {
+
+    var service = this;
+
+    // console.log("Sip Data"+JSON.stringify(data));
+
+    if (!checkFlags || (
+        typeof(info.sipFlags) === 'object' &&
+        //checking for undefined for platform v7.3, which doesn't support this flag
+        (info.sipFlags.outboundCallsEnabled === undefined || info.sipFlags.outboundCallsEnabled === true))
+    ) {
+
+        // console.log('SIP Provision data', data+'\n');
+        info = info.sipInfo[0];
+
+    } else {
+        throw new Error('ERROR.sipOutboundNotAvailable'); //FIXME Better error reporting...
+    }
+
+    var headers = [];
+    var endpointId = this.uuid;
+    if (endpointId) {
+        headers.push('P-rc-endpoint-id: ' + endpointId);
+    }
+
+    extend(info, {
+        extraHeaders: headers
+    });
+
+    if (service.isRegistered) {
+        console.warn('Already registered, please unregister the UA first');
+        return service.__registerDeferred.promise;
+    }
+
+    if (service.isRegistering) {
+        console.warn('Already registering the UA');
+        return service.__registerDeferred.promise;
+    }
+
+    try {
+        service.__registerDeferred = defer();
+        service.isRegistering = true;
+        service.isRegistered = false;
+
+        //compatability properties
+        info.wsServers = info.outboundProxy && info.transport
+            ? info.transport.toLowerCase() + '://' + info.outboundProxy
+            : info.wsServers;
+        info.domain = info.domain || info.sipDomain;
+        info.username = info.username || info.userName;
+        info.extraHeaders = Array.isArray(info.extraHeaders) ? info.extraHeaders : [];
+
+        var options = {
+            wsServers: info.wsServers,
+            uri: "sip:" + info.username + "@" + info.domain,
+            password: info.password,
+            authorizationUser: info.authorizationId,
+            traceSip: true,
+            stunServers: info.stunServers || ['stun:74.125.194.127:19302'],
+            turnServers: [],
+            log: {
+                level: 1 //FIXME LOG LEVEL 3
+            },
+            domain: info.domain,
+            autostart: false,   //turn off autostart on UA creation
+            register: false,     //turn off auto register on UA creation,
+            iceGatheringTimeout: info.iceGatheringTimeout || 3000
+        };
+
+        service.username = info.userName;
+        service.ua.setSIPConfig(options);
+        service.ua.start({
+            extraHeaders: info.extraHeaders
+        });
+    }
+    catch (e) {
+        service.isRegistering = false;
+        service.isRegistered = false;
+        throw e;
+    }
+
+    return service.__registerDeferred.promise;
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+WebPhone.prototype.reregister = function(reconnect) {
+    var service = this;
+    if (service.isRegistering) return service.__registerDeferred;
+    service.__registerDeferred = defer();
+    service.isRegistering = true;
+    service.ua.reregister({}, !!reconnect);
+    return service.__registerDeferred.promise;
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+WebPhone.prototype.unregister = function() {
+    var service = this;
+    if (service.isRegistering) {
+        service.ua.forceDisconnect();
+        service.isRegistering = false;
+        service.isUnregistering = false;
+        service.isRegistered = false;
+        service.isUnregistered = true;
+    }
+
+    if (service.isUnregistered || service.isUnregistering) return service.__unregisterDeferred;
+
+    service.isUnregistering = true;
     service.isUnregistered = false;
-});
+
+    service.__unregisterDeferred = defer();
+    if (service.__sipRegistered) {
+        service.ua.stop();
+    }
+    else {
+        service.__unregisterDeferred.resolve(null);
+    }
+    return service.__unregisterDeferred.promise.catch(function() {
+        return null;
+    });
+};
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-service.on([EVENT_NAMES.sipRegistrationFailed, EVENT_NAMES.sipConnectionFailed], function(e) {
-    __sipRegistered = false;
-    __registerDeferred && __registerDeferred.reject(e);
-    service.isRegistered = false;
-    service.isRegistering = false;
-    service.isUnregistering = false;
-    service.isUnregistered = false;
-});
+WebPhone.prototype.forceDisconnect = function() {
+    this.ua.forceDisconnect();
+};
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-service.on(EVENT_NAMES.sipUnRegistered, function(e) {
-    __sipRegistered = false;
-    __unregisterDeferred && __unregisterDeferred.resolve(e);
-    service.isRegistered = false;
-    service.isRegistering = false;
-    service.isUnregistered = true;
-    service.isUnregistering = false;
-});
+WebPhone.prototype.call = function(toNumber, fromNumber, country) {
+    var service = this;
+    if (!service.__callDeferred) {
+        service.__callDeferred = defer();
+        this.activeLine = service.ua.call.call(service.ua, toNumber, {
+            fromNumber: fromNumber,
+            country: country
+        });
+    }
+    return service.__callDeferred;
+};
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-window.addEventListener('unload', function() {
-    service.hangup();
-    service.unregister();
-});
+WebPhone.prototype.answer = function(line) {
+    var incomingLines = this.ua.getIncomingLinesArray();
+    var activeLines = this.ua.getActiveLinesArray();
+    var self = this;
+
+    if (!line) {
+        line = incomingLines.length > 0 && arr[0];
+    }
+
+    if (line) {
+        var promises = [];
+        activeLines.forEach(function(activeLine) {
+            if (activeLine !== line) {
+                !activeLine.isOnHold() && promises.push(activeLine.setHold(true));
+            }
+        });
+        Promise.all(promises).then(function() {
+            self.activeLine = line;
+            self.ua.answer(line);
+        }, function(e) {
+            self.hangup(line);
+        });
+    }
+
+    return Promise.resolve(null);
+};
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-module.exports = service;
+WebPhone.prototype.onCall = function() {
+    return this.ua.getActiveLinesArray().filter(function(line) {
+            return line.onCall;
+        }).length > 0;
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+WebPhone.prototype.hangup = function(line) {
+    if (!line) line = this.activeLine;
+    line && this.ua.hangup(line);
+    if (line === this.activeLine) this.activeLine = null;
+    return Promise.resolve(null);
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+//FIXME: Check if we can replace this with  SIPJS dtmf(tone,[options]) ref: http://sipjs.com/api/0.7.0/session/#dtmftone-options
+WebPhone.prototype.sendDTMF = function(value, line) {
+    if (!line) line = this.activeLine;
+    line && line.sendDTMF.call(line, value);
+    return Promise.resolve(null);
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+WebPhone.prototype.hold = function(line) {
+    if (!line) line = this.activeLine;
+    line && line.setHold(true);
+    if (line === this.activeLine) this.activeLine = null;
+    return Promise.resolve(null);
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+WebPhone.prototype.unhold = function(line) {
+    if (!line) line = this.activeLine;
+    if (line) {
+        this.ua.getActiveLinesArray().forEach(function(activeLine) {
+            if (activeLine !== line && !activeLine.isIncoming() && !activeLine.isOnHold()) {
+                activeLine.setHold(true);
+            }
+        });
+        line.setHold(false);
+        this.activeLine = line;
+    }
+    return Promise.resolve(null);
+};
+
+////FIXME: Use SIPJS mute() and unmute() ref:http://sipjs.com/api/0.7.0/session/#muteoptions
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+WebPhone.prototype.mute = function(line) {
+    if (!line) line = this.activeLine;
+    line && line.setMute(true);
+    return Promise.resolve(null);
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+WebPhone.prototype.unmute = function(line) {
+    if (!line) line = this.activeLine;
+    line && line.setMute(false);
+    return Promise.resolve(null);
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+//Phone-line->transfer->blindTransfer
+WebPhone.prototype.transfer = function(line, target, options) {
+    if (!line) line = this.activeLine;
+    line && line.transfer(target, options);
+    if (line === this.activeLine) this.activeLine = null;
+    return Promise.resolve(null);
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+module.exports = WebPhone;
 
 /***/ },
 /* 2 */
@@ -11806,8 +11809,6 @@ module.exports = EventEmitter;
 /* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
-//Fixme We need to split this file into 3-4 modules -- User Agent, Phone-Line, Event-Emitter, Service
-
 var SIP = __webpack_require__(2);
 var EventEmitter = __webpack_require__(35);
 var PhoneLine = __webpack_require__(37);
@@ -11817,12 +11818,14 @@ var extend = utils.extend;
 var uuid = utils.uuid;
 
 var EVENT_NAMES = __webpack_require__(39);
-var dom = __webpack_require__(40);
-var LOCAL_AUDIO = dom.LOCAL_AUDIO;
-var REMOTE_AUDIO = dom.REMOTE_AUDIO;
+var DomAudio = __webpack_require__(40);
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+/**
+ * @param options
+ * @constructor
+ */
 var UserAgent = function(options) {
     this.eventEmitter = new EventEmitter();
     this.sipConfig = options ? (options.sipConfig || {}) : ({});
@@ -11831,7 +11834,21 @@ var UserAgent = function(options) {
     this.getUserMedia = undefined;
     this.RTCPeerConnection = undefined;
     this.RTCSessionDescription = undefined;
-    checkConfig.apply(this);
+    this.dom = new DomAudio();
+    this.checkConfig();
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+UserAgent.prototype.checkConfig = function() {
+    // set mootools expands to non-enumerables under ES5
+    if (typeof this.sipConfig.wsServers === 'string') {
+        this.sipConfig.wsServers = [
+            {ws_uri: this.sipConfig.wsServers}
+        ];
+    }
+    var key, enums = {enumerable: false};
+    for (key in this.sipConfig.wsServers) this.sipConfig.wsServers.hasOwnProperty(key) || Object.defineProperty(Array.prototype, key, enums);
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -11852,7 +11869,7 @@ UserAgent.prototype.setSIPConfig = function(config) {
     }
 
     this.sipConfig = config;
-    checkConfig.apply(this);
+    this.checkConfig();
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -11922,78 +11939,75 @@ var __disconnectCount = 0;
 UserAgent.prototype.start = function(options) {
     var self = this;
 
-    function initUA() {
-        self.stop();
-        if (self.userAgent instanceof SIP.UA) {
-            self.userAgent.loadConfig(self.sipConfig);
-            self.userAgent.traceSip=true;
-        }
-        else {
-            self.userAgent = new SIP.UA(self.sipConfig);
-            self.__registerExtraOptions = options || {};
-            self.userAgent.on('connected', function(e) {
+    self.stop();
+    if (self.userAgent instanceof SIP.UA) {
+        self.userAgent.loadConfig(self.sipConfig);
+        self.userAgent.traceSip = true;
+    }
+    else {
+        self.userAgent = new SIP.UA(self.sipConfig);
+        self.__registerExtraOptions = options || {};
+        self.userAgent.on('connected', function(e) {
+            __disconnectCount = 0;
+            self.eventEmitter.emit(EVENT_NAMES.sipConnected, e);
+            self.userAgent.register({
+                extraHeaders: options.extraHeaders || []
+            });
+        });
+        self.userAgent.on('disconnected', function(e) {
+            if (++__disconnectCount >= (self.sipConfig.retryCount || 3)) {
                 __disconnectCount = 0;
-                self.eventEmitter.emit(EVENT_NAMES.sipConnected, e);
-                self.userAgent.register({
-                    extraHeaders: options.extraHeaders || []
-                });
-            });
-            self.userAgent.on('disconnected', function(e) {
-                if (++__disconnectCount >= (self.sipConfig.retryCount || 3)) {
-                    __disconnectCount = 0;
-                    self.stop();
-                    self.eventEmitter.emit(EVENT_NAMES.sipConnectionFailed, new Error("Unable to connect to the WS server: exceeded number of attempts"));
-                }
-                self.eventEmitter.emit(EVENT_NAMES.sipDisconnected, e);
-            });
-            self.userAgent.on('registered', function(e) {
-                self.eventEmitter.emit(EVENT_NAMES.sipRegistered, e);
-            });
-            self.userAgent.on('unregistered', function(e) {
-                self.eventEmitter.emit(EVENT_NAMES.sipUnRegistered, e);
-            });
-            self.userAgent.on('registrationFailed', function(e) {
-                self.eventEmitter.emit(EVENT_NAMES.sipRegistrationFailed, e);
-            });
-            //happens when call is incoming
-            self.userAgent.on('invite', function(session) {
-                var newLine;
+                self.stop();
+                self.eventEmitter.emit(EVENT_NAMES.sipConnectionFailed, new Error("Unable to connect to the WS server: exceeded number of attempts"));
+            }
+            self.eventEmitter.emit(EVENT_NAMES.sipDisconnected, e);
+        });
+        self.userAgent.on('registered', function(e) {
+            self.eventEmitter.emit(EVENT_NAMES.sipRegistered, e);
+        });
+        self.userAgent.on('unregistered', function(e) {
+            self.eventEmitter.emit(EVENT_NAMES.sipUnRegistered, e);
+        });
+        self.userAgent.on('registrationFailed', function(e) {
+            self.eventEmitter.emit(EVENT_NAMES.sipRegistrationFailed, e);
+        });
+        //happens when call is incoming
+        self.userAgent.on('invite', function(session) {
+            var newLine;
 
-                if (session && session.request && session.request.hasHeader('replaces')) {
-                    var replaces = session.request.getHeader('replaces').split(';'),
-                        callId = replaces[0],
-                        lines = self.getActiveLinesArray(),
-                        foundLine = null;
-                    for (var i = 0; i < lines.length; i++) {
-                        if (lines[i].session.request.call_id) {
-                            if (callId === lines[i].session.request.call_id) {
-                                foundLine = lines[i];
-                                break;
-                            }
+            if (session && session.request && session.request.hasHeader('replaces')) {
+                var replaces = session.request.getHeader('replaces').split(';'),
+                    callId = replaces[0],
+                    lines = self.getActiveLinesArray(),
+                    foundLine = null;
+                for (var i = 0; i < lines.length; i++) {
+                    if (lines[i].session.request.call_id) {
+                        if (callId === lines[i].session.request.call_id) {
+                            foundLine = lines[i];
+                            break;
                         }
                     }
-
-                    if (foundLine) {
-                        var originalSessionId = foundLine.getId();
-                        newLine = self.__createLine(session, PhoneLine.types.incoming);
-                        newLine.answer().then(function() {
-                            self.eventEmitter.emit(EVENT_NAMES.callReplaced, newLine, foundLine);
-                            foundLine.cancel();
-                        });
-                    }
                 }
-                else {
+
+                if (foundLine) {
+                    var originalSessionId = foundLine.getId();
                     newLine = self.__createLine(session, PhoneLine.types.incoming);
-                    self.eventEmitter.emit(EVENT_NAMES.sipIncomingCall, newLine);
+                    newLine.answer().then(function() {
+                        self.eventEmitter.emit(EVENT_NAMES.callReplaced, newLine, foundLine);
+                        foundLine.cancel();
+                    });
                 }
-            });
-        }
-        //noop on transport connected (this will cause unwanted REGISTER)
-        self.userAgent.registerContext.onTransportConnected = function() {};
-        self.userAgent.start();
+            }
+            else {
+                newLine = self.__createLine(session, PhoneLine.types.incoming);
+                self.eventEmitter.emit(EVENT_NAMES.sipIncomingCall, newLine);
+            }
+        });
     }
+    //noop on transport connected (this will cause unwanted REGISTER)
+    self.userAgent.registerContext.onTransportConnected = function() {};
+    self.userAgent.start();
 
-    initUA();
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -12037,10 +12051,10 @@ UserAgent.prototype.call = function(number, inviteOptions) {
             constraints: {audio: true, video: false},
             render: {
                 local: {
-                    audio: LOCAL_AUDIO
+                    audio: self.dom.localAudio
                 },
                 remote: {
-                    audio: REMOTE_AUDIO
+                    audio: self.dom.remoteAudio
                 }
             }
         },
@@ -12092,20 +12106,6 @@ UserAgent.prototype.on = function(eventName, cb) {
     return this;
 };
 
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-function checkConfig() {
-    // set mootools expands to non-enumerables under ES5
-    if (typeof this.sipConfig.wsServers === 'string') {
-        this.sipConfig.wsServers = [
-            {ws_uri: this.sipConfig.wsServers}
-        ];
-    }
-    var key, enums = {enumerable: false};
-    for (key in this.sipConfig.wsServers) this.sipConfig.wsServers.hasOwnProperty(key) || Object.defineProperty(Array.prototype, key, enums);
-}
-
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 UserAgent.prototype.isConnected = function() {
@@ -12148,6 +12148,10 @@ var extend = utils.extend;
 
 var index = 0;
 
+/**
+ * @param options
+ * @constructor
+ */
 var PhoneLine = function(options) {
     var self = this;
 
@@ -13132,35 +13136,39 @@ module.exports = {
 
 var uuid = __webpack_require__(38).uuid;
 
-/*
- * We create audio containers here
- * Sorry for DOM manipulations inside a service, but it is for the good :)
- */
-var LOCAL_AUDIO = document.createElement('video'),
-    REMOTE_AUDIO = document.createElement('video'),
-    LOCAL_AUDIO_ID = 'local_' + uuid(),
-    REMOTE_AUDIO_ID = 'remote_' + uuid();
+function DomAudio(){
 
-LOCAL_AUDIO.setAttribute('id', LOCAL_AUDIO_ID);
-LOCAL_AUDIO.setAttribute('autoplay', 'true');
-LOCAL_AUDIO.setAttribute('hidden', 'true');
-LOCAL_AUDIO.setAttribute('muted', '');
+    /*
+     * We create audio containers here
+     * Sorry for DOM manipulations inside a service, but it is for the good :)
+     */
+    var LOCAL_AUDIO = document.createElement('video'),
+        REMOTE_AUDIO = document.createElement('video'),
+        LOCAL_AUDIO_ID = 'local_' + uuid(),
+        REMOTE_AUDIO_ID = 'remote_' + uuid();
 
-REMOTE_AUDIO.setAttribute('id', REMOTE_AUDIO_ID);
-REMOTE_AUDIO.setAttribute('autoplay', 'true');
-REMOTE_AUDIO.setAttribute('hidden', 'true');
+    LOCAL_AUDIO.setAttribute('id', LOCAL_AUDIO_ID);
+    LOCAL_AUDIO.setAttribute('autoplay', 'true');
+    LOCAL_AUDIO.setAttribute('hidden', 'true');
+    LOCAL_AUDIO.setAttribute('muted', '');
 
-document.body.appendChild(LOCAL_AUDIO);
-document.body.appendChild(REMOTE_AUDIO);
+    REMOTE_AUDIO.setAttribute('id', REMOTE_AUDIO_ID);
+    REMOTE_AUDIO.setAttribute('autoplay', 'true');
+    REMOTE_AUDIO.setAttribute('hidden', 'true');
 
-LOCAL_AUDIO.volume = 0;
+    document.body.appendChild(LOCAL_AUDIO);
+    document.body.appendChild(REMOTE_AUDIO);
 
-module.exports = {
-    LOCAL_AUDIO: LOCAL_AUDIO,
-    REMOTE_AUDIO: REMOTE_AUDIO,
-    LOCAL_AUDIO_ID: LOCAL_AUDIO_ID,
-    REMOTE_AUDIO_ID: REMOTE_AUDIO_ID
-};
+    LOCAL_AUDIO.volume = 0;
+
+    this.localAudio = LOCAL_AUDIO;
+    this.remoteAudio = REMOTE_AUDIO;
+    this.localAudioId = LOCAL_AUDIO_ID;
+    this.remoteAudioId = REMOTE_AUDIO_ID;
+
+}
+
+module.exports = DomAudio;
 
 /***/ },
 /* 41 */
@@ -13170,6 +13178,11 @@ module.exports = {
 
 var audio = __webpack_require__(42);
 
+/**
+ * @param {WebPhone} rcSIPUA
+ * @param options
+ * @constructor
+ */
 function AudioHelper(rcSIPUA, options) {
 
     var self = this;
@@ -13179,6 +13192,7 @@ function AudioHelper(rcSIPUA, options) {
     this._rcSIPUA = rcSIPUA;
     this._incoming = options.incoming || 'audio/incoming.ogg';
     this._outgoing = options.outgoing || 'audio/outgoing.ogg';
+    this._audio = {};
 
     rcSIPUA.on(rcSIPUA.events.incomingCall, function() {
         self.playIncoming(true);
@@ -13203,17 +13217,17 @@ function AudioHelper(rcSIPUA, options) {
 
 AudioHelper.prototype._playSound = function(url, val, volume) {
 
-    if (!this._audio) {
+    if (!this._audio[url]) {
         if (val) {
             volume !== undefined && (audio.volume = volume);
-            this._audio = audio.play(url, {loop: true});
+            this._audio[url] = audio.play(url, {loop: true});
         }
     } else {
         if (val) {
-            this._audio.reset();
+            this._audio[url].reset();
         }
         else {
-            this._audio.stop();
+            this._audio[url].stop();
         }
     }
 
@@ -13308,7 +13322,7 @@ module.exports = {
 
         audio.play();
 
-        return emitter; //TODO Return audio?
+        return emitter;
 
     }
 };

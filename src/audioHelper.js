@@ -2,6 +2,11 @@
 
 var audio = require('./audio');
 
+/**
+ * @param {WebPhone} rcSIPUA
+ * @param options
+ * @constructor
+ */
 function AudioHelper(rcSIPUA, options) {
 
     var self = this;
@@ -11,6 +16,7 @@ function AudioHelper(rcSIPUA, options) {
     this._rcSIPUA = rcSIPUA;
     this._incoming = options.incoming || 'audio/incoming.ogg';
     this._outgoing = options.outgoing || 'audio/outgoing.ogg';
+    this._audio = {};
 
     rcSIPUA.on(rcSIPUA.events.incomingCall, function() {
         self.playIncoming(true);
@@ -35,17 +41,17 @@ function AudioHelper(rcSIPUA, options) {
 
 AudioHelper.prototype._playSound = function(url, val, volume) {
 
-    if (!this._audio) {
+    if (!this._audio[url]) {
         if (val) {
             volume !== undefined && (audio.volume = volume);
-            this._audio = audio.play(url, {loop: true});
+            this._audio[url] = audio.play(url, {loop: true});
         }
     } else {
         if (val) {
-            this._audio.reset();
+            this._audio[url].reset();
         }
         else {
-            this._audio.stop();
+            this._audio[url].stop();
         }
     }
 

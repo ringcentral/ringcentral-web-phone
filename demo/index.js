@@ -1,19 +1,7 @@
 //.factory("ringout", function($rootScope, $q, callMonitor, utils, logging, rcCore, rcPlatform, rcSIPUA, appstorage, settingsService, getLocaleString, $locale) { 'use strict';
-var webPhone = RingCentral.WebPhone;
+var webPhone = new RingCentral.WebPhone({audioHelper: true});
 var platform;
 var log = document.getElementById('log');
-
-webPhone.createAudioHelper();
-
-['log', 'warn', 'error'].forEach(function(verb) {
-    console[verb] = (function(method, verb, log) {
-        return function(text) {
-            method(text);
-            var message = verb + '     :    ' + text + '<br />';
-            log.innerHTML += message;
-        };
-    })(console[verb].bind(console), verb, log);
-});
 
 function startCall(toNumber, fromNumber) {
     if (fromNumber == "")
@@ -32,6 +20,9 @@ function startCall(toNumber, fromNumber) {
             .then(function(countryId) {
                 console.log('SIP call to', toNumber, 'from', fromNumber + '\n');
                 webPhone.call(toNumber, fromNumber, countryId);
+            })
+            .catch(function(e){
+                console.error(e.stack);
             });
     }
 }
@@ -167,6 +158,9 @@ function registerSIP(checkFlags, transport) {
             console.log("Sip Data" + JSON.stringify(data));
 
             return webPhone.register(data, checkFlags)
+                .then(function(){
+                    console.log('Registered');
+                })
                 .catch(function(e) {
                     var err = e && e.status_code && e.reason_phrase
                         ? new Error(e.status_code + ' ' + e.reason_phrase)
@@ -225,4 +219,4 @@ setTimeout(function(){
     document.getElementById('password').value = localStorage.webPhonePassword;
 }, 100);
 
-console.log('WebPhone version: ' + webPhone.version);
+console.log('WebPhone version: ' + RingCentral.WebPhone.version);

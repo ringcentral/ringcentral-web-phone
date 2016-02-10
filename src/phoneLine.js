@@ -10,6 +10,10 @@ var extend = utils.extend;
 
 var index = 0;
 
+/**
+ * @param options
+ * @constructor
+ */
 var PhoneLine = function(options) {
     var self = this;
 

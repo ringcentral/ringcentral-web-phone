@@ -1,5 +1,3 @@
-//Fixme We need to split this file into 3-4 modules -- User Agent, Phone-Line, Event-Emitter, Service
-
 var SIP = require('sip.js');
 var EventEmitter = require('./emitter');
 var PhoneLine = require('./phoneLine');
@@ -9,12 +7,14 @@ var extend = utils.extend;
 var uuid = utils.uuid;
 
 var EVENT_NAMES = require('./eventNames');
-var dom = require('./dom');
-var LOCAL_AUDIO = dom.LOCAL_AUDIO;
-var REMOTE_AUDIO = dom.REMOTE_AUDIO;
+var DomAudio = require('./dom');
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+/**
+ * @param options
+ * @constructor
+ */
 var UserAgent = function(options) {
     this.eventEmitter = new EventEmitter();
     this.sipConfig = options ? (options.sipConfig || {}) : ({});
@@ -23,7 +23,21 @@ var UserAgent = function(options) {
     this.getUserMedia = undefined;
     this.RTCPeerConnection = undefined;
     this.RTCSessionDescription = undefined;
-    checkConfig.apply(this);
+    this.dom = new DomAudio();
+    this.checkConfig();
+};
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+UserAgent.prototype.checkConfig = function() {
+    // set mootools expands to non-enumerables under ES5
+    if (typeof this.sipConfig.wsServers === 'string') {
+        this.sipConfig.wsServers = [
+            {ws_uri: this.sipConfig.wsServers}
+        ];
+    }
+    var key, enums = {enumerable: false};
+    for (key in this.sipConfig.wsServers) this.sipConfig.wsServers.hasOwnProperty(key) || Object.defineProperty(Array.prototype, key, enums);
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -44,7 +58,7 @@ UserAgent.prototype.setSIPConfig = function(config) {
     }
 
     this.sipConfig = config;
-    checkConfig.apply(this);
+    this.checkConfig();
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -114,78 +128,75 @@ var __disconnectCount = 0;
 UserAgent.prototype.start = function(options) {
     var self = this;
 
-    function initUA() {
-        self.stop();
-        if (self.userAgent instanceof SIP.UA) {
-            self.userAgent.loadConfig(self.sipConfig);
-            self.userAgent.traceSip=true;
-        }
-        else {
-            self.userAgent = new SIP.UA(self.sipConfig);
-            self.__registerExtraOptions = options || {};
-            self.userAgent.on('connected', function(e) {
+    self.stop();
+    if (self.userAgent instanceof SIP.UA) {
+        self.userAgent.loadConfig(self.sipConfig);
+        self.userAgent.traceSip = true;
+    }
+    else {
+        self.userAgent = new SIP.UA(self.sipConfig);
+        self.__registerExtraOptions = options || {};
+        self.userAgent.on('connected', function(e) {
+            __disconnectCount = 0;
+            self.eventEmitter.emit(EVENT_NAMES.sipConnected, e);
+            self.userAgent.register({
+                extraHeaders: options.extraHeaders || []
+            });
+        });
+        self.userAgent.on('disconnected', function(e) {
+            if (++__disconnectCount >= (self.sipConfig.retryCount || 3)) {
                 __disconnectCount = 0;
-                self.eventEmitter.emit(EVENT_NAMES.sipConnected, e);
-                self.userAgent.register({
-                    extraHeaders: options.extraHeaders || []
-                });
-            });
-            self.userAgent.on('disconnected', function(e) {
-                if (++__disconnectCount >= (self.sipConfig.retryCount || 3)) {
-                    __disconnectCount = 0;
-                    self.stop();
-                    self.eventEmitter.emit(EVENT_NAMES.sipConnectionFailed, new Error("Unable to connect to the WS server: exceeded number of attempts"));
-                }
-                self.eventEmitter.emit(EVENT_NAMES.sipDisconnected, e);
-            });
-            self.userAgent.on('registered', function(e) {
-                self.eventEmitter.emit(EVENT_NAMES.sipRegistered, e);
-            });
-            self.userAgent.on('unregistered', function(e) {
-                self.eventEmitter.emit(EVENT_NAMES.sipUnRegistered, e);
-            });
-            self.userAgent.on('registrationFailed', function(e) {
-                self.eventEmitter.emit(EVENT_NAMES.sipRegistrationFailed, e);
-            });
-            //happens when call is incoming
-            self.userAgent.on('invite', function(session) {
-                var newLine;
+                self.stop();
+                self.eventEmitter.emit(EVENT_NAMES.sipConnectionFailed, new Error("Unable to connect to the WS server: exceeded number of attempts"));
+            }
+            self.eventEmitter.emit(EVENT_NAMES.sipDisconnected, e);
+        });
+        self.userAgent.on('registered', function(e) {
+            self.eventEmitter.emit(EVENT_NAMES.sipRegistered, e);
+        });
+        self.userAgent.on('unregistered', function(e) {
+            self.eventEmitter.emit(EVENT_NAMES.sipUnRegistered, e);
+        });
+        self.userAgent.on('registrationFailed', function(e) {
+            self.eventEmitter.emit(EVENT_NAMES.sipRegistrationFailed, e);
+        });
+        //happens when call is incoming
+        self.userAgent.on('invite', function(session) {
+            var newLine;
 
-                if (session && session.request && session.request.hasHeader('replaces')) {
-                    var replaces = session.request.getHeader('replaces').split(';'),
-                        callId = replaces[0],
-                        lines = self.getActiveLinesArray(),
-                        foundLine = null;
-                    for (var i = 0; i < lines.length; i++) {
-                        if (lines[i].session.request.call_id) {
-                            if (callId === lines[i].session.request.call_id) {
-                                foundLine = lines[i];
-                                break;
-                            }
+            if (session && session.request && session.request.hasHeader('replaces')) {
+                var replaces = session.request.getHeader('replaces').split(';'),
+                    callId = replaces[0],
+                    lines = self.getActiveLinesArray(),
+                    foundLine = null;
+                for (var i = 0; i < lines.length; i++) {
+                    if (lines[i].session.request.call_id) {
+                        if (callId === lines[i].session.request.call_id) {
+                            foundLine = lines[i];
+                            break;
                         }
                     }
-
-                    if (foundLine) {
-                        var originalSessionId = foundLine.getId();
-                        newLine = self.__createLine(session, PhoneLine.types.incoming);
-                        newLine.answer().then(function() {
-                            self.eventEmitter.emit(EVENT_NAMES.callReplaced, newLine, foundLine);
-                            foundLine.cancel();
-                        });
-                    }
                 }
-                else {
+
+                if (foundLine) {
+                    var originalSessionId = foundLine.getId();
                     newLine = self.__createLine(session, PhoneLine.types.incoming);
-                    self.eventEmitter.emit(EVENT_NAMES.sipIncomingCall, newLine);
+                    newLine.answer().then(function() {
+                        self.eventEmitter.emit(EVENT_NAMES.callReplaced, newLine, foundLine);
+                        foundLine.cancel();
+                    });
                 }
-            });
-        }
-        //noop on transport connected (this will cause unwanted REGISTER)
-        self.userAgent.registerContext.onTransportConnected = function() {};
-        self.userAgent.start();
+            }
+            else {
+                newLine = self.__createLine(session, PhoneLine.types.incoming);
+                self.eventEmitter.emit(EVENT_NAMES.sipIncomingCall, newLine);
+            }
+        });
     }
+    //noop on transport connected (this will cause unwanted REGISTER)
+    self.userAgent.registerContext.onTransportConnected = function() {};
+    self.userAgent.start();
 
-    initUA();
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -229,10 +240,10 @@ UserAgent.prototype.call = function(number, inviteOptions) {
             constraints: {audio: true, video: false},
             render: {
                 local: {
-                    audio: LOCAL_AUDIO
+                    audio: self.dom.localAudio
                 },
                 remote: {
-                    audio: REMOTE_AUDIO
+                    audio: self.dom.remoteAudio
                 }
             }
         },
@@ -283,20 +294,6 @@ UserAgent.prototype.on = function(eventName, cb) {
     this.eventEmitter.on(eventName, cb);
     return this;
 };
-
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-function checkConfig() {
-    // set mootools expands to non-enumerables under ES5
-    if (typeof this.sipConfig.wsServers === 'string') {
-        this.sipConfig.wsServers = [
-            {ws_uri: this.sipConfig.wsServers}
-        ];
-    }
-    var key, enums = {enumerable: false};
-    for (key in this.sipConfig.wsServers) this.sipConfig.wsServers.hasOwnProperty(key) || Object.defineProperty(Array.prototype, key, enums);
-}
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 

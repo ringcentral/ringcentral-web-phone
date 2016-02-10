@@ -6,7 +6,9 @@
 ```
 
 ```js
-var webphone = RingCentral.WebPhone;
+var webphone = new RingCentral.WebPhone({
+    audioHelper: true
+});
 
 var sdk = new RingCentral.SDK({
     appKey: '...',
@@ -30,7 +32,7 @@ platform
                 }]
             })
             .then(function(res) {
-                return webPhone.registerSIP(res.json());
+                return webPhone.register(res.json());
             });
         
     })

@@ -71,7 +71,7 @@ module.exports = {
 
         audio.play();
 
-        return emitter; //TODO Return audio?
+        return emitter;
 
     }
 };
