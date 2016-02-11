@@ -1,7 +1,8 @@
 //.factory("ringout", function($rootScope, $q, callMonitor, utils, logging, rcCore, rcPlatform, rcSIPUA, appstorage, settingsService, getLocaleString, $locale) { 'use strict';
 var webPhone = new RingCentral.WebPhone({audioHelper: true});
 var platform;
-var log = document.getElementById('log');
+
+
 
 function startCall(toNumber, fromNumber) {
     if (fromNumber == "")
@@ -49,11 +50,8 @@ function unhold() {
 
 function answerIncomingCall() {
     webPhone.answer(line);
-    //
     console.log("Incoming call from : " + line.getContact().number);
-    //
-
-    var delay = 1000; //1 seconds
+   var delay = 1000; //1 seconds
 
     setTimeout(function() {
         if (line.getContact().number == "16197619503") {
@@ -83,11 +81,13 @@ function reregister() {
 
 
 function unregisterSip() {
+    document.getElementById("hid").style.display = "none"
     webPhone.unregister();
     console.log('Unregistered SIP\n');
 }
 
 function forceDisconnectSip() {
+    document.getElementById("hid").style.display = "none"
     webPhone.forceDisconnect();
     console.log('Forcing SIP disconnection\n');
 }
@@ -125,6 +125,17 @@ function callTransfer(number) {
         console.log('Call Transfer\n');
     }
 }
+
+
+function  sendDTMFs(DTMF){
+    if (DTMF == "")
+        alert('Fill in the DTMF');
+    else {
+        line.sendDTMFs(DTMF)
+        console.log('Send DTMF' + DTMF + '\n');
+    }
+}
+
 
 function sendDTMF(DTMF) {
     if (DTMF == "")
@@ -178,6 +189,7 @@ function registerSIP(checkFlags, transport) {
 }
 
 function app() {
+
 }
 
 /**
@@ -208,7 +220,14 @@ function register(apikey, apisecret, username, password) {
         .then(function() {
             return registerSIP();
         })
-        .then(app);
+        .then(function () {
+           if(webPhone.isRegistered==true){
+               document.getElementById("hid").style.display = "block"
+           }
+            else {
+               document.getElementById("hid").style.display = "none"
+           }
+        });
 
 }
 

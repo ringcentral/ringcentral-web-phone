@@ -4,32 +4,13 @@
     <title>WebPhone</title>
 </head>
 
-<style>
-    [draggable=true] {
-        cursor: move;
-    }
-
-    .resizable {
-        overflow: scroll;
-        resize: both;
-        max-width: 300px;
-        max-height: 460px;
-    }
-
-    samp p {
-        color: black;
-        font-family: Courier;
-        -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)"; /* IE 8 */
-        filter: alpha(opacity=50); /* IE 5-7 */
-        -moz-opacity: 0.5; /* Netscape */
-        -khtml-opacity: 0.5; /* Safari 1.x */
-        opacity: 0.5; /* Good browsers */
-    }
-</style>
-
-
 <body>
 
+<style >
+    #hid {
+        display: none;
+    }
+</style>
 
 <div role="navigation" class="navbar navbar-inverse navbar-fixed-top">
     <div class="container">
@@ -56,6 +37,8 @@
         </div>
     </div>
 </div>
+
+
 <div class="container">
 
     <br><br>
@@ -101,12 +84,24 @@
             <input type="submit" value="UnRegister Sip Configurations" onclick="unregisterSip();">
             <input type="submit" value="Force Disconnect Sip Connection" onclick="forceDisconnectSip();">
             <br><br>
+
+         </div>
+
+    </div>
+
+
+    <br>
+    <br>
+
+
+
+    <div class="col-sm-offset-2 col-sm-10" id="hid">
             <label class="control-lable">Call To</label>
             <div class="form-group">
                 <div class="col-sm-2">
                     <input type="text" class="form-control" id="tonumber">
                 </div>
-            </div>
+
             <input type="submit" value="Call" onclick="startCall(tonumber.value,fromnumber.value);">
             <input type="submit" value="Disconnect Call" onclick="disconnect();">
             <input type="submit" value="Hold" onclick="hold();">
@@ -116,58 +111,48 @@
             <input type="submit" value="Accept incoming Call" onclick="answerIncomingCall();">
             <input type="submit" value="Start Recording" onclick="startRecording();">
             <input type="submit" value="Stop Recording" onclick="stopRecording();">
+
+            </div>
             <br><br>
+
+
             <label class="control-lable">FlipCall To</label>
+
             <div class="form-group">
                 <div class="col-sm-2">
                     <input type="text" class="form-control" id="Xnumber">
                 </div>
-            </div>
+
             <input type="submit" value="Call Flip" onclick="callflip(Xnumber.value);">
             <input type="submit" value="Call Park" onclick="callpark();">
             <input type="submit" value="Call Transfer" onclick="callTransfer(Xnumber.value);">
+            </div>
             <br><br>
+
+
             <label class="control-lable">Send DTMF</label>
             <div class="form-group">
                 <div class="col-sm-2">
                     <input type="text" class="form-control" id="DTMF">
                 </div>
+
+            <input type="submit" value="Send DTMF " onclick="sendDTMFs(DTMF.value);">
+
             </div>
-            <input type="submit" value="Send DTMF " onclick="sendDTMF(DTMF.value);">
             <br><br>
+
+
             <label class="control-lable">Forward Call to </label>
             <div class="form-group">
                 <div class="col-sm-2">
                     <input type="text" class="form-control" id="forwardNumber">
                 </div>
-            </div>
+
             <input type="submit" value="Forward the Call" onclick="forward(forwardNumber.value);">
-        </div>
-
+            </div>
     </div>
 
-    <br><br>
-
-    <div>
-
-        <div class="dynDiv_moveDiv" style="border-style:inset; overflow:scroll; height: 293px; cursor: move; width: 586px; left: 601px; top: 483px;">
-            <samp>
-                <p id="log"></p>
-            </samp>
-            <div class="dynDiv_resizeDiv_tl"></div>
-            <div class="dynDiv_resizeDiv_tr"></div>
-            <div class="dynDiv_resizeDiv_bl"></div>
-            <div class="dynDiv_resizeDiv_br"></div>
-        </div>
-    </div>
-
-
-    <br><br>
-    <h2>Monitor</h2>
-    <pre id="monitor"></pre>
-
-    <link rel="stylesheet" type="text/css" href="../demo/style/byrei-dyndiv_0.5.css">
-    <script type="text/javascript" src="../demo/js/byrei-dyndiv_1.0rc1.js"></script>
+</div>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
     <script src="../bower_components/ringcentral/build/ringcentral-bundle.js" type="text/javascript"></script>
     <script src="../build/ringcentral-web-phone.js" type="text/javascript"></script>
