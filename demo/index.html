@@ -42,111 +42,106 @@
     <br><br>
     <br><br>
 
-    <div class="form-horizontal">
-
+    <form onsubmit="return false">
 
         <div class="form-group">
-            <label class="col-sm-2 control-label">apikey</label>
-            <div class="col-sm-6">
-                <input type="text" class="form-control" id="apikey">
-            </div>
+            <label class="control-label" for="apikey">apikey</label>
+            <input type="text" class="form-control" id="apikey">
         </div>
         <div class="form-group">
-            <label class="col-sm-2 control-label">apisecret</label>
-            <div class="col-sm-6">
-                <input type="text" class="form-control" id="apisecret">
-            </div>
+            <label class="control-label" for="apisecret">apisecret</label>
+            <input type="text" class="form-control" id="apisecret">
         </div>
         <div class="form-group">
-            <label class="col-sm-2 control-label">fromnumber</label>
-            <div class="col-sm-6">
-                <input type="text" class="form-control" id="fromnumber">
-            </div>
+            <label class="control-label" for="fromnumber">fromnumber</label>
+            <input type="text" class="form-control" id="fromnumber">
         </div>
         <div class="form-group">
-            <label class="col-sm-2 control-label">extension</label>
-            <div class="col-sm-6">
-                <input type="text" class="form-control" id="extension">
-            </div>
+            <label class="control-label" for="extension">extension</label>
+            <input type="text" class="form-control" id="extension">
         </div>
         <div class="form-group">
-            <label class="col-sm-2 control-label">password</label>
-            <div class="col-sm-6">
-                <input type="password" class="form-control" id="password">
-            </div>
+            <label class="control-label" for="password">password</label>
+            <input type="password" class="form-control" id="password">
         </div>
 
-
-        <div class="col-sm-offset-2 col-sm-10">
-            <input type="submit" value="Register Sip Configurations" onclick="register(apikey.value,apisecret.value,fromnumber.value,password.value);">
-            <input type="submit" value="UnRegister Sip Configurations" onclick="unregisterSip();">
-            <input type="submit" value="Force Disconnect Sip Connection" onclick="forceDisconnectSip();">
-            <br><br>
-
+        <div>
+            <input type="button" class="btn btn-primary" value="Register Sip Configurations" onclick="register(apikey.value,apisecret.value,fromnumber.value,password.value);">
+            <input type="button" class="btn btn-warning" value="UnRegister Sip Configurations" onclick="unregisterSip();">
+            <input type="button" class="btn btn-danger" value="Force Disconnect Sip Connection" onclick="forceDisconnectSip();">
         </div>
 
-    </div>
-
+    </form>
 
     <br>
     <br>
 
+    <div id="hid">
 
-    <div class="col-sm-offset-2 col-sm-10" id="hid">
-        <label class="control-lable">Call To</label>
+        <h2>Call To</h2>
+
         <div class="form-group">
-            <div class="col-sm-2">
-                <input type="text" class="form-control" id="tonumber">
-            </div>
-
-            <input type="submit" value="Call" onclick="startCall(tonumber.value,fromnumber.value);">
-            <input type="submit" value="Disconnect Call" onclick="disconnect();">
-            <input type="submit" value="Hold" onclick="hold();">
-            <input type="submit" value="Unhold" onclick="unhold();">
-            <input type="submit" value="Mute" onclick="mute();">
-            <input type="submit" value="UnMute" onclick="unmute();">
-            <input type="submit" value="Accept incoming Call" onclick="answerIncomingCall();">
-            <input type="submit" value="Start Recording" onclick="startRecording();">
-            <input type="submit" value="Stop Recording" onclick="stopRecording();">
-
+            <input type="text" class="form-control" id="tonumber" placeholder="1-234-567-8901">
         </div>
+
+        <div class="btn-toolbar" role="toolbar">
+            <div class="btn-group" role="group">
+                <input type="button" class="btn btn-default" value="Call" onclick="startCall(tonumber.value,fromnumber.value);">
+                <input type="button" class="btn btn-default" value="Accept incoming Call" onclick="answerIncomingCall();">
+                <input type="button" class="btn btn-default" value="Disconnect Call" onclick="disconnect();">
+            </div>
+            <div class="btn-group" role="group">
+                <input type="button" class="btn btn-default" value="Hold" onclick="hold();">
+                <input type="button" class="btn btn-default" value="Unhold" onclick="unhold();">
+            </div>
+            <div class="btn-group" role="group">
+                <input type="button" class="btn btn-default" value="Mute" onclick="mute();">
+                <input type="button" class="btn btn-default" value="UnMute" onclick="unmute();">
+            </div>
+            <div class="btn-group" role="group">
+                <input type="button" class="btn btn-default" value="Start Recording" onclick="startRecording();">
+                <input type="button" class="btn btn-default" value="Stop Recording" onclick="stopRecording();">
+            </div>
+        </div>
+
         <br><br>
 
-
-        <label class="control-lable">FlipCall To</label>
+        <h2>FlipCall To</h2>
 
         <div class="form-group">
-            <div class="col-sm-2">
-                <input type="text" class="form-control" id="Xnumber">
-            </div>
-
-            <input type="submit" value="Call Flip" onclick="callflip(Xnumber.value);">
-            <input type="submit" value="Call Park" onclick="callpark();">
-            <input type="submit" value="Call Transfer" onclick="callTransfer(Xnumber.value);">
+            <input type="text" class="form-control" id="Xnumber" placeholder="1-234-567-8901">
         </div>
+
+        <div class="btn-group" role="group">
+            <input type="button" class="btn btn-default" value="Call Flip" onclick="callflip(Xnumber.value);">
+            <input type="button" class="btn btn-default" value="Call Park" onclick="callpark();">
+            <input type="button" class="btn btn-default" value="Call Transfer" onclick="callTransfer(Xnumber.value);">
+        </div>
+
         <br><br>
 
+        <h2 class="control-lable">Send DTMF</h2>
 
-        <label class="control-lable">Send DTMF</label>
         <div class="form-group">
-            <div class="col-sm-2">
-                <input type="text" class="form-control" id="DTMF">
-            </div>
-
-            <input type="submit" value="Send DTMF " onclick="sendDTMFs(DTMF.value);">
-
+            <input type="text" class="form-control" id="DTMF" placeholder="1-234-567-8901">
         </div>
+
+        <div class="btn-group" role="group">
+            <input type="button" class="btn btn-default" value="Send DTMF " onclick="sendDTMFs(DTMF.value);">
+        </div>
+
         <br><br>
 
+        <h2>Forward Call to </h2>
 
-        <label class="control-lable">Forward Call to </label>
         <div class="form-group">
-            <div class="col-sm-2">
-                <input type="text" class="form-control" id="forwardNumber">
-            </div>
-
-            <input type="submit" value="Forward the Call" onclick="forward(forwardNumber.value);">
+            <input type="text" class="form-control" id="forwardNumber" placeholder="1-234-567-8901">
         </div>
+
+        <div class="btn-group" role="group">
+            <input type="button" class="btn btn-default" value="Forward the Call" onclick="forward(forwardNumber.value);">
+        </div>
+
     </div>
 
 </div>
