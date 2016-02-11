@@ -312,7 +312,7 @@ var PhoneLine = function(options) {
         onEnd();
         self.eventEmitter.emit(EVENT_NAMES.callFailed, self, response, cause);
         //SIP.js 0.6.x does not call terminated event sometimes, so we call it ourselves
-        if (cause === service.causes.REQUEST_TIMEOUT) {
+        if (cause === SIP.C.causes.REQUEST_TIMEOUT) {
             //this === session
             if (this.status !== SIP.Session.C.STATUS_CONFIRMED) {
                 this.terminated(null, SIP.C.causes.REQUEST_TIMEOUT);

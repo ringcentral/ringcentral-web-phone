@@ -24,6 +24,11 @@
         #hid {
             display: none;
         }
+
+        #hid2{
+            display: none;
+        }
+
     </style>
 </head>
 <body>
@@ -95,10 +100,16 @@
 
     <div id="hid">
 
+        <h2>Number of Active Calls in the session</h2>
+        <label id="activeCalls"></label>
+
         <h2>Call To</h2>
 
         <div class="form-group">
             <input type="text" class="form-control" id="tonumber" placeholder="1-234-567-8901">
+            <div>
+                <label id="duration" style="color:red"></label>
+            </div>
         </div>
 
         <div class="btn-toolbar" role="toolbar">
@@ -119,6 +130,14 @@
                 <input type="button" class="btn btn-default" value="Start Recording" onclick="startRecording();">
                 <input type="button" class="btn btn-default" value="Stop Recording" onclick="stopRecording();">
             </div>
+        </div>
+
+        <br><br>
+
+
+        <div id="hid2">
+            <input type="button" class="btn btn-success" value="Accept incoming Call" onclick="answerIncomingCall();">
+            <input type="button" class="btn btn-danger" value="Disconnect Incoming Call" onclick="disconnect();">
         </div>
 
         <br><br>

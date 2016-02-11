@@ -2,6 +2,28 @@
 var webPhone = new RingCentral.WebPhone({audioHelper: true});
 var platform;
 
+(function(){
+    webPhone.ua.on('sipIncomingCall', function(e) {
+        document.getElementById("hid2").style.display = "block";
+    });
+
+    webPhone.ua.on('callStarted',function(e){
+        setInterval(function() {
+            document.getElementById('activeCalls').innerText = webPhone.ua.getActiveLinesArray().length;
+            function f(val, d) {
+                var sval = val + '';
+                return '000000'.substr(0, d - sval.length) + val;
+            }
+            var dur = Math.ceil(line.getCallDuration() / 1000);
+            var sec = dur % 60;
+            var min = Math.floor(dur / 60);
+            var hours = Math.floor(dur / 3600);
+            document.getElementById("duration").innerText = 'Duration: ' + f(hours, 2) + ':' + f(min, 2) + ':' + f(sec, 2);
+        }, 500);
+    })
+
+
+})();
 
 
 function startCall(toNumber, fromNumber) {
@@ -53,12 +75,12 @@ function answerIncomingCall() {
     console.log("Incoming call from : " + line.getContact().number);
    var delay = 1000; //1 seconds
 
-    setTimeout(function() {
-        if (line.getContact().number == "16197619503") {
-            console.log("incoming call - recording")
-            line.record(true);
-        }
-    }, delay);
+    //setTimeout(function() {
+    //    if (line.getContact().number == "16197619503") {
+    //        console.log("incoming call - recording")
+    //        line.record(true);
+    //    }
+    //}, delay);
 
 
     console.log('Answering Incoming Call\n');
@@ -66,6 +88,7 @@ function answerIncomingCall() {
 
 function disconnect() {
     webPhone.hangup(line);
+    document.getElementById("hid2").style.display = "none";
     console.log('Hangup Call\n');
 }
 
@@ -126,15 +149,6 @@ function callTransfer(number) {
     }
 }
 
-
-function  sendDTMFs(DTMF){
-    if (DTMF == "")
-        alert('Fill in the DTMF');
-    else {
-        line.sendDTMFs(DTMF)
-        console.log('Send DTMF' + DTMF + '\n');
-    }
-}
 
 
 function sendDTMF(DTMF) {
