@@ -2,15 +2,14 @@
 <html>
 <head>
     <title>WebPhone</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <style>
+        #hid {
+            display: none;
+        }
+    </style>
 </head>
-
 <body>
-
-<style >
-    #hid {
-        display: none;
-    }
-</style>
 
 <div role="navigation" class="navbar navbar-inverse navbar-fixed-top">
     <div class="container">
@@ -37,7 +36,6 @@
         </div>
     </div>
 </div>
-
 
 <div class="container">
 
@@ -85,7 +83,7 @@
             <input type="submit" value="Force Disconnect Sip Connection" onclick="forceDisconnectSip();">
             <br><br>
 
-         </div>
+        </div>
 
     </div>
 
@@ -94,13 +92,12 @@
     <br>
 
 
-
     <div class="col-sm-offset-2 col-sm-10" id="hid">
-            <label class="control-lable">Call To</label>
-            <div class="form-group">
-                <div class="col-sm-2">
-                    <input type="text" class="form-control" id="tonumber">
-                </div>
+        <label class="control-lable">Call To</label>
+        <div class="form-group">
+            <div class="col-sm-2">
+                <input type="text" class="form-control" id="tonumber">
+            </div>
 
             <input type="submit" value="Call" onclick="startCall(tonumber.value,fromnumber.value);">
             <input type="submit" value="Disconnect Call" onclick="disconnect();">
@@ -112,52 +109,52 @@
             <input type="submit" value="Start Recording" onclick="startRecording();">
             <input type="submit" value="Stop Recording" onclick="stopRecording();">
 
+        </div>
+        <br><br>
+
+
+        <label class="control-lable">FlipCall To</label>
+
+        <div class="form-group">
+            <div class="col-sm-2">
+                <input type="text" class="form-control" id="Xnumber">
             </div>
-            <br><br>
-
-
-            <label class="control-lable">FlipCall To</label>
-
-            <div class="form-group">
-                <div class="col-sm-2">
-                    <input type="text" class="form-control" id="Xnumber">
-                </div>
 
             <input type="submit" value="Call Flip" onclick="callflip(Xnumber.value);">
             <input type="submit" value="Call Park" onclick="callpark();">
             <input type="submit" value="Call Transfer" onclick="callTransfer(Xnumber.value);">
+        </div>
+        <br><br>
+
+
+        <label class="control-lable">Send DTMF</label>
+        <div class="form-group">
+            <div class="col-sm-2">
+                <input type="text" class="form-control" id="DTMF">
             </div>
-            <br><br>
-
-
-            <label class="control-lable">Send DTMF</label>
-            <div class="form-group">
-                <div class="col-sm-2">
-                    <input type="text" class="form-control" id="DTMF">
-                </div>
 
             <input type="submit" value="Send DTMF " onclick="sendDTMFs(DTMF.value);">
 
+        </div>
+        <br><br>
+
+
+        <label class="control-lable">Forward Call to </label>
+        <div class="form-group">
+            <div class="col-sm-2">
+                <input type="text" class="form-control" id="forwardNumber">
             </div>
-            <br><br>
-
-
-            <label class="control-lable">Forward Call to </label>
-            <div class="form-group">
-                <div class="col-sm-2">
-                    <input type="text" class="form-control" id="forwardNumber">
-                </div>
 
             <input type="submit" value="Forward the Call" onclick="forward(forwardNumber.value);">
-            </div>
+        </div>
     </div>
 
 </div>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
-    <script src="../bower_components/ringcentral/build/ringcentral-bundle.js" type="text/javascript"></script>
-    <script src="../build/ringcentral-web-phone.js" type="text/javascript"></script>
-    <script src="index.js" type="text/javascript"></script>
 
-</div>
+<!-- TODO Use CDN -->
+<script src="ringcentral-bundle.js" type="text/javascript"></script>
+<script src="../build/ringcentral-web-phone.js" type="text/javascript"></script>
+<script src="index.js" type="text/javascript"></script>
+
 </body>
 </html>
