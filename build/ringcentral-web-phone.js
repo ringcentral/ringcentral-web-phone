@@ -569,35 +569,59 @@ module.exports = (function(window) {
 /***/ function(module, exports) {
 
 module.exports = {
-	"name": "sip.js",
-	"title": "SIP.js",
-	"description": "A simple, intuitive, and powerful JavaScript signaling library",
-	"version": "0.6.4",
-	"main": "src/SIP.js",
-	"homepage": "http://sipjs.com",
+	"_args": [
+		[
+			"sip.js@0.6.4",
+			"/Users/vyshakh.babji/Desktop/WebRTC/kirill-webphone/web-phone-1"
+		]
+	],
+	"_from": "sip.js@0.6.4",
+	"_id": "sip.js@0.6.4",
+	"_inCache": true,
+	"_installable": true,
+	"_location": "/sip.js",
+	"_npmUser": {
+		"email": "eric.green@onsip.com",
+		"name": "egreen_onsip"
+	},
+	"_npmVersion": "1.4.13",
+	"_phantomChildren": {},
+	"_requested": {
+		"name": "sip.js",
+		"raw": "sip.js@0.6.4",
+		"rawSpec": "0.6.4",
+		"scope": null,
+		"spec": "0.6.4",
+		"type": "version"
+	},
+	"_requiredBy": [
+		"/"
+	],
+	"_resolved": "https://registry.npmjs.org/sip.js/-/sip.js-0.6.4.tgz",
+	"_shasum": "e080d4b0fa1a7dd803741d6bca6d32c29ae37380",
+	"_shrinkwrap": null,
+	"_spec": "sip.js@0.6.4",
+	"_where": "/Users/vyshakh.babji/Desktop/WebRTC/kirill-webphone/web-phone-1",
 	"author": {
-		"name": "Will Mitchell",
-		"email": "will@onsip.com"
+		"email": "will@onsip.com",
+		"name": "Will Mitchell"
+	},
+	"bugs": {
+		"url": "https://github.com/onsip/SIP.js/issues"
 	},
 	"contributors": [
 		{
 			"url": "http://sipjs.com/authors/"
 		}
 	],
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/onsip/SIP.js.git"
-	},
-	"keywords": [
-		"sip",
-		"websocket",
-		"webrtc",
-		"library",
-		"javascript"
-	],
+	"dependencies": {},
+	"description": "A simple, intuitive, and powerful JavaScript signaling library",
 	"devDependencies": {
+		"browserify": "^4.1.8",
 		"grunt": "~0.4.0",
+		"grunt-browserify": "^2.1.0",
 		"grunt-cli": "~0.1.6",
+		"grunt-contrib-copy": "^0.5.0",
 		"grunt-contrib-jasmine": "~0.6.0",
 		"grunt-contrib-jshint": ">0.5.0",
 		"grunt-contrib-uglify": "~0.2.0",
@@ -605,30 +629,27 @@ module.exports = {
 		"grunt-trimtrailingspaces": "^0.4.0",
 		"node-minify": "~0.7.2",
 		"pegjs": "0.8.0",
-		"sdp-transform": "~0.4.0",
-		"grunt-contrib-copy": "^0.5.0",
-		"browserify": "^4.1.8",
-		"grunt-browserify": "^2.1.0"
+		"sdp-transform": "~0.4.0"
+	},
+	"directories": {},
+	"dist": {
+		"shasum": "e080d4b0fa1a7dd803741d6bca6d32c29ae37380",
+		"tarball": "http://registry.npmjs.org/sip.js/-/sip.js-0.6.4.tgz"
 	},
 	"engines": {
 		"node": ">=0.8"
 	},
-	"license": "MIT",
-	"scripts": {
-		"test": "grunt travis --verbose"
-	},
 	"gitHead": "209fb9bb50f1918522d37a002b83f21abd6946ab",
-	"bugs": {
-		"url": "https://github.com/onsip/SIP.js/issues"
-	},
-	"_id": "sip.js@0.6.4",
-	"_shasum": "e080d4b0fa1a7dd803741d6bca6d32c29ae37380",
-	"_from": "sip.js@0.6.4",
-	"_npmVersion": "1.4.13",
-	"_npmUser": {
-		"name": "egreen_onsip",
-		"email": "eric.green@onsip.com"
-	},
+	"homepage": "http://sipjs.com",
+	"keywords": [
+		"javascript",
+		"library",
+		"sip",
+		"webrtc",
+		"websocket"
+	],
+	"license": "MIT",
+	"main": "src/SIP.js",
 	"maintainers": [
 		{
 			"name": "joseph-onsip",
@@ -639,12 +660,18 @@ module.exports = {
 			"email": "eric.green@onsip.com"
 		}
 	],
-	"dist": {
-		"shasum": "e080d4b0fa1a7dd803741d6bca6d32c29ae37380",
-		"tarball": "http://registry.npmjs.org/sip.js/-/sip.js-0.6.4.tgz"
+	"name": "sip.js",
+	"optionalDependencies": {},
+	"readme": "ERROR: No README data found!",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/onsip/SIP.js.git"
 	},
-	"directories": {},
-	"_resolved": "https://registry.npmjs.org/sip.js/-/sip.js-0.6.4.tgz"
+	"scripts": {
+		"test": "grunt travis --verbose"
+	},
+	"title": "SIP.js",
+	"version": "0.6.4"
 };
 
 /***/ },
@@ -12450,7 +12477,7 @@ var PhoneLine = function(options) {
         onEnd();
         self.eventEmitter.emit(EVENT_NAMES.callFailed, self, response, cause);
         //SIP.js 0.6.x does not call terminated event sometimes, so we call it ourselves
-        if (cause === service.causes.REQUEST_TIMEOUT) {
+        if (cause === SIP.C.causes.REQUEST_TIMEOUT) {
             //this === session
             if (this.status !== SIP.Session.C.STATUS_CONFIRMED) {
                 this.terminated(null, SIP.C.causes.REQUEST_TIMEOUT);
