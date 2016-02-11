@@ -52,15 +52,15 @@ platform
 Use the following steps to get started using the web phone demo:
 
 ```sh
-$ git clone https://github.com/vyshakhbabji/web-phone-1.git
-$ cd web-phone
+$ git clone https://github.com/ringcentral/ringcentral-web-phone.git
+$ cd ringcentral-web-phone
 $ npm install
 $ sudo npm install http-server -g //skip this if you have http-server installed
-$ http-server
+$ http-server ./demo/index.html -o
 Click on  (drwxr-xr-x)		demo/ 
 ```
 
-Open /web-phone/demo/index.html in the browser.
+Open /web-phone/demo/index.html in the browser if it does not open automatically using the `-o` option of the http-server..
 Add your RC credentials and click on `Register Sip Configurations` .
 
 For making outbound calls, enter `to phone number` and click on call. To disconnect to call, click on `Disconnect Call`.
