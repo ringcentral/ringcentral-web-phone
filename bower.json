@@ -1,25 +1,39 @@
 {
   "name": "ringcentral-web-phone",
-  "version": "0.0.1",
-  "homepage": "https://github.com/kirill-konshin/web-phone",
-  "authors": [
-    "Kirill Konshin <kirill.konshin@gmail.com>"
-  ],
-  "main": "build/ringcentral-web-phone.js",
-  "moduleType": [
-    "amd",
-    "globals",
-    "node"
-  ],
-  "license": "MIT",
+  "main": "./build/ringcentral-web-phone.js",
   "ignore": [
-    "**/.*",
-    "node_modules",
-    "bower_components",
-    "test",
-    "tests"
+    "**/*",
+    "!README.md",
+    "!build/ringcentral-web-phone.js",
+    "!build/ringcentral-web-phone.js.map",
+    "!build/ringcentral-web-phone.min.js",
+    "!build/ringcentral-web-phone.min.js.map",
+    "!demo/**/*",
+    "!src/**/*"
   ],
   "dependencies": {
-    "ringcentral": "~2.0.3"
-  }
+    "ringcentral": "~2.0.4"
+  },
+  "devDependencies": {},
+  "moduleType": [
+    "amd",
+    "globals"
+  ],
+  "private": false,
+  "license": "MIT",
+  "homepage": "https://github.com/ringcentral/ringcentral-web-phone",
+  "authors": [
+    {
+      "name": "RingCentral, Inc.",
+      "email": "devsupport@ringcentral.com"
+    },
+    {
+      "name": "Kirill Konshin"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ringcentral/ringcentral-web-phone.git"
+  },
+  "version": "0.1.0"
 }

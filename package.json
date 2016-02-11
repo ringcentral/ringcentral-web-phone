@@ -1,20 +1,47 @@
 {
   "name": "ringcentral-web-phone",
-  "version": "0.0.1",
-  "description": "",
-  "main": "build/index.js",
   "scripts": {
+    "main": "build/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "webpack": "./node_modules/.bin/webpack --display-modules --progress --colors --bail"
+    "webpack": "./node_modules/.bin/webpack --display-modules --progress --colors --bail",
+    "build": "./node_modules/.bin/gulp"
   },
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "ringcentral": "^2.0.1",
+    "ringcentral": "^2.0.4",
     "sip.js": "0.6.4"
   },
   "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-rename": "^1.2.2",
+    "gulp-sourcemaps": "^1.6.0",
+    "gulp-uglify": "^1.5.2",
+    "gulp-util": "^3.0.7",
     "json-loader": "^0.5.4",
     "webpack": "^1.12.12"
-  }
+  },
+  "preferGlobal": false,
+  "private": false,
+  "main": "./build/ringcentral-web-phone.js",
+  "author": {
+    "name": "RingCentral, Inc.",
+    "email": "devsupport@ringcentral.com"
+  },
+  "contributors": [
+    {
+      "name": "Kirill Konshin"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ringcentral/ringcentral-web-phone.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ringcentral/ringcentral-web-phone/issues"
+  },
+  "homepage": "https://github.com/ringcentral/ringcentral-web-phone",
+  "engines": {
+    "node": ">=0.10.36"
+  },
+  "license": "MIT",
+  "version": "0.1.0"
 }
