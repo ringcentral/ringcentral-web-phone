@@ -180,7 +180,7 @@ function registerSIP(checkFlags, transport) {
         .then(function(res) {
             var data = res.json();
 
-            console.log("Sip Data" + JSON.stringify(data));
+            console.log("Sip Provisioning Data from RC API: " + JSON.stringify(data));
 
             return webPhone.register(data, checkFlags)
                 .then(function(){

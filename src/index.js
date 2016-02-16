@@ -53,6 +53,7 @@ function WebPhone(options) {
     this.__unregisterDeferred = undefined;
     this.__callDeferred = undefined;
     this.__sipRegistered = false;
+    this.__sipOutboundEnabled = false;
 
     if (options.uuid) {
         this.uuid = options.uuid;
@@ -187,44 +188,47 @@ WebPhone.prototype.createAudioHelper = function(options) {
 
 WebPhone.prototype.register = function(info, checkFlags) {
 
-    var service = this;
-
-    // console.log("Sip Data"+JSON.stringify(data));
-
-    if (!checkFlags || (
-        typeof(info.sipFlags) === 'object' &&
-        //checking for undefined for platform v7.3, which doesn't support this flag
-        (info.sipFlags.outboundCallsEnabled === undefined || info.sipFlags.outboundCallsEnabled === true))
-    ) {
-
-        // console.log('SIP Provision data', data+'\n');
-        info = info.sipInfo[0];
-
-    } else {
-        throw new Error('ERROR.sipOutboundNotAvailable'); //FIXME Better error reporting...
-    }
-
-    var headers = [];
-    var endpointId = this.uuid;
-    if (endpointId) {
-        headers.push('P-rc-endpoint-id: ' + endpointId);
-    }
-
-    extend(info, {
-        extraHeaders: headers
-    });
-
-    if (service.isRegistered) {
-        console.warn('Already registered, please unregister the UA first');
-        return service.__registerDeferred.promise;
-    }
-
-    if (service.isRegistering) {
-        console.warn('Already registering the UA');
-        return service.__registerDeferred.promise;
-    }
-
     try {
+        var service = this;
+
+        // console.log("Sip Data"+JSON.stringify(data));
+
+        if (!checkFlags || (
+            typeof(info.sipFlags) === 'object' &&
+            //checking for undefined for platform v7.3, which doesn't support this flag
+            (info.sipFlags.outboundCallsEnabled === undefined || info.sipFlags.outboundCallsEnabled === true))
+        ) {
+
+            // Access SIP flags
+            this.__sipOutboundEnabled = info.sipFlags.outboundCallsEnabled;
+
+            // console.log('SIP Provision data', data+'\n');
+            info = info.sipInfo[0];
+
+        } else {
+            throw new Error('ERROR.sipOutboundNotAvailable'); //FIXME Better error reporting...
+        }
+
+        var headers = [];
+        var endpointId = this.uuid;
+        if (endpointId) {
+            headers.push('P-rc-endpoint-id: ' + endpointId);
+        }
+
+        extend(info, {
+            extraHeaders: headers
+        });
+
+        if (service.isRegistered) {
+            console.warn('Already registered, please unregister the UA first');
+            return service.__registerDeferred.promise;
+        }
+
+        if (service.isRegistering) {
+            console.warn('Already registering the UA');
+            return service.__registerDeferred.promise;
+        }
+
         service.__registerDeferred = defer();
         service.isRegistering = true;
         service.isRegistered = false;
@@ -263,7 +267,7 @@ WebPhone.prototype.register = function(info, checkFlags) {
     catch (e) {
         service.isRegistering = false;
         service.isRegistered = false;
-        throw e;
+        return Promise.reject(e);
     }
 
     return service.__registerDeferred.promise;
@@ -319,6 +323,9 @@ WebPhone.prototype.forceDisconnect = function() {
 
 WebPhone.prototype.call = function(toNumber, fromNumber, country) {
     var service = this;
+    if(!this.__sipOutboundEnabled || false === Boolean(this.__sipOutboundEnabled)) {
+      throw new Error('Outbound calling is disabled'); // TODO: Fix this to be more robust error messaging
+    }
     if (!service.__callDeferred) {
         service.__callDeferred = defer();
         this.activeLine = service.ua.call.call(service.ua, toNumber, {
