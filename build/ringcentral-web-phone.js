@@ -116,6 +116,7 @@ function WebPhone(options) {
     this.__unregisterDeferred = undefined;
     this.__callDeferred = undefined;
     this.__sipRegistered = false;
+    this.__sipOutboundEnabled = false;
 
     if (options.uuid) {
         this.uuid = options.uuid;
@@ -250,44 +251,47 @@ WebPhone.prototype.createAudioHelper = function(options) {
 
 WebPhone.prototype.register = function(info, checkFlags) {
 
-    var service = this;
-
-    // console.log("Sip Data"+JSON.stringify(data));
-
-    if (!checkFlags || (
-        typeof(info.sipFlags) === 'object' &&
-        //checking for undefined for platform v7.3, which doesn't support this flag
-        (info.sipFlags.outboundCallsEnabled === undefined || info.sipFlags.outboundCallsEnabled === true))
-    ) {
-
-        // console.log('SIP Provision data', data+'\n');
-        info = info.sipInfo[0];
-
-    } else {
-        throw new Error('ERROR.sipOutboundNotAvailable'); //FIXME Better error reporting...
-    }
-
-    var headers = [];
-    var endpointId = this.uuid;
-    if (endpointId) {
-        headers.push('P-rc-endpoint-id: ' + endpointId);
-    }
-
-    extend(info, {
-        extraHeaders: headers
-    });
-
-    if (service.isRegistered) {
-        console.warn('Already registered, please unregister the UA first');
-        return service.__registerDeferred.promise;
-    }
-
-    if (service.isRegistering) {
-        console.warn('Already registering the UA');
-        return service.__registerDeferred.promise;
-    }
-
     try {
+        var service = this;
+
+        // console.log("Sip Data"+JSON.stringify(data));
+
+        if (!checkFlags || (
+            typeof(info.sipFlags) === 'object' &&
+            //checking for undefined for platform v7.3, which doesn't support this flag
+            (info.sipFlags.outboundCallsEnabled === undefined || info.sipFlags.outboundCallsEnabled === true))
+        ) {
+
+            // Access SIP flags
+            this.__sipOutboundEnabled = info.sipFlags.outboundCallsEnabled;
+
+            // console.log('SIP Provision data', data+'\n');
+            info = info.sipInfo[0];
+
+        } else {
+            throw new Error('ERROR.sipOutboundNotAvailable'); //FIXME Better error reporting...
+        }
+
+        var headers = [];
+        var endpointId = this.uuid;
+        if (endpointId) {
+            headers.push('P-rc-endpoint-id: ' + endpointId);
+        }
+
+        extend(info, {
+            extraHeaders: headers
+        });
+
+        if (service.isRegistered) {
+            console.warn('Already registered, please unregister the UA first');
+            return service.__registerDeferred.promise;
+        }
+
+        if (service.isRegistering) {
+            console.warn('Already registering the UA');
+            return service.__registerDeferred.promise;
+        }
+
         service.__registerDeferred = defer();
         service.isRegistering = true;
         service.isRegistered = false;
@@ -326,7 +330,7 @@ WebPhone.prototype.register = function(info, checkFlags) {
     catch (e) {
         service.isRegistering = false;
         service.isRegistered = false;
-        throw e;
+        return Promise.reject(e);
     }
 
     return service.__registerDeferred.promise;
@@ -382,6 +386,9 @@ WebPhone.prototype.forceDisconnect = function() {
 
 WebPhone.prototype.call = function(toNumber, fromNumber, country) {
     var service = this;
+    if(!this.__sipOutboundEnabled || false === Boolean(this.__sipOutboundEnabled)) {
+      throw new Error('Outbound calling is disabled'); // TODO: Fix this to be more robust error messaging
+    }
     if (!service.__callDeferred) {
         service.__callDeferred = defer();
         this.activeLine = service.ua.call.call(service.ua, toNumber, {
@@ -503,6 +510,7 @@ WebPhone.prototype.transfer = function(line, target, options) {
 
 module.exports = WebPhone;
 
+
 /***/ },
 /* 2 */
 /***/ function(module, exports, __webpack_require__) {
@@ -569,59 +577,35 @@ module.exports = (function(window) {
 /***/ function(module, exports) {
 
 module.exports = {
-	"_args": [
-		[
-			"sip.js@0.6.4",
-			"/Users/vyshakh.babji/Desktop/WebRTC/kirill-webphone/web-phone-1"
-		]
-	],
-	"_from": "sip.js@0.6.4",
-	"_id": "sip.js@0.6.4",
-	"_inCache": true,
-	"_installable": true,
-	"_location": "/sip.js",
-	"_npmUser": {
-		"email": "eric.green@onsip.com",
-		"name": "egreen_onsip"
-	},
-	"_npmVersion": "1.4.13",
-	"_phantomChildren": {},
-	"_requested": {
-		"name": "sip.js",
-		"raw": "sip.js@0.6.4",
-		"rawSpec": "0.6.4",
-		"scope": null,
-		"spec": "0.6.4",
-		"type": "version"
-	},
-	"_requiredBy": [
-		"/"
-	],
-	"_resolved": "https://registry.npmjs.org/sip.js/-/sip.js-0.6.4.tgz",
-	"_shasum": "e080d4b0fa1a7dd803741d6bca6d32c29ae37380",
-	"_shrinkwrap": null,
-	"_spec": "sip.js@0.6.4",
-	"_where": "/Users/vyshakh.babji/Desktop/WebRTC/kirill-webphone/web-phone-1",
+	"name": "sip.js",
+	"title": "SIP.js",
+	"description": "A simple, intuitive, and powerful JavaScript signaling library",
+	"version": "0.6.4",
+	"main": "src/SIP.js",
+	"homepage": "http://sipjs.com",
 	"author": {
-		"email": "will@onsip.com",
-		"name": "Will Mitchell"
-	},
-	"bugs": {
-		"url": "https://github.com/onsip/SIP.js/issues"
+		"name": "Will Mitchell",
+		"email": "will@onsip.com"
 	},
 	"contributors": [
 		{
 			"url": "http://sipjs.com/authors/"
 		}
 	],
-	"dependencies": {},
-	"description": "A simple, intuitive, and powerful JavaScript signaling library",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/onsip/SIP.js.git"
+	},
+	"keywords": [
+		"sip",
+		"websocket",
+		"webrtc",
+		"library",
+		"javascript"
+	],
 	"devDependencies": {
-		"browserify": "^4.1.8",
 		"grunt": "~0.4.0",
-		"grunt-browserify": "^2.1.0",
 		"grunt-cli": "~0.1.6",
-		"grunt-contrib-copy": "^0.5.0",
 		"grunt-contrib-jasmine": "~0.6.0",
 		"grunt-contrib-jshint": ">0.5.0",
 		"grunt-contrib-uglify": "~0.2.0",
@@ -629,27 +613,30 @@ module.exports = {
 		"grunt-trimtrailingspaces": "^0.4.0",
 		"node-minify": "~0.7.2",
 		"pegjs": "0.8.0",
-		"sdp-transform": "~0.4.0"
-	},
-	"directories": {},
-	"dist": {
-		"shasum": "e080d4b0fa1a7dd803741d6bca6d32c29ae37380",
-		"tarball": "http://registry.npmjs.org/sip.js/-/sip.js-0.6.4.tgz"
+		"sdp-transform": "~0.4.0",
+		"grunt-contrib-copy": "^0.5.0",
+		"browserify": "^4.1.8",
+		"grunt-browserify": "^2.1.0"
 	},
 	"engines": {
 		"node": ">=0.8"
 	},
-	"gitHead": "209fb9bb50f1918522d37a002b83f21abd6946ab",
-	"homepage": "http://sipjs.com",
-	"keywords": [
-		"javascript",
-		"library",
-		"sip",
-		"webrtc",
-		"websocket"
-	],
 	"license": "MIT",
-	"main": "src/SIP.js",
+	"scripts": {
+		"test": "grunt travis --verbose"
+	},
+	"gitHead": "209fb9bb50f1918522d37a002b83f21abd6946ab",
+	"bugs": {
+		"url": "https://github.com/onsip/SIP.js/issues"
+	},
+	"_id": "sip.js@0.6.4",
+	"_shasum": "e080d4b0fa1a7dd803741d6bca6d32c29ae37380",
+	"_from": "sip.js@0.6.4",
+	"_npmVersion": "1.4.13",
+	"_npmUser": {
+		"name": "egreen_onsip",
+		"email": "eric.green@onsip.com"
+	},
 	"maintainers": [
 		{
 			"name": "joseph-onsip",
@@ -660,18 +647,12 @@ module.exports = {
 			"email": "eric.green@onsip.com"
 		}
 	],
-	"name": "sip.js",
-	"optionalDependencies": {},
-	"readme": "ERROR: No README data found!",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/onsip/SIP.js.git"
+	"dist": {
+		"shasum": "e080d4b0fa1a7dd803741d6bca6d32c29ae37380",
+		"tarball": "http://registry.npmjs.org/sip.js/-/sip.js-0.6.4.tgz"
 	},
-	"scripts": {
-		"test": "grunt travis --verbose"
-	},
-	"title": "SIP.js",
-	"version": "0.6.4"
+	"directories": {},
+	"_resolved": "https://registry.npmjs.org/sip.js/-/sip.js-0.6.4.tgz"
 };
 
 /***/ },

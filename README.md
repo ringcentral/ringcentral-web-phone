@@ -339,10 +339,10 @@ $ git clone https://github.com/ringcentral/ringcentral-web-phone.git
 $ cd ringcentral-web-phone
 $ npm install
 $ sudo npm install http-server -g //skip this if you have http-server installed
-$ http-server ./demo/index.html -o
+$ http-server
 ```
 
-Open /web-phone/demo/index.html in the browser if it does not open automatically using the `-o` option of the http-server..
+Open localhost:8080/demo/ in the browser
 
 Add your RC credentials and click on `Register Sip Configurations` .
 
