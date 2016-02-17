@@ -15,8 +15,8 @@ var index = 0;
  * @constructor
  */
 var PhoneLine = function(options) {
-    var self = this;
 
+    var self = this;
     this.index = index++;
 
     this.session = options.session;
@@ -57,7 +57,6 @@ var PhoneLine = function(options) {
             var cseq = null;
 
             return new Promise(function(resolve, reject){
-
                 self.session.sendRequest(SIP.C.INFO, {
                     body: JSON.stringify({
                         request: command
@@ -466,7 +465,7 @@ PhoneLine.prototype.record = function(val) {
         }
     }
     else {
-        return Promise.reject(new Error('Not on call'));
+        return Promise.reject(new Error('No line or no active line'));
     }
 };
 
@@ -480,7 +479,7 @@ PhoneLine.prototype.flip = function(target) {
         });
     }
     else {
-        return Promise.reject(new Error('Not on call'));
+        return Promise.reject(new Error('No line or no active line'));
     }
 };
 
@@ -489,23 +488,43 @@ PhoneLine.prototype.park = function() {
         return this.controlSender.send(this.controlSender.messages.park);
     }
     else {
-        return Promise.reject(new Error('Not on call'));
+        return Promise.reject(new Error('No line or no active line'));
     }
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 // Explore ref: http://sipjs.com/api/0.6.0/session/#dtmftone-options
 
+//PhoneLine.prototype.sendDTMF = function(value, duration) {
+//    duration = parseInt(duration) || 1000;
+//    var peer = this.session.mediaHandler.peerConnection;
+//    var stream = this.session.getLocalStreams()[0];
+//    var dtmfSender = peer.createDTMFSender(stream.getAudioTracks()[0]);
+//    if (dtmfSender !== undefined && dtmfSender.canInsertDTMF) {
+//        dtmfSender.insertDTMF(value, duration);
+//    }
+//    return Promise.resolve(null);
+//};
+
 PhoneLine.prototype.sendDTMF = function(value, duration) {
-    duration = parseInt(duration) || 1000;
-    var peer = this.session.mediaHandler.peerConnection;
-    var stream = this.session.getLocalStreams()[0];
-    var dtmfSender = peer.createDTMFSender(stream.getAudioTracks()[0]);
-    if (dtmfSender !== undefined && dtmfSender.canInsertDTMF) {
-        dtmfSender.insertDTMF(value, duration);
-    }
-    return Promise.resolve(null);
+    var self = this;
+    return new Promise(function(resolve, reject){
+        if(self.onCall) {
+            duration = parseInt(duration) || 1000;
+            var peer = self.session.mediaHandler.peerConnection;
+            var stream = self.session.getLocalStreams()[0];
+            var dtmfSender = peer.createDTMFSender(stream.getAudioTracks()[0]);
+            if (dtmfSender !== undefined && dtmfSender.canInsertDTMF) {
+                dtmfSender.insertDTMF(value, duration);
+            }
+            return null;
+        }
+        else
+            return Promise.reject(new Error('No line or no active line'));
+    });
 };
+
+
 
 PhoneLine.prototype.sendInfoDTMF = function(value, duration) {
     duration = parseInt(duration) || 1000;
@@ -610,7 +629,7 @@ PhoneLine.prototype.transfer = function(target, options) {
 
 PhoneLine.prototype.forward = function(target, options) {
     var self = this, interval = null;
-    return self.answer().then(function() {
+        return self.answer().then(function() {
         return new Promise(function(resolve, reject){
             interval = setInterval(function() {
                 if (self.session.status === 12) {
@@ -703,6 +722,7 @@ function setStreamMute(stream, val) {
 
 PhoneLine.prototype.setMuteBoth = function(val) {
     this.bothMuted = !!val;
+    this,muted=!!val;
     try {
         setStreamMute(this.session.getLocalStreams()[0], this.bothMuted);
         setStreamMute(this.session.getRemoteStreams()[0], this.bothMuted);
@@ -806,7 +826,7 @@ PhoneLine.prototype.__legacyHold = function(val) {
             });
         }
         else {
-            reject(new Error('Not on call or no dialog'));
+            reject(new Error('No line or no active line'));
         }
     });
 };
@@ -907,3 +927,5 @@ PhoneLine.prototype.hasEarlyMedia = function() {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 module.exports = PhoneLine;
+
+

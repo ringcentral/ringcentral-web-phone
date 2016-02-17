@@ -322,10 +322,15 @@ WebPhone.prototype.forceDisconnect = function() {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 WebPhone.prototype.call = function(toNumber, fromNumber, country) {
+
     var service = this;
     if(!this.__sipOutboundEnabled || false === Boolean(this.__sipOutboundEnabled)) {
       throw new Error('Outbound calling is disabled'); // TODO: Fix this to be more robust error messaging
     }
+
+    if(!toNumber)
+        throw new Error('Invalid or undefined [toNumber]');
+
     if (!service.__callDeferred) {
         service.__callDeferred = defer();
         this.activeLine = service.ua.call.call(service.ua, toNumber, {
@@ -336,33 +341,35 @@ WebPhone.prototype.call = function(toNumber, fromNumber, country) {
     return service.__callDeferred;
 };
 
+
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 WebPhone.prototype.answer = function(line) {
-    var incomingLines = this.ua.getIncomingLinesArray();
-    var activeLines = this.ua.getActiveLinesArray();
     var self = this;
+    return new Promise(function(resolve, reject){
+        var incomingLines = self.ua.getIncomingLinesArray();
+        var activeLines = self.ua.getActiveLinesArray();
 
-    if (!line) {
-        line = incomingLines.length > 0 && arr[0];
-    }
+        if (!line) {
+            line = self.getLine(incomingLines.length > 0 && arr[0]);
+        }
 
-    if (line) {
-        var promises = [];
-        activeLines.forEach(function(activeLine) {
-            if (activeLine !== line) {
-                !activeLine.isOnHold() && promises.push(activeLine.setHold(true));
-            }
+        if (line) {
+            var promises = [];
+            activeLines.forEach(function(activeLine) {
+                if (activeLine !== line) {
+                    !activeLine.isOnHold() && promises.push(activeLine.setHold(true));
+                }
+            });
+            Promise.all(promises).then(function() {
+                self.activeLine = line;
+                self.ua.answer(line);
+            }, function(e) {
+                self.hangup(line);
+            });
+        }
+        return null;
         });
-        Promise.all(promises).then(function() {
-            self.activeLine = line;
-            self.ua.answer(line);
-        }, function(e) {
-            self.hangup(line);
-        });
-    }
-
-    return Promise.resolve(null);
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -374,75 +381,132 @@ WebPhone.prototype.onCall = function() {
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
-
+/***
+ * deprecated
+ * @param line
+ * @returns {*}
+ */
 WebPhone.prototype.hangup = function(line) {
+    var self = this;
+    return new Promise(function(resolve, reject){
+        line = self.getLine(line);
+        this.ua.hangup(line);
+        if (line === this.activeLine) this.activeLine = null;
+        return null;
+    });
+};
+
+WebPhone.prototype.getLine = function(line) {
     if (!line) line = this.activeLine;
-    line && this.ua.hangup(line);
-    if (line === this.activeLine) this.activeLine = null;
-    return Promise.resolve(null);
+    if (!line) throw new Error('No line or no active line');
+    return line;
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 //FIXME: Check if we can replace this with  SIPJS dtmf(tone,[options]) ref: http://sipjs.com/api/0.7.0/session/#dtmftone-options
+/***
+ * deprecated
+ * @param value
+ * @param line
+ * @returns {*}
+ */
 WebPhone.prototype.sendDTMF = function(value, line) {
-    if (!line) line = this.activeLine;
-    line && line.sendDTMF.call(line, value);
-    return Promise.resolve(null);
+    var self = this;
+    return new Promise(function(resolve, reject){
+        line = self.getLine(line);
+        line && line.sendDTMF.call(line, value);
+        return null;
+    });
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
-
+/***
+ * deprecated
+ * @param line
+ * @returns {*}
+ */
 WebPhone.prototype.hold = function(line) {
-    if (!line) line = this.activeLine;
-    line && line.setHold(true);
-    if (line === this.activeLine) this.activeLine = null;
-    return Promise.resolve(null);
+    var self = this;
+    return new Promise(function(resolve, reject){
+        line = self.getLine(line);
+        line && line.setHold(true);
+        if (line === this.activeLine) this.activeLine = null;
+        return null;
+    });
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
-
+/***
+ * deprecated
+ * @param line
+ * @returns {*}
+ */
 WebPhone.prototype.unhold = function(line) {
-    if (!line) line = this.activeLine;
-    if (line) {
-        this.ua.getActiveLinesArray().forEach(function(activeLine) {
-            if (activeLine !== line && !activeLine.isIncoming() && !activeLine.isOnHold()) {
-                activeLine.setHold(true);
-            }
-        });
-        line.setHold(false);
-        this.activeLine = line;
-    }
-    return Promise.resolve(null);
+    var self = this;
+    return new Promise(function(resolve, reject){
+        line = self.getLine(line);
+        if (line) {
+            this.ua.getActiveLinesArray().forEach(function (activeLine) {
+                if (activeLine !== line && !activeLine.isIncoming() && !activeLine.isOnHold()) {
+                    activeLine.setHold(true);
+                }
+            });
+            line.setHold(false);
+            this.activeLine = line;
+        }
+        return null;
+    });
 };
 
 ////FIXME: Use SIPJS mute() and unmute() ref:http://sipjs.com/api/0.7.0/session/#muteoptions
 /*--------------------------------------------------------------------------------------------------------------------*/
-
+/***
+ * deprecated
+ * @param line
+ * @returns {*}
+ */
 WebPhone.prototype.mute = function(line) {
-    if (!line) line = this.activeLine;
-    line && line.setMute(true);
-    return Promise.resolve(null);
+    var self = this;
+    return new Promise(function(resolve, reject){
+        line = self.getLine(line);
+        line && line.setMute(true);
+        return null;
+    });
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
-
+/***
+ * deprecated
+ * @param line
+ * @returns {*}
+ */
 WebPhone.prototype.unmute = function(line) {
-    if (!line) line = this.activeLine;
-    line && line.setMute(false);
-    return Promise.resolve(null);
+    var self = this;
+    return new Promise(function(resolve, reject){
+        line = self.getLine(line);
+        line && line.setMute(false);
+        return null;
+    });
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
-
+/***
+ * deprecated
+ * @param line
+ * @param target
+ * @param options
+ * @returns {*}
+ */
 //Phone-line->transfer->blindTransfer
 WebPhone.prototype.transfer = function(line, target, options) {
-    if (!line) line = this.activeLine;
-    line && line.transfer(target, options);
-    if (line === this.activeLine) this.activeLine = null;
-    return Promise.resolve(null);
+    var self = this;
+    return new Promise(function(resolve, reject){
+        line = self.getLine(line);
+        line && line.transfer(target, options);
+        if (line === this.activeLine) this.activeLine = null;
+        return null;
+    });
 };
-
-/*--------------------------------------------------------------------------------------------------------------------*/
 
 module.exports = WebPhone;
