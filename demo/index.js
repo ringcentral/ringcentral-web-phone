@@ -14,7 +14,7 @@ var platform;
                 var sval = val + '';
                 return '000000'.substr(0, d - sval.length) + val;
             }
-            var dur = Math.ceil(line.getCallDuration() / 1000);
+            var dur = Math.ceil(webPhone.getLine().getCallDuration() / 1000);
             var sec = dur % 60;
             var min = Math.floor(dur / 60);
             var hours = Math.floor(dur / 3600);
@@ -42,7 +42,7 @@ function startCall(toNumber, fromNumber) {
             })
             .then(function(countryId) {
                 console.log('SIP call to', toNumber, 'from', fromNumber + '\n');
-                webPhone.call(toNumber, fromNumber, countryId);
+                webPhone.call(toNumber, fromNumber, countryId).catch(function(e){ console.error(e);});
             })
             .catch(function(e){
                 console.error(e.stack);
@@ -51,28 +51,27 @@ function startCall(toNumber, fromNumber) {
 }
 
 function mute() {
-    webPhone.mute(line);
+    webPhone.mute().catch(function(e){ console.error(e);});
     console.log('Call Mute\n');
 }
 
 function unmute() {
-    webPhone.unmute(line);
+    webPhone.unmute().catch(function(e){ console.error(e);});
     console.log('Call Unmute\n');
 }
 
 function hold() {
-    webPhone.hold(line);
+    webPhone.hold().catch(function(e){ console.error(e);});
     console.log('Call Hold\n');
 }
 
 function unhold() {
-    webPhone.unhold(line);
+    webPhone.unhold().catch(function(e){ console.error(e);});
     console.log('Call UnHold\n');
 }
 
 function answerIncomingCall() {
     webPhone.answer(line);
-    console.log("Incoming call from : " + line.getContact().number);
    var delay = 1000; //1 seconds
 
     //setTimeout(function() {
@@ -87,7 +86,7 @@ function answerIncomingCall() {
 }
 
 function disconnect() {
-    webPhone.hangup(line);
+    webPhone.hangup().catch(function(e){ console.error(e);});
     document.getElementById("hid2").style.display = "none";
     console.log('Hangup Call\n');
 }
@@ -98,75 +97,66 @@ function isOnCall() {
 
 
 function reregister() {
-    webPhone.reregister();
+    webPhone.reregister().catch(function(e){ console.error(e);});
     console.log('Reregistered SIP\n');
 }
 
 
 function unregisterSip() {
     document.getElementById("hid").style.display = "none"
-    webPhone.unregister();
+    webPhone.unregister().catch(function(e){ console.error(e);});
     console.log('Unregistered SIP\n');
 }
 
 function forceDisconnectSip() {
     document.getElementById("hid").style.display = "none"
-    webPhone.forceDisconnect();
+    webPhone.forceDisconnect().catch(function(e){ console.error(e);});
     console.log('Forcing SIP disconnection\n');
 }
 
 
 function startRecording() {
 
-    line.record(true);
+    webPhone.getLine().record(true);
     console.log('Start Recording Call\n');
 }
 
 function stopRecording() {
-    line.record(false);
+    webPhone.getLine().record(false);
     console.log('Stop Recording Call\n');
 }
 
 
 function callpark() {
-    line.park();
+    webPhone.getLine().park();
     console.log('Call Parking\n');
 }
 
 function callflip(number) {
-    if (number == "")
-        alert('Fill in the number');
-    else
-        line.flip(number)
+    webPhone.getLine().flip(number);
 }
 
 function callTransfer(number) {
-    if (number == "")
-        alert('Fill in the number');
-    else {
-        line.transfer(number)
+    webPhone.transfer(number).catch(function(e){console.error(e)});
         console.log('Call Transfer\n');
-    }
-}
 
+}
 
 
 function sendDTMF(DTMF) {
-    if (DTMF == "")
-        alert('Fill in the DTMF');
-    else {
-        line.sendDTMF(DTMF)
+        webPhone.sendDTMF(DTMF).catch(function(e){ console.error(e);});
         console.log('Send DTMF' + DTMF + '\n');
-    }
 }
 
 function forward(number) {
-    if (number == "")
-        alert('Fill in the number');
-    else {
-        line.forward(number)
-        console.log('Call Forwarding\n');
+    try {
+        webPhone.getLine().forward(number);
     }
+    catch(e){
+        console.error(e);
+    }
+        console.log('Call Forwarding\n');
+
 }
 
 function registerSIP(checkFlags, transport) {
@@ -213,11 +203,12 @@ function app() {
  * @param username
  * @param password
  */
-function register(apikey, apisecret, username, password) {
+function register(apikey, apisecret, username,extension, password) {
 
     localStorage.webPhoneAppKey = apikey;
     localStorage.webPhoneAppSecret = apisecret;
     localStorage.webPhoneLogin = username;
+    localStorage.webPhoneextension=extension;
     localStorage.webPhonePassword = password;
 
     var sdk = new RingCentral.SDK({
@@ -229,6 +220,7 @@ function register(apikey, apisecret, username, password) {
     platform
         .login({
             username: username,// localStorage.webPhoneLogin,
+            extension:extension,
             password: password// localStorage.webPhonePassword
         })
         .then(function() {
@@ -249,6 +241,7 @@ setTimeout(function(){
     document.getElementById('apikey').value = localStorage.webPhoneAppKey;
     document.getElementById('apisecret').value = localStorage.webPhoneAppSecret;
     document.getElementById('fromnumber').value = localStorage.webPhoneLogin;
+    document.getElementById('extension').value = localStorage.webPhoneextension;
     document.getElementById('password').value = localStorage.webPhonePassword;
 }, 100);
 
