@@ -159,6 +159,13 @@ function WebPhone(options) {
     this._audioHelper = null;
     if (options.audioHelper) service.createAudioHelper();
 
+    this._appKey = options.appKey;
+    this._appName = options.appName;
+    this._appVersion = options.appVersion;
+
+    this._userAgent = (options.appName ? (options.appName + (options.appVersion ? '/' + options.appVersion : '')) + ' ' : '') +
+                      'RCWEBPHONE/' + WebPhone.version;
+
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
