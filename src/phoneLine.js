@@ -443,53 +443,64 @@ PhoneLine.prototype.getSession = function() {
 
 PhoneLine.prototype.cancel = function() {
     var session = this.getSession();
-    session.terminate({statusCode: 486});
-    return Promise.resolve(null);
+    return new Promise(function(resolve, reject) {
+        session.terminate({statusCode: 486});
+        return null;
+    });
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 PhoneLine.prototype.record = function(val) {
     var self = this;
-    if (self.onCall) {
-        var message = !!val
-            ? self.controlSender.messages.startRecord
-            : self.controlSender.messages.stopRecord;
+    return new Promise(function(resolve, reject){
+        if (self.onCall) {
+            var message = !!val
+                ? self.controlSender.messages.startRecord
+                : self.controlSender.messages.stopRecord;
 
-        if ((self.onRecord && !val) || (!self.onRecord && val)) {
-            return this.controlSender.send(message)
-                .then(function(data) {
-                    self.onRecord = !!val;
-                    return data;
-                });
+            if ((self.onRecord && !val) || (!self.onRecord && val)) {
+                return self.controlSender.send(message)
+                    .then(function(data) {
+                        self.onRecord = !!val;
+                        return data;
+                    });
+            }
         }
-    }
-    else {
-        return Promise.reject(new Error('No line or no active line'));
-    }
+        else {
+         throw new Error('No line or no active line');
+        }
+    });
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 PhoneLine.prototype.flip = function(target) {
-    if (!target) return;
-    if (this.onCall) {
-        return this.controlSender.send(this.controlSender.messages.flip, {
-            target: target
-        });
-    }
-    else {
-        return Promise.reject(new Error('No line or no active line'));
-    }
+    var self = this;
+
+    return new Promise(function(resolve, reject){
+        if (!target) return;
+        if (self.onCall) {
+            return self.controlSender.send(self.controlSender.messages.flip, {
+                target: target
+            });
+        }
+        else {
+           throw new Error('No line or no active line');
+        }
+    });
 };
 
 PhoneLine.prototype.park = function() {
-    if (this.onCall) {
-        return this.controlSender.send(this.controlSender.messages.park);
-    }
-    else {
-        return Promise.reject(new Error('No line or no active line'));
-    }
+
+    var self = this;
+    return new Promise(function(resolve, reject){
+        if (self.onCall) {
+            return self.controlSender.send(self.controlSender.messages.park);
+        }
+        else
+            throw new Error('No line or no active line');
+    });
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -520,19 +531,22 @@ PhoneLine.prototype.sendDTMF = function(value, duration) {
             return null;
         }
         else
-            return Promise.reject(new Error('No line or no active line'));
+            throw new Error('No line or no active line');
     });
 };
 
 
 
 PhoneLine.prototype.sendInfoDTMF = function(value, duration) {
-    duration = parseInt(duration) || 1000;
+
     var session = this.session;
-    session.dtmf(value.toString(), {
-        duration: duration
+    return new Promise(function(resolve, reject) {
+        duration = parseInt(duration) || 1000;
+        session.dtmf(value.toString(), {
+            duration: duration
+        });
+        return null;
     });
-    return Promise.resolve(null);
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -629,7 +643,7 @@ PhoneLine.prototype.transfer = function(target, options) {
 
 PhoneLine.prototype.forward = function(target, options) {
     var self = this, interval = null;
-        return self.answer().then(function() {
+    return self.answer().then(function() {
         return new Promise(function(resolve, reject){
             interval = setInterval(function() {
                 if (self.session.status === 12) {
@@ -690,19 +704,22 @@ PhoneLine.prototype.answer = function() {
 
 };
 
+
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 //FIXME: Use SIPJS mute() and unmute() ref: http://sipjs.com/api/0.7.0/session/#muteoptions
 
 PhoneLine.prototype.setMute = function(val) {
-    this.muted = !!val;
-    try {
-        setStreamMute(this.session.getLocalStreams()[0], this.muted);
-        val ? this.eventEmitter.emit(EVENT_NAMES.callMute, this) : this.eventEmitter.emit(EVENT_NAMES.callUnmute, this);
-    } catch (e) {
-        console.error(e);
-    }
-    return Promise.resolve(null);
+    var self = this;
+    return new Promise(function(resolve, reject) {
+        self.muted = !!val;
+        if (self.onCall) {
+            setStreamMute(self.session.getLocalStreams()[0], self.muted);
+            val ? self.eventEmitter.emit(EVENT_NAMES.callMute, self) : self.eventEmitter.emit(EVENT_NAMES.callUnmute, self);
+        }
+        else
+            throw new Error('No line or no active line');
+    });
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -721,17 +738,19 @@ function setStreamMute(stream, val) {
 ////FIXME: Use SIPJS mute() and unmute() ref: http://sipjs.com/api/0.7.0/session/#muteoptions
 
 PhoneLine.prototype.setMuteBoth = function(val) {
-    this.bothMuted = !!val;
-    this,muted=!!val;
-    try {
-        setStreamMute(this.session.getLocalStreams()[0], this.bothMuted);
-        setStreamMute(this.session.getRemoteStreams()[0], this.bothMuted);
-        val ? this.eventEmitter.emit(EVENT_NAMES.callMute, this) : this.eventEmitter.emit(EVENT_NAMES.callUnmute, this);
-    }
-    catch (e) {
-        console.error(e);
-    }
-    return Promise.resolve(null);
+    var self = this;
+    return new Promise(function(resolve, reject) {
+        self.bothMuted = !!val;
+        self.muted = !!val;
+        if (self.onCall) {
+            setStreamMute(self.session.getLocalStreams()[0], self.bothMuted);
+            setStreamMute(self.session.getRemoteStreams()[0], self.bothMuted);
+            val ? self.eventEmitter.emit(EVENT_NAMES.callMute, self) : self.eventEmitter.emit(EVENT_NAMES.callUnmute, self);
+        }
+        else
+            throw new Error('No line or no active line');
+    });
+
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -782,8 +801,6 @@ PhoneLine.prototype.sendRequest = function(method, body, options) {
 
 //FIXME: should be replaced with __hold()
 //This can be removed
-
-
 //Legacy hold uses direct in-dialog messages to trick SIP.js, try to avoid using this method if possible
 PhoneLine.prototype.__legacyHold = function(val) {
     var self = this;
@@ -826,7 +843,7 @@ PhoneLine.prototype.__legacyHold = function(val) {
             });
         }
         else {
-            reject(new Error('No line or no active line'));
+            throw new Error('No line or no active line');
         }
     });
 };
@@ -857,17 +874,20 @@ PhoneLine.prototype.__hold = function(val) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 PhoneLine.prototype.setHold = function(val) {
-    var promise;
     var self = this;
-    this.onHold = !!val;
-    if (this.onCall) {
-        promise = self.__hold(val).then(function() {
-            val ? self.eventEmitter.emit(EVENT_NAMES.callHold, self) : self.eventEmitter.emit(EVENT_NAMES.callUnhold, self);
-        }, function(e) {
-            self.onHold = !self.onHold;
-        });
-    }
-    return Promise.resolve(promise);
+
+    return new Promise(function(resolve, reject){
+        self.onHold = !!val;
+        if (self.onCall) {
+            promise = self.__hold(val).then(function() {
+                val ? self.eventEmitter.emit(EVENT_NAMES.callHold, self) : self.eventEmitter.emit(EVENT_NAMES.callUnhold, self);
+            }, function(e) {
+                self.onHold = !self.onHold;
+            });
+        }
+        else
+            throw new Error('No line or no active line');
+    });
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -909,7 +929,7 @@ PhoneLine.prototype.getCallDuration = function() {
 
 PhoneLine.prototype.isIncoming = function() {
     return this.session.mediaHandler.peerConnection.signalingState !== "closed"
-           && !this.session.startTime;
+        && !this.session.startTime;
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -927,5 +947,4 @@ PhoneLine.prototype.hasEarlyMedia = function() {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 module.exports = PhoneLine;
-
 

@@ -195,7 +195,7 @@ WebPhone.prototype.register = function(info, checkFlags) {
 
         if (!checkFlags || (
             typeof(info.sipFlags) === 'object' &&
-            //checking for undefined for platform v7.3, which doesn't support this flag
+                //checking for undefined for platform v7.3, which doesn't support this flag
             (info.sipFlags.outboundCallsEnabled === undefined || info.sipFlags.outboundCallsEnabled === true))
         ) {
 
@@ -325,7 +325,7 @@ WebPhone.prototype.call = function(toNumber, fromNumber, country) {
 
     var service = this;
     if(!this.__sipOutboundEnabled || false === Boolean(this.__sipOutboundEnabled)) {
-      throw new Error('Outbound calling is disabled'); // TODO: Fix this to be more robust error messaging
+        throw new Error('Outbound calling is disabled'); // TODO: Fix this to be more robust error messaging
     }
 
     if(!toNumber)
@@ -345,13 +345,12 @@ WebPhone.prototype.call = function(toNumber, fromNumber, country) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 WebPhone.prototype.answer = function(line) {
-    var self = this;
-    return new Promise(function(resolve, reject){
-        var incomingLines = self.ua.getIncomingLinesArray();
-        var activeLines = self.ua.getActiveLinesArray();
+        var incomingLines = this.ua.getIncomingLinesArray();
+        var activeLines = this.ua.getActiveLinesArray();
+        var self = this;
 
         if (!line) {
-            line = self.getLine(incomingLines.length > 0 && arr[0]);
+            line = incomingLines.length > 0 && arr[0];
         }
 
         if (line) {
@@ -368,8 +367,8 @@ WebPhone.prototype.answer = function(line) {
                 self.hangup(line);
             });
         }
-        return null;
-        });
+
+        return Promise.resolve(null);
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -390,8 +389,8 @@ WebPhone.prototype.hangup = function(line) {
     var self = this;
     return new Promise(function(resolve, reject){
         line = self.getLine(line);
-        this.ua.hangup(line);
-        if (line === this.activeLine) this.activeLine = null;
+        self.ua.hangup(line);
+        if (line === self.activeLine) self.activeLine = null;
         return null;
     });
 };
@@ -431,7 +430,7 @@ WebPhone.prototype.hold = function(line) {
     return new Promise(function(resolve, reject){
         line = self.getLine(line);
         line && line.setHold(true);
-        if (line === this.activeLine) this.activeLine = null;
+        if (line === self.activeLine) self.activeLine = null;
         return null;
     });
 };
@@ -447,13 +446,13 @@ WebPhone.prototype.unhold = function(line) {
     return new Promise(function(resolve, reject){
         line = self.getLine(line);
         if (line) {
-            this.ua.getActiveLinesArray().forEach(function (activeLine) {
+            self.ua.getActiveLinesArray().forEach(function (activeLine) {
                 if (activeLine !== line && !activeLine.isIncoming() && !activeLine.isOnHold()) {
                     activeLine.setHold(true);
                 }
             });
             line.setHold(false);
-            this.activeLine = line;
+            self.activeLine = line;
         }
         return null;
     });
@@ -504,7 +503,7 @@ WebPhone.prototype.transfer = function(line, target, options) {
     return new Promise(function(resolve, reject){
         line = self.getLine(line);
         line && line.transfer(target, options);
-        if (line === this.activeLine) this.activeLine = null;
+        if (line === self.activeLine) self.activeLine = null;
         return null;
     });
 };

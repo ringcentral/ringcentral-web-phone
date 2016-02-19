@@ -2,6 +2,8 @@
 var webPhone = new RingCentral.WebPhone({audioHelper: true});
 var platform;
 
+var line;
+
 (function(){
     webPhone.ua.on('sipIncomingCall', function(e) {
         document.getElementById("hid2").style.display = "block";
@@ -14,13 +16,14 @@ var platform;
                 var sval = val + '';
                 return '000000'.substr(0, d - sval.length) + val;
             }
-            var dur = Math.ceil(webPhone.getLine().getCallDuration() / 1000);
+            var dur = Math.ceil(line.getCallDuration() / 1000);
             var sec = dur % 60;
             var min = Math.floor(dur / 60);
             var hours = Math.floor(dur / 3600);
             document.getElementById("duration").innerText = 'Duration: ' + f(hours, 2) + ':' + f(min, 2) + ':' + f(sec, 2);
         }, 500);
     })
+
 
 
 })();
@@ -42,7 +45,7 @@ function startCall(toNumber, fromNumber) {
             })
             .then(function(countryId) {
                 console.log('SIP call to', toNumber, 'from', fromNumber + '\n');
-                webPhone.call(toNumber, fromNumber, countryId).catch(function(e){ console.error(e);});
+                webPhone.call(toNumber, fromNumber, countryId);
             })
             .catch(function(e){
                 console.error(e.stack);
@@ -61,17 +64,17 @@ function unmute() {
 }
 
 function hold() {
-    webPhone.hold().catch(function(e){ console.error(e);});
+    webPhone.getLine().setHold(true).catch(function(e){ console.error(e);});
     console.log('Call Hold\n');
 }
 
 function unhold() {
-    webPhone.unhold().catch(function(e){ console.error(e);});
+    webPhone.getLine().setHold(false).catch(function(e){ console.error(e);});
     console.log('Call UnHold\n');
 }
 
 function answerIncomingCall() {
-    webPhone.answer(line);
+    webPhone.answer(line).catch(function(e){ console.error(e);});
    var delay = 1000; //1 seconds
 
     //setTimeout(function() {
@@ -86,7 +89,7 @@ function answerIncomingCall() {
 }
 
 function disconnect() {
-    webPhone.hangup().catch(function(e){ console.error(e);});
+    webPhone.hangup(line).catch(function(e){ console.error(e);});
     document.getElementById("hid2").style.display = "none";
     console.log('Hangup Call\n');
 }
@@ -97,7 +100,7 @@ function isOnCall() {
 
 
 function reregister() {
-    webPhone.reregister().catch(function(e){ console.error(e);});
+    webPhone.reregister().catch(function(e){console.error(e);});
     console.log('Reregistered SIP\n');
 }
 
@@ -116,7 +119,6 @@ function forceDisconnectSip() {
 
 
 function startRecording() {
-
     webPhone.getLine().record(true);
     console.log('Start Recording Call\n');
 }
@@ -149,14 +151,7 @@ function sendDTMF(DTMF) {
 }
 
 function forward(number) {
-    try {
-        webPhone.getLine().forward(number);
-    }
-    catch(e){
-        console.error(e);
-    }
-        console.log('Call Forwarding\n');
-
+    webPhone.getLine().forward(number).catch(function(e){console.error(e)});
 }
 
 function registerSIP(checkFlags, transport) {
