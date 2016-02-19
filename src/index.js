@@ -350,32 +350,38 @@ WebPhone.prototype.call = function(toNumber, fromNumber, country) {
 
 
 /*--------------------------------------------------------------------------------------------------------------------*/
-
 WebPhone.prototype.answer = function(line) {
-        var incomingLines = this.ua.getIncomingLinesArray();
-        var activeLines = this.ua.getActiveLinesArray();
-        var self = this;
+    var incomingLines = this.ua.getIncomingLinesArray();
+    var activeLines = this.ua.getActiveLinesArray();
+    var self = this;
 
+    return new Promise(function(resolve, reject) {
         if (!line) {
             line = incomingLines.length > 0 && arr[0];
         }
 
         if (line) {
             var promises = [];
-            activeLines.forEach(function(activeLine) {
+            activeLines.forEach(function (activeLine) {
                 if (activeLine !== line) {
                     !activeLine.isOnHold() && promises.push(activeLine.setHold(true));
                 }
             });
-            Promise.all(promises).then(function() {
-                self.activeLine = line;
-                self.ua.answer(line);
-            }, function(e) {
-                self.hangup(line);
-            });
+            resolve(Promise
+                .all(promises)
+                .then(function () {
+                    self.activeLine = line;
+                    self.ua.answer(line);
+                })
+                .catch(function (e) {
+                    self.hangup(line);
+                    throw e;
+                }));
         }
 
-        return Promise.resolve(null);
+        return null;
+    });
+
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
