@@ -1,6 +1,7 @@
 //.factory("ringout", function($rootScope, $q, callMonitor, utils, logging, rcCore, rcPlatform, rcSIPUA, appstorage, settingsService, getLocaleString, $locale) { 'use strict';
 var webPhone = new RingCentral.WebPhone({audioHelper: true});
 var platform;
+var environment;
 
 var line;
 
@@ -192,30 +193,31 @@ function app() {
 }
 
 /**
- * TODO Create remember flag
  * @param apikey
  * @param apisecret
  * @param username
  * @param password
  */
 function register(apikey, apisecret, username,extension, password) {
-
-    localStorage.webPhoneAppKey = apikey;
-    localStorage.webPhoneAppSecret = apisecret;
-    localStorage.webPhoneLogin = username;
-    localStorage.webPhoneextension=extension;
-    localStorage.webPhonePassword = password;
+    if (document.getElementById('remember').checked) {
+        localStorage.webPhoneAppKey = apikey || '';
+        localStorage.webPhoneAppSecret = apisecret || '';
+        localStorage.webPhoneLogin = username || '';
+        localStorage.webPhoneextension = extension || '';
+        localStorage.webPhonePassword = password || '';
+        localStorage.webPhoneRemember = true;
+    }
 
     var sdk = new RingCentral.SDK({
         appKey: apikey, //,
         appSecret: apisecret,//localStorage.webPhoneAppSecret,
-        server: RingCentral.SDK.server.sandbox
+        server: environment === 'production'? RingCentral.SDK.server.production: RingCentral.SDK.server.sandbox
     });
     platform = sdk.platform();
     platform
         .login({
             username: username,// localStorage.webPhoneLogin,
-            extension:extension,
+            extension: extension,
             password: password// localStorage.webPhonePassword
         })
         .then(function() {
@@ -233,11 +235,20 @@ function register(apikey, apisecret, username,extension, password) {
 }
 
 setTimeout(function(){
-    document.getElementById('apikey').value = localStorage.webPhoneAppKey;
-    document.getElementById('apisecret').value = localStorage.webPhoneAppSecret;
-    document.getElementById('fromnumber').value = localStorage.webPhoneLogin;
-    document.getElementById('extension').value = localStorage.webPhoneextension;
-    document.getElementById('password').value = localStorage.webPhonePassword;
+    document.getElementById('apikey').value = localStorage.webPhoneAppKey || '';
+    document.getElementById('apisecret').value = localStorage.webPhoneAppSecret || '';
+    document.getElementById('fromnumber').value = localStorage.webPhoneLogin || '';
+    document.getElementById('extension').value = localStorage.webPhoneextension || '';
+    document.getElementById('password').value = localStorage.webPhonePassword || '';
+
+    if (localStorage.webPhoneRemember) {
+        document.getElementById('remember').checked = true;
+    }
 }, 100);
+
+function switchEnv(env) {
+    environment = env;
+    document.getElementById('env').textContent = env;
+}
 
 console.log('WebPhone version: ' + RingCentral.WebPhone.version);
