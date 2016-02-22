@@ -69,21 +69,12 @@
     <br><br>
     <br><br>
 
-    <div class="dropdown">
-        <label>environment</label>
-        <button class="btn btn-default dropdown-toggle" type="button" id="envDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-            <span id='env'>sandbox</span>
-            <span class="caret"></span>
-        </button>
-        <ul class="dropdown-menu" aria-labelledby="envDropdown">
-            <li><a href="#" onclick="switchEnv('sandbox')">sandbox</a></li>
-            <li><a href="#" onclick="switchEnv('production')">production</a></li>
-        </ul>
-    </div>
-
-
     <form onsubmit="return false">
 
+        <div class="form-group">
+            <label class="control-label" for="server">server</label>
+            <input type="text" class="form-control" id="server">
+        </div>
         <div class="form-group">
             <label class="control-label" for="apikey">apikey</label>
             <input type="text" class="form-control" id="apikey">
@@ -105,11 +96,11 @@
             <input type="password" class="form-control" id="password">
         </div>
         <div>
-            <input type="checkbox" id="remember"></input>
+            <input type="checkbox" id="remember"/>
             <label for="remember">Remember me</label>
         </div>
         <div>
-            <input type="button" class="btn btn-primary" value="Register Sip Configurations" onclick="register(apikey.value,apisecret.value,fromnumber.value,extension.value,password.value);">
+            <input type="button" class="btn btn-primary" value="Register Sip Configurations" onclick="register(server.value, apikey.value,apisecret.value,fromnumber.value,extension.value,password.value);">
             <input type="button" class="btn btn-warning" value="UnRegister Sip Configurations" onclick="unregisterSip();">
             <input type="button" class="btn btn-danger" value="Force Disconnect Sip Connection" onclick="forceDisconnectSip();">
         </div>

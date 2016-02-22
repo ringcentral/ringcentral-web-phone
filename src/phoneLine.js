@@ -1,9 +1,6 @@
 var SIP = require('sip.js');
 var utils = require('./utils');
 var EVENT_NAMES = require('./eventNames');
-var dom = require('./dom');
-var LOCAL_AUDIO = dom.LOCAL_AUDIO;
-var REMOTE_AUDIO = dom.REMOTE_AUDIO;
 
 var delay = utils.delay;
 var extend = utils.extend;
@@ -691,10 +688,10 @@ PhoneLine.prototype.answer = function() {
                 constraints: {audio: true, video: false},
                 render: {
                     local: {
-                        audio: LOCAL_AUDIO
+                        audio: self.userAgent.dom.localAudio
                     },
                     remote: {
-                        audio: REMOTE_AUDIO
+                        audio: self.userAgent.dom.remoteAudio
                     }
                 }
             }

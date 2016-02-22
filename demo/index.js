@@ -1,7 +1,6 @@
 //.factory("ringout", function($rootScope, $q, callMonitor, utils, logging, rcCore, rcPlatform, rcSIPUA, appstorage, settingsService, getLocaleString, $locale) { 'use strict';
 var webPhone = new RingCentral.WebPhone({audioHelper: true});
 var platform;
-var environment;
 
 var line;
 
@@ -193,17 +192,21 @@ function app() {
 }
 
 /**
+ * @param server
  * @param apikey
  * @param apisecret
  * @param username
+ * @param extension
  * @param password
  */
-function register(apikey, apisecret, username,extension, password) {
+function register(server, apikey, apisecret, username,extension, password) {
+    server = server || RingCentral.SDK.server.sandbox;
     if (document.getElementById('remember').checked) {
+        localStorage.webPhoneServer = server;
         localStorage.webPhoneAppKey = apikey || '';
         localStorage.webPhoneAppSecret = apisecret || '';
         localStorage.webPhoneLogin = username || '';
-        localStorage.webPhoneextension = extension || '';
+        localStorage.webPhoneExtension = extension || '';
         localStorage.webPhonePassword = password || '';
         localStorage.webPhoneRemember = true;
     }
@@ -211,7 +214,7 @@ function register(apikey, apisecret, username,extension, password) {
     var sdk = new RingCentral.SDK({
         appKey: apikey, //,
         appSecret: apisecret,//localStorage.webPhoneAppSecret,
-        server: environment === 'production'? RingCentral.SDK.server.production: RingCentral.SDK.server.sandbox
+        server: server
     });
     platform = sdk.platform();
     platform
@@ -235,10 +238,11 @@ function register(apikey, apisecret, username,extension, password) {
 }
 
 setTimeout(function(){
+    document.getElementById('server').value = localStorage.webPhoneServer || RingCentral.SDK.server.sandbox;
     document.getElementById('apikey').value = localStorage.webPhoneAppKey || '';
     document.getElementById('apisecret').value = localStorage.webPhoneAppSecret || '';
     document.getElementById('fromnumber').value = localStorage.webPhoneLogin || '';
-    document.getElementById('extension').value = localStorage.webPhoneextension || '';
+    document.getElementById('extension').value = localStorage.webPhoneExtension || '';
     document.getElementById('password').value = localStorage.webPhonePassword || '';
 
     if (localStorage.webPhoneRemember) {
