@@ -21,7 +21,7 @@ npm run build
 Configure the web-phone:
 
 ```js
-var webphone = new RingCentral.WebPhone({
+var webPhone = new RingCentral.WebPhone({
     audioHelper: true
 });
 
@@ -43,7 +43,7 @@ platform
         return platform
             .post('/client-info/sip-provision', {
                 sipInfo: [{
-                    transport: transport
+                    transport: 'WSS'
                 }]
             })
             .then(function(res) {
@@ -349,6 +349,8 @@ Add your RC credentials and click on `Register Sip Configurations` .
 For making outbound calls, enter `to phone number` and click on call. To disconnect to call, click on `Disconnect Call`.
 
 For recieve incoming calls, Click on `Accept incoming calls` button which will be visible when there is an incoming call.
+
+The demo app uses the sandbox environment. If there's any connection problems, you may need to switch to the  production environment.
 
 
 Functionalities included:
