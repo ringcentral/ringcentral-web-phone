@@ -329,15 +329,12 @@ WebPhone.prototype.forceDisconnect = function() {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 WebPhone.prototype.call = function(toNumber, fromNumber, country) {
-
     var service = this;
     if(!this.__sipOutboundEnabled || false === Boolean(this.__sipOutboundEnabled)) {
         throw new Error('Outbound calling is disabled'); // TODO: Fix this to be more robust error messaging
     }
-
     if(!toNumber)
         throw new Error('Invalid or undefined [toNumber]');
-
     if (!service.__callDeferred) {
         service.__callDeferred = defer();
         this.activeLine = service.ua.call.call(service.ua, toNumber, {

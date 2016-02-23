@@ -392,15 +392,12 @@ WebPhone.prototype.forceDisconnect = function() {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 WebPhone.prototype.call = function(toNumber, fromNumber, country) {
-
     var service = this;
     if(!this.__sipOutboundEnabled || false === Boolean(this.__sipOutboundEnabled)) {
         throw new Error('Outbound calling is disabled'); // TODO: Fix this to be more robust error messaging
     }
-
     if(!toNumber)
         throw new Error('Invalid or undefined [toNumber]');
-
     if (!service.__callDeferred) {
         service.__callDeferred = defer();
         this.activeLine = service.ua.call.call(service.ua, toNumber, {
@@ -652,35 +649,59 @@ module.exports = (function(window) {
 /***/ function(module, exports) {
 
 module.exports = {
-	"name": "sip.js",
-	"title": "SIP.js",
-	"description": "A simple, intuitive, and powerful JavaScript signaling library",
-	"version": "0.6.4",
-	"main": "src/SIP.js",
-	"homepage": "http://sipjs.com",
+	"_args": [
+		[
+			"sip.js@0.6.4",
+			"/Users/vyshakh.babji/Desktop/WebRTC/kirill-webphone/web-phone-1"
+		]
+	],
+	"_from": "sip.js@0.6.4",
+	"_id": "sip.js@0.6.4",
+	"_inCache": true,
+	"_installable": true,
+	"_location": "/sip.js",
+	"_npmUser": {
+		"email": "eric.green@onsip.com",
+		"name": "egreen_onsip"
+	},
+	"_npmVersion": "1.4.13",
+	"_phantomChildren": {},
+	"_requested": {
+		"name": "sip.js",
+		"raw": "sip.js@0.6.4",
+		"rawSpec": "0.6.4",
+		"scope": null,
+		"spec": "0.6.4",
+		"type": "version"
+	},
+	"_requiredBy": [
+		"/"
+	],
+	"_resolved": "https://registry.npmjs.org/sip.js/-/sip.js-0.6.4.tgz",
+	"_shasum": "e080d4b0fa1a7dd803741d6bca6d32c29ae37380",
+	"_shrinkwrap": null,
+	"_spec": "sip.js@0.6.4",
+	"_where": "/Users/vyshakh.babji/Desktop/WebRTC/kirill-webphone/web-phone-1",
 	"author": {
-		"name": "Will Mitchell",
-		"email": "will@onsip.com"
+		"email": "will@onsip.com",
+		"name": "Will Mitchell"
+	},
+	"bugs": {
+		"url": "https://github.com/onsip/SIP.js/issues"
 	},
 	"contributors": [
 		{
 			"url": "http://sipjs.com/authors/"
 		}
 	],
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/onsip/SIP.js.git"
-	},
-	"keywords": [
-		"sip",
-		"websocket",
-		"webrtc",
-		"library",
-		"javascript"
-	],
+	"dependencies": {},
+	"description": "A simple, intuitive, and powerful JavaScript signaling library",
 	"devDependencies": {
+		"browserify": "^4.1.8",
 		"grunt": "~0.4.0",
+		"grunt-browserify": "^2.1.0",
 		"grunt-cli": "~0.1.6",
+		"grunt-contrib-copy": "^0.5.0",
 		"grunt-contrib-jasmine": "~0.6.0",
 		"grunt-contrib-jshint": ">0.5.0",
 		"grunt-contrib-uglify": "~0.2.0",
@@ -688,30 +709,27 @@ module.exports = {
 		"grunt-trimtrailingspaces": "^0.4.0",
 		"node-minify": "~0.7.2",
 		"pegjs": "0.8.0",
-		"sdp-transform": "~0.4.0",
-		"grunt-contrib-copy": "^0.5.0",
-		"browserify": "^4.1.8",
-		"grunt-browserify": "^2.1.0"
+		"sdp-transform": "~0.4.0"
+	},
+	"directories": {},
+	"dist": {
+		"shasum": "e080d4b0fa1a7dd803741d6bca6d32c29ae37380",
+		"tarball": "http://registry.npmjs.org/sip.js/-/sip.js-0.6.4.tgz"
 	},
 	"engines": {
 		"node": ">=0.8"
 	},
-	"license": "MIT",
-	"scripts": {
-		"test": "grunt travis --verbose"
-	},
 	"gitHead": "209fb9bb50f1918522d37a002b83f21abd6946ab",
-	"bugs": {
-		"url": "https://github.com/onsip/SIP.js/issues"
-	},
-	"_id": "sip.js@0.6.4",
-	"_shasum": "e080d4b0fa1a7dd803741d6bca6d32c29ae37380",
-	"_from": "sip.js@0.6.4",
-	"_npmVersion": "1.4.13",
-	"_npmUser": {
-		"name": "egreen_onsip",
-		"email": "eric.green@onsip.com"
-	},
+	"homepage": "http://sipjs.com",
+	"keywords": [
+		"javascript",
+		"library",
+		"sip",
+		"webrtc",
+		"websocket"
+	],
+	"license": "MIT",
+	"main": "src/SIP.js",
 	"maintainers": [
 		{
 			"name": "joseph-onsip",
@@ -722,13 +740,18 @@ module.exports = {
 			"email": "eric.green@onsip.com"
 		}
 	],
-	"dist": {
-		"shasum": "e080d4b0fa1a7dd803741d6bca6d32c29ae37380",
-		"tarball": "http://registry.npmjs.org/sip.js/-/sip.js-0.6.4.tgz"
+	"name": "sip.js",
+	"optionalDependencies": {},
+	"readme": "ERROR: No README data found!",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/onsip/SIP.js.git"
 	},
-	"directories": {},
-	"_resolved": "https://registry.npmjs.org/sip.js/-/sip.js-0.6.4.tgz",
-	"readme": "ERROR: No README data found!"
+	"scripts": {
+		"test": "grunt travis --verbose"
+	},
+	"title": "SIP.js",
+	"version": "0.6.4"
 };
 
 /***/ },
@@ -12725,17 +12748,6 @@ PhoneLine.prototype.park = function() {
 /*--------------------------------------------------------------------------------------------------------------------*/
 // Explore ref: http://sipjs.com/api/0.6.0/session/#dtmftone-options
 
-//PhoneLine.prototype.sendDTMF = function(value, duration) {
-//    duration = parseInt(duration) || 1000;
-//    var peer = this.session.mediaHandler.peerConnection;
-//    var stream = this.session.getLocalStreams()[0];
-//    var dtmfSender = peer.createDTMFSender(stream.getAudioTracks()[0]);
-//    if (dtmfSender !== undefined && dtmfSender.canInsertDTMF) {
-//        dtmfSender.insertDTMF(value, duration);
-//    }
-//    return Promise.resolve(null);
-//};
-
 PhoneLine.prototype.sendDTMF = function(value, duration) {
     var self = this;
     return new Promise(function(resolve, reject){
@@ -12754,10 +12766,10 @@ PhoneLine.prototype.sendDTMF = function(value, duration) {
     });
 };
 
-
-
+/*
+Currently not supported
+ */
 PhoneLine.prototype.sendInfoDTMF = function(value, duration) {
-
     var session = this.session;
     return new Promise(function(resolve, reject) {
         duration = parseInt(duration) || 1000;
@@ -12771,7 +12783,6 @@ PhoneLine.prototype.sendInfoDTMF = function(value, duration) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 PhoneLine.prototype.blindTransfer = function(target, options) {
-
     var session = this.session;
     var self = this;
     var extraHeaders = [];
@@ -12858,6 +12869,7 @@ PhoneLine.prototype.transfer = function(target, options) {
     });
 };
 
+
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 PhoneLine.prototype.forward = function(target, options) {
@@ -12902,7 +12914,6 @@ PhoneLine.prototype.answer = function() {
         self.eventEmitter.on(EVENT_NAMES.callStarted, onAnswered);
         self.eventEmitter.on(EVENT_NAMES.callFailed, onFail);
 
-        console.warn('emitting callProgress');
         self.eventEmitter.emit(EVENT_NAMES.callProgress, self);
 
         self.session.accept({
@@ -13094,15 +13105,20 @@ PhoneLine.prototype.__hold = function(val) {
 
 PhoneLine.prototype.setHold = function(val) {
     var self = this;
-
     return new Promise(function(resolve, reject){
         self.onHold = !!val;
         if (self.onCall) {
-            promise = self.__hold(val).then(function() {
-                val ? self.eventEmitter.emit(EVENT_NAMES.callHold, self) : self.eventEmitter.emit(EVENT_NAMES.callUnhold, self);
-            }, function(e) {
+            resolve(self.__hold(val).then(function(res) {
+                if (val) {
+                    self.eventEmitter.emit(EVENT_NAMES.callHold, self);
+                } else {
+                    self.eventEmitter.emit(EVENT_NAMES.callUnhold, self);
+                }
+                return res;
+            }).catch(function(e) {
                 self.onHold = !self.onHold;
-            });
+                throw e;
+            }));
         }
         else
             throw new Error('No line or no active line');
