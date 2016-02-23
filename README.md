@@ -4,8 +4,6 @@
 
 ```sh
 git clone https://github.com/ringcentral/ringcentral-web-phone.git
-npm install
-npm run build
 ```
 
 ## Usage
@@ -21,10 +19,6 @@ npm run build
 Configure the web-phone:
 
 ```js
-var webPhone = new RingCentral.WebPhone({
-    audioHelper: true
-});
-
 var sdk = new RingCentral.SDK({
     appKey: '...',
     appSecret: '...',
@@ -47,13 +41,14 @@ platform
                 }]
             })
             .then(function(res) {
-                return webPhone.register(res.json());
+                return new RingCentral.WebPhone(res.json());
             });
         
     })
-    .then(function(){
+    .then(function(webPhone){
     
         // YOUR CODE
+        // webPhone.userAgent.invite('...', {...});
     
     });
 ```

@@ -25,181 +25,23 @@
     <meta name="msapplication-TileImage" content="img/mstile-144x144.png">
     <meta name="msapplication-config" content="img/browserconfig.xml">
     <meta name="theme-color" content="#ffffff">
-    <style>
-        #hid {
-            display: none;
-        }
-
-        #hid2{
-            display: none;
-        }
-
-    </style>
 </head>
 <body>
 
-<div role="navigation" class="navbar navbar-inverse navbar-fixed-top">
-    <div class="container">
-        <div class="navbar-header">
-            <button type="button" data-toggle="collapse" data-target=".navbar-collapse" class="navbar-toggle">
-                <span class="sr-only">Toggle navigation</span><span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
-            </button>
-            <a href="/" style="color:#ffffff;font-size:150%" class="navbar-brand"><span style="color:deepskyblue">RingCentral <span style="color:orange">Demo App</span></span></a>
-        </div>
-        <div class="navbar-collapse collapse">
-            <ul class="nav navbar-nav navbar-right">
-                <li class="active"><a href="/">Home</a></li>
-                <li><a href="https://developers.ringcentral.com/login.html">Developer Portal</a></li>
-                <li><a href="https://devcommunity.ringcentral.com/">Developer Community</a></li>
-                <li style="display:none;" class="dropdown">
-                    <a href="/login" data-toggle="dropdown" class="dropdown-toggle">Manage<b class="caret"></b></a>
-                    <ul class="dropdown-menu">
-                        <li><a href="/profile">My Profile</a></li>
-                        <li><a href="/communications">My Communications</a></li>
-                        <li><a href="/calendar">My Calendar</a></li>
-                    </ul>
-                </li>
-            </ul>
-        </div>
-    </div>
-</div>
-
 <div class="container">
-
-    <br><br>
-    <br><br>
-
-    <form onsubmit="return false">
-
-        <div class="form-group">
-            <label class="control-label" for="server">server</label>
-            <input type="text" class="form-control" id="server">
-        </div>
-        <div class="form-group">
-            <label class="control-label" for="apikey">apikey</label>
-            <input type="text" class="form-control" id="apikey">
-        </div>
-        <div class="form-group">
-            <label class="control-label" for="apisecret">apisecret</label>
-            <input type="text" class="form-control" id="apisecret">
-        </div>
-        <div class="form-group">
-            <label class="control-label" for="fromnumber">fromnumber</label>
-            <input type="text" class="form-control" id="fromnumber">
-        </div>
-        <div class="form-group">
-            <label class="control-label" for="extension">extension</label>
-            <input type="text" class="form-control" id="extension">
-        </div>
-        <div class="form-group">
-            <label class="control-label" for="password">password</label>
-            <input type="password" class="form-control" id="password">
-        </div>
-        <div>
-            <input type="checkbox" id="remember"/>
-            <label for="remember">Remember me</label>
-        </div>
-        <div>
-            <input type="button" class="btn btn-primary" value="Register Sip Configurations" onclick="register(server.value, apikey.value,apisecret.value,fromnumber.value,extension.value,password.value);">
-            <input type="button" class="btn btn-warning" value="UnRegister Sip Configurations" onclick="unregisterSip();">
-            <input type="button" class="btn btn-danger" value="Force Disconnect Sip Connection" onclick="forceDisconnectSip();">
-        </div>
-
-    </form>
-
-    <br>
-    <br>
-
-    <div id="hid">
-
-        <h2>Number of Active Calls in the session</h2>
-        <label id="activeCalls"></label>
-
-        <h2>Call To</h2>
-
-        <div class="form-group">
-            <input type="text" class="form-control" id="tonumber" placeholder="1-234-567-8901">
-            <div>
-                <label id="duration" style="color:red"></label>
-            </div>
-        </div>
-
-        <div class="btn-toolbar" role="toolbar">
-            <div class="btn-group" role="group">
-                <input type="button" class="btn btn-default" value="Call" onclick="startCall(tonumber.value,fromnumber.value);">
-                <input type="button" class="btn btn-default" value="Accept incoming Call" onclick="answerIncomingCall();">
-                <input type="button" class="btn btn-default" value="Disconnect Call" onclick="disconnect();">
-            </div>
-            <div class="btn-group" role="group">
-                <input type="button" class="btn btn-default" value="Hold" onclick="hold();">
-                <input type="button" class="btn btn-default" value="Unhold" onclick="unhold();">
-            </div>
-            <div class="btn-group" role="group">
-                <input type="button" class="btn btn-default" value="Mute" onclick="mute();">
-                <input type="button" class="btn btn-default" value="UnMute" onclick="unmute();">
-            </div>
-            <div class="btn-group" role="group">
-                <input type="button" class="btn btn-default" value="Start Recording" onclick="startRecording();">
-                <input type="button" class="btn btn-default" value="Stop Recording" onclick="stopRecording();">
-            </div>
-        </div>
-
-        <br><br>
-
-
-        <div id="hid2">
-            <input type="button" class="btn btn-success" value="Accept incoming Call" onclick="answerIncomingCall();">
-            <input type="button" class="btn btn-danger" value="Disconnect Incoming Call" onclick="disconnect();">
-        </div>
-
-        <br><br>
-
-        <h2>FlipCall To</h2>
-
-        <div class="form-group">
-            <input type="text" class="form-control" id="Xnumber" placeholder="1-234-567-8901">
-        </div>
-
-        <div class="btn-group" role="group">
-            <input type="button" class="btn btn-default" value="Call Flip" onclick="callflip(Xnumber.value);">
-            <input type="button" class="btn btn-default" value="Call Park" onclick="callpark();">
-            <input type="button" class="btn btn-default" value="Call Transfer" onclick="callTransfer(Xnumber.value);">
-        </div>
-
-        <br><br>
-
-        <h2 class="control-lable">Send DTMF</h2>
-
-        <div class="form-group">
-            <input type="text" class="form-control" id="DTMF" placeholder="1-234-567-8901">
-        </div>
-
-        <div class="btn-group" role="group">
-            <input type="button" class="btn btn-default" value="Send DTMF " onclick="sendDTMF(DTMF.value);">
-        </div>
-
-        <br><br>
-
-        <h2>Forward Call to </h2>
-
-        <div class="form-group">
-            <input type="text" class="form-control" id="forwardNumber" placeholder="1-234-567-8901">
-        </div>
-
-        <div class="btn-group" role="group">
-            <input type="button" class="btn btn-default" value="Forward the Call" onclick="forward(forwardNumber.value);">
-        </div>
-
-    </div>
-
+    <h1>RingCentral WebPhone Demo</h1>
+    <div id="app"></div>
 </div>
 
-<script src="https://code.jquery.com/jquery-1.12.0.min.js" type="text/javascript"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" type="text/javascript"></script>
-<!-- TODO Use CDN -->
-<script src="ringcentral-bundle.js" type="text/javascript"></script>
-<script src="../build/ringcentral-web-phone.js" type="text/javascript"></script>
-<script src="index.js" type="text/javascript"></script>
+<video id="remoteVideo" hidden="hidden"></video>
+<video id="localVideo" hidden="hidden" muted="muted"></video>
+
+<script type="text/javascript" src="https://code.jquery.com/jquery-2.2.1.js"></script>
+<script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../src/sip.js"></script>
+<script type="text/javascript" src="ringcentral-bundle.js"></script><!-- TODO Use CDN -->
+<script type="text/javascript" src="../src/ringcentral-web-phone.js"></script>
+<script type="text/javascript" src="index.js"></script>
 
 </body>
 </html>

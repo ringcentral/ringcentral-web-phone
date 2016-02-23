@@ -20,7 +20,7 @@
   },
   "preferGlobal": false,
   "private": false,
-  "main": "./src/index.js",
+  "main": "./src/ringcentral-web-phone.js",
   "author": {
     "name": "RingCentral, Inc.",
     "email": "devsupport@ringcentral.com"

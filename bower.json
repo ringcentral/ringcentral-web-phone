@@ -1,13 +1,9 @@
 {
   "name": "ringcentral-web-phone",
-  "main": "./build/ringcentral-web-phone.js",
+  "main": "./src/ringcentral-web-phone.js",
   "ignore": [
     "**/*",
     "!README.md",
-    "!build/ringcentral-web-phone.js",
-    "!build/ringcentral-web-phone.js.map",
-    "!build/ringcentral-web-phone.min.js",
-    "!build/ringcentral-web-phone.min.js.map",
     "!demo/**/*",
     "!src/**/*"
   ],
