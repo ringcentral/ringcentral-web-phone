@@ -392,15 +392,12 @@ WebPhone.prototype.forceDisconnect = function() {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 WebPhone.prototype.call = function(toNumber, fromNumber, country) {
-
     var service = this;
     if(!this.__sipOutboundEnabled || false === Boolean(this.__sipOutboundEnabled)) {
         throw new Error('Outbound calling is disabled'); // TODO: Fix this to be more robust error messaging
     }
-
     if(!toNumber)
         throw new Error('Invalid or undefined [toNumber]');
-
     if (!service.__callDeferred) {
         service.__callDeferred = defer();
         this.activeLine = service.ua.call.call(service.ua, toNumber, {
@@ -12724,17 +12721,6 @@ PhoneLine.prototype.park = function() {
 /*--------------------------------------------------------------------------------------------------------------------*/
 // Explore ref: http://sipjs.com/api/0.6.0/session/#dtmftone-options
 
-//PhoneLine.prototype.sendDTMF = function(value, duration) {
-//    duration = parseInt(duration) || 1000;
-//    var peer = this.session.mediaHandler.peerConnection;
-//    var stream = this.session.getLocalStreams()[0];
-//    var dtmfSender = peer.createDTMFSender(stream.getAudioTracks()[0]);
-//    if (dtmfSender !== undefined && dtmfSender.canInsertDTMF) {
-//        dtmfSender.insertDTMF(value, duration);
-//    }
-//    return Promise.resolve(null);
-//};
-
 PhoneLine.prototype.sendDTMF = function(value, duration) {
     var self = this;
     return new Promise(function(resolve, reject){
@@ -12753,10 +12739,10 @@ PhoneLine.prototype.sendDTMF = function(value, duration) {
     });
 };
 
-
-
+/*
+Currently not supported
+ */
 PhoneLine.prototype.sendInfoDTMF = function(value, duration) {
-
     var session = this.session;
     return new Promise(function(resolve, reject) {
         duration = parseInt(duration) || 1000;
@@ -12770,7 +12756,6 @@ PhoneLine.prototype.sendInfoDTMF = function(value, duration) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 PhoneLine.prototype.blindTransfer = function(target, options) {
-
     var session = this.session;
     var self = this;
     var extraHeaders = [];
@@ -12857,6 +12842,7 @@ PhoneLine.prototype.transfer = function(target, options) {
     });
 };
 
+
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 PhoneLine.prototype.forward = function(target, options) {
@@ -12901,7 +12887,6 @@ PhoneLine.prototype.answer = function() {
         self.eventEmitter.on(EVENT_NAMES.callStarted, onAnswered);
         self.eventEmitter.on(EVENT_NAMES.callFailed, onFail);
 
-        console.warn('emitting callProgress');
         self.eventEmitter.emit(EVENT_NAMES.callProgress, self);
 
         self.session.accept({
@@ -13093,15 +13078,20 @@ PhoneLine.prototype.__hold = function(val) {
 
 PhoneLine.prototype.setHold = function(val) {
     var self = this;
-
     return new Promise(function(resolve, reject){
         self.onHold = !!val;
         if (self.onCall) {
-            promise = self.__hold(val).then(function() {
-                val ? self.eventEmitter.emit(EVENT_NAMES.callHold, self) : self.eventEmitter.emit(EVENT_NAMES.callUnhold, self);
-            }, function(e) {
+            resolve(self.__hold(val).then(function(res) {
+                if (val) {
+                    self.eventEmitter.emit(EVENT_NAMES.callHold, self);
+                } else {
+                    self.eventEmitter.emit(EVENT_NAMES.callUnhold, self);
+                }
+                return res;
+            }).catch(function(e) {
                 self.onHold = !self.onHold;
-            });
+                throw e;
+            }));
         }
         else
             throw new Error('No line or no active line');

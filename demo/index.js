@@ -2,7 +2,7 @@
 var webPhone = new RingCentral.WebPhone({audioHelper: true});
 var platform;
 
-var line;
+
 
 (function(){
     webPhone.ua.on('sipIncomingCall', function(e) {
@@ -83,8 +83,6 @@ function answerIncomingCall() {
     //        line.record(true);
     //    }
     //}, delay);
-
-
     console.log('Answering Incoming Call\n');
 }
 
@@ -113,7 +111,7 @@ function unregisterSip() {
 
 function forceDisconnectSip() {
     document.getElementById("hid").style.display = "none"
-    webPhone.forceDisconnect().catch(function(e){ console.error(e);});
+    webPhone.forceDisconnect();
     console.log('Forcing SIP disconnection\n');
 }
 
@@ -139,8 +137,9 @@ function callflip(number) {
 }
 
 function callTransfer(number) {
-    webPhone.transfer(number).catch(function(e){console.error(e)});
+    webPhone.getLine(line).transfer(number).then(function(){
         console.log('Call Transfer\n');
+    }).catch(function(e){console.error(e)});
 
 }
 
@@ -151,7 +150,9 @@ function sendDTMF(DTMF) {
 }
 
 function forward(number) {
-    webPhone.getLine().forward(number).catch(function(e){console.error(e)});
+    webPhone.getLine(line).forward(number).then(function(){
+        console.log('Call Transfer\n');
+    }).catch(function(e){console.error(e)});
 }
 
 function registerSIP(checkFlags, transport) {
