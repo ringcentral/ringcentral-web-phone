@@ -724,8 +724,7 @@ module.exports = {
 		"tarball": "http://registry.npmjs.org/sip.js/-/sip.js-0.6.4.tgz"
 	},
 	"directories": {},
-	"_resolved": "https://registry.npmjs.org/sip.js/-/sip.js-0.6.4.tgz",
-	"readme": "ERROR: No README data found!"
+	"_resolved": "https://registry.npmjs.org/sip.js/-/sip.js-0.6.4.tgz"
 };
 
 /***/ },
