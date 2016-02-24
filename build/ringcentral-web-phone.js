@@ -417,7 +417,7 @@ WebPhone.prototype.answer = function(line) {
 
     return new Promise(function(resolve, reject) {
         if (!line) {
-            line = incomingLines.length > 0 && arr[0];
+            line = incomingLines.length > 0 && incomingLines[0];
         }
 
         if (line) {
@@ -437,9 +437,9 @@ WebPhone.prototype.answer = function(line) {
                     self.hangup(line);
                     throw e;
                 }));
+        } else {
+            reject();            
         }
-
-        return null;
     });
 
 };
@@ -464,7 +464,7 @@ WebPhone.prototype.hangup = function(line) {
         line = self.getLine(line);
         self.ua.hangup(line);
         if (line === self.activeLine) self.activeLine = null;
-        return null;
+        resolve();
     });
 };
 
@@ -488,7 +488,7 @@ WebPhone.prototype.sendDTMF = function(value, line) {
     return new Promise(function(resolve, reject){
         line = self.getLine(line);
         line && line.sendDTMF.call(line, value);
-        return null;
+        resolve();
     });
 };
 
@@ -504,7 +504,7 @@ WebPhone.prototype.hold = function(line) {
         line = self.getLine(line);
         line && line.setHold(true);
         if (line === self.activeLine) self.activeLine = null;
-        return null;
+        resolve();
     });
 };
 
@@ -527,7 +527,7 @@ WebPhone.prototype.unhold = function(line) {
             line.setHold(false);
             self.activeLine = line;
         }
-        return null;
+        resolve();
     });
 };
 
@@ -543,7 +543,7 @@ WebPhone.prototype.mute = function(line) {
     return new Promise(function(resolve, reject){
         line = self.getLine(line);
         line && line.setMute(true);
-        return null;
+        resolve();
     });
 };
 
@@ -558,7 +558,7 @@ WebPhone.prototype.unmute = function(line) {
     return new Promise(function(resolve, reject){
         line = self.getLine(line);
         line && line.setMute(false);
-        return null;
+        resolve();
     });
 };
 
@@ -577,11 +577,12 @@ WebPhone.prototype.transfer = function(line, target, options) {
         line = self.getLine(line);
         line && line.transfer(target, options);
         if (line === self.activeLine) self.activeLine = null;
-        return null;
+        resolve();
     });
 };
 
 module.exports = WebPhone;
+
 
 /***/ },
 /* 2 */
@@ -649,35 +650,59 @@ module.exports = (function(window) {
 /***/ function(module, exports) {
 
 module.exports = {
-	"name": "sip.js",
-	"title": "SIP.js",
-	"description": "A simple, intuitive, and powerful JavaScript signaling library",
-	"version": "0.6.4",
-	"main": "src/SIP.js",
-	"homepage": "http://sipjs.com",
+	"_args": [
+		[
+			"sip.js@0.6.4",
+			"/Users/howard.zhang/Sites/rwp"
+		]
+	],
+	"_from": "sip.js@0.6.4",
+	"_id": "sip.js@0.6.4",
+	"_inCache": true,
+	"_installable": true,
+	"_location": "/sip.js",
+	"_npmUser": {
+		"email": "eric.green@onsip.com",
+		"name": "egreen_onsip"
+	},
+	"_npmVersion": "1.4.13",
+	"_phantomChildren": {},
+	"_requested": {
+		"name": "sip.js",
+		"raw": "sip.js@0.6.4",
+		"rawSpec": "0.6.4",
+		"scope": null,
+		"spec": "0.6.4",
+		"type": "version"
+	},
+	"_requiredBy": [
+		"/"
+	],
+	"_resolved": "https://registry.npmjs.org/sip.js/-/sip.js-0.6.4.tgz",
+	"_shasum": "e080d4b0fa1a7dd803741d6bca6d32c29ae37380",
+	"_shrinkwrap": null,
+	"_spec": "sip.js@0.6.4",
+	"_where": "/Users/howard.zhang/Sites/rwp",
 	"author": {
-		"name": "Will Mitchell",
-		"email": "will@onsip.com"
+		"email": "will@onsip.com",
+		"name": "Will Mitchell"
+	},
+	"bugs": {
+		"url": "https://github.com/onsip/SIP.js/issues"
 	},
 	"contributors": [
 		{
 			"url": "http://sipjs.com/authors/"
 		}
 	],
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/onsip/SIP.js.git"
-	},
-	"keywords": [
-		"sip",
-		"websocket",
-		"webrtc",
-		"library",
-		"javascript"
-	],
+	"dependencies": {},
+	"description": "A simple, intuitive, and powerful JavaScript signaling library",
 	"devDependencies": {
+		"browserify": "^4.1.8",
 		"grunt": "~0.4.0",
+		"grunt-browserify": "^2.1.0",
 		"grunt-cli": "~0.1.6",
+		"grunt-contrib-copy": "^0.5.0",
 		"grunt-contrib-jasmine": "~0.6.0",
 		"grunt-contrib-jshint": ">0.5.0",
 		"grunt-contrib-uglify": "~0.2.0",
@@ -685,47 +710,49 @@ module.exports = {
 		"grunt-trimtrailingspaces": "^0.4.0",
 		"node-minify": "~0.7.2",
 		"pegjs": "0.8.0",
-		"sdp-transform": "~0.4.0",
-		"grunt-contrib-copy": "^0.5.0",
-		"browserify": "^4.1.8",
-		"grunt-browserify": "^2.1.0"
+		"sdp-transform": "~0.4.0"
 	},
-	"engines": {
-		"node": ">=0.8"
-	},
-	"license": "MIT",
-	"scripts": {
-		"test": "grunt travis --verbose"
-	},
-	"gitHead": "209fb9bb50f1918522d37a002b83f21abd6946ab",
-	"bugs": {
-		"url": "https://github.com/onsip/SIP.js/issues"
-	},
-	"_id": "sip.js@0.6.4",
-	"_shasum": "e080d4b0fa1a7dd803741d6bca6d32c29ae37380",
-	"_from": "sip.js@0.6.4",
-	"_npmVersion": "1.4.13",
-	"_npmUser": {
-		"name": "egreen_onsip",
-		"email": "eric.green@onsip.com"
-	},
-	"maintainers": [
-		{
-			"name": "joseph-onsip",
-			"email": "joseph@onsip.com"
-		},
-		{
-			"name": "egreen_onsip",
-			"email": "eric.green@onsip.com"
-		}
-	],
+	"directories": {},
 	"dist": {
 		"shasum": "e080d4b0fa1a7dd803741d6bca6d32c29ae37380",
 		"tarball": "http://registry.npmjs.org/sip.js/-/sip.js-0.6.4.tgz"
 	},
-	"directories": {},
-	"_resolved": "https://registry.npmjs.org/sip.js/-/sip.js-0.6.4.tgz",
-	"readme": "ERROR: No README data found!"
+	"engines": {
+		"node": ">=0.8"
+	},
+	"gitHead": "209fb9bb50f1918522d37a002b83f21abd6946ab",
+	"homepage": "http://sipjs.com",
+	"keywords": [
+		"sip",
+		"websocket",
+		"webrtc",
+		"library",
+		"javascript"
+	],
+	"license": "MIT",
+	"main": "src/SIP.js",
+	"maintainers": [
+		{
+			"email": "joseph@onsip.com",
+			"name": "joseph-onsip"
+		},
+		{
+			"email": "eric.green@onsip.com",
+			"name": "egreen_onsip"
+		}
+	],
+	"name": "sip.js",
+	"optionalDependencies": {},
+	"readme": "ERROR: No README data found!",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/onsip/SIP.js.git"
+	},
+	"scripts": {
+		"test": "grunt travis --verbose"
+	},
+	"title": "SIP.js",
+	"version": "0.6.4"
 };
 
 /***/ },
@@ -11968,7 +11995,6 @@ UserAgent.prototype.__createLine = function(session, type) {
     });
     self.__clearInactiveLines();
     self.lines[session.data.id] = line;
-    window.line = line;
     return line;
 };
 
@@ -12212,6 +12238,7 @@ UserAgent.prototype.forceDisconnect = function() {
 };
 
 module.exports = UserAgent;
+
 
 /***/ },
 /* 37 */
@@ -12661,7 +12688,7 @@ PhoneLine.prototype.cancel = function() {
     var session = this.getSession();
     return new Promise(function(resolve, reject) {
         session.terminate({statusCode: 486});
-        return null;
+        resolve();
     });
 };
 
@@ -12684,7 +12711,7 @@ PhoneLine.prototype.record = function(val) {
             }
         }
         else {
-         throw new Error('No line or no active line');
+            reject(new Error('No line or no active line'));
         }
     });
 };
@@ -12702,7 +12729,7 @@ PhoneLine.prototype.flip = function(target) {
             });
         }
         else {
-           throw new Error('No line or no active line');
+           reject(new Error('No line or no active line'));
         }
     });
 };
@@ -12712,10 +12739,10 @@ PhoneLine.prototype.park = function() {
     var self = this;
     return new Promise(function(resolve, reject){
         if (self.onCall) {
-            return self.controlSender.send(self.controlSender.messages.park);
+            resolve(self.controlSender.send(self.controlSender.messages.park));
         }
         else
-            throw new Error('No line or no active line');
+            reject(new Error('No line or no active line'));
     });
 };
 
@@ -12733,10 +12760,10 @@ PhoneLine.prototype.sendDTMF = function(value, duration) {
             if (dtmfSender !== undefined && dtmfSender.canInsertDTMF) {
                 dtmfSender.insertDTMF(value, duration);
             }
-            return null;
+            resolve();
         }
         else
-            throw new Error('No line or no active line');
+            reject(new Error('No line or no active line'));
     });
 };
 
@@ -12750,7 +12777,7 @@ PhoneLine.prototype.sendInfoDTMF = function(value, duration) {
         session.dtmf(value.toString(), {
             duration: duration
         });
-        return null;
+        resolve();
     });
 };
 
@@ -12768,7 +12795,7 @@ PhoneLine.prototype.blindTransfer = function(target, options) {
 
         // Check Session Status
         if (session.status !== SIP.Session.C.STATUS_CONFIRMED) {
-            throw new SIP.Exceptions.InvalidStateError(session.status);
+            reject(new SIP.Exceptions.InvalidStateError(session.status));
         }
 
         // normalizeTarget allows instances of SIP.URI to pass through unaltered,
@@ -12920,9 +12947,10 @@ PhoneLine.prototype.setMute = function(val) {
         if (self.onCall) {
             setStreamMute(self.session.getLocalStreams()[0], self.muted);
             val ? self.eventEmitter.emit(EVENT_NAMES.callMute, self) : self.eventEmitter.emit(EVENT_NAMES.callUnmute, self);
+            resolve();
         }
         else
-            throw new Error('No line or no active line');
+            reject(new Error('No line or no active line'));
     });
 };
 
@@ -12950,9 +12978,10 @@ PhoneLine.prototype.setMuteBoth = function(val) {
             setStreamMute(self.session.getLocalStreams()[0], self.bothMuted);
             setStreamMute(self.session.getRemoteStreams()[0], self.bothMuted);
             val ? self.eventEmitter.emit(EVENT_NAMES.callMute, self) : self.eventEmitter.emit(EVENT_NAMES.callUnmute, self);
+            resolve();
         }
         else
-            throw new Error('No line or no active line');
+            reject(new Error('No line or no active line'));
     });
 
 };
@@ -13095,7 +13124,7 @@ PhoneLine.prototype.setHold = function(val) {
             }));
         }
         else
-            throw new Error('No line or no active line');
+            reject(new Error('No line or no active line'));
     });
 };
 
@@ -13156,7 +13185,6 @@ PhoneLine.prototype.hasEarlyMedia = function() {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 module.exports = PhoneLine;
-
 
 
 /***/ },

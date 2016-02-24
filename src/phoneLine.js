@@ -442,7 +442,7 @@ PhoneLine.prototype.cancel = function() {
     var session = this.getSession();
     return new Promise(function(resolve, reject) {
         session.terminate({statusCode: 486});
-        return null;
+        resolve();
     });
 };
 
@@ -465,7 +465,7 @@ PhoneLine.prototype.record = function(val) {
             }
         }
         else {
-         throw new Error('No line or no active line');
+            reject(new Error('No line or no active line'));
         }
     });
 };
@@ -483,7 +483,7 @@ PhoneLine.prototype.flip = function(target) {
             });
         }
         else {
-           throw new Error('No line or no active line');
+           reject(new Error('No line or no active line'));
         }
     });
 };
@@ -493,10 +493,10 @@ PhoneLine.prototype.park = function() {
     var self = this;
     return new Promise(function(resolve, reject){
         if (self.onCall) {
-            return self.controlSender.send(self.controlSender.messages.park);
+            resolve(self.controlSender.send(self.controlSender.messages.park));
         }
         else
-            throw new Error('No line or no active line');
+            reject(new Error('No line or no active line'));
     });
 };
 
@@ -514,10 +514,10 @@ PhoneLine.prototype.sendDTMF = function(value, duration) {
             if (dtmfSender !== undefined && dtmfSender.canInsertDTMF) {
                 dtmfSender.insertDTMF(value, duration);
             }
-            return null;
+            resolve();
         }
         else
-            throw new Error('No line or no active line');
+            reject(new Error('No line or no active line'));
     });
 };
 
@@ -531,7 +531,7 @@ PhoneLine.prototype.sendInfoDTMF = function(value, duration) {
         session.dtmf(value.toString(), {
             duration: duration
         });
-        return null;
+        resolve();
     });
 };
 
@@ -549,7 +549,7 @@ PhoneLine.prototype.blindTransfer = function(target, options) {
 
         // Check Session Status
         if (session.status !== SIP.Session.C.STATUS_CONFIRMED) {
-            throw new SIP.Exceptions.InvalidStateError(session.status);
+            reject(new SIP.Exceptions.InvalidStateError(session.status));
         }
 
         // normalizeTarget allows instances of SIP.URI to pass through unaltered,
@@ -701,9 +701,10 @@ PhoneLine.prototype.setMute = function(val) {
         if (self.onCall) {
             setStreamMute(self.session.getLocalStreams()[0], self.muted);
             val ? self.eventEmitter.emit(EVENT_NAMES.callMute, self) : self.eventEmitter.emit(EVENT_NAMES.callUnmute, self);
+            resolve();
         }
         else
-            throw new Error('No line or no active line');
+            reject(new Error('No line or no active line'));
     });
 };
 
@@ -731,9 +732,10 @@ PhoneLine.prototype.setMuteBoth = function(val) {
             setStreamMute(self.session.getLocalStreams()[0], self.bothMuted);
             setStreamMute(self.session.getRemoteStreams()[0], self.bothMuted);
             val ? self.eventEmitter.emit(EVENT_NAMES.callMute, self) : self.eventEmitter.emit(EVENT_NAMES.callUnmute, self);
+            resolve();
         }
         else
-            throw new Error('No line or no active line');
+            reject(new Error('No line or no active line'));
     });
 
 };
@@ -876,7 +878,7 @@ PhoneLine.prototype.setHold = function(val) {
             }));
         }
         else
-            throw new Error('No line or no active line');
+            reject(new Error('No line or no active line'));
     });
 };
 
@@ -937,4 +939,3 @@ PhoneLine.prototype.hasEarlyMedia = function() {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 module.exports = PhoneLine;
-

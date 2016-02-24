@@ -76,7 +76,6 @@ UserAgent.prototype.__createLine = function(session, type) {
     });
     self.__clearInactiveLines();
     self.lines[session.data.id] = line;
-    window.line = line;
     return line;
 };
 
