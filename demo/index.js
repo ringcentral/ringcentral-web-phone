@@ -202,6 +202,10 @@ function app() {
  */
 function register(server, apikey, apisecret, username,extension, password) {
     server = server || RingCentral.SDK.server.sandbox;
+    // TODO: Improve this to support international phone number country codes
+    if (username) {
+        username = (username.match(/^1/)) ? username : '1' + username;
+    }
     if (document.getElementById('remember').checked) {
         localStorage.webPhoneServer = server;
         localStorage.webPhoneAppKey = apikey || '';
