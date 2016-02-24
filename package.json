@@ -6,8 +6,10 @@
     "build": "./node_modules/.bin/gulp"
   },
   "dependencies": {
-    "ringcentral": "^2.0.4",
     "sip.js": "0.6.4"
+  },
+  "peerDependencies": {
+    "ringcentral": "^2.0.4"
   },
   "devDependencies": {
     "gulp": "^3.9.1",
