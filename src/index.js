@@ -354,7 +354,7 @@ WebPhone.prototype.answer = function(line) {
 
     return new Promise(function(resolve, reject) {
         if (!line) {
-            line = incomingLines.length > 0 && incomingLines[0];
+            line = incomingLines.length > 0 && arr[0];
         }
 
         if (line) {
@@ -374,9 +374,9 @@ WebPhone.prototype.answer = function(line) {
                     self.hangup(line);
                     throw e;
                 }));
-        } else {
-            reject();            
         }
+
+        return null;
     });
 
 };
@@ -401,7 +401,7 @@ WebPhone.prototype.hangup = function(line) {
         line = self.getLine(line);
         self.ua.hangup(line);
         if (line === self.activeLine) self.activeLine = null;
-        resolve();
+        return null;
     });
 };
 
@@ -425,7 +425,7 @@ WebPhone.prototype.sendDTMF = function(value, line) {
     return new Promise(function(resolve, reject){
         line = self.getLine(line);
         line && line.sendDTMF.call(line, value);
-        resolve();
+        return null;
     });
 };
 
@@ -441,7 +441,7 @@ WebPhone.prototype.hold = function(line) {
         line = self.getLine(line);
         line && line.setHold(true);
         if (line === self.activeLine) self.activeLine = null;
-        resolve();
+        return null;
     });
 };
 
@@ -464,7 +464,7 @@ WebPhone.prototype.unhold = function(line) {
             line.setHold(false);
             self.activeLine = line;
         }
-        resolve();
+        return null;
     });
 };
 
@@ -480,7 +480,7 @@ WebPhone.prototype.mute = function(line) {
     return new Promise(function(resolve, reject){
         line = self.getLine(line);
         line && line.setMute(true);
-        resolve();
+        return null;
     });
 };
 
@@ -495,7 +495,7 @@ WebPhone.prototype.unmute = function(line) {
     return new Promise(function(resolve, reject){
         line = self.getLine(line);
         line && line.setMute(false);
-        resolve();
+        return null;
     });
 };
 
@@ -514,7 +514,7 @@ WebPhone.prototype.transfer = function(line, target, options) {
         line = self.getLine(line);
         line && line.transfer(target, options);
         if (line === self.activeLine) self.activeLine = null;
-        resolve();
+        return null;
     });
 };
 
