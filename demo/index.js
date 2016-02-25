@@ -1,5 +1,7 @@
 //.factory("ringout", function($rootScope, $q, callMonitor, utils, logging, rcCore, rcPlatform, rcSIPUA, appstorage, settingsService, getLocaleString, $locale) { 'use strict';
-var webPhone = new RingCentral.WebPhone({audioHelper: true , appkey: localStorage.webPhoneAppKey});
+var webPhone = new RingCentral.WebPhone({
+    audioHelper: { incoming: 'audio/incoming.ogg', outgoing: 'audio/outgoing.ogg' }, 
+    appkey: localStorage.webPhoneAppKey});
 var platform;
 var line;
 
