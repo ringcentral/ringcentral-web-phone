@@ -163,8 +163,10 @@ function WebPhone(options) {
     this._appName = options.appName;
     this._appVersion = options.appVersion;
 
-    this._userAgent = (options.appName ? (options.appName + (options.appVersion ? '/' + options.appVersion : '')) + ' ' : '') +
+    this._x_userAgent = (options.appName ? (options.appName + (options.appVersion ? '/' + options.appVersion : '')) + ' ' : '') +
                       'RCWEBPHONE/' + WebPhone.version;
+
+    this._client_id = options.appkey;
 
 }
 
@@ -220,6 +222,8 @@ WebPhone.prototype.register = function(info, checkFlags) {
         var endpointId = this.uuid;
         if (endpointId) {
             headers.push('P-rc-endpoint-id: ' + endpointId);
+            headers.push('x-user-agent:'+ this._x_userAgent);
+            headers.push('client-id:'+this._client_id);
         }
 
         extend(info, {
@@ -246,7 +250,12 @@ WebPhone.prototype.register = function(info, checkFlags) {
             : info.wsServers;
         info.domain = info.domain || info.sipDomain;
         info.username = info.username || info.userName;
+
         info.extraHeaders = Array.isArray(info.extraHeaders) ? info.extraHeaders : [];
+
+
+
+
 
         var options = {
             wsServers: info.wsServers,
@@ -257,12 +266,14 @@ WebPhone.prototype.register = function(info, checkFlags) {
             stunServers: info.stunServers || ['stun:74.125.194.127:19302'],
             turnServers: [],
             log: {
-                level: 1 //FIXME LOG LEVEL 3
+                level: 3 //FIXME LOG LEVEL 3
             },
             domain: info.domain,
             autostart: false,   //turn off autostart on UA creation
             register: false,     //turn off auto register on UA creation,
-            iceGatheringTimeout: info.iceGatheringTimeout || 3000
+            iceGatheringTimeout: info.iceGatheringTimeout || 3000,
+
+            headers: headers
         };
 
         service.username = info.userName;

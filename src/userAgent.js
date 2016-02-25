@@ -24,6 +24,8 @@ var UserAgent = function(options) {
     this.RTCPeerConnection = undefined;
     this.RTCSessionDescription = undefined;
     this.dom = new DomAudio();
+    this._x_userAgent = '';
+    this._client_id = '';
     this.checkConfig();
 };
 
@@ -58,6 +60,8 @@ UserAgent.prototype.setSIPConfig = function(config) {
     }
 
     this.sipConfig = config;
+    this._x_userAgent = config.headers[1];
+    this._client_id =  config.headers[2]
     this.checkConfig();
 };
 
@@ -72,7 +76,9 @@ UserAgent.prototype.__createLine = function(session, type) {
         userAgent: self,
         instanceId: self.sipConfig.authorizationUser,
         eventEmitter: self.eventEmitter,
-        type: type
+        type: type,
+        _x_userAgent: this._x_userAgent,
+        _client_id : this._client_id
     });
     self.__clearInactiveLines();
     self.lines[session.data.id] = line;
@@ -262,6 +268,10 @@ UserAgent.prototype.call = function(number, inviteOptions) {
     if (country) {
         headers.push('P-rc-country-id: ' + country);
     }
+
+    headers.push(this._x_userAgent);
+    headers.push(this._client_id);
+
     extend(options, {
         extraHeaders: headers
     });
