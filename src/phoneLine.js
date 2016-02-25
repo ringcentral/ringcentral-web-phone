@@ -61,8 +61,8 @@ var PhoneLine = function(options) {
                 var headers = [];
 
                 headers.push('Content-Type: application/json;charset=utf-8');
-                headers.push(this._x_userAgent);
-                headers.push(this._client_id);
+                headers.push(self._x_userAgent);
+                headers.push(self._client_id);
 
                 self.session.sendRequest(SIP.C.INFO, {
                     body: JSON.stringify({
@@ -578,8 +578,8 @@ PhoneLine.prototype.blindTransfer = function(target, options) {
         extraHeaders.push('Contact: ' + session.contact);
         extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(session.ua));
         extraHeaders.push('Refer-To: ' + target);
-        extraHeaders.push('x-user-agent:'+this._x_userAgent);
-        extraHeaders.push('client-id'+this._x_userAgent);
+        extraHeaders.push('x-user-agent:'+self._x_userAgent);
+        extraHeaders.push('client-id'+self._x_userAgent);
 
 
         // Send the request
