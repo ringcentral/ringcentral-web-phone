@@ -220,7 +220,7 @@ function WebPhone(options) {
     });
 
     this._audioHelper = null;
-    if (options.audioHelper) service.createAudioHelper();
+    if (options.audioHelper) service.createAudioHelper(options.audioHelper);
 
     this._appKey = options.appKey;
     this._appName = options.appName;
@@ -664,7 +664,7 @@ module.exports = {
 	"_args": [
 		[
 			"sip.js@0.6.4",
-			"/Users/vyshakh.babji/Desktop/WebRTC/kirill-webphone/web-phone-1"
+			"/Users/howard.zhang/Sites/ringcentral-web-phone"
 		]
 	],
 	"_from": "sip.js@0.6.4",
@@ -693,7 +693,7 @@ module.exports = {
 	"_shasum": "e080d4b0fa1a7dd803741d6bca6d32c29ae37380",
 	"_shrinkwrap": null,
 	"_spec": "sip.js@0.6.4",
-	"_where": "/Users/vyshakh.babji/Desktop/WebRTC/kirill-webphone/web-phone-1",
+	"_where": "/Users/howard.zhang/Sites/ringcentral-web-phone",
 	"author": {
 		"email": "will@onsip.com",
 		"name": "Will Mitchell"
@@ -734,22 +734,22 @@ module.exports = {
 	"gitHead": "209fb9bb50f1918522d37a002b83f21abd6946ab",
 	"homepage": "http://sipjs.com",
 	"keywords": [
-		"javascript",
-		"library",
 		"sip",
+		"websocket",
 		"webrtc",
-		"websocket"
+		"library",
+		"javascript"
 	],
 	"license": "MIT",
 	"main": "src/SIP.js",
 	"maintainers": [
 		{
-			"name": "joseph-onsip",
-			"email": "joseph@onsip.com"
+			"email": "joseph@onsip.com",
+			"name": "joseph-onsip"
 		},
 		{
-			"name": "egreen_onsip",
-			"email": "eric.green@onsip.com"
+			"email": "eric.green@onsip.com",
+			"name": "egreen_onsip"
 		}
 	],
 	"name": "sip.js",

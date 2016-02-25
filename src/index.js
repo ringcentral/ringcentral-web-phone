@@ -39,7 +39,7 @@ SIP.WebRTC.MediaStreamManager.prototype = mediaStreamManagerProto;
 
 /**
  * @namespace RingCentral
- * @param {boolean} [options.audioHelper] Automatically create audio helper
+ * @param {Object} [options.audioHelper] Automatically create audio helper
  * @param {string} [options.uuid] Instance ID
  * @constructor
  */
@@ -157,7 +157,7 @@ function WebPhone(options) {
     });
 
     this._audioHelper = null;
-    if (options.audioHelper) service.createAudioHelper();
+    if (options.audioHelper) service.createAudioHelper(options.audioHelper);
 
     this._appKey = options.appKey;
     this._appName = options.appName;
