@@ -33,6 +33,9 @@ var PhoneLine = function(options) {
     this.accepted = false;
     this.type = options.type;
 
+    this._x_userAgent = options._x_userAgent;
+    this._client_id = options._client_id;
+
     this.responseTimeout = 10000;
 
     this.controlSender = {
@@ -54,13 +57,18 @@ var PhoneLine = function(options) {
             var cseq = null;
 
             return new Promise(function(resolve, reject){
+
+                var headers = [];
+
+                headers.push('Content-Type: application/json;charset=utf-8');
+                headers.push(this._x_userAgent);
+                headers.push(this._client_id);
+
                 self.session.sendRequest(SIP.C.INFO, {
                     body: JSON.stringify({
                         request: command
                     }),
-                    extraHeaders: [
-                        "Content-Type: application/json;charset=utf-8"
-                    ],
+                    extraHeaders: headers,
                     receiveResponse: function(response) {
                         var timeout = null;
                         if (response.status_code === 200) {
@@ -570,6 +578,9 @@ PhoneLine.prototype.blindTransfer = function(target, options) {
         extraHeaders.push('Contact: ' + session.contact);
         extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(session.ua));
         extraHeaders.push('Refer-To: ' + target);
+        extraHeaders.push('x-user-agent:'+this._x_userAgent);
+        extraHeaders.push('client-id'+this._x_userAgent);
+
 
         // Send the request
         session.sendRequest(SIP.C.REFER, {
@@ -809,7 +820,9 @@ PhoneLine.prototype.__legacyHold = function(val) {
             self.sendRequest(SIP.C.INVITE, body, {
                 extraHeaders: [
                     "Content-Type: application/sdp",
-                    "Contact: " + self.session.contact
+                    "Contact: " + self.session.contact,
+                    self._x_userAgent,
+                    self._client_id
                 ],
                 receiveResponse: function(response) {
                     switch (true) {

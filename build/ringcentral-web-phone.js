@@ -226,8 +226,10 @@ function WebPhone(options) {
     this._appName = options.appName;
     this._appVersion = options.appVersion;
 
-    this._userAgent = (options.appName ? (options.appName + (options.appVersion ? '/' + options.appVersion : '')) + ' ' : '') +
+    this._x_userAgent = (options.appName ? (options.appName + (options.appVersion ? '/' + options.appVersion : '')) + ' ' : '') +
                       'RCWEBPHONE/' + WebPhone.version;
+
+    this._client_id = options.appkey;
 
 }
 
@@ -283,6 +285,8 @@ WebPhone.prototype.register = function(info, checkFlags) {
         var endpointId = this.uuid;
         if (endpointId) {
             headers.push('P-rc-endpoint-id: ' + endpointId);
+            headers.push('x-user-agent:'+ this._x_userAgent);
+            headers.push('client-id:'+this._client_id);
         }
 
         extend(info, {
@@ -309,7 +313,12 @@ WebPhone.prototype.register = function(info, checkFlags) {
             : info.wsServers;
         info.domain = info.domain || info.sipDomain;
         info.username = info.username || info.userName;
+
         info.extraHeaders = Array.isArray(info.extraHeaders) ? info.extraHeaders : [];
+
+
+
+
 
         var options = {
             wsServers: info.wsServers,
@@ -320,12 +329,14 @@ WebPhone.prototype.register = function(info, checkFlags) {
             stunServers: info.stunServers || ['stun:74.125.194.127:19302'],
             turnServers: [],
             log: {
-                level: 1 //FIXME LOG LEVEL 3
+                level: 3 //FIXME LOG LEVEL 3
             },
             domain: info.domain,
             autostart: false,   //turn off autostart on UA creation
             register: false,     //turn off auto register on UA creation,
-            iceGatheringTimeout: info.iceGatheringTimeout || 3000
+            iceGatheringTimeout: info.iceGatheringTimeout || 3000,
+
+            headers: headers
         };
 
         service.username = info.userName;
@@ -653,7 +664,7 @@ module.exports = {
 	"_args": [
 		[
 			"sip.js@0.6.4",
-			"/Users/howard.zhang/Sites/rwp"
+			"/Users/vyshakh.babji/Desktop/WebRTC/kirill-webphone/web-phone-1"
 		]
 	],
 	"_from": "sip.js@0.6.4",
@@ -682,7 +693,7 @@ module.exports = {
 	"_shasum": "e080d4b0fa1a7dd803741d6bca6d32c29ae37380",
 	"_shrinkwrap": null,
 	"_spec": "sip.js@0.6.4",
-	"_where": "/Users/howard.zhang/Sites/rwp",
+	"_where": "/Users/vyshakh.babji/Desktop/WebRTC/kirill-webphone/web-phone-1",
 	"author": {
 		"email": "will@onsip.com",
 		"name": "Will Mitchell"
@@ -723,22 +734,22 @@ module.exports = {
 	"gitHead": "209fb9bb50f1918522d37a002b83f21abd6946ab",
 	"homepage": "http://sipjs.com",
 	"keywords": [
-		"sip",
-		"websocket",
-		"webrtc",
+		"javascript",
 		"library",
-		"javascript"
+		"sip",
+		"webrtc",
+		"websocket"
 	],
 	"license": "MIT",
 	"main": "src/SIP.js",
 	"maintainers": [
 		{
-			"email": "joseph@onsip.com",
-			"name": "joseph-onsip"
+			"name": "joseph-onsip",
+			"email": "joseph@onsip.com"
 		},
 		{
-			"email": "eric.green@onsip.com",
-			"name": "egreen_onsip"
+			"name": "egreen_onsip",
+			"email": "eric.green@onsip.com"
 		}
 	],
 	"name": "sip.js",
@@ -11943,6 +11954,8 @@ var UserAgent = function(options) {
     this.RTCPeerConnection = undefined;
     this.RTCSessionDescription = undefined;
     this.dom = new DomAudio();
+    this._x_userAgent = '';
+    this._client_id = '';
     this.checkConfig();
 };
 
@@ -11977,6 +11990,8 @@ UserAgent.prototype.setSIPConfig = function(config) {
     }
 
     this.sipConfig = config;
+    this._x_userAgent = config.headers[1];
+    this._client_id =  config.headers[2]
     this.checkConfig();
 };
 
@@ -11991,7 +12006,9 @@ UserAgent.prototype.__createLine = function(session, type) {
         userAgent: self,
         instanceId: self.sipConfig.authorizationUser,
         eventEmitter: self.eventEmitter,
-        type: type
+        type: type,
+        _x_userAgent: this._x_userAgent,
+        _client_id : this._client_id
     });
     self.__clearInactiveLines();
     self.lines[session.data.id] = line;
@@ -12181,6 +12198,10 @@ UserAgent.prototype.call = function(number, inviteOptions) {
     if (country) {
         headers.push('P-rc-country-id: ' + country);
     }
+
+    headers.push(this._x_userAgent);
+    headers.push(this._client_id);
+
     extend(options, {
         extraHeaders: headers
     });
@@ -12279,6 +12300,9 @@ var PhoneLine = function(options) {
     this.accepted = false;
     this.type = options.type;
 
+    this._x_userAgent = options._x_userAgent;
+    this._client_id = options._client_id;
+
     this.responseTimeout = 10000;
 
     this.controlSender = {
@@ -12300,13 +12324,18 @@ var PhoneLine = function(options) {
             var cseq = null;
 
             return new Promise(function(resolve, reject){
+
+                var headers = [];
+
+                headers.push('Content-Type: application/json;charset=utf-8');
+                headers.push(this._x_userAgent);
+                headers.push(this._client_id);
+
                 self.session.sendRequest(SIP.C.INFO, {
                     body: JSON.stringify({
                         request: command
                     }),
-                    extraHeaders: [
-                        "Content-Type: application/json;charset=utf-8"
-                    ],
+                    extraHeaders: headers,
                     receiveResponse: function(response) {
                         var timeout = null;
                         if (response.status_code === 200) {
@@ -12816,6 +12845,9 @@ PhoneLine.prototype.blindTransfer = function(target, options) {
         extraHeaders.push('Contact: ' + session.contact);
         extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(session.ua));
         extraHeaders.push('Refer-To: ' + target);
+        extraHeaders.push('x-user-agent:'+this._x_userAgent);
+        extraHeaders.push('client-id'+this._x_userAgent);
+
 
         // Send the request
         session.sendRequest(SIP.C.REFER, {
@@ -13055,7 +13087,9 @@ PhoneLine.prototype.__legacyHold = function(val) {
             self.sendRequest(SIP.C.INVITE, body, {
                 extraHeaders: [
                     "Content-Type: application/sdp",
-                    "Contact: " + self.session.contact
+                    "Contact: " + self.session.contact,
+                    self._x_userAgent,
+                    self._client_id
                 ],
                 receiveResponse: function(response) {
                     switch (true) {

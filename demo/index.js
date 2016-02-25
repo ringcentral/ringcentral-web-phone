@@ -1,5 +1,5 @@
 //.factory("ringout", function($rootScope, $q, callMonitor, utils, logging, rcCore, rcPlatform, rcSIPUA, appstorage, settingsService, getLocaleString, $locale) { 'use strict';
-var webPhone = new RingCentral.WebPhone({audioHelper: true});
+var webPhone = new RingCentral.WebPhone({audioHelper: true , appkey: localStorage.webPhoneAppKey});
 var platform;
 var line;
 
@@ -166,7 +166,11 @@ function registerSIP(checkFlags, transport) {
             }]
         })
         .then(function(res) {
+
+
             var data = res.json();
+
+            //data.appKey = localStorage.webPhoneAppKey;
 
             console.log("Sip Provisioning Data from RC API: " + JSON.stringify(data));
 
