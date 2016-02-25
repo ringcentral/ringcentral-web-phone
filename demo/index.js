@@ -1,17 +1,15 @@
 //.factory("ringout", function($rootScope, $q, callMonitor, utils, logging, rcCore, rcPlatform, rcSIPUA, appstorage, settingsService, getLocaleString, $locale) { 'use strict';
 var webPhone = new RingCentral.WebPhone({audioHelper: true});
 var platform;
-var line;
+
 
 
 (function(){
     webPhone.ua.on('sipIncomingCall', function(e) {
-        line = e;
         document.getElementById("hid2").style.display = "block";
     });
 
     webPhone.ua.on('callStarted',function(e){
-        line = e;
         setInterval(function() {
             document.getElementById('activeCalls').innerText = webPhone.ua.getActiveLinesArray().length;
             function f(val, d) {
@@ -204,6 +202,11 @@ function app() {
  */
 function register(server, apikey, apisecret, username,extension, password) {
     server = server || RingCentral.SDK.server.sandbox;
+    // TODO: Improve this to support international phone number country codes
+    if (username) {
+        username = (username.match(/^\+?1/)) ? username : '1' + username;
+        username = username.replace(/\W/g, '');
+    }
     if (document.getElementById('remember').checked) {
         localStorage.webPhoneServer = server;
         localStorage.webPhoneAppKey = apikey || '';
