@@ -77,8 +77,8 @@ UserAgent.prototype.__createLine = function(session, type) {
         instanceId: self.sipConfig.authorizationUser,
         eventEmitter: self.eventEmitter,
         type: type,
-        _x_userAgent: this._x_userAgent,
-        _client_id : this._client_id
+        _x_userAgent: self._x_userAgent,
+        _client_id : self._client_id
     });
     self.__clearInactiveLines();
     self.lines[session.data.id] = line;
@@ -269,8 +269,8 @@ UserAgent.prototype.call = function(number, inviteOptions) {
         headers.push('P-rc-country-id: ' + country);
     }
 
-    headers.push(this._x_userAgent);
-    headers.push(this._client_id);
+    headers.push(self._x_userAgent);
+    headers.push(self._client_id);
 
     extend(options, {
         extraHeaders: headers

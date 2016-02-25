@@ -12007,8 +12007,8 @@ UserAgent.prototype.__createLine = function(session, type) {
         instanceId: self.sipConfig.authorizationUser,
         eventEmitter: self.eventEmitter,
         type: type,
-        _x_userAgent: this._x_userAgent,
-        _client_id : this._client_id
+        _x_userAgent: self._x_userAgent,
+        _client_id : self._client_id
     });
     self.__clearInactiveLines();
     self.lines[session.data.id] = line;
@@ -12199,8 +12199,8 @@ UserAgent.prototype.call = function(number, inviteOptions) {
         headers.push('P-rc-country-id: ' + country);
     }
 
-    headers.push(this._x_userAgent);
-    headers.push(this._client_id);
+    headers.push(self._x_userAgent);
+    headers.push(self._client_id);
 
     extend(options, {
         extraHeaders: headers
@@ -12328,8 +12328,8 @@ var PhoneLine = function(options) {
                 var headers = [];
 
                 headers.push('Content-Type: application/json;charset=utf-8');
-                headers.push(this._x_userAgent);
-                headers.push(this._client_id);
+                headers.push(self._x_userAgent);
+                headers.push(self._client_id);
 
                 self.session.sendRequest(SIP.C.INFO, {
                     body: JSON.stringify({
@@ -12845,8 +12845,8 @@ PhoneLine.prototype.blindTransfer = function(target, options) {
         extraHeaders.push('Contact: ' + session.contact);
         extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(session.ua));
         extraHeaders.push('Refer-To: ' + target);
-        extraHeaders.push('x-user-agent:'+this._x_userAgent);
-        extraHeaders.push('client-id'+this._x_userAgent);
+        extraHeaders.push('x-user-agent:'+self._x_userAgent);
+        extraHeaders.push('client-id'+self._x_userAgent);
 
 
         // Send the request
