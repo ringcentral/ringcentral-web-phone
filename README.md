@@ -1,5 +1,10 @@
 # RingCentral WebPhone Library
 
+##Account setup settings
+###Please read this document carefully before starting your development. The document shows step-by-step setup of the account
+
+https://docs.google.com/document/d/1mGEM6ID5un95W0mYxjhhLrDqd8QmXTcaThDRxwjyNtY/edit?usp=sharing
+
 ## Installing
 
 ```sh
