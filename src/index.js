@@ -172,7 +172,7 @@ function WebPhone(options) {
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-WebPhone.version = '0.1.0';
+WebPhone.version = '0.2.0';
 
 WebPhone.PhoneLine = PhoneLine;
 WebPhone.EventEmitter = EventEmitter;

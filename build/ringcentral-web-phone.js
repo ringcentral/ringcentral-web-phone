@@ -102,7 +102,7 @@ SIP.WebRTC.MediaStreamManager.prototype = mediaStreamManagerProto;
 
 /**
  * @namespace RingCentral
- * @param {boolean} [options.audioHelper] Automatically create audio helper
+ * @param {Object} [options.audioHelper] Automatically create audio helper
  * @param {string} [options.uuid] Instance ID
  * @constructor
  */
@@ -235,7 +235,7 @@ function WebPhone(options) {
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-WebPhone.version = '0.1.0';
+WebPhone.version = '0.2.0';
 
 WebPhone.PhoneLine = PhoneLine;
 WebPhone.EventEmitter = EventEmitter;
@@ -661,78 +661,25 @@ module.exports = (function(window) {
 /***/ function(module, exports) {
 
 module.exports = {
-	"_args": [
-		[
-			"sip.js@0.6.4",
-			"/Users/howard.zhang/Sites/ringcentral-web-phone"
-		]
-	],
-	"_from": "sip.js@0.6.4",
-	"_id": "sip.js@0.6.4",
-	"_inCache": true,
-	"_installable": true,
-	"_location": "/sip.js",
-	"_npmUser": {
-		"email": "eric.green@onsip.com",
-		"name": "egreen_onsip"
-	},
-	"_npmVersion": "1.4.13",
-	"_phantomChildren": {},
-	"_requested": {
-		"name": "sip.js",
-		"raw": "sip.js@0.6.4",
-		"rawSpec": "0.6.4",
-		"scope": null,
-		"spec": "0.6.4",
-		"type": "version"
-	},
-	"_requiredBy": [
-		"/"
-	],
-	"_resolved": "https://registry.npmjs.org/sip.js/-/sip.js-0.6.4.tgz",
-	"_shasum": "e080d4b0fa1a7dd803741d6bca6d32c29ae37380",
-	"_shrinkwrap": null,
-	"_spec": "sip.js@0.6.4",
-	"_where": "/Users/howard.zhang/Sites/ringcentral-web-phone",
+	"name": "sip.js",
+	"title": "SIP.js",
+	"description": "A simple, intuitive, and powerful JavaScript signaling library",
+	"version": "0.6.4",
+	"main": "src/SIP.js",
+	"homepage": "http://sipjs.com",
 	"author": {
-		"email": "will@onsip.com",
-		"name": "Will Mitchell"
-	},
-	"bugs": {
-		"url": "https://github.com/onsip/SIP.js/issues"
+		"name": "Will Mitchell",
+		"email": "will@onsip.com"
 	},
 	"contributors": [
 		{
 			"url": "http://sipjs.com/authors/"
 		}
 	],
-	"dependencies": {},
-	"description": "A simple, intuitive, and powerful JavaScript signaling library",
-	"devDependencies": {
-		"browserify": "^4.1.8",
-		"grunt": "~0.4.0",
-		"grunt-browserify": "^2.1.0",
-		"grunt-cli": "~0.1.6",
-		"grunt-contrib-copy": "^0.5.0",
-		"grunt-contrib-jasmine": "~0.6.0",
-		"grunt-contrib-jshint": ">0.5.0",
-		"grunt-contrib-uglify": "~0.2.0",
-		"grunt-peg": "~1.3.1",
-		"grunt-trimtrailingspaces": "^0.4.0",
-		"node-minify": "~0.7.2",
-		"pegjs": "0.8.0",
-		"sdp-transform": "~0.4.0"
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/onsip/SIP.js.git"
 	},
-	"directories": {},
-	"dist": {
-		"shasum": "e080d4b0fa1a7dd803741d6bca6d32c29ae37380",
-		"tarball": "http://registry.npmjs.org/sip.js/-/sip.js-0.6.4.tgz"
-	},
-	"engines": {
-		"node": ">=0.8"
-	},
-	"gitHead": "209fb9bb50f1918522d37a002b83f21abd6946ab",
-	"homepage": "http://sipjs.com",
 	"keywords": [
 		"sip",
 		"websocket",
@@ -740,30 +687,57 @@ module.exports = {
 		"library",
 		"javascript"
 	],
-	"license": "MIT",
-	"main": "src/SIP.js",
-	"maintainers": [
-		{
-			"email": "joseph@onsip.com",
-			"name": "joseph-onsip"
-		},
-		{
-			"email": "eric.green@onsip.com",
-			"name": "egreen_onsip"
-		}
-	],
-	"name": "sip.js",
-	"optionalDependencies": {},
-	"readme": "ERROR: No README data found!",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/onsip/SIP.js.git"
+	"devDependencies": {
+		"grunt": "~0.4.0",
+		"grunt-cli": "~0.1.6",
+		"grunt-contrib-jasmine": "~0.6.0",
+		"grunt-contrib-jshint": ">0.5.0",
+		"grunt-contrib-uglify": "~0.2.0",
+		"grunt-peg": "~1.3.1",
+		"grunt-trimtrailingspaces": "^0.4.0",
+		"node-minify": "~0.7.2",
+		"pegjs": "0.8.0",
+		"sdp-transform": "~0.4.0",
+		"grunt-contrib-copy": "^0.5.0",
+		"browserify": "^4.1.8",
+		"grunt-browserify": "^2.1.0"
 	},
+	"engines": {
+		"node": ">=0.8"
+	},
+	"license": "MIT",
 	"scripts": {
 		"test": "grunt travis --verbose"
 	},
-	"title": "SIP.js",
-	"version": "0.6.4"
+	"gitHead": "209fb9bb50f1918522d37a002b83f21abd6946ab",
+	"bugs": {
+		"url": "https://github.com/onsip/SIP.js/issues"
+	},
+	"_id": "sip.js@0.6.4",
+	"_shasum": "e080d4b0fa1a7dd803741d6bca6d32c29ae37380",
+	"_from": "sip.js@0.6.4",
+	"_npmVersion": "1.4.13",
+	"_npmUser": {
+		"name": "egreen_onsip",
+		"email": "eric.green@onsip.com"
+	},
+	"maintainers": [
+		{
+			"name": "joseph-onsip",
+			"email": "joseph@onsip.com"
+		},
+		{
+			"name": "egreen_onsip",
+			"email": "eric.green@onsip.com"
+		}
+	],
+	"dist": {
+		"shasum": "e080d4b0fa1a7dd803741d6bca6d32c29ae37380",
+		"tarball": "http://registry.npmjs.org/sip.js/-/sip.js-0.6.4.tgz"
+	},
+	"directories": {},
+	"_resolved": "https://registry.npmjs.org/sip.js/-/sip.js-0.6.4.tgz",
+	"readme": "ERROR: No README data found!"
 };
 
 /***/ },
