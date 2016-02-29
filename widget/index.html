@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>RingCentral Web Phone</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="normalize.css">
+    <link rel="stylesheet" type="text/css" href="main.css">
+    <link rel="stylesheet" type="text/css" href="theme/basic.css" id="theme-css">
+    <style type="text/css">
+    * {
+        box-sizing: border-box;
+        transition: all 0.1s ease-in-out;
+    }
+    
+    body {
+        max-width: 250px;
+        padding: 10px;
+    }
+    
+    .theme-panel {
+        margin-bottom: 10px;
+    }
+    
+    .theme-button {
+        border: 0;
+        width: 20px;
+        height: 20px;
+        border: 1px solid;
+    }
+    
+    #theme-basic {
+        background-color: #fff;
+        border-color: #000;
+    }
+    
+    #theme-blue {
+        background-color: #3498db;
+    }
+    
+    #theme-casual {
+        background-color: #95a5a6;
+    }
+    #auth-panel,
+    #dial-pad,
+    #call-panel,
+    #call-log {
+        margin-bottom: 10px;
+    }
+    </style>
+</head>
+
+<body>
+    <div class='theme-panel'>
+        Theme:
+        <button class='theme-button' id='theme-basic' onclick="switchTheme('basic')"></button>
+        <button class='theme-button' id='theme-blue' onclick="switchTheme('blue')"></button>
+        <button class='theme-button' id='theme-casual' onclick="switchTheme('casual')"></button>
+    </div>
+    <div>
+        <div id="auth-panel"></div>
+        <div id="dial-pad"></div>
+        <div id="call-panel"></div>
+        <div id="call-log"></div>
+    </div>
+    <script type="text/javascript" src="../bower_components/ringcentral/build/ringcentral-bundle.js"></script>
+    <script type="text/javascript" src="../build/ringcentral-web-phone.js"></script>
+    <script type="text/javascript" src="components/auth-panel.js"></script>
+    <script type="text/javascript" src="components/dial-pad.js"></script>
+    <script type="text/javascript" src="components/call-panel.js"></script>
+    <script type="text/javascript" src="components/call-log.js"></script>
+    <script type="text/javascript">
+    var authPanel = new AuthPanel({
+        target: '#auth-panel',
+        afterLogin: function() {
+            // we only can initial dial pad after logging in, because we want to reuse sdk and webPhone
+            authPanel.close();
+            var dialPad = new DialPad({
+                target: '#dial-pad',
+                sdk: authPanel.sdk,
+                webPhone: authPanel.webPhone,
+                afterCallout: function() { /* ... */ }
+            });
+            var callPanel = new CallPanel({
+                target: '#call-panel',
+                sdk: authPanel.sdk,
+                webPhone: authPanel.webPhone,
+                afterCallStart: function() { /* ... */ },
+                afterCallEnd: function() { /* ... */ }
+            });
+            var callLog = new CallLog({
+                target: '#call-log',
+                sdk: authPanel.sdk,
+                webPhone: authPanel.webPhone
+            });
+        }
+    });
+
+    function switchTheme(theme) {
+        document.getElementById('theme-css').href = 'theme/' + theme + '.css';
+    }
+    </script>
+</body>
+
+</html>

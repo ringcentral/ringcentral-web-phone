@@ -1,0 +1,113 @@
+
+.rc-input,
+.rc-button {
+    width: 100%;
+    outline: none;
+}
+
+.rc-input {
+    padding: 5px;
+    border: 0;
+    border-bottom: 1px solid #ccc;
+    border-radius: 2px;
+    font-size: 12px;
+}
+
+.rc-input:focus {
+    border-bottom: 1px solid #000;
+}
+
+.rc-button {
+    border: 0;
+    border-radius: 2px;
+    background-color: #7f8c8d;
+    padding: 5px;
+    color: #fff;
+}
+
+.rc-button-important {
+    background-color: #e74c3c;
+}
+
+.rc-button-important:hover {
+    background-color: #c0392b;
+}
+
+.rc-button:hover {
+    background-color: #bdc3c7;
+}
+
+.rc-panel {
+    padding: 10px;
+    border: 2px solid #878787;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+}
+
+.rc-panel > .rc-input,
+.rc-panel > .rc-button {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.rc-panel-title {
+    font-size: 16px;
+    color: #fff;
+    padding: 10px;
+    border-top-right-radius: 5px;
+    border-top-left-radius: 5px;
+    text-align: center;
+    background-color: #878787;
+}
+
+.rc-sub-panel {
+    font-size: 12px;
+    padding: 5px;
+}
+
+.rc-dial-wrapper {
+    width: 190px;
+    margin: 0 auto;
+    padding: 10px;
+}
+
+.rc-dial-button {
+    width: 50px;
+    height: 50px;
+    margin: 2px;
+    border-radius: 50%;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    outline: none;
+}
+
+.rc-message {
+    font-size: 12px;
+    color: #878787;
+}
+
+.rc-error-message {
+    font-size: 12px;
+    color: #e74c3c;
+}
+
+.rc-calllog {
+    border-bottom: 1px solid #878787;
+}
+
+.rc-calllog-name {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.rc-calllog-time {
+    font-size: 12px;
+}
+
+.rc-calllog-type {
+    font-size: 12px;
+}
