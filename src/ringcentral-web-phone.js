@@ -93,6 +93,43 @@
 
         /*--------------------------------------------------------------------------------------------------------------------*/
 
+        session.__ignoreReinviteDuplicates = false;
+
+        //Monkey patching sendReinvite for better Hold handling
+        session.__sendReinvite = session.sendReinvite;
+        session.sendReinvite = function() {
+            session.__ignoreReinviteDuplicates = false;
+            var res = session.__sendReinvite.apply(this, arguments);
+            var __reinviteSucceeded = this.reinviteSucceeded,
+                __reinviteFailed = this.reinviteFailed;
+            this.reinviteSucceeded = function() {
+                session.emit('CALL_REINVITE_SUCCEEDED', session);
+                return __reinviteSucceeded.apply(this, []);
+            };
+            this.reinviteFailed = function() {
+                session.emit('CALL_REINVITE_FAILED', session);
+                return __reinviteFailed.apply(this, []);
+            };
+            return res;
+        };
+
+        //Monkey patching receiveReinviteResponse to ignore duplicates which may break Hold/Unhold
+        session.__receiveReinviteResponse = session.receiveReinviteResponse;
+        session.receiveReinviteResponse = function(response) {
+            switch (true) {
+                case /^2[0-9]{2}$/.test(response.status_code):
+                    if (session.__ignoreReinviteDuplicates) {
+                        this.sendRequest(SIP.C.ACK, {cseq: response.cseq});
+                        return;
+                    }
+                    session.__ignoreReinviteDuplicates = true;
+                    break;
+            }
+            return session.__receiveReinviteResponse.apply(this, arguments);
+        };
+
+        /*--------------------------------------------------------------------------------------------------------------------*/
+
         var __receiveRequest = session.receiveRequest;
         session.receiveRequest = function(request) {
             switch (request.method) {
@@ -134,10 +171,10 @@
 
         /*--------------------------------------------------------------------------------------------------------------------*/
 
-        // session.__hasEarlyMedia = false;
-        // session.__waitingForIce = false;
-        // session.__doubleCompleted = false;
-        //
+        session.__hasEarlyMedia = false;
+        session.__waitingForIce = false;
+        session.__doubleCompleted = false;
+
         // //Fired when the request fails, whether due to an unsuccessful final response or due to timeout, transport, or other error
         // session.on('failed', function(response, cause) {
         //     session.terminated('Forced Termination', cause);
@@ -148,9 +185,9 @@
         //         }
         //     }
         // });
-        //
-        // // /*--------------------------------------------------------------------------------------------------------------------*/
-        //
+
+        // /*--------------------------------------------------------------------------------------------------------------------*/
+
         // //Fired when ICE is starting to negotiate between the peers.
         // session.on('connecting', function(e) {
         //     setTimeout(function() {
@@ -162,121 +199,121 @@
         //         }
         //     }, this.iceGatheringTimeout);
         // });
-        //
-        // // /*--------------------------------------------------------------------------------------------------------------------*/
-        //
-        // //Fired each time a provisional (100-199) response is received.
-        // session.on('progress', function(e) {
-        //     var response = e;
-        //     //Early media is supported by SIP.js library
-        //     //But in case it is sent without 100rel support we play it manually
-        //     //STATUS_EARLY_MEDIA === 11, it will be set by SIP.js if 100rel is supported
-        //     if (session.status !== SIP.Session.C.STATUS_EARLY_MEDIA && e.status_code === 183 && typeof(e.body) === 'string' && e.body.indexOf('\n') !== -1) {
-        //         if (session.hasOffer) {
-        //             if (!session.createDialog(response, 'UAC')) {
-        //                 return;
-        //             }
-        //             session.mediaHandler.setDescription(
-        //                 response.body,
-        //                 function() {
-        //                     session.dialog.pracked.push(response.getHeader('rseq'));
-        //                     session.status = SIP.Session.C.STATUS_EARLY_MEDIA;
-        //                     session.mute();
-        //                     session.__hasEarlyMedia = true;
-        //                 },
-        //                 function(e) {
-        //                     session.logger.warn(e);
-        //                     session.acceptAndTerminate(response, 488, 'Not Acceptable Here');
-        //                     session.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
-        //                 }
-        //             );
-        //         }
-        //     }
-        // });
-        //
-        // // /*--------------------------------------------------------------------------------------------------------------------*/
-        //
-        // //Monkey patching for handling early media and to delay ACKs
-        // var __receiveInviteReponse = session.receiveInviteResponse;
-        // session.receiveInviteResponse = function(response) {
-        //     var session = this, args = arguments;
-        //     switch (true) {
-        //         case (/^1[0-9]{2}$/.test(response.status_code)):
-        //             //Let's not allow the library to send PRACK
-        //             if (session.__hasEarlyMedia) {
-        //                 this.emit('progress', response);
-        //                 return;
-        //             }
-        //             break;
-        //         case /^(2[0-9]{2})|(4\d{2})$/.test(response.status_code):
-        //             if (!session.__hasEarlyMedia) break;
-        //
-        //             //Let's check the ICE connection state
-        //             if (session.mediaHandler.peerConnection.iceConnectionState === 'completed' && !session.__waitingForIce) {
-        //                 session.__waitingForIce = false;
-        //                 //if ICE is connected, then let the library to handle the ACK
-        //                 break;
-        //             }
-        //             else {
-        //                 //If ICE is not connected, then we should send ACK after it has been connected
-        //                 if (!session.__waitingForIce) {
-        //                     function onICECompleted() {
-        //                         session.removeListener('ICECompeted', onICECompleted);
-        //                         //let the library handle the ACK after ICE connection is completed
-        //                         session.__waitingForIce = false;
-        //                         __receiveInviteReponse.apply(session, args);
-        //                     }
-        //                     session.on('ICECompeted', onICECompleted);
-        //
-        //                     function onICEFailed() {
-        //                         session.removeListener('ICEFailed', onICEFailed);
-        //                         //handle the ICE Failed situation
-        //                         session.__waitingForIce = false;
-        //                         session.acceptAndTerminate(response, null, 'ICE Connection Failed');
-        //                     }
-        //                     session.on('ICEFailed', onICEFailed);
-        //
-        //                     session.__waitingForIce = true;
-        //                 }
-        //                 return;
-        //             }
-        //             break;
-        //     }
-        //     return __receiveInviteReponse.apply(session, args);
-        // };
-        //
+
         // /*--------------------------------------------------------------------------------------------------------------------*/
-        //
-        // Session.prototype.terminateCallOnDisconnected = function(reason) {
-        //     this.terminated(null, reason || SIP.C.causes.CONNECTION_ERROR);
+
+        //Fired each time a provisional (100-199) response is received.
+        session.on('progress', function(e) {
+            var response = e;
+            //Early media is supported by SIP.js library
+            //But in case it is sent without 100rel support we play it manually
+            //STATUS_EARLY_MEDIA === 11, it will be set by SIP.js if 100rel is supported
+            if (session.status !== SIP.Session.C.STATUS_EARLY_MEDIA && e.status_code === 183 && typeof(e.body) === 'string' && e.body.indexOf('\n') !== -1) {
+                if (session.hasOffer) {
+                    if (!session.createDialog(response, 'UAC')) {
+                        return;
+                    }
+                    session.mediaHandler.setDescription(
+                        response.body,
+                        function() {
+                            session.dialog.pracked.push(response.getHeader('rseq'));
+                            session.status = SIP.Session.C.STATUS_EARLY_MEDIA;
+                            session.mute();
+                            session.__hasEarlyMedia = true;
+                        },
+                        function(e) {
+                            session.logger.warn(e);
+                            session.acceptAndTerminate(response, 488, 'Not Acceptable Here');
+                            session.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+                        }
+                    );
+                }
+            }
+        });
+
+        // /*--------------------------------------------------------------------------------------------------------------------*/
+
+        //Monkey patching for handling early media and to delay ACKs
+        var __receiveInviteReponse = session.receiveInviteResponse;
+        session.receiveInviteResponse = function(response) {
+            var session = this, args = arguments;
+            switch (true) {
+                case (/^1[0-9]{2}$/.test(response.status_code)):
+                    //Let's not allow the library to send PRACK
+                    if (session.__hasEarlyMedia) {
+                        this.emit('progress', response);
+                        return;
+                    }
+                    break;
+                case /^(2[0-9]{2})|(4\d{2})$/.test(response.status_code):
+                    if (!session.__hasEarlyMedia) break;
+
+                    //Let's check the ICE connection state
+                    if (session.mediaHandler.peerConnection.iceConnectionState === 'completed' && !session.__waitingForIce) {
+                        session.__waitingForIce = false;
+                        //if ICE is connected, then let the library to handle the ACK
+                        break;
+                    }
+                    else {
+                        //If ICE is not connected, then we should send ACK after it has been connected
+                        if (!session.__waitingForIce) {
+                            function onICECompleted() {
+                                session.removeListener('iceComplete', onICECompleted);
+                                //let the library handle the ACK after ICE connection is completed
+                                session.__waitingForIce = false;
+                                __receiveInviteReponse.apply(session, args);
+                            }
+                            session.on('iceComplete', onICECompleted);
+
+                            function onICEFailed() {
+                                session.removeListener('iceFailed', onICEFailed);
+                                //handle the ICE Failed situation
+                                session.__waitingForIce = false;
+                                session.acceptAndTerminate(response, null, 'ICE Connection Failed');
+                            }
+                            session.on('iceFailed', onICEFailed);
+
+                            session.__waitingForIce = true;
+                        }
+                        return;
+                    }
+                    break;
+            }
+            return __receiveInviteReponse.apply(session, args);
+        };
+
+        /*--------------------------------------------------------------------------------------------------------------------*/
+
+        // session.terminateCallOnDisconnected = function(reason) {
+        //     session.terminated(null, reason || SIP.C.causes.CONNECTION_ERROR);
         //     // self.eventEmitter.emit(EVENT_NAMES.callFailed, self, null, 'Connection error');
         // };
         //
         // //FIXME: Explore if it can be replaced with ref: http://sipjs.com/api/0.7.0/mediaHandler/
         // //Monkey patching oniceconnectionstatechange because SIP.js 0.6.x does not have this event
-        // var onStateChange = session.mediaHandler.peerConnection.oniceconnectionstatechange || function() {};
+        // var oniceconnectionstatechange = session.mediaHandler.peerConnection.oniceconnectionstatechange || function() {};
         // session.mediaHandler.peerConnection.oniceconnectionstatechange = function() {
         //     //this === peerConnection
         //     var state = this.iceConnectionState;
-        //     onStateChange.apply(this, arguments);
+        //     oniceconnectionstatechange.apply(this, arguments);
         //
         //     switch (state) {
         //         case 'connected':
-        //             session.emit('ICEConnected', session);
+        //             session.emit('ICE_CONNECTED', session);
         //             break;
         //         case 'completed':
         //             //this may be called twice, see: https://code.google.com/p/chromium/issues/detail?id=371804
         //             if (!session.__doubleCompleted) {
-        //                 session.emit('ICECompleted', session);
+        //                 session.emit('ICE_COMPLETED', session);
         //                 session.__doubleCompleted = true;
         //             }
         //             break;
         //         case 'disconnected':
-        //             terminateCallOnDisconnected();
-        //             session.emit('ICEDisconnected', session);
+        //             session.terminateCallOnDisconnected();
+        //             session.emit('ICE_DISCONNECTED', session);
         //             break;
         //         case 'failed':
-        //             session.emit('ICEFailed', session);
+        //             session.emit('ICE_FAILED', session);
         //             break;
         //     }
         // };
@@ -315,12 +352,26 @@
     WebPhone.prototype.setHold = function(session, flag) {
         session = this.patchSession(session);
         return (new Promise(function(resolve, reject) {
-            var handlers = {eventHandlers: {succeeded: resolve, failed: reject}};
-            if (flag) {
-                session.hold(handlers);
-            } else {
-                session.unhold(handlers);
+
+            function onSucceeded() {
+                resolve();
+                session.removeListener('CALL_REINVITE_FAILED', onFailed);
             }
+
+            function onFailed(e) {
+                reject(e);
+                session.removeListener('CALL_REINVITE_SUCCEEDED', onSucceeded);
+            }
+
+            session.on('CALL_REINVITE_SUCCEEDED', onSucceeded);
+            session.on('CALL_REINVITE_FAILED', onFailed);
+
+            if (flag) {
+                session.hold();
+            } else {
+                session.unhold();
+            }
+
         }.bind(this)));
     };
 
