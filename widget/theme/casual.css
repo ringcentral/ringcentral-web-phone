@@ -1,0 +1,57 @@
+.rc-input {
+    border-radius: 10px;
+    border: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    padding: 10px;
+}
+
+.rc-input:focus {
+    border-bottom: 0;
+}
+
+.rc-button {
+    color: #000;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.rc-button:hover {
+    background-color: #fff;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+}
+
+.rc-panel {
+    background-color: #eeeded;
+}
+
+.rc-sub-panel {
+    color: #000;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    margin-bottom: 5px;
+}
+
+.rc-dial-wrapper {
+    width: 190px;
+}
+
+.rc-dial-button {
+    background-color: #fff;
+    border: 1px solid #fff;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+    margin: 2px;
+}
+
+.rc-message {}
+
+.rc-error-message {}
+
+.rc-calllog {}
+
+.rc-calllog-name {}
+
+.rc-calllog-time {}
+
+.rc-calllog-type {}

@@ -1,0 +1,40 @@
+.rc-input {
+    border-color: #3498db;
+}
+
+.rc-button {
+    background-color: #3498db;
+}
+
+.rc-button:hover {
+    background-color: #2980b9;
+}
+
+.rc-panel {
+    border: 2px solid #3498db;
+}
+
+.rc-panel-title {
+    background-color: #3498db;
+}
+
+.rc-dial-wrapper {}
+
+.rc-dial-button {
+    background-color: #fff;
+    border: 1px solid #3498db;
+}
+
+.rc-message {}
+
+.rc-error-message {}
+
+.rc-calllog {
+    border-bottom: 1px solid #3498db;
+}
+
+.rc-calllog-name {}
+
+.rc-calllog-time {}
+
+.rc-calllog-type {}
