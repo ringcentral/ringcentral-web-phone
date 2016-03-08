@@ -260,7 +260,7 @@ $(function() {
 
         var headers = [];
 
-        headers.push('P-Asserted-Identity: sip:18559978182@' + sipInfo.domain);
+        headers.push('P-Asserted-Identity: sip:12223334455@' + sipInfo.domain); //FIXME Move to lib
         if (homeCountry) {
             headers.push('P-rc-country-id: ' + homeCountry);
         }
