@@ -94,6 +94,12 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
+    WebPhone.uuid = uuid;
+    WebPhone.delay = delay;
+    WebPhone.extend = extend;
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     //Monkey patching sendReinvite for better Hold handling
     Session.prototype.__sendReinvite = Session.prototype.sendReinvite;
     Session.prototype.sendReinvite = function() {
