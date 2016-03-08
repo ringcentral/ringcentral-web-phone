@@ -47,6 +47,9 @@
 
     function WebPhone(regData, options) {
 
+        regData = regData || {};
+        options = options || {};
+
         this.sipInfo = regData.sipInfo[0] || regData.sipInfo;
         this.sipFlags = regData.sipFlags;
 
