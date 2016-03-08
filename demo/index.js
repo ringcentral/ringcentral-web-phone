@@ -10,8 +10,21 @@ $(function() {
     var extension = null;
     var sipInfo = null;
     var $app = $('#app');
+    
+    var $loginTemplate = $('#template-login');
+    var $callTemplate = $('#template-call');
+    var $incomingTemplate = $('#template-incoming');
+    var $acceptedTemplate = $('#template-accepted');
 
-    function login(server, appKey, appSecret, login, ext, password) {
+    /**
+     * @param {jQuery|HTMLElement} $tpl
+     * @return {jQuery|HTMLElement}
+     */
+    function cloneTemplate($tpl) {
+        return $($tpl.html());
+    }
+
+    function login(server, appKey, appSecret, username, ext, password) {
 
         sdk = new RingCentral.SDK({
             appKey: appKey,
@@ -23,14 +36,15 @@ $(function() {
 
         platform
             .login({
-                username: login,
+                username: username,
+                extension: ext || null,
                 password: password
             })
             .then(function() {
 
                 localStorage.setItem('webPhoneAppKey', appKey || '');
                 localStorage.setItem('webPhoneAppSecret', appSecret || '');
-                localStorage.setItem('webPhoneLogin', login || '');
+                localStorage.setItem('webPhoneLogin', username || '');
                 localStorage.setItem('webPhoneExtension', ext || '');
                 localStorage.setItem('webPhonePassword', password || '');
 
@@ -55,7 +69,7 @@ $(function() {
             .then(makeCallForm)
             .catch(function(e) {
                 console.error('Error in main promise chain');
-                console.error(e);
+                console.error(e.stack);
             });
 
     }
@@ -80,27 +94,7 @@ $(function() {
         console.log('To', session.request.to.displayName, session.request.to.friendlyName);
         console.log('From', session.request.from.displayName, session.request.from.friendlyName);
 
-        var $modal = $('<div class="modal fade" tabindex="-1" role="dialog">' +
-                       '    <div class="modal-dialog">' +
-                       '        <div class="modal-content">' +
-                       '            <div class="modal-header">' +
-                       '                <h4 class="modal-title">Incoming Call</h4>' +
-                       '            </div>' +
-                       '        <div class="modal-body">' +
-                       '            <form class="form-inline forward-form">' +
-                       '                <div class="form-group">' +
-                       '                    <label>Forward To:</label>' +
-                       '                    <input type="text" class="form-control" name="forward" placeholder="">' +
-                       '                </div>' +
-                       '                <button class="btn btn-primary" type="submit">Forward</button>' +
-                       '            </form>' +
-                       '        </div>' +
-                       '        <div class="modal-footer">' +
-                       '            <button class="btn btn-success answer">Answer</button>' +
-                       '            <button class="btn btn-danger decline">Decline</button>' +
-                       '        </div>' +
-                       '    </div>' +
-                       '</div>').modal({backdrop: 'static'});
+        var $modal = cloneTemplate($incomingTemplate).modal({backdrop: 'static'});
 
         var acceptOptions = {
             media: {
@@ -146,63 +140,7 @@ $(function() {
         console.log('To', session.request.to.displayName, session.request.to.friendlyName);
         console.log('From', session.request.from.displayName, session.request.from.friendlyName);
 
-        var $modal = $('<div class="modal fade" tabindex="-1" role="dialog">' +
-                       '    <div class="modal-dialog modal-lg">' +
-                       '        <div class="modal-content">' +
-                       '            <div class="modal-header">' +
-                       '                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>' +
-                       '                <h4 class="modal-title">Call In Progress</h4>' +
-                       '            </div>' +
-                       '        <div class="modal-body">' +
-                       '            <div class="btn-toolbar">' +
-                       '                <span class="btn-group">' +
-                       '                    <button class="btn btn-default mute">Mute</button>' +
-                       '                    <button class="btn btn-default unmute">UnMute</button>' +
-                       '                </span>' +
-                       '                <span class="btn-group">' +
-                       '                     <button class="btn btn-default hold">Hold</button>' +
-                       '                     <button class="btn btn-default unhold">UnHold</button>' +
-                       '                </span>' +
-                       '                <span class="btn-group">' +
-                       '                     <button class="btn btn-default startRecord">Start Recording</button>' +
-                       '                     <button class="btn btn-default stopRecord">Stop Recording</button>' +
-                       '                </span>' +
-                       '                <span class="btn-group">' +
-                       '                     <button class="btn btn-default park">Park</button>' +
-                       '                </span>' +
-                       '            </div>' +
-                       '            <hr/>' +
-                       '            <form class="form-inline flip-form">' +
-                       '                <div class="form-group">' +
-                       '                    <label>Flip:</label>' +
-                       '                    <input type="text" class="form-control" name="flip" placeholder="1 ... 8">' +
-                       '                </div>' +
-                       '                <button class="btn btn-primary" type="submit">Flip</button>' +
-                       '            </form>' +
-                       '            <hr/>' +
-                       '            <form class="form-inline transfer-form">' +
-                       '                <div class="form-group">' +
-                       '                    <label>Transfer:</label>' +
-                       '                    <input type="text" class="form-control" name="transfer" placeholder="+1 234 567-8900">' +
-                       '                </div>' +
-                       '                <button class="btn btn-primary" type="submit">Transfer</button>' +
-                       '            </form>' +
-                       '            <hr/>' +
-                       '            <form class="form-inline dtmf-form">' +
-                       '                <div class="form-group">' +
-                       '                    <label>DTMF:</label>' +
-                       '                    <input type="text" class="form-control" name="dtmf" placeholder="">' +
-                       '                </div>' +
-                       '                <button class="btn btn-primary" type="submit">Send</button>' +
-                       '            </form>' +
-                       '            <hr/>' +
-                       '            <pre class="info"></pre>' +
-                       '        </div>' +
-                       '        <div class="modal-footer">' +
-                       '            <button class="btn btn-danger hangup">Hang Up</button>' +
-                       '        </div>' +
-                       '    </div>' +
-                       '</div>').modal();
+        var $modal = cloneTemplate($acceptedTemplate).modal();
 
         var $info = $modal.find('.info').eq(0);
         var $dtmf = $modal.find('input[name=dtmf]').eq(0);
@@ -352,18 +290,7 @@ $(function() {
 
     function makeCallForm() {
 
-        var $form = $('<form class="panel panel-default">' +
-                      '    <div class="panel-heading"><h3 class="panel-title">Make A Call</h3></div>' +
-                      '    <div class="panel-body">' +
-                      '        <div class="form-inline">' +
-                      '            <div class="form-group">' +
-                      '                <label>Phone Number:</label>' +
-                      '                <input type="text" class="form-control" name="number" placeholder="+1 (234) 567-8901">' +
-                      '            </div>' +
-                      '            <button class="btn btn-primary" type="submit">Call</button>' +
-                      '        </div>' +
-                      '    </div>' +
-                      '</form>');
+        var $form = cloneTemplate($callTemplate);
 
         var $number = $form.find('input[name=number]').eq(0);
 
@@ -386,38 +313,7 @@ $(function() {
 
     function makeLoginForm() {
 
-        var $form = $('<form class="panel panel-default">' +
-                      '    <div class="panel-heading"><h3 class="panel-title">Login</h3></div>' +
-                      '    <div class="panel-body">' +
-                      '        <div class="form-group">' +
-                      '            <label>Server:</label>' +
-                      '            <input type="text" class="form-control" name="server">' +
-                      '        </div>' +
-                      '        <div class="form-group">' +
-                      '            <label>App Key:</label>' +
-                      '            <input type="text" class="form-control" name="appKey">' +
-                      '        </div>' +
-                      '        <div class="form-group">' +
-                      '            <label>App Secret:</label>' +
-                      '            <input type="text" class="form-control" name="appSecret">' +
-                      '        </div>' +
-                      '        <div class="form-group">' +
-                      '            <label>Login:</label>' +
-                      '            <input type="text" class="form-control" name="login" placeholder="18881234567">' +
-                      '        </div>' +
-                      '        <div class="form-group">' +
-                      '            <label>Extension:</label>' +
-                      '            <input type="text" class="form-control" name="username" placeholder="101">' +
-                      '        </div>' +
-                      '        <div class="form-group">' +
-                      '            <label>Password:</label>' +
-                      '            <input type="password" class="form-control" name="password">' +
-                      '        </div>' +
-                      '    </div>' +
-                      '    <div class="panel-footer">' +
-                      '        <button class="btn btn-primary" type="submit">Login</button>' +
-                      '    </div>' +
-                      '</form>');
+        var $form = cloneTemplate($loginTemplate);
 
         var $server = $form.find('input[name=server]').eq(0);
         var $appKey = $form.find('input[name=appKey]').eq(0);

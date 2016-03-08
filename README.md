@@ -4,7 +4,11 @@
 
 ```sh
 git clone https://github.com/ringcentral/ringcentral-web-phone.git
+npm install
+bower install
 ```
+
+Then open demo.
 
 ## Usage
 ### Include Library

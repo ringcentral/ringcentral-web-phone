@@ -1,4 +1,14 @@
-(function() {
+(function(root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['sip.js'], function(SIP) {
+            return factory(SIP);
+        });
+    } else {
+        root.WebPhone = factory(root.SIP);
+    }
+}(this, function(SIP) {
+
+    var Session = SIP.Session;
 
     var messages = {
         park: {reqid: 1, command: 'callpark'},
@@ -77,249 +87,69 @@
 
     }
 
-    WebPhone.version = '0.1.0';
+    WebPhone.version = '0.3.0';
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-    /**
-     * @param {Session} session
-     * @return {Session}
-     */
-    WebPhone.prototype.patchSession = function(session) {
-
-        if (session.__isPatched) return session;
-
-        session.__isPatched = true;
-
-        /*--------------------------------------------------------------------------------------------------------------------*/
-
+    //Monkey patching sendReinvite for better Hold handling
+    Session.prototype.__sendReinvite = Session.prototype.sendReinvite;
+    Session.prototype.sendReinvite = function() {
+        var session = this;
         session.__ignoreReinviteDuplicates = false;
-
-        //Monkey patching sendReinvite for better Hold handling
-        session.__sendReinvite = session.sendReinvite;
-        session.sendReinvite = function() {
-            session.__ignoreReinviteDuplicates = false;
-            var res = session.__sendReinvite.apply(this, arguments);
-            var __reinviteSucceeded = this.reinviteSucceeded,
-                __reinviteFailed = this.reinviteFailed;
-            this.reinviteSucceeded = function() {
-                session.emit('CALL_REINVITE_SUCCEEDED', session);
-                return __reinviteSucceeded.apply(this, []);
-            };
-            this.reinviteFailed = function() {
-                session.emit('CALL_REINVITE_FAILED', session);
-                return __reinviteFailed.apply(this, []);
-            };
-            return res;
+        var res = session.__sendReinvite.apply(this, arguments);
+        var __reinviteSucceeded = this.reinviteSucceeded,
+            __reinviteFailed = this.reinviteFailed;
+        this.reinviteSucceeded = function() {
+            session.emit('RC_CALL_REINVITE_SUCCEEDED', session);
+            return __reinviteSucceeded.apply(this, []);
         };
-
-        //Monkey patching receiveReinviteResponse to ignore duplicates which may break Hold/Unhold
-        session.__receiveReinviteResponse = session.receiveReinviteResponse;
-        session.receiveReinviteResponse = function(response) {
-            switch (true) {
-                case /^2[0-9]{2}$/.test(response.status_code):
-                    if (session.__ignoreReinviteDuplicates) {
-                        this.sendRequest(SIP.C.ACK, {cseq: response.cseq});
-                        return;
-                    }
-                    session.__ignoreReinviteDuplicates = true;
-                    break;
-            }
-            return session.__receiveReinviteResponse.apply(this, arguments);
+        this.reinviteFailed = function() {
+            session.emit('RC_CALL_REINVITE_FAILED', session);
+            return __reinviteFailed.apply(this, []);
         };
+        return res;
+    };
 
-        /*--------------------------------------------------------------------------------------------------------------------*/
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
-        var __receiveRequest = session.receiveRequest;
-        session.receiveRequest = function(request) {
-            switch (request.method) {
-                case SIP.C.INFO:
-                    session.emit('SIP_INFO', request);
-                    //SIP.js does not support application/json content type, so we monkey override its behaviour in this case
-                    if (session.status === SIP.Session.C.STATUS_CONFIRMED || session.status === SIP.Session.C.STATUS_WAITING_FOR_ACK) {
-                        var contentType = request.getHeader('content-type');
-                        if (contentType.match(/^application\/json/i)) {
-                            request.reply(200);
-                            return this;
-                        }
+    Session.prototype.__receiveRequest = Session.prototype.receiveRequest;
+    Session.prototype.receiveRequest = function(request) {
+        var session = this;
+        switch (request.method) {
+            case SIP.C.INFO:
+                session.emit('RC_SIP_INFO', request);
+                //SIP.js does not support application/json content type, so we monkey override its behaviour in this case
+                if (session.status === SIP.Session.C.STATUS_CONFIRMED || session.status === SIP.Session.C.STATUS_WAITING_FOR_ACK) {
+                    var contentType = request.getHeader('content-type');
+                    if (contentType.match(/^application\/json/i)) {
+                        request.reply(200);
+                        return this;
                     }
-                    break;
-                //Refresh invite should not be rejected with 488
-                case SIP.C.INVITE:
-                    if (session.status === SIP.Session.C.STATUS_CONFIRMED) {
-                        if (request.call_id && session.dialog && session.dialog.id && request.call_id == session.dialog.id.call_id) {
-                            //TODO: check that SDP did not change
-                            session.logger.log('re-INVITE received');
-                            var localSDP = session.mediaHandler.peerConnection.localDescription.sdp;
-                            request.reply(200, null, ['Contact: ' + session.contact], localSDP, function() {
-                                session.status = SIP.Session.C.STATUS_WAITING_FOR_ACK;
-                                session.setInvite2xxTimer(request, localSDP);
-                                session.setACKTimer();
-                            });
-                            return session;
-                        }
-                        //else will be rejected with 488 by SIP.js
-                    }
-                    break;
-                //We need to analize NOTIFY messages sometimes, so we fire an event
-                case SIP.C.NOTIFY:
-                    session.emit('SIP_NOTIFY', request);
-                    break;
-            }
-            return __receiveRequest.apply(session, arguments);
-        };
-
-        /*--------------------------------------------------------------------------------------------------------------------*/
-
-        session.__hasEarlyMedia = false;
-        session.__waitingForIce = false;
-        session.__doubleCompleted = false;
-
-        // //Fired when the request fails, whether due to an unsuccessful final response or due to timeout, transport, or other error
-        // session.on('failed', function(response, cause) {
-        //     session.terminated('Forced Termination', cause);
-        //     //FIXME SIP.js 0.6.x does not call terminated event sometimes, so we call it ourselves
-        //     if (cause === SIP.C.causes.REQUEST_TIMEOUT) {
-        //         if (session.status !== SIP.Session.C.STATUS_CONFIRMED) {
-        //             session.terminated('Forced Termination', SIP.C.causes.REQUEST_TIMEOUT);
-        //         }
-        //     }
-        // });
-
-        // /*--------------------------------------------------------------------------------------------------------------------*/
-
-        // //Fired when ICE is starting to negotiate between the peers.
-        // session.on('connecting', function(e) {
-        //     setTimeout(function() {
-        //         if (session.mediaHandler.onIceCompleted !== undefined) {
-        //             session.mediaHandler.onIceCompleted(session); //FIXME Incompatible with SIP.JS 0.7
-        //         }
-        //         else {
-        //             session.mediaHandler.callOnIceCompleted = true;
-        //         }
-        //     }, this.iceGatheringTimeout);
-        // });
-
-        // /*--------------------------------------------------------------------------------------------------------------------*/
-
-        //Fired each time a provisional (100-199) response is received.
-        session.on('progress', function(e) {
-            var response = e;
-            //Early media is supported by SIP.js library
-            //But in case it is sent without 100rel support we play it manually
-            //STATUS_EARLY_MEDIA === 11, it will be set by SIP.js if 100rel is supported
-            if (session.status !== SIP.Session.C.STATUS_EARLY_MEDIA && e.status_code === 183 && typeof(e.body) === 'string' && e.body.indexOf('\n') !== -1) {
-                if (session.hasOffer) {
-                    if (!session.createDialog(response, 'UAC')) {
-                        return;
-                    }
-                    session.mediaHandler.setDescription(
-                        response.body,
-                        function() {
-                            session.dialog.pracked.push(response.getHeader('rseq'));
-                            session.status = SIP.Session.C.STATUS_EARLY_MEDIA;
-                            session.mute();
-                            session.__hasEarlyMedia = true;
-                        },
-                        function(e) {
-                            session.logger.warn(e);
-                            session.acceptAndTerminate(response, 488, 'Not Acceptable Here');
-                            session.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
-                        }
-                    );
                 }
-            }
-        });
-
-        // /*--------------------------------------------------------------------------------------------------------------------*/
-
-        //Monkey patching for handling early media and to delay ACKs
-        var __receiveInviteReponse = session.receiveInviteResponse;
-        session.receiveInviteResponse = function(response) {
-            var session = this, args = arguments;
-            switch (true) {
-                case (/^1[0-9]{2}$/.test(response.status_code)):
-                    //Let's not allow the library to send PRACK
-                    if (session.__hasEarlyMedia) {
-                        this.emit('progress', response);
-                        return;
+                break;
+            //Refresh invite should not be rejected with 488
+            case SIP.C.INVITE:
+                if (session.status === SIP.Session.C.STATUS_CONFIRMED) {
+                    if (request.call_id && session.dialog && session.dialog.id && request.call_id == session.dialog.id.call_id) {
+                        //TODO: check that SDP did not change
+                        session.logger.log('re-INVITE received');
+                        var localSDP = session.mediaHandler.peerConnection.localDescription.sdp;
+                        request.reply(200, null, ['Contact: ' + session.contact], localSDP, function() {
+                            session.status = SIP.Session.C.STATUS_WAITING_FOR_ACK;
+                            session.setInvite2xxTimer(request, localSDP);
+                            session.setACKTimer();
+                        });
+                        return session;
                     }
-                    break;
-                case /^(2[0-9]{2})|(4\d{2})$/.test(response.status_code):
-                    if (!session.__hasEarlyMedia) break;
-
-                    //Let's check the ICE connection state
-                    if (session.mediaHandler.peerConnection.iceConnectionState === 'completed' && !session.__waitingForIce) {
-                        session.__waitingForIce = false;
-                        //if ICE is connected, then let the library to handle the ACK
-                        break;
-                    }
-                    else {
-                        //If ICE is not connected, then we should send ACK after it has been connected
-                        if (!session.__waitingForIce) {
-                            function onICECompleted() {
-                                session.removeListener('iceComplete', onICECompleted);
-                                //let the library handle the ACK after ICE connection is completed
-                                session.__waitingForIce = false;
-                                __receiveInviteReponse.apply(session, args);
-                            }
-                            session.on('iceComplete', onICECompleted);
-
-                            function onICEFailed() {
-                                session.removeListener('iceFailed', onICEFailed);
-                                //handle the ICE Failed situation
-                                session.__waitingForIce = false;
-                                session.acceptAndTerminate(response, null, 'ICE Connection Failed');
-                            }
-                            session.on('iceFailed', onICEFailed);
-
-                            session.__waitingForIce = true;
-                        }
-                        return;
-                    }
-                    break;
-            }
-            return __receiveInviteReponse.apply(session, args);
-        };
-
-        /*--------------------------------------------------------------------------------------------------------------------*/
-
-        // session.terminateCallOnDisconnected = function(reason) {
-        //     session.terminated(null, reason || SIP.C.causes.CONNECTION_ERROR);
-        //     // self.eventEmitter.emit(EVENT_NAMES.callFailed, self, null, 'Connection error');
-        // };
-        //
-        // //FIXME: Explore if it can be replaced with ref: http://sipjs.com/api/0.7.0/mediaHandler/
-        // //Monkey patching oniceconnectionstatechange because SIP.js 0.6.x does not have this event
-        // var oniceconnectionstatechange = session.mediaHandler.peerConnection.oniceconnectionstatechange || function() {};
-        // session.mediaHandler.peerConnection.oniceconnectionstatechange = function() {
-        //     //this === peerConnection
-        //     var state = this.iceConnectionState;
-        //     oniceconnectionstatechange.apply(this, arguments);
-        //
-        //     switch (state) {
-        //         case 'connected':
-        //             session.emit('ICE_CONNECTED', session);
-        //             break;
-        //         case 'completed':
-        //             //this may be called twice, see: https://code.google.com/p/chromium/issues/detail?id=371804
-        //             if (!session.__doubleCompleted) {
-        //                 session.emit('ICE_COMPLETED', session);
-        //                 session.__doubleCompleted = true;
-        //             }
-        //             break;
-        //         case 'disconnected':
-        //             session.terminateCallOnDisconnected();
-        //             session.emit('ICE_DISCONNECTED', session);
-        //             break;
-        //         case 'failed':
-        //             session.emit('ICE_FAILED', session);
-        //             break;
-        //     }
-        // };
-
-        return session;
-
+                    //else will be rejected with 488 by SIP.js
+                }
+                break;
+            //We need to analize NOTIFY messages sometimes, so we fire an event
+            case SIP.C.NOTIFY:
+                session.emit('RC_SIP_NOTIFY', request);
+                break;
+        }
+        return session.__receiveRequest.apply(session, arguments);
     };
 
     /*--------------------------------------------------------------------------------------------------------------------*/
@@ -331,7 +161,6 @@
      * @return {Promise}
      */
     WebPhone.prototype.dtmf = function(session, dtmf, duration) {
-        session = this.patchSession(session);
         duration = parseInt(duration) || 1000;
         var peer = session.mediaHandler.peerConnection;
         var stream = session.getLocalStreams()[0];
@@ -350,21 +179,20 @@
      * @return {Promise}
      */
     WebPhone.prototype.setHold = function(session, flag) {
-        session = this.patchSession(session);
         return (new Promise(function(resolve, reject) {
 
             function onSucceeded() {
                 resolve();
-                session.removeListener('CALL_REINVITE_FAILED', onFailed);
+                session.removeListener('RC_CALL_REINVITE_FAILED', onFailed);
             }
 
             function onFailed(e) {
                 reject(e);
-                session.removeListener('CALL_REINVITE_SUCCEEDED', onSucceeded);
+                session.removeListener('RC_CALL_REINVITE_SUCCEEDED', onSucceeded);
             }
 
-            session.on('CALL_REINVITE_SUCCEEDED', onSucceeded);
-            session.on('CALL_REINVITE_FAILED', onFailed);
+            session.on('RC_CALL_REINVITE_SUCCEEDED', onSucceeded);
+            session.on('RC_CALL_REINVITE_FAILED', onFailed);
 
             if (flag) {
                 session.hold();
@@ -384,8 +212,6 @@
      * @return {Promise}
      */
     WebPhone.prototype.send = function(session, command, options) {
-
-        session = this.patchSession(session);
 
         options = options || {};
 
@@ -428,16 +254,16 @@
                                     }
                                 }
                                 timeout && clearTimeout(timeout);
-                                session.removeListener('SIP_INFO', onInfo);
+                                session.removeListener('RC_SIP_INFO', onInfo);
                                 resolve(null); //FIXME What to resolve
                             }
                         }
 
                         timeout = setTimeout(function() {
                             reject(new Error('Timeout: no reply'));
-                            session.removeListener('SIP_INFO', onInfo);
+                            session.removeListener('RC_SIP_INFO', onInfo);
                         }, responseTimeout);
-                        session.on('SIP_INFO', onInfo);
+                        session.on('RC_SIP_INFO', onInfo);
                     }
                     else {
                         reject(new Error('The INFO response status code is: ' + response.status_code + ' (waiting for 200)'));
@@ -458,8 +284,6 @@
      * @return {Promise}
      */
     WebPhone.prototype.blindTransfer = function(session, target, options) {
-
-        session = this.patchSession(session);
 
         var extraHeaders = [];
         var originalTarget = target;
@@ -511,7 +335,7 @@
                                     case /2[0-9]{2}/.test(body):
                                         session.terminate();
                                         clearTimeout(timeout);
-                                        session.removeListener('SIP_NOTIFY', onNotify);
+                                        session.removeListener('RC_SIP_NOTIFY', onNotify);
                                         resolve();
                                         break;
                                     default:
@@ -523,9 +347,9 @@
 
                         timeout = setTimeout(function() {
                             reject(new Error('Timeout: no reply'));
-                            session.removeListener('SIP_NOTIFY', onNotify);
+                            session.removeListener('RC_SIP_NOTIFY', onNotify);
                         }, responseTimeout);
-                        session.on('SIP_NOTIFY', onNotify);
+                        session.on('RC_SIP_NOTIFY', onNotify);
                     }
                     else {
                         reject(new Error('The response status code is: ' + response.status_code + ' (waiting for 202)'));
@@ -546,8 +370,6 @@
      */
     WebPhone.prototype.transfer = function(session, target, options) {
 
-        session = this.patchSession(session);
-
         return (session.isOnHold() ? Promise.resolve(null) : this.setHold(session, true))
             .then(function() { return delay(300); })
             .then(function() {
@@ -564,8 +386,6 @@
      * @return {Promise}
      */
     WebPhone.prototype.answer = function(session, options) {
-
-        session = this.patchSession(session);
 
         return new Promise(function(resolve, reject) {
 
@@ -602,8 +422,6 @@
      */
     WebPhone.prototype.forward = function(session, target, acceptOptions, transferOptions) {
 
-        session = this.patchSession(session);
-
         var interval = null,
             self = this;
 
@@ -635,8 +453,6 @@
      */
     WebPhone.prototype.record = function(session, flag) {
 
-        session = this.patchSession(session);
-
         var message = !!flag
             ? messages.startRecord
             : messages.stopRecord;
@@ -654,7 +470,6 @@
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     WebPhone.prototype.flip = function(session, target) {
-        session = this.patchSession(session);
         return this.send(session, messages.flip, {target: target});
     };
 
@@ -665,12 +480,11 @@
      * @return {Promise}
      */
     WebPhone.prototype.park = function(session) {
-        session = this.patchSession(session);
         return this.send(session, messages.park);
     };
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-    window.WebPhone = WebPhone;
+    return WebPhone;
 
-})();
+}));
