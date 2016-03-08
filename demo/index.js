@@ -10,7 +10,7 @@ $(function() {
     var extension = null;
     var sipInfo = null;
     var $app = $('#app');
-    
+
     var $loginTemplate = $('#template-login');
     var $callTemplate = $('#template-call');
     var $incomingTemplate = $('#template-incoming');
@@ -106,11 +106,12 @@ $(function() {
         };
 
         $modal.find('.answer').on('click', function() {
-            session.on('accepted', function() {
-                $modal.modal('hide');
-                onAccepted(session);
-            });
-            session.accept(acceptOptions);
+            webPhone.accept(session, acceptOptions)
+                .then(function() {
+                    $modal.modal('hide');
+                    onAccepted(session);
+                })
+                .catch(function(e) { console.error('Accept failed', e.stack); });
         });
 
         $modal.find('.decline').on('click', function() {
@@ -125,7 +126,7 @@ $(function() {
                     console.log('Forwarded');
                     $modal.modal('hide');
                 })
-                .catch(function(e) { console.error('Forward failed', e); });
+                .catch(function(e) { console.error('Forward failed', e.stack); });
         });
 
         session.on('rejected', function() {
@@ -258,30 +259,14 @@ $(function() {
             ? extension.regionalSettings.homeCountry.id
             : null;
 
-        var headers = [];
-
-        headers.push('P-Asserted-Identity: sip:12223334455@' + sipInfo.domain); //FIXME Move to lib
-        if (homeCountry) {
-            headers.push('P-rc-country-id: ' + homeCountry);
-        }
-
-        var session = webPhone.userAgent.invite(number, {
+        var session = webPhone.invite(number, {
             media: {
-                constraints: {
-                    audio: true,
-                    video: false
-                },
                 render: {
                     remote: document.getElementById('remoteVideo'),
                     local: document.getElementById('localVideo')
                 }
             },
-            RTCConstraints: {
-                "optional": [
-                    {'DtlsSrtpKeyAgreement': 'true'}
-                ]
-            },
-            extraHeaders: headers
+            homeCountryId: homeCountry
         });
 
         onAccepted(session);

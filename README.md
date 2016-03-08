@@ -61,9 +61,16 @@ Functionalities included:
 Configure the web-phone:
 
 ```js
+var appKey = '...'; 
+var appSecret = '...';
+var appName = '...';
+var appVersion = '...';
+ 
 var sdk = new RingCentral.SDK({
-    appKey: '...',
-    appSecret: '...',
+    appKey: appKey,
+    appSecret: appSecret,
+    appName: appName,
+    appVersion: appVersion,
     server: RingCentral.SDK.server.production // or .sandbox
 });
 
@@ -74,14 +81,22 @@ platform
         username: '...',
         password: '...'
     })
-    .then(function() {
+    .then(function(loginResponse) {
     
         return platform
             .post('/client-info/sip-provision', {
                 sipInfo: [{transport: 'WSS'}]
             })
             .then(function(res) {
-                return new RingCentral.WebPhone(res.json());
+            
+                return new RingCentral.WebPhone(res.json(), { // optional
+                    appKey: appKey,
+                    appName: appName,
+                    appVersion: appVersion,
+                    uuid: loginResponse.json().endpoint_id, // or you can store any UUID in localStorage
+                    logLevel: 1 // error 0, warn 1, log: 2, debug: 3
+                });
+                
             });
         
     })
@@ -89,6 +104,9 @@ platform
     
         // YOUR CODE HERE
     
+    })
+    .catch(function(e){
+        console.error(e.stack);
     });
 ```
 
@@ -99,17 +117,14 @@ Except for some RingCentral-specific features the API is 100% the same as SIP.JS
 #### Initiating The Call
 
 ```javascript
-webPhone.userAgent.invite('...', {
+var session = webPhone.invite('PHONE_NUMBER', {
     media: {
-        constraints: {
-            audio: true,
-            video: false
-        },
         render: {
             remote: document.getElementById('remoteVideo'),
             local: document.getElementById('localVideo')
         }
-    }
+    },
+    homeCountryId: '1' // Optional, the value of
 });
 ```
 
@@ -117,18 +132,20 @@ webPhone.userAgent.invite('...', {
 
 ```javascript
 webPhone.userAgent.on('invite', function(session){
-    session.accept({
+
+    webPhone.accept({
         media: {
             render: {
                 remote: document.getElementById('remoteVideo'),
                 local: document.getElementById('localVideo')
             }
         }
-    });
+    }).then(...);
+    
 });
 ```
 
-#### DTMF *RC-Specific*
+#### DTMF
 
 Callee will be put on hold and the another person can join into the call by dialing the extension number announced within the call.
 
@@ -136,7 +153,7 @@ Callee will be put on hold and the another person can join into the call by dial
 webPhone.dtmf(session, 'digits').then(...);
 ```
 
-#### Hold/Unhold *RC-Specific*
+#### Hold/Unhold
 
 Callee will be put on hold and the another person can join into the call by dialing the extension number announced within the call.
 
@@ -145,7 +162,7 @@ webPhone.hold(session).then(...);
 webPhone.unhold(session).then(...);
 ```
 
-#### Park *RC-Specific*
+#### Park
 
 Callee will be put on hold and the another person can join into the call by dialing the extension number announced within the call.
 
@@ -153,7 +170,7 @@ Callee will be put on hold and the another person can join into the call by dial
 webPhone.park(session).then(...);
 ```
 
-#### Flip *RC-Specific*
+#### Flip
 
 Caller can filp calls to different devices logged in through the same credentials.
 
@@ -161,6 +178,6 @@ Caller can filp calls to different devices logged in through the same credential
 webPhone.flip(session, 'TARGET_NUMBER').then(...);
 ```
 
-#### Barge/Whisper *RC-Specific*
+#### Barge/Whisper
 
 Not yet implemented. Could be done by dialing \*83. The account should be enabled for barge/whisper access through system admin.

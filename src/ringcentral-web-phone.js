@@ -45,14 +45,16 @@
         return dst;
     }
 
-    function WebPhone(options) {
+    function WebPhone(regData, options) {
 
-        this.sipInfo = options.sipInfo[0] || options.sipInfo;
-        this.sipFlags = options.sipFlags;
+        this.sipInfo = regData.sipInfo[0] || regData.sipInfo;
+        this.sipFlags = regData.sipFlags;
 
         console.log('Provisioning info', this.sipInfo, this.sipFlags);
 
         this.iceGatheringTimeout = this.sipInfo.iceGatheringTimeout || 3000;
+        this.endpointId = options.uuid || uuid();
+        this.endpointHeader = 'P-rc-endpoint-id: ' + this.endpointId;
 
         var configuration = {
             uri: 'sip:' + this.sipInfo.username + '@' + this.sipInfo.domain,
@@ -61,18 +63,18 @@
                 : this.sipInfo.wsServers,
             authorizationUser: this.sipInfo.authorizationId,
             extraHeaders: [
-                'P-rc-endpoint-id: ' + options.uuid || uuid()
+                'P-rc-endpoint-id: ' + this.endpointId
             ],
             password: this.sipInfo.password,
             traceSip: true,
             stunServers: this.sipInfo.stunServers || ['stun:74.125.194.127:19302'], //FIXME Hardcoded?
             turnServers: [],
             log: {
-                level: 1 //FIXME LOG LEVEL 3
+                level: options.logLevel || 1 //FIXME LOG LEVEL 3
             },
             domain: this.sipInfo.domain,
-            autostart: true,   //turn off autostart on UA creation
-            register: true,    //turn off auto register on UA creation,
+            autostart: true,
+            register: true,
             iceGatheringTimeout: this.iceGatheringTimeout
         };
 
@@ -80,7 +82,8 @@
         this.appKey = options.appKey;
         this.appName = options.appName;
         this.appVersion = options.appVersion;
-        this.userAgentHeader = (options.appName ? (options.appName + (options.appVersion ? '/' + options.appVersion : '')) + ' ' : '') +
+        this.userAgentHeader = 'RC-User-Agent: ' +
+                               (options.appName ? (options.appName + (options.appVersion ? '/' + options.appVersion : '')) + ' ' : '') +
                                'RCWEBPHONE/' + WebPhone.version;
 
         this.userAgent = new SIP.UA(configuration);
@@ -385,12 +388,18 @@
      * @param {object} options
      * @return {Promise}
      */
-    WebPhone.prototype.answer = function(session, options) {
+    WebPhone.prototype.accept = function(session, options) {
+
+        options = options || {};
+        options.extraHeaders = options.extraHeaders || [];
+
+        options.extraHeaders.push(this.userAgentHeader);
+        options.extraHeaders.push(this.endpointHeader);
 
         return new Promise(function(resolve, reject) {
 
             function onAnswered() {
-                resolve();
+                resolve(session);
                 session.removeListener('accepted', onAnswered);
                 session.removeListener('failed', onFail);
             }
@@ -411,6 +420,32 @@
 
     };
 
+    /**
+     * @param number
+     * @param options
+     * @return {SIP.Session}
+     */
+    WebPhone.prototype.invite = function(number, options) {
+
+        options = options || {};
+        options.extraHeaders = options.extraHeaders || [];
+
+        options.extraHeaders.push(this.userAgentHeader);
+        options.extraHeaders.push(this.endpointHeader);
+
+        //FIXME Backend should know it already
+        options.extraHeaders.push('P-Asserted-Identity: sip:12223334455@' + this.sipInfo.domain); //FIXME Phone Number
+        if (options.homeCountryId) { options.extraHeaders.push('P-rc-country-id: ' + options.homeCountryId); }
+
+        options.media = options.media || {};
+        options.media.constraints = options.media.constraints || {audio: true, video: false};
+
+        options.RTCConstraints = options.RTCConstraints || {optional: [{DtlsSrtpKeyAgreement: 'true'}]};
+
+        return this.userAgent.invite(number, options);
+
+    };
+
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     /**
@@ -425,7 +460,7 @@
         var interval = null,
             self = this;
 
-        return this.answer(session, acceptOptions)
+        return this.accept(session, acceptOptions)
             .then(function() {
 
                 return new Promise(function(resolve, reject) {
