@@ -78,7 +78,7 @@ $(function() {
 
         sipInfo = data.sipInfo[0] || data.sipInfo;
 
-        webPhone = new WebPhone(data);
+        webPhone = new WebPhone(data,{appKey : localStorage.getItem('webPhoneAppKey')});
 
         webPhone.userAgent.on('invite', onInvite);
         webPhone.userAgent.on('connected', function() { console.log('UA Connected'); });
