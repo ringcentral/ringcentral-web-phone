@@ -65,9 +65,6 @@
                 ? this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxy
                 : this.sipInfo.wsServers,
             authorizationUser: this.sipInfo.authorizationId,
-            extraHeaders: [
-                'P-rc-endpoint-id: ' + this.endpointId
-            ],
             password: this.sipInfo.password,
             traceSip: true,
             stunServers: this.sipInfo.stunServers || ['stun:74.125.194.127:19302'], //FIXME Hardcoded?
@@ -86,10 +83,17 @@
         this.appName = options.appName;
         this.appVersion = options.appVersion;
         this.userAgentHeader = 'RC-User-Agent: ' +
-                               (options.appName ? (options.appName + (options.appVersion ? '/' + options.appVersion : '')) + ' ' : '') +
-                               'RCWEBPHONE/' + WebPhone.version;
+            (options.appName ? (options.appName + (options.appVersion ? '/' + options.appVersion : '')) + ' ' : '') +
+            'RCWEBPHONE/' + WebPhone.version;
 
-        this.userAgent = new SIP.UA(configuration);
+        this.clientId = 'Client-id:'+options.appKey;
+
+        var headers= [];
+        headers.push(this.endpointHeader);
+        headers.push(this.userAgentHeader);
+        headers.push(this.clientId);
+
+        this.userAgent = new SIP.UA(configuration).register({extraHeaders:headers});
 
     }
 
@@ -225,6 +229,8 @@
      */
     WebPhone.prototype.send = function(session, command, options) {
 
+        var self = this;
+
         options = options || {};
 
         extend(command, options);
@@ -238,7 +244,9 @@
                     request: command
                 }),
                 extraHeaders: [
-                    "Content-Type: application/json;charset=utf-8"
+                    "Content-Type: application/json;charset=utf-8",
+                    self.userAgentHeader,
+                    self.clientId
                 ],
                 receiveResponse: function(response) {
                     var timeout = null;
@@ -404,6 +412,7 @@
 
         options.extraHeaders.push(this.userAgentHeader);
         options.extraHeaders.push(this.endpointHeader);
+        options.extraHeaders.push(this.clientId);
 
         return new Promise(function(resolve, reject) {
 
@@ -441,6 +450,7 @@
 
         options.extraHeaders.push(this.userAgentHeader);
         options.extraHeaders.push(this.endpointHeader);
+        options.extraHeaders.push(this.clientId);
 
         //FIXME Backend should know it already
         options.extraHeaders.push('P-Asserted-Identity: sip:12223334455@' + this.sipInfo.domain); //FIXME Phone Number
