@@ -69,7 +69,7 @@ $(function() {
             .then(makeCallForm)
             .catch(function(e) {
                 console.error('Error in main promise chain');
-                console.error(e.stack);
+                console.error(e.stack || e);
             });
 
     }
@@ -106,12 +106,12 @@ $(function() {
         };
 
         $modal.find('.answer').on('click', function() {
-            webPhone.accept(session, acceptOptions)
+            session.accept(acceptOptions)
                 .then(function() {
                     $modal.modal('hide');
                     onAccepted(session);
                 })
-                .catch(function(e) { console.error('Accept failed', e.stack); });
+                .catch(function(e) { console.error('Accept failed', e.stack || e); });
         });
 
         $modal.find('.decline').on('click', function() {
@@ -121,12 +121,12 @@ $(function() {
         $modal.find('.forward-form').on('submit', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            webPhone.forward(session, $modal.find('input[name=forward]').val().trim(), acceptOptions)
+            session.forward($modal.find('input[name=forward]').val().trim(), acceptOptions)
                 .then(function() {
                     console.log('Forwarded');
                     $modal.modal('hide');
                 })
-                .catch(function(e) { console.error('Forward failed', e.stack); });
+                .catch(function(e) { console.error('Forward failed', e.stack || e); });
         });
 
         session.on('rejected', function() {
@@ -173,42 +173,42 @@ $(function() {
         });
 
         $modal.find('.hold').on('click', function() {
-            webPhone.setHold(session, true).then(function() { console.log('Holding'); }).catch(function(e) { console.error('Holding failed', e); });
+            session.hold().then(function() { console.log('Holding'); }).catch(function(e) { console.error('Holding failed', e.stack || e); });
         });
 
         $modal.find('.unhold').on('click', function() {
-            webPhone.setHold(session, false).then(function() { console.log('Holding'); }).catch(function(e) { console.error('Holding failed', e); });
+            session.unhold().then(function() { console.log('UnHolding'); }).catch(function(e) { console.error('UnHolding failed', e.stack || e); });
         });
         $modal.find('.startRecord').on('click', function() {
-            webPhone.record(session, true).then(function() { console.log('Recording Started'); }).catch(function(e) { console.error('Recording Start failed', e); });
+            session.record(true).then(function() { console.log('Recording Started'); }).catch(function(e) { console.error('Recording Start failed', e.stack || e); });
         });
 
         $modal.find('.stopRecord').on('click', function() {
-            webPhone.record(session, false).then(function() { console.log('Recording Stopped'); }).catch(function(e) { console.error('Recording Stop failed', e); });
+            session.record(false).then(function() { console.log('Recording Stopped'); }).catch(function(e) { console.error('Recording Stop failed', e.stack || e); });
         });
 
         $modal.find('.park').on('click', function() {
-            webPhone.park(session).then(function() { console.log('Parked'); }).catch(function(e) { console.error('Park failed', e); });
+            session.park().then(function() { console.log('Parked'); }).catch(function(e) { console.error('Park failed', e.stack || e); });
         });
 
         $modal.find('.transfer-form').on('submit', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            webPhone.transfer(session, $transfer.val().trim()).then(function() { console.log('Transferred'); }).catch(function(e) { console.error('Transfer failed', e); });
+            session.transfer($transfer.val().trim()).then(function() { console.log('Transferred'); }).catch(function(e) { console.error('Transfer failed', e.stack || e); });
             $transfer.val('');
         });
 
         $modal.find('.flip-form').on('submit', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            webPhone.flip(session, $flip.val().trim()).then(function() { console.log('Flipped'); }).catch(function(e) { console.error('Flip failed', e); });
+            session.flip($flip.val().trim()).then(function() { console.log('Flipped'); }).catch(function(e) { console.error('Flip failed', e.stack || e); });
             $flip.val('');
         });
 
         $modal.find('.dtmf-form').on('submit', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            webPhone.dtmf(session, $dtmf.val().trim());
+            session.dtmf($dtmf.val().trim());
             $dtmf.val('');
         });
 
@@ -259,7 +259,7 @@ $(function() {
             ? extension.regionalSettings.homeCountry.id
             : null;
 
-        var session = webPhone.invite(number, {
+        var session = webPhone.userAgent.invite(number, {
             media: {
                 render: {
                     remote: document.getElementById('remoteVideo'),

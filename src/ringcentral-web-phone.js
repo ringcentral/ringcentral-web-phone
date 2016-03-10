@@ -8,8 +8,6 @@
     }
 }(this, function(SIP) {
 
-    var Session = SIP.Session;
-
     var messages = {
         park: {reqid: 1, command: 'callpark'},
         startRecord: {reqid: 2, command: 'startcallrecord'},
@@ -55,9 +53,7 @@
 
         console.log('Provisioning info', this.sipInfo, this.sipFlags);
 
-        this.iceGatheringTimeout = this.sipInfo.iceGatheringTimeout || 3000;
-        this.endpointId = options.uuid || uuid();
-        this.endpointHeader = 'P-rc-endpoint-id: ' + this.endpointId;
+        this.endpointHeader = 'P-rc-endpoint-id: ' + options.uuid || uuid();
 
         var configuration = {
             uri: 'sip:' + this.sipInfo.username + '@' + this.sipInfo.domain,
@@ -75,7 +71,7 @@
             domain: this.sipInfo.domain,
             autostart: true,
             register: true,
-            iceGatheringTimeout: this.iceGatheringTimeout
+            iceGatheringTimeout: this.sipInfo.iceGatheringTimeout || 3000
         };
 
         //TODO Use this
@@ -83,17 +79,20 @@
         this.appName = options.appName;
         this.appVersion = options.appVersion;
         this.userAgentHeader = 'RC-User-Agent: ' +
-            (options.appName ? (options.appName + (options.appVersion ? '/' + options.appVersion : '')) + ' ' : '') +
-            'RCWEBPHONE/' + WebPhone.version;
+                               (options.appName ? (options.appName + (options.appVersion ? '/' + options.appVersion : '')) + ' ' : '') +
+                               'RCWEBPHONE/' + WebPhone.version;
 
-        this.clientId = 'Client-id:'+options.appKey;
+        this.clientIdHeader = 'Client-id:' + options.appKey;
 
-        var headers= [];
-        headers.push(this.endpointHeader);
-        headers.push(this.userAgentHeader);
-        headers.push(this.clientId);
+        this.userAgent = new SIP.UA(configuration).register({
+            extraHeaders: [
+                this.endpointHeader,
+                this.userAgentHeader,
+                this.clientIdHeader
+            ]
+        });
 
-        this.userAgent = new SIP.UA(configuration).register({extraHeaders:headers});
+        this.patchUserAgent();
 
     }
 
@@ -107,29 +106,123 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-    //Monkey patching sendReinvite for better Hold handling
-    Session.prototype.__sendReinvite = Session.prototype.sendReinvite;
-    Session.prototype.sendReinvite = function() {
-        var session = this;
-        session.__ignoreReinviteDuplicates = false;
-        var res = session.__sendReinvite.apply(this, arguments);
-        var __reinviteSucceeded = this.reinviteSucceeded,
-            __reinviteFailed = this.reinviteFailed;
-        this.reinviteSucceeded = function() {
-            session.emit('RC_CALL_REINVITE_SUCCEEDED', session);
-            return __reinviteSucceeded.apply(this, []);
-        };
-        this.reinviteFailed = function() {
-            session.emit('RC_CALL_REINVITE_FAILED', session);
-            return __reinviteFailed.apply(this, []);
-        };
-        return res;
+    WebPhone.prototype.patchUserAgent = function() {
+
+        this.userAgent.endpointHeader = this.endpointHeader;
+        this.userAgent.userAgentHeader = this.userAgentHeader;
+        this.userAgent.clientIdHeader = this.clientIdHeader;
+        this.userAgent.sipInfo = this.sipInfo;
+
+        this.userAgent.__invite = this.userAgent.invite;
+        this.userAgent.invite = invite;
+
+        this.userAgent.on('invite', function(session) {
+            patchSession(session);
+        }.bind(this));
+
+        console.log('UserAgent has been patched', this.userAgent);
+
     };
+
+    function patchSession(session) {
+
+        if (session.__patched) return session;
+
+        session.__patched = true;
+
+        session.__receiveRequest = session.receiveRequest;
+        session.__sendReinvite = session.sendReinvite;
+        session.__accept = session.accept;
+        session.__hold = session.hold;
+        session.__unhold = session.unhold;
+
+        session.sendReinvite = sendReinvite;
+        session.receiveRequest = receiveRequest;
+        session.accept = accept;
+        session.blindTransfer = blindTransfer;
+        session.transfer = transfer;
+        session.hold = hold;
+        session.unhold = unhold;
+        session.park = park;
+        session.forward = forward;
+        session.dtmf = dtmf;
+        session.record = record;
+        session.flip = flip;
+        session.send = send;
+
+        session.on('replaced', function(newSession){
+            patchSession(newSession);
+        });
+
+        console.log('Session has been patched', session);
+
+        return session;
+
+    }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-    Session.prototype.__receiveRequest = Session.prototype.receiveRequest;
-    Session.prototype.receiveRequest = function(request) {
+    /**
+     * @this {SIP.UA}
+     * @param number
+     * @param options
+     * @return {SIP.Session}
+     */
+    function invite(number, options) {
+
+        var ua = this;
+
+        options = options || {};
+        options.extraHeaders = options.extraHeaders || [];
+
+        options.extraHeaders.push(ua.userAgentHeader);
+        options.extraHeaders.push(ua.endpointHeader);
+        options.extraHeaders.push(ua.clientIdHeader);
+
+        //FIXME Backend should know it already
+        options.extraHeaders.push('P-Asserted-Identity: sip:' + ua.sipInfo.username + '@' + ua.sipInfo.domain); //FIXME Phone Number
+        if (options.homeCountryId) { options.extraHeaders.push('P-rc-country-id: ' + options.homeCountryId); }
+
+        options.media = options.media || {};
+        options.media.constraints = options.media.constraints || {audio: true, video: false};
+
+        options.RTCConstraints = options.RTCConstraints || {optional: [{DtlsSrtpKeyAgreement: 'true'}]};
+
+        return patchSession(ua.__invite(number, options));
+
+    }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * Monkey patching sendReinvite for better Hold handling
+     * @this {SIP.Session}
+     * @return {*}
+     */
+    function sendReinvite() {
+        var session = this;
+        var res = session.__sendReinvite.apply(session, arguments);
+        var __reinviteSucceeded = session.reinviteSucceeded,
+            __reinviteFailed = session.reinviteFailed;
+        session.reinviteSucceeded = function() {
+            session.emit('RC_CALL_REINVITE_SUCCEEDED', session);
+            return __reinviteSucceeded.apply(session, arguments);
+        };
+        session.reinviteFailed = function() {
+            session.emit('RC_CALL_REINVITE_FAILED', session);
+            return __reinviteFailed.apply(session, arguments);
+        };
+        return res;
+    }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * @this {SIP.Session}
+     * @param request
+     * @return {*}
+     */
+    function receiveRequest(request) {
         var session = this;
         switch (request.method) {
             case SIP.C.INFO:
@@ -139,7 +232,7 @@
                     var contentType = request.getHeader('content-type');
                     if (contentType.match(/^application\/json/i)) {
                         request.reply(200);
-                        return this;
+                        return session;
                     }
                 }
                 break;
@@ -166,17 +259,18 @@
                 break;
         }
         return session.__receiveRequest.apply(session, arguments);
-    };
+    }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * @param {Session} session
+     * @this {SIP.Session} session
      * @param {string} dtmf
      * @param {number} duration
      * @return {Promise}
      */
-    WebPhone.prototype.dtmf = function(session, dtmf, duration) {
+    function dtmf(dtmf, duration) {
+        var session = this;
         duration = parseInt(duration) || 1000;
         var peer = session.mediaHandler.peerConnection;
         var stream = session.getLocalStreams()[0];
@@ -185,25 +279,37 @@
             return dtmfSender.insertDTMF(dtmf, duration);
         }
         throw new Error('Send DTMF failed: ' + (!dtmfSender ? 'no sender' : (!dtmfSender.canInsertDTMF ? 'can\'t insert DTMF' : 'Unknown')));
-    };
+    }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
+
+    function hold() {
+        return setHold.call(this, true);
+    }
+
+    function unhold() {
+        return setHold.call(this, false);
+    }
+
     /**
-     * @param {Session} session
+     * @this {SIP.Session} session
      * @param {boolean} flag
      * @return {Promise}
      */
-    WebPhone.prototype.setHold = function(session, flag) {
-        return (new Promise(function(resolve, reject) {
+    function setHold(flag) {
+        var session = this;
+        return new Promise(function(resolve, reject) {
 
             function onSucceeded() {
                 resolve();
                 session.removeListener('RC_CALL_REINVITE_FAILED', onFailed);
+                session.removeListener('RC_CALL_REINVITE_SUCCEEDED', onSucceeded);
             }
 
             function onFailed(e) {
                 reject(e);
+                session.removeListener('RC_CALL_REINVITE_FAILED', onFailed);
                 session.removeListener('RC_CALL_REINVITE_SUCCEEDED', onSucceeded);
             }
 
@@ -211,25 +317,25 @@
             session.on('RC_CALL_REINVITE_FAILED', onFailed);
 
             if (flag) {
-                session.hold();
+                session.__hold();
             } else {
-                session.unhold();
+                session.__unhold();
             }
 
-        }.bind(this)));
-    };
+        });
+    }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * @param {Session} session
+     * @this {SIP.Session}
      * @param {object} command
-     * @param {object} options
+     * @param {object} [options]
      * @return {Promise}
      */
-    WebPhone.prototype.send = function(session, command, options) {
+    function send(command, options) {
 
-        var self = this;
+        var session = this;
 
         options = options || {};
 
@@ -245,8 +351,9 @@
                 }),
                 extraHeaders: [
                     "Content-Type: application/json;charset=utf-8",
-                    self.userAgentHeader,
-                    self.clientId
+                    session.ua.userAgentHeader,
+                    session.ua.endpointHeader,
+                    session.ua.clientIdHeader
                 ],
                 receiveResponse: function(response) {
                     var timeout = null;
@@ -293,18 +400,19 @@
 
         });
 
-    };
+    }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * @param {Session} session
+     * @this {SIP.Session} session
      * @param {string} target
      * @param {object} options
      * @return {Promise}
      */
-    WebPhone.prototype.blindTransfer = function(session, target, options) {
+    function blindTransfer(target, options) {
 
+        var session = this;
         var extraHeaders = [];
         var originalTarget = target;
         options = options || {};
@@ -378,41 +486,46 @@
             });
 
         });
-    };
+    }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * @param {Session} session
+     * @this {SIP.Session}
      * @param {string} target
      * @param {object} options
      * @return {Promise}
      */
-    WebPhone.prototype.transfer = function(session, target, options) {
+    function transfer(target, options) {
 
-        return (session.isOnHold() ? Promise.resolve(null) : this.setHold(session, true))
+        var session = this;
+
+        return (session.isOnHold() ? Promise.resolve(null) : session.hold())
             .then(function() { return delay(300); })
             .then(function() {
-                return this.blindTransfer(session, target, options);
-            }.bind(this));
+                return session.blindTransfer(target, options);
+            });
 
-    };
+    }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
+
     /**
-     * @param {Session} session
+     * @this {SIP.Session}
      * @param {object} options
      * @return {Promise}
      */
-    WebPhone.prototype.accept = function(session, options) {
+    function accept(options) {
+
+        var session = this;
 
         options = options || {};
         options.extraHeaders = options.extraHeaders || [];
 
-        options.extraHeaders.push(this.userAgentHeader);
-        options.extraHeaders.push(this.endpointHeader);
-        options.extraHeaders.push(this.clientId);
+        options.extraHeaders.push(session.ua.userAgentHeader);
+        options.extraHeaders.push(session.ua.endpointHeader);
+        options.extraHeaders.push(session.ua.clientIdHeader);
 
         return new Promise(function(resolve, reject) {
 
@@ -432,54 +545,27 @@
             session.on('accepted', onAnswered);
             session.on('failed', onFail);
 
-            session.accept(options);
+            session.__accept(options);
 
         });
 
-    };
-
-    /**
-     * @param number
-     * @param options
-     * @return {SIP.Session}
-     */
-    WebPhone.prototype.invite = function(number, options) {
-
-        options = options || {};
-        options.extraHeaders = options.extraHeaders || [];
-
-        options.extraHeaders.push(this.userAgentHeader);
-        options.extraHeaders.push(this.endpointHeader);
-        options.extraHeaders.push(this.clientId);
-
-        //FIXME Backend should know it already
-        options.extraHeaders.push('P-Asserted-Identity: sip:12223334455@' + this.sipInfo.domain); //FIXME Phone Number
-        if (options.homeCountryId) { options.extraHeaders.push('P-rc-country-id: ' + options.homeCountryId); }
-
-        options.media = options.media || {};
-        options.media.constraints = options.media.constraints || {audio: true, video: false};
-
-        options.RTCConstraints = options.RTCConstraints || {optional: [{DtlsSrtpKeyAgreement: 'true'}]};
-
-        return this.userAgent.invite(number, options);
-
-    };
+    }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * @param {Session} session
+     * @this {SIP.Session}
      * @param {string} target
      * @param {object} acceptOptions
      * @param {object} [transferOptions]
      * @return {Promise}
      */
-    WebPhone.prototype.forward = function(session, target, acceptOptions, transferOptions) {
+    function forward(target, acceptOptions, transferOptions) {
 
         var interval = null,
-            self = this;
+            session = this;
 
-        return this.accept(session, acceptOptions)
+        return session.accept(acceptOptions)
             .then(function() {
 
                 return new Promise(function(resolve, reject) {
@@ -488,7 +574,7 @@
                             clearInterval(interval);
                             session.mute();
                             setTimeout(function() {
-                                resolve(self.transfer(session, target, transferOptions));
+                                resolve(session.transfer(target, transferOptions));
                             }, 700);
                         }
                     }, 50);
@@ -496,46 +582,55 @@
 
             });
 
-    };
+    }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * @param {Session} session
+     * @this {SIP.Session}
      * @param {boolean} flag
      * @return {Promise}
      */
-    WebPhone.prototype.record = function(session, flag) {
+    function record(flag) {
+
+        var session = this;
 
         var message = !!flag
             ? messages.startRecord
             : messages.stopRecord;
 
         if ((session.__onRecord && !flag) || (!session.__onRecord && flag)) {
-            return this.send(session, message)
+            return session.send(message)
                 .then(function(data) {
                     session.__onRecord = !!flag;
                     return data;
                 });
         }
 
-    };
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-    WebPhone.prototype.flip = function(session, target) {
-        return this.send(session, messages.flip, {target: target});
-    };
+    }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * @param {Session} session
+     * @this {SIP.Session}
+     * @param target
      * @return {Promise}
      */
-    WebPhone.prototype.park = function(session) {
-        return this.send(session, messages.park);
-    };
+    function flip(target) {
+        var session = this;
+        return session.send(messages.flip, {target: target});
+    }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * @this {SIP.Session}
+     * @return {Promise}
+     */
+    function park() {
+        var session = this;
+        return session.send(messages.park);
+    }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
