@@ -43,6 +43,8 @@
         return dst;
     }
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     function WebPhone(regData, options) {
 
         regData = regData || {};
@@ -92,22 +94,6 @@
             ]
         });
 
-        this.patchUserAgent();
-
-    }
-
-    WebPhone.version = '0.3.0';
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-    WebPhone.uuid = uuid;
-    WebPhone.delay = delay;
-    WebPhone.extend = extend;
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-    WebPhone.prototype.patchUserAgent = function() {
-
         this.userAgent.endpointHeader = this.endpointHeader;
         this.userAgent.userAgentHeader = this.userAgentHeader;
         this.userAgent.clientIdHeader = this.clientIdHeader;
@@ -116,15 +102,23 @@
         this.userAgent.__invite = this.userAgent.invite;
         this.userAgent.invite = invite;
 
-        this.userAgent.on('invite', function(session) {
-            patchSession(session);
-        }.bind(this));
+        this.userAgent.on('invite', patchSession);
 
-        console.log('UserAgent has been patched', this.userAgent);
+        console.warn('UserAgent has been patched', this.userAgent);
 
-    };
+    }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    WebPhone.version = '0.3.0';
+    WebPhone.uuid = uuid;
+    WebPhone.delay = delay;
+    WebPhone.extend = extend;
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     function patchSession(session) {
+
 
         if (session.__patched) return session;
 
@@ -135,29 +129,164 @@
         session.__accept = session.accept;
         session.__hold = session.hold;
         session.__unhold = session.unhold;
+        session.__dtmf = session.dtmf;
 
-        session.sendReinvite = sendReinvite;
         session.receiveRequest = receiveRequest;
+        session.sendReinvite = sendReinvite;
         session.accept = accept;
-        session.blindTransfer = blindTransfer;
-        session.transfer = transfer;
         session.hold = hold;
         session.unhold = unhold;
+        session.dtmf = dtmf;
+
+        session.blindTransfer = blindTransfer;
+        session.transfer = transfer;
         session.park = park;
         session.forward = forward;
-        session.dtmf = dtmf;
-        session.record = record;
+        session.startRecord = startRecord;
+        session.stopRecord = stopRecord;
         session.flip = flip;
-        session.send = send;
 
-        session.on('replaced', function(newSession){
-            patchSession(newSession);
-        });
+        session.on('replaced', patchSession);
 
-        console.log('Session has been patched', session);
+        console.warn('Session has been patched', session);
 
         return session;
 
+    }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * @private
+     * @param {SIP.Session} session
+     * @param {object} command
+     * @param {object} [options]
+     * @return {Promise}
+     */
+    function sendReceive(session, command, options) {
+
+        options = options || {};
+
+        extend(command, options);
+
+        var cseq = null;
+
+        return new Promise(function(resolve, reject) {
+
+            session.sendRequest(SIP.C.INFO, {
+                body: JSON.stringify({
+                    request: command
+                }),
+                extraHeaders: [
+                    "Content-Type: application/json;charset=utf-8",
+                    session.ua.userAgentHeader,
+                    session.ua.endpointHeader,
+                    session.ua.clientIdHeader
+                ],
+                receiveResponse: function(response) {
+                    var timeout = null;
+                    if (response.status_code === 200) {
+                        cseq = response.cseq;
+                        function onInfo(request) {
+                            if (response.cseq === cseq) {
+
+                                var body = request && request.body || '{}';
+                                var obj;
+
+                                try {
+                                    obj = JSON.parse(body);
+                                } catch (e) {
+                                    obj = {};
+                                }
+
+                                if (obj.response && obj.response.command === command.command) {
+                                    if (obj.response.result) {
+                                        if (obj.response.result.code == 0) {
+                                            return resolve(obj.response.result);
+                                        } else {
+                                            return reject(obj.response.result);
+                                        }
+                                    }
+                                }
+                                timeout && clearTimeout(timeout);
+                                session.removeListener('RC_SIP_INFO', onInfo);
+                                resolve(null); //FIXME What to resolve
+                            }
+                        }
+
+                        timeout = setTimeout(function() {
+                            reject(new Error('Timeout: no reply'));
+                            session.removeListener('RC_SIP_INFO', onInfo);
+                        }, responseTimeout);
+                        session.on('RC_SIP_INFO', onInfo);
+                    }
+                    else {
+                        reject(new Error('The INFO response status code is: ' + response.status_code + ' (waiting for 200)'));
+                    }
+                }
+            });
+
+        });
+
+    }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * @private
+     * @param {SIP.Session} session
+     * @param {boolean} flag
+     * @return {Promise}
+     */
+    function setRecord(session, flag) {
+
+        var message = !!flag
+            ? messages.startRecord
+            : messages.stopRecord;
+
+        if ((session.__onRecord && !flag) || (!session.__onRecord && flag)) {
+            return sendReceive(session, message)
+                .then(function(data) {
+                    session.__onRecord = !!flag;
+                    return data;
+                });
+        }
+
+    }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * @private
+     * @param {SIP.Session} session
+     * @param {boolean} flag
+     * @return {Promise}
+     */
+    function setHold(session, flag) {
+        return new Promise(function(resolve, reject) {
+
+            function onSucceeded() {
+                resolve();
+                session.removeListener('RC_CALL_REINVITE_FAILED', onFailed);
+                session.removeListener('RC_CALL_REINVITE_SUCCEEDED', onSucceeded);
+            }
+
+            function onFailed(e) {
+                reject(e);
+                session.removeListener('RC_CALL_REINVITE_FAILED', onFailed);
+                session.removeListener('RC_CALL_REINVITE_SUCCEEDED', onSucceeded);
+            }
+
+            session.on('RC_CALL_REINVITE_SUCCEEDED', onSucceeded);
+            session.on('RC_CALL_REINVITE_FAILED', onFailed);
+
+            if (flag) {
+                session.__hold();
+            } else {
+                session.__unhold();
+            }
+
+        });
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
@@ -264,6 +393,48 @@
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     /**
+     * @this {SIP.Session}
+     * @param {object} options
+     * @return {Promise}
+     */
+    function accept(options) {
+
+        var session = this;
+
+        options = options || {};
+        options.extraHeaders = options.extraHeaders || [];
+
+        options.extraHeaders.push(session.ua.userAgentHeader);
+        options.extraHeaders.push(session.ua.endpointHeader);
+        options.extraHeaders.push(session.ua.clientIdHeader);
+
+        return new Promise(function(resolve, reject) {
+
+            function onAnswered() {
+                resolve(session);
+                session.removeListener('accepted', onAnswered);
+                session.removeListener('failed', onFail);
+            }
+
+            function onFail(e) {
+                reject(e);
+                session.removeListener('accepted', onAnswered);
+                session.removeListener('failed', onFail);
+            }
+
+            //TODO More events
+            session.on('accepted', onAnswered);
+            session.on('failed', onFail);
+
+            session.__accept(options);
+
+        });
+
+    }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
      * @this {SIP.Session} session
      * @param {string} dtmf
      * @param {number} duration
@@ -283,123 +454,22 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-
-    function hold() {
-        return setHold.call(this, true);
-    }
-
-    function unhold() {
-        return setHold.call(this, false);
-    }
-
     /**
      * @this {SIP.Session} session
-     * @param {boolean} flag
      * @return {Promise}
      */
-    function setHold(flag) {
-        var session = this;
-        return new Promise(function(resolve, reject) {
-
-            function onSucceeded() {
-                resolve();
-                session.removeListener('RC_CALL_REINVITE_FAILED', onFailed);
-                session.removeListener('RC_CALL_REINVITE_SUCCEEDED', onSucceeded);
-            }
-
-            function onFailed(e) {
-                reject(e);
-                session.removeListener('RC_CALL_REINVITE_FAILED', onFailed);
-                session.removeListener('RC_CALL_REINVITE_SUCCEEDED', onSucceeded);
-            }
-
-            session.on('RC_CALL_REINVITE_SUCCEEDED', onSucceeded);
-            session.on('RC_CALL_REINVITE_FAILED', onFailed);
-
-            if (flag) {
-                session.__hold();
-            } else {
-                session.__unhold();
-            }
-
-        });
+    function hold() {
+        return setHold(this, true);
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * @this {SIP.Session}
-     * @param {object} command
-     * @param {object} [options]
+     * @this {SIP.Session} session
      * @return {Promise}
      */
-    function send(command, options) {
-
-        var session = this;
-
-        options = options || {};
-
-        extend(command, options);
-
-        var cseq = null;
-
-        return new Promise(function(resolve, reject) {
-
-            session.sendRequest(SIP.C.INFO, {
-                body: JSON.stringify({
-                    request: command
-                }),
-                extraHeaders: [
-                    "Content-Type: application/json;charset=utf-8",
-                    session.ua.userAgentHeader,
-                    session.ua.endpointHeader,
-                    session.ua.clientIdHeader
-                ],
-                receiveResponse: function(response) {
-                    var timeout = null;
-                    if (response.status_code === 200) {
-                        cseq = response.cseq;
-                        function onInfo(request) {
-                            if (response.cseq === cseq) {
-
-                                var body = request && request.body || '{}';
-                                var obj;
-
-                                try {
-                                    obj = JSON.parse(body);
-                                } catch (e) {
-                                    obj = {};
-                                }
-
-                                if (obj.response && obj.response.command === command.command) {
-                                    if (obj.response.result) {
-                                        if (obj.response.result.code == 0) {
-                                            return resolve(obj.response.result);
-                                        } else {
-                                            return reject(obj.response.result);
-                                        }
-                                    }
-                                }
-                                timeout && clearTimeout(timeout);
-                                session.removeListener('RC_SIP_INFO', onInfo);
-                                resolve(null); //FIXME What to resolve
-                            }
-                        }
-
-                        timeout = setTimeout(function() {
-                            reject(new Error('Timeout: no reply'));
-                            session.removeListener('RC_SIP_INFO', onInfo);
-                        }, responseTimeout);
-                        session.on('RC_SIP_INFO', onInfo);
-                    }
-                    else {
-                        reject(new Error('The INFO response status code is: ' + response.status_code + ' (waiting for 200)'));
-                    }
-                }
-            });
-
-        });
-
+    function unhold() {
+        return setHold(this, false);
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
@@ -510,49 +580,6 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-
-    /**
-     * @this {SIP.Session}
-     * @param {object} options
-     * @return {Promise}
-     */
-    function accept(options) {
-
-        var session = this;
-
-        options = options || {};
-        options.extraHeaders = options.extraHeaders || [];
-
-        options.extraHeaders.push(session.ua.userAgentHeader);
-        options.extraHeaders.push(session.ua.endpointHeader);
-        options.extraHeaders.push(session.ua.clientIdHeader);
-
-        return new Promise(function(resolve, reject) {
-
-            function onAnswered() {
-                resolve(session);
-                session.removeListener('accepted', onAnswered);
-                session.removeListener('failed', onFail);
-            }
-
-            function onFail(e) {
-                reject(e);
-                session.removeListener('accepted', onAnswered);
-                session.removeListener('failed', onFail);
-            }
-
-            //TODO More events
-            session.on('accepted', onAnswered);
-            session.on('failed', onFail);
-
-            session.__accept(options);
-
-        });
-
-    }
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
     /**
      * @this {SIP.Session}
      * @param {string} target
@@ -588,25 +615,20 @@
 
     /**
      * @this {SIP.Session}
-     * @param {boolean} flag
      * @return {Promise}
      */
-    function record(flag) {
+    function startRecord() {
+        return setRecord(this, true);
+    }
 
-        var session = this;
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
-        var message = !!flag
-            ? messages.startRecord
-            : messages.stopRecord;
-
-        if ((session.__onRecord && !flag) || (!session.__onRecord && flag)) {
-            return session.send(message)
-                .then(function(data) {
-                    session.__onRecord = !!flag;
-                    return data;
-                });
-        }
-
+    /**
+     * @this {SIP.Session}
+     * @return {Promise}
+     */
+    function stopRecord() {
+        return setRecord(this, false);
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
@@ -617,8 +639,7 @@
      * @return {Promise}
      */
     function flip(target) {
-        var session = this;
-        return session.send(messages.flip, {target: target});
+        return sendReceive(this, messages.flip, {target: target});
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
@@ -628,8 +649,7 @@
      * @return {Promise}
      */
     function park() {
-        var session = this;
-        return session.send(messages.park);
+        return sendReceive(this, messages.park);
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/

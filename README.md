@@ -112,12 +112,17 @@ platform
 
 ### API
 
-Except for some RingCentral-specific features the API is 100% the same as SIP.JS: http://sipjs.com/api/0.7.0
+Except for some RingCentral-specific features the API is 100% the same as SIP.JS: http://sipjs.com/api/0.7.0: most of 
+the time you will be working with RC-flavored [UserAgent](http://sipjs.com/api/0.7.0/ua) and
+[Session](http://sipjs.com/api/0.7.0/session) objects of SIP.JS.
+
+We encourage you to take a look at [Guides](http://sipjs.com/guides) section, especially
+[Make A Call](http://sipjs.com/guides/make-call) and [Receive A Call](http://sipjs.com/guides/receive-call/) articles.
 
 #### Initiating The Call
 
 ```javascript
-var session = webPhone.invite('PHONE_NUMBER', {
+var session = webPhone.userAgent.invite('PHONE_NUMBER', {
     media: {
         render: {
             remote: document.getElementById('remoteVideo'),
@@ -125,7 +130,7 @@ var session = webPhone.invite('PHONE_NUMBER', {
         }
     },
     homeCountryId: '1' // Optional, the value of
-});
+}).then(...);
 ```
 
 #### Accepting Incoming Call
@@ -133,7 +138,7 @@ var session = webPhone.invite('PHONE_NUMBER', {
 ```javascript
 webPhone.userAgent.on('invite', function(session){
 
-    webPhone.accept({
+    session.accept({
         media: {
             render: {
                 remote: document.getElementById('remoteVideo'),
@@ -150,7 +155,7 @@ webPhone.userAgent.on('invite', function(session){
 Callee will be put on hold and the another person can join into the call by dialing the extension number announced within the call.
 
 ```js
-webPhone.dtmf(session, 'digits').then(...);
+session.dtmf('DTMF_DIGITS').then(...);
 ```
 
 #### Hold/Unhold
@@ -158,8 +163,8 @@ webPhone.dtmf(session, 'digits').then(...);
 Callee will be put on hold and the another person can join into the call by dialing the extension number announced within the call.
 
 ```js
-webPhone.hold(session).then(...);
-webPhone.unhold(session).then(...);
+session.hold().then(...);
+session.unhold().then(...);
 ```
 
 #### Park
@@ -167,7 +172,7 @@ webPhone.unhold(session).then(...);
 Callee will be put on hold and the another person can join into the call by dialing the extension number announced within the call.
 
 ```js
-webPhone.park(session).then(...);
+session.park().then(...);
 ```
 
 #### Flip
@@ -175,7 +180,26 @@ webPhone.park(session).then(...);
 Caller can filp calls to different devices logged in through the same credentials.
 
 ```js
-webPhone.flip(session, 'TARGET_NUMBER').then(...);
+session.flip('TARGET_NUMBER').then(...);
+```
+
+#### Transfer
+
+```js
+session.transfer('TARGET_NUMBER').then(...);
+```
+
+#### Forward
+
+```js
+session.forward('TARGET_NUMBER').then(...);
+```
+
+#### Start / Stop Recording
+
+```js
+session.startRecord().then(...);
+session.stopRecord().then(...);
 ```
 
 #### Barge/Whisper

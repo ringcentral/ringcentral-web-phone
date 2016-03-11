@@ -180,11 +180,11 @@ $(function() {
             session.unhold().then(function() { console.log('UnHolding'); }).catch(function(e) { console.error('UnHolding failed', e.stack || e); });
         });
         $modal.find('.startRecord').on('click', function() {
-            session.record(true).then(function() { console.log('Recording Started'); }).catch(function(e) { console.error('Recording Start failed', e.stack || e); });
+            session.startRecord().then(function() { console.log('Recording Started'); }).catch(function(e) { console.error('Recording Start failed', e.stack || e); });
         });
 
         $modal.find('.stopRecord').on('click', function() {
-            session.record(false).then(function() { console.log('Recording Stopped'); }).catch(function(e) { console.error('Recording Stop failed', e.stack || e); });
+            session.stopRecord().then(function() { console.log('Recording Stopped'); }).catch(function(e) { console.error('Recording Stop failed', e.stack || e); });
         });
 
         $modal.find('.park').on('click', function() {
@@ -243,9 +243,9 @@ $(function() {
             close();
             onAccepted(newSession);
         });
-        session.on('dtmf', function() { log('Event: DTMF'); });
-        session.on('muted', function() { log('Event: Muted'); });
-        session.on('unmuted', function() { log('Event: Unmuted'); });
+        session.on('dtmf', function() { console.log('Event: DTMF'); });
+        session.on('muted', function() { console.log('Event: Muted'); });
+        session.on('unmuted', function() { console.log('Event: Unmuted'); });
         session.on('bye', function() {
             console.log('Event: Bye');
             close();
