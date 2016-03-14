@@ -93,8 +93,13 @@ platform
                     appKey: appKey,
                     appName: appName,
                     appVersion: appVersion,
-                    uuid: loginResponse.json().endpoint_id, // or you can store any UUID in localStorage
-                    logLevel: 1 // error 0, warn 1, log: 2, debug: 3
+                    uuid: loginResponse.json().endpoint_id,
+                    logLevel: 1, // error 0, warn 1, log: 2, debug: 3
+                    audioHelper: {
+                        enabled: true,
+                        incoming: 'path-to-audio/incoming.ogg',
+                        outgoing: 'path-to-audio/outgoing.ogg'
+                    }
                 });
                 
             });

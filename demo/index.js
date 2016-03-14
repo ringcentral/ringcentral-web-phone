@@ -78,7 +78,14 @@ $(function() {
 
         sipInfo = data.sipInfo[0] || data.sipInfo;
 
-        webPhone = new WebPhone(data,{appKey : localStorage.getItem('webPhoneAppKey')});
+        webPhone = new WebPhone(data, {
+            appKey: localStorage.getItem('webPhoneAppKey'),
+            audioHelper: {
+                enabled: true,
+                incoming: '../audio/incoming.ogg',
+                outgoing: '../audio/outgoing.ogg'
+            }
+        });
 
         webPhone.userAgent.on('invite', onInvite);
         webPhone.userAgent.on('connected', function() { console.log('UA Connected'); });

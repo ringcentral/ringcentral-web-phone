@@ -45,6 +45,56 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
+    /**
+     * @param options
+     * @constructor
+     */
+    function AudioHelper(options) {
+
+        options = options || {};
+
+        this._enabled = !!options.enabled;
+        this._incoming = options.incoming || '../audio/incoming.ogg';
+        this._outgoing = options.outgoing || '../audio/outgoing.ogg';
+        this._audio = {};
+
+    }
+
+    AudioHelper.prototype._playSound = function(url, val, volume) {
+
+        if (!this._enabled) return this;
+
+        if (!this._audio[url]) {
+            if (val) {
+                this._audio[url] = new Audio();
+                this._audio[url].src = url;
+                this._audio[url].loop = true;
+                this._audio[url].volume = volume;
+                this._audio[url].play();
+            }
+        } else {
+            if (val) {
+                this._audio[url].currentTime = 0;
+                this._audio[url].play();
+            } else {
+                this._audio[url].pause();
+            }
+        }
+
+        return this;
+
+    };
+
+    AudioHelper.prototype.playIncoming = function(val) {
+        return this._playSound(this._incoming, val, 0.5);
+    };
+
+    AudioHelper.prototype.playOutgoing = function(val) {
+        return this._playSound(this._outgoing, val, 1);
+    };
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     function WebPhone(regData, options) {
 
         regData = regData || {};
@@ -55,7 +105,10 @@
 
         console.log('Provisioning info', this.sipInfo, this.sipFlags);
 
-        this.endpointHeader = 'P-rc-endpoint-id: ' + options.uuid || uuid();
+        var id = options.uuid || localStorage.getItem('rc-webPhone-uuid') || uuid(); //TODO Make configurable
+        localStorage.setItem('rc-webPhone-uuid', id);
+
+        this.endpointHeader = 'P-rc-endpoint-id: ' + id;
 
         var configuration = {
             uri: 'sip:' + this.sipInfo.username + '@' + this.sipInfo.domain,
@@ -76,7 +129,6 @@
             iceGatheringTimeout: this.sipInfo.iceGatheringTimeout || 3000
         };
 
-        //TODO Use this
         this.appKey = options.appKey;
         this.appName = options.appName;
         this.appVersion = options.appVersion;
@@ -102,9 +154,12 @@
         this.userAgent.__invite = this.userAgent.invite;
         this.userAgent.invite = invite;
 
-        this.userAgent.on('invite', patchSession);
+        this.userAgent.on('invite', function(session) {
+            this.userAgent.audioHelper.playIncoming(true);
+            patchSession(session);
+        }.bind(this));
 
-        console.warn('UserAgent has been patched', this.userAgent);
+        this.userAgent.audioHelper = new AudioHelper(options.audioHelper);
 
     }
 
@@ -118,7 +173,6 @@
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     function patchSession(session) {
-
 
         if (session.__patched) return session;
 
@@ -148,7 +202,27 @@
 
         session.on('replaced', patchSession);
 
-        console.warn('Session has been patched', session);
+        // Audio
+        session.on('accepted', stopPlaying);
+        session.on('rejected', stopPlaying);
+        session.on('bye', stopPlaying);
+        session.on('terminated', stopPlaying);
+        session.on('cancel', stopPlaying);
+        session.on('failed', stopPlaying);
+        session.on('replaced', stopPlaying);
+        //TODO session.on('progress', stopPlaying); // if session has early media, find a way to detect it
+
+        function stopPlaying() {
+            session.ua.audioHelper.playOutgoing(false);
+            session.ua.audioHelper.playIncoming(false);
+            session.removeListener('accepted', stopPlaying);
+            session.removeListener('rejected', stopPlaying);
+            session.removeListener('bye', stopPlaying);
+            session.removeListener('terminated', stopPlaying);
+            session.removeListener('cancel', stopPlaying);
+            session.removeListener('failed', stopPlaying);
+            session.removeListener('replaced', stopPlaying);
+        }
 
         return session;
 
@@ -187,7 +261,7 @@
                     var timeout = null;
                     if (response.status_code === 200) {
                         cseq = response.cseq;
-                        function onInfo(request) {
+                        var onInfo = function(request) {
                             if (response.cseq === cseq) {
 
                                 var body = request && request.body || '{}';
@@ -212,7 +286,7 @@
                                 session.removeListener('RC_SIP_INFO', onInfo);
                                 resolve(null); //FIXME What to resolve
                             }
-                        }
+                        };
 
                         timeout = setTimeout(function() {
                             reject(new Error('Timeout: no reply'));
@@ -316,6 +390,8 @@
         options.media.constraints = options.media.constraints || {audio: true, video: false};
 
         options.RTCConstraints = options.RTCConstraints || {optional: [{DtlsSrtpKeyAgreement: 'true'}]};
+
+        ua.audioHelper.playOutgoing(true);
 
         return patchSession(ua.__invite(number, options));
 
@@ -483,7 +559,7 @@
     function blindTransfer(target, options) {
 
         var session = this;
-        var extraHeaders = [];
+        var extraHeaders = options.extraHeaders || [];
         var originalTarget = target;
         options = options || {};
 
@@ -513,6 +589,9 @@
             extraHeaders.push('Contact: ' + session.contact);
             extraHeaders.push('Allow: ' + SIP.UA.C.ALLOWED_METHODS.toString());
             extraHeaders.push('Refer-To: ' + target);
+            extraHeaders.push(session.ua.userAgentHeader);
+            extraHeaders.push(session.ua.endpointHeader);
+            extraHeaders.push(session.ua.clientIdHeader);
 
             // Send the request
             session.sendRequest(SIP.C.REFER, {
@@ -523,7 +602,7 @@
                     if (response.status_code === 202) {
                         var callId = response.call_id;
 
-                        function onNotify(request) {
+                        var onNotify = function(request) {
                             if (request.call_id === callId) {
                                 var body = request && request.body || '';
                                 switch (true) {
@@ -541,7 +620,7 @@
                                         break;
                                 }
                             }
-                        }
+                        };
 
                         timeout = setTimeout(function() {
                             reject(new Error('Timeout: no reply'));
