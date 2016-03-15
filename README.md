@@ -134,6 +134,7 @@ var session = webPhone.userAgent.invite('PHONE_NUMBER', {
             local: document.getElementById('localVideo')
         }
     },
+    fromNumber: 'PHONE_NUMBER', // Optional, Company Number will be used as default
     homeCountryId: '1' // Optional, the value of
 }).then(...);
 ```

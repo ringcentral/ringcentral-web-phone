@@ -7,6 +7,7 @@ $(function() {
     /** @type {WebPhone} */
     var webPhone = null;
 
+    var username = null;
     var extension = null;
     var sipInfo = null;
     var $app = $('#app');
@@ -24,7 +25,7 @@ $(function() {
         return $($tpl.html());
     }
 
-    function login(server, appKey, appSecret, username, ext, password) {
+    function login(server, appKey, appSecret, login, ext, password) {
 
         sdk = new RingCentral.SDK({
             appKey: appKey,
@@ -36,15 +37,17 @@ $(function() {
 
         platform
             .login({
-                username: username,
+                username: login,
                 extension: ext || null,
                 password: password
             })
             .then(function() {
 
+                username = login;
+
                 localStorage.setItem('webPhoneAppKey', appKey || '');
                 localStorage.setItem('webPhoneAppSecret', appSecret || '');
-                localStorage.setItem('webPhoneLogin', username || '');
+                localStorage.setItem('webPhoneLogin', login || '');
                 localStorage.setItem('webPhoneExtension', ext || '');
                 localStorage.setItem('webPhonePassword', password || '');
 
@@ -273,6 +276,7 @@ $(function() {
                     local: document.getElementById('localVideo')
                 }
             },
+            fromNumber: username,
             homeCountryId: homeCountry
         });
 

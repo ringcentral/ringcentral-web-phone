@@ -380,8 +380,9 @@
         options.extraHeaders.push(ua.endpointHeader);
         options.extraHeaders.push(ua.clientIdHeader);
 
+        options.extraHeaders.push('P-Asserted-Identity: sip:' + (options.fromNumber || ua.sipInfo.username) + '@' + ua.sipInfo.domain); //FIXME Phone Number
+
         //FIXME Backend should know it already
-        options.extraHeaders.push('P-Asserted-Identity: sip:' + ua.sipInfo.username + '@' + ua.sipInfo.domain); //FIXME Phone Number
         if (options.homeCountryId) { options.extraHeaders.push('P-rc-country-id: ' + options.homeCountryId); }
 
         options.media = options.media || {};
