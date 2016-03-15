@@ -2,7 +2,6 @@
   "name": "ringcentral-web-phone",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "webpack": "./node_modules/.bin/webpack --display-modules --progress --colors --bail",
     "build": "./node_modules/.bin/gulp"
   },
   "dependencies": {
@@ -12,13 +11,7 @@
     "ringcentral": "^2.0.4"
   },
   "devDependencies": {
-    "gulp": "^3.9.1",
-    "gulp-rename": "^1.2.2",
-    "gulp-sourcemaps": "^1.6.0",
-    "gulp-uglify": "^1.5.2",
-    "gulp-util": "^3.0.7",
-    "json-loader": "^0.5.4",
-    "webpack": "^1.12.12"
+    "gulp": "^3.9.1"
   },
   "preferGlobal": false,
   "private": false,
@@ -44,5 +37,5 @@
     "node": ">=0.10.36"
   },
   "license": "MIT",
-  "version": "0.2.0"
+  "version": "0.3.0"
 }

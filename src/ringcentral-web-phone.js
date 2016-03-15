@@ -3,6 +3,9 @@
         define(['sip.js'], function(SIP) {
             return factory(SIP);
         });
+    } else if (typeof module === 'object') {
+        module.exports = factory(require('sip.js'));
+        module.exports.default = module.exports; //ES6
     } else {
         root.WebPhone = factory(root.SIP);
     }
