@@ -1,267 +1,343 @@
-//.factory("ringout", function($rootScope, $q, callMonitor, utils, logging, rcCore, rcPlatform, rcSIPUA, appstorage, settingsService, getLocaleString, $locale) { 'use strict';
-var webPhone = new RingCentral.WebPhone({
-    audioHelper: { incoming: 'audio/incoming.ogg', outgoing: 'audio/outgoing.ogg' }, 
-    appkey: localStorage.webPhoneAppKey});
-var platform;
-var line;
+$(function() {
 
+    /** @type {RingCentral.SDK} */
+    var sdk = null;
+    /** @type {Platform} */
+    var platform = null;
+    /** @type {WebPhone} */
+    var webPhone = null;
 
-(function(){
-    webPhone.ua.on('sipIncomingCall', function(e) {
-        line = e;
-        document.getElementById("hid2").style.display = "block";
-    });
+    var username = null;
+    var extension = null;
+    var sipInfo = null;
+    var $app = $('#app');
 
-    webPhone.ua.on('callStarted',function(e){
-        line = e;
-        setInterval(function() {
-            document.getElementById('activeCalls').innerText = webPhone.ua.getActiveLinesArray().length;
-            function f(val, d) {
-                var sval = val + '';
-                return '000000'.substr(0, d - sval.length) + val;
-            }
-            var dur = Math.ceil(line.getCallDuration() / 1000);
-            var sec = dur % 60;
-            var min = Math.floor(dur / 60);
-            var hours = Math.floor(dur / 3600);
-            document.getElementById("duration").innerText = 'Duration: ' + f(hours, 2) + ':' + f(min, 2) + ':' + f(sec, 2);
-        }, 500);
-    })
+    var $loginTemplate = $('#template-login');
+    var $callTemplate = $('#template-call');
+    var $incomingTemplate = $('#template-incoming');
+    var $acceptedTemplate = $('#template-accepted');
 
-
-
-})();
-
-
-function startCall(toNumber, fromNumber) {
-    if (fromNumber == "")
-        alert('Fill in the number');
-    else {
-        fromNumber = fromNumber || localStorage.webPhoneLogin;
-        platform
-            .get('/restapi/v1.0/account/~/extension/~')
-            .then(function(res) {
-                var info = res.json();
-                if (info && info.regionalSettings && info.regionalSettings.homeCountry) {
-                    return info.regionalSettings.homeCountry.id;
-                }
-                return null;
-            })
-            .then(function(countryId) {
-                console.log('SIP call to', toNumber, 'from', fromNumber + '\n');
-                webPhone.call(toNumber, fromNumber, countryId);
-            })
-            .catch(function(e){
-                console.error(e.stack);
-            });
+    /**
+     * @param {jQuery|HTMLElement} $tpl
+     * @return {jQuery|HTMLElement}
+     */
+    function cloneTemplate($tpl) {
+        return $($tpl.html());
     }
-}
 
-function mute() {
-    webPhone.mute().catch(function(e){ console.error(e);});
-    console.log('Call Mute\n');
-}
+    function login(server, appKey, appSecret, login, ext, password) {
 
-function unmute() {
-    webPhone.unmute().catch(function(e){ console.error(e);});
-    console.log('Call Unmute\n');
-}
+        sdk = new RingCentral.SDK({
+            appKey: appKey,
+            appSecret: appSecret,
+            server: server
+        });
 
-function hold() {
-    webPhone.getLine().setHold(true).catch(function(e){ console.error(e);});
-    console.log('Call Hold\n');
-}
+        platform = sdk.platform();
 
-function unhold() {
-    webPhone.getLine().setHold(false).catch(function(e){ console.error(e);});
-    console.log('Call UnHold\n');
-}
+        platform
+            .login({
+                username: login,
+                extension: ext || null,
+                password: password
+            })
+            .then(function() {
 
-function answerIncomingCall() {
-    webPhone.answer(line).catch(function(e){ console.error(e);});
-   var delay = 1000; //1 seconds
+                username = login;
 
-    //setTimeout(function() {
-    //    if (line.getContact().number == "16197619503") {
-    //        console.log("incoming call - recording")
-    //        line.record(true);
-    //    }
-    //}, delay);
-    console.log('Answering Incoming Call\n');
-}
+                localStorage.setItem('webPhoneAppKey', appKey || '');
+                localStorage.setItem('webPhoneAppSecret', appSecret || '');
+                localStorage.setItem('webPhoneLogin', login || '');
+                localStorage.setItem('webPhoneExtension', ext || '');
+                localStorage.setItem('webPhonePassword', password || '');
 
-function disconnect() {
-    webPhone.hangup(line).catch(function(e){ console.error(e);});
-    document.getElementById("hid2").style.display = "none";
-    console.log('Hangup Call\n');
-}
+                return platform.get('/restapi/v1.0/account/~/extension/~');
 
-function isOnCall() {
-    return webPhone.onCall();
-}
+            })
+            .then(function(res) {
 
+                extension = res.json();
 
-function reregister() {
-    webPhone.reregister().catch(function(e){console.error(e);});
-    console.log('Reregistered SIP\n');
-}
+                console.log('Extension info', extension);
 
-
-function unregisterSip() {
-    document.getElementById("hid").style.display = "none"
-    webPhone.unregister().catch(function(e){ console.error(e);});
-    console.log('Unregistered SIP\n');
-}
-
-function forceDisconnectSip() {
-    document.getElementById("hid").style.display = "none"
-    webPhone.forceDisconnect();
-    console.log('Forcing SIP disconnection\n');
-}
-
-
-function startRecording() {
-    webPhone.getLine().record(true);
-    console.log('Start Recording Call\n');
-}
-
-function stopRecording() {
-    webPhone.getLine().record(false);
-    console.log('Stop Recording Call\n');
-}
-
-
-function callpark() {
-    webPhone.getLine().park();
-    console.log('Call Parking\n');
-}
-
-function callflip(number) {
-    webPhone.getLine().flip(number);
-}
-
-function callTransfer(number) {
-    webPhone.getLine(line).transfer(number).then(function(){
-        console.log('Call Transfer\n');
-    }).catch(function(e){console.error(e)});
-
-}
-
-
-function sendDTMF(DTMF) {
-        webPhone.sendDTMF(DTMF).catch(function(e){ console.error(e);});
-        console.log('Send DTMF' + DTMF + '\n');
-}
-
-function forward(number) {
-    webPhone.getLine(line).forward(number).then(function(){
-        console.log('Call Transfer\n');
-    }).catch(function(e){console.error(e)});
-}
-
-function registerSIP(checkFlags, transport) {
-    transport = transport || 'WSS';
-    return platform
-        .post('/client-info/sip-provision', {
-            sipInfo: [{
-                transport: transport
-            }]
-        })
-        .then(function(res) {
-
-
-            var data = res.json();
-
-            //data.appKey = localStorage.webPhoneAppKey;
-
-            console.log("Sip Provisioning Data from RC API: " + JSON.stringify(data));
-
-            return webPhone.register(data, checkFlags)
-                .then(function(){
-                    console.log('Registered');
-                })
-                .catch(function(e) {
-                    var err = e && e.status_code && e.reason_phrase
-                        ? new Error(e.status_code + ' ' + e.reason_phrase)
-                        : (e && e.data)
-                                  ? new Error('SIP Error: ' + e.data)
-                                  : new Error('SIP Error: ' + (e || 'Unknown error'));
-                    console.error('SIP Error: ' + ((e && e.data) || e) + '\n');
-                    return Promise.reject(err);
+                return platform.post('/client-info/sip-provision', {
+                    sipInfo: [{
+                        transport: 'WSS'
+                    }]
                 });
 
-        }).catch(function(e) {
-            console.error(e);
-            return Promise.reject(e);
-        });
-}
+            })
+            .then(function(res) { return res.json(); })
+            .then(register)
+            .then(makeCallForm)
+            .catch(function(e) {
+                console.error('Error in main promise chain');
+                console.error(e.stack || e);
+            });
 
-function app() {
-
-}
-
-/**
- * @param server
- * @param apikey
- * @param apisecret
- * @param username
- * @param extension
- * @param password
- */
-function register(server, apikey, apisecret, username,extension, password) {
-    server = server || RingCentral.SDK.server.sandbox;
-    if (document.getElementById('remember').checked) {
-        localStorage.webPhoneServer = server;
-        localStorage.webPhoneAppKey = apikey || '';
-        localStorage.webPhoneAppSecret = apisecret || '';
-        localStorage.webPhoneLogin = username || '';
-        localStorage.webPhoneExtension = extension || '';
-        localStorage.webPhonePassword = password || '';
-        localStorage.webPhoneRemember = true;
     }
 
-    var sdk = new RingCentral.SDK({
-        appKey: apikey, //,
-        appSecret: apisecret,//localStorage.webPhoneAppSecret,
-        server: server
-    });
-    platform = sdk.platform();
-    platform
-        .login({
-            username: username,// localStorage.webPhoneLogin,
-            extension: extension,
-            password: password// localStorage.webPhonePassword
-        })
-        .then(function() {
-            return registerSIP();
-        })
-        .then(function () {
-           if(webPhone.isRegistered==true){
-               document.getElementById("hid").style.display = "block"
-           }
-            else {
-               document.getElementById("hid").style.display = "none"
-           }
+    function register(data) {
+
+        sipInfo = data.sipInfo[0] || data.sipInfo;
+
+        webPhone = new WebPhone(data, {
+            appKey: localStorage.getItem('webPhoneAppKey'),
+            audioHelper: {
+                enabled: true,
+                incoming: '../audio/incoming.ogg',
+                outgoing: '../audio/outgoing.ogg'
+            }
         });
 
-}
+        webPhone.userAgent.on('invite', onInvite);
+        webPhone.userAgent.on('connected', function() { console.log('UA Connected'); });
+        webPhone.userAgent.on('registered', function() { console.log('UA Registered'); });
 
-setTimeout(function(){
-    document.getElementById('server').value = localStorage.webPhoneServer || RingCentral.SDK.server.sandbox;
-    document.getElementById('apikey').value = localStorage.webPhoneAppKey || '';
-    document.getElementById('apisecret').value = localStorage.webPhoneAppSecret || '';
-    document.getElementById('fromnumber').value = localStorage.webPhoneLogin || '';
-    document.getElementById('extension').value = localStorage.webPhoneExtension || '';
-    document.getElementById('password').value = localStorage.webPhonePassword || '';
+        return webPhone;
 
-    if (localStorage.webPhoneRemember) {
-        document.getElementById('remember').checked = true;
     }
-}, 100);
 
-function switchEnv(env) {
-    environment = env;
-    document.getElementById('env').textContent = env;
-}
+    function onInvite(session) {
 
-console.log('WebPhone version: ' + RingCentral.WebPhone.version);
+        console.log('EVENT: Invite', session.request);
+        console.log('To', session.request.to.displayName, session.request.to.friendlyName);
+        console.log('From', session.request.from.displayName, session.request.from.friendlyName);
+
+        var $modal = cloneTemplate($incomingTemplate).modal({backdrop: 'static'});
+
+        var acceptOptions = {
+            media: {
+                render: {
+                    remote: document.getElementById('remoteVideo'),
+                    local: document.getElementById('localVideo')
+                }
+            }
+        };
+
+        $modal.find('.answer').on('click', function() {
+            session.accept(acceptOptions)
+                .then(function() {
+                    $modal.modal('hide');
+                    onAccepted(session);
+                })
+                .catch(function(e) { console.error('Accept failed', e.stack || e); });
+        });
+
+        $modal.find('.decline').on('click', function() {
+            session.reject();
+        });
+
+        $modal.find('.forward-form').on('submit', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            session.forward($modal.find('input[name=forward]').val().trim(), acceptOptions)
+                .then(function() {
+                    console.log('Forwarded');
+                    $modal.modal('hide');
+                })
+                .catch(function(e) { console.error('Forward failed', e.stack || e); });
+        });
+
+        session.on('rejected', function() {
+            $modal.modal('hide');
+        });
+
+    }
+
+    function onAccepted(session) {
+
+        console.log('EVENT: Accepted', session.request);
+        console.log('To', session.request.to.displayName, session.request.to.friendlyName);
+        console.log('From', session.request.from.displayName, session.request.from.friendlyName);
+
+        var $modal = cloneTemplate($acceptedTemplate).modal();
+
+        var $info = $modal.find('.info').eq(0);
+        var $dtmf = $modal.find('input[name=dtmf]').eq(0);
+        var $transfer = $modal.find('input[name=transfer]').eq(0);
+        var $flip = $modal.find('input[name=flip]').eq(0);
+
+        var interval = setInterval(function() {
+
+            var time = session.startTime ? (Math.round((Date.now() - session.startTime) / 1000) + 's') : 'Ringing';
+
+            $info.text(
+                'time: ' + time + '\n' +
+                'startTime: ' + JSON.stringify(session.startTime, null, 2) + '\n'
+            );
+
+        }, 1000);
+
+        function close() {
+            clearInterval(interval);
+            $modal.modal('hide');
+        }
+
+        $modal.find('.mute').on('click', function() {
+            session.mute();
+        });
+
+        $modal.find('.unmute').on('click', function() {
+            session.unmute();
+        });
+
+        $modal.find('.hold').on('click', function() {
+            session.hold().then(function() { console.log('Holding'); }).catch(function(e) { console.error('Holding failed', e.stack || e); });
+        });
+
+        $modal.find('.unhold').on('click', function() {
+            session.unhold().then(function() { console.log('UnHolding'); }).catch(function(e) { console.error('UnHolding failed', e.stack || e); });
+        });
+        $modal.find('.startRecord').on('click', function() {
+            session.startRecord().then(function() { console.log('Recording Started'); }).catch(function(e) { console.error('Recording Start failed', e.stack || e); });
+        });
+
+        $modal.find('.stopRecord').on('click', function() {
+            session.stopRecord().then(function() { console.log('Recording Stopped'); }).catch(function(e) { console.error('Recording Stop failed', e.stack || e); });
+        });
+
+        $modal.find('.park').on('click', function() {
+            session.park().then(function() { console.log('Parked'); }).catch(function(e) { console.error('Park failed', e.stack || e); });
+        });
+
+        $modal.find('.transfer-form').on('submit', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            session.transfer($transfer.val().trim()).then(function() { console.log('Transferred'); }).catch(function(e) { console.error('Transfer failed', e.stack || e); });
+            $transfer.val('');
+        });
+
+        $modal.find('.flip-form').on('submit', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            session.flip($flip.val().trim()).then(function() { console.log('Flipped'); }).catch(function(e) { console.error('Flip failed', e.stack || e); });
+            $flip.val('');
+        });
+
+        $modal.find('.dtmf-form').on('submit', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            session.dtmf($dtmf.val().trim());
+            $dtmf.val('');
+        });
+
+        $modal.find('.hangup').on('click', function() {
+            session.terminate();
+        });
+
+        session.on('accepted', function() { console.log('Event: Accepted'); });
+        session.on('progress', function() { console.log('Event: Progress'); });
+        session.on('rejected', function() {
+            console.log('Event: Rejected');
+            close();
+        });
+        session.on('failed', function() {
+            console.log('Event: Failed');
+            close();
+        });
+        session.on('terminated', function() {
+            console.log('Event: Terminated');
+            close();
+        });
+        session.on('cancel', function() {
+            console.log('Event: Cancel');
+            close();
+        });
+        session.on('refer', function() {
+            console.log('Event: Refer');
+            close();
+        });
+        session.on('replaced', function(newSession) {
+            console.log('Event: Replaced: old session', session, 'has been replaced with', newSession);
+            close();
+            onAccepted(newSession);
+        });
+        session.on('dtmf', function() { console.log('Event: DTMF'); });
+        session.on('muted', function() { console.log('Event: Muted'); });
+        session.on('unmuted', function() { console.log('Event: Unmuted'); });
+        session.on('bye', function() {
+            console.log('Event: Bye');
+            close();
+        });
+
+    }
+
+    function makeCall(number) {
+
+        var homeCountry = (extension && extension.regionalSettings && extension.regionalSettings.homeCountry)
+            ? extension.regionalSettings.homeCountry.id
+            : null;
+
+        var session = webPhone.userAgent.invite(number, {
+            media: {
+                render: {
+                    remote: document.getElementById('remoteVideo'),
+                    local: document.getElementById('localVideo')
+                }
+            },
+            fromNumber: username,
+            homeCountryId: homeCountry
+        });
+
+        onAccepted(session);
+
+    }
+
+    function makeCallForm() {
+
+        var $form = cloneTemplate($callTemplate);
+
+        var $number = $form.find('input[name=number]').eq(0);
+
+        $number.val(localStorage.getItem('webPhoneLastNumber') || '');
+
+        $form.on('submit', function(e) {
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            localStorage.setItem('webPhoneLastNumber', $number.val() || '');
+
+            makeCall($number.val());
+
+        });
+
+        $app.empty().append($form);
+
+    }
+
+    function makeLoginForm() {
+
+        var $form = cloneTemplate($loginTemplate);
+
+        var $server = $form.find('input[name=server]').eq(0);
+        var $appKey = $form.find('input[name=appKey]').eq(0);
+        var $appSecret = $form.find('input[name=appSecret]').eq(0);
+        var $login = $form.find('input[name=login]').eq(0);
+        var $ext = $form.find('input[name=extension]').eq(0);
+        var $password = $form.find('input[name=password]').eq(0);
+
+        $server.val(localStorage.getItem('webPhoneServer') || RingCentral.SDK.server.sandbox);
+        $appKey.val(localStorage.getItem('webPhoneAppKey') || '');
+        $appSecret.val(localStorage.getItem('webPhoneAppSecret') || '');
+        $login.val(localStorage.getItem('webPhoneLogin') || '');
+        $ext.val(localStorage.getItem('webPhoneExtension') || '');
+        $password.val(localStorage.getItem('webPhonePassword') || '');
+
+        $form.on('submit', function(e) {
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            login($server.val(), $appKey.val(), $appSecret.val(), $login.val(), $ext.val(), $password.val());
+
+        });
+
+        $app.empty().append($form);
+
+    }
+
+    makeLoginForm();
+
+});

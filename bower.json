@@ -1,20 +1,20 @@
 {
   "name": "ringcentral-web-phone",
-  "main": "./build/ringcentral-web-phone.js",
+  "main": "./src/ringcentral-web-phone.js",
   "ignore": [
     "**/*",
     "!README.md",
-    "!build/ringcentral-web-phone.js",
-    "!build/ringcentral-web-phone.js.map",
-    "!build/ringcentral-web-phone.min.js",
-    "!build/ringcentral-web-phone.min.js.map",
     "!demo/**/*",
     "!src/**/*"
   ],
   "dependencies": {
-    "ringcentral": "~2.0.4"
+    "ringcentral": "~2.0.5",
+    "sip.js": "^0.7.3"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "jquery": "^2.2.1",
+    "bootstrap": "^3.3.6"
+  },
   "moduleType": [
     "amd",
     "globals"
@@ -35,5 +35,5 @@
     "type": "git",
     "url": "git://github.com/ringcentral/ringcentral-web-phone.git"
   },
-  "version": "0.2.0"
+  "version": "0.3.0"
 }
