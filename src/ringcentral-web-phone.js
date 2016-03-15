@@ -342,17 +342,15 @@
             function onSucceeded() {
                 resolve();
                 session.removeListener('RC_CALL_REINVITE_FAILED', onFailed);
-                session.removeListener('RC_CALL_REINVITE_SUCCEEDED', onSucceeded);
             }
 
             function onFailed(e) {
                 reject(e);
-                session.removeListener('RC_CALL_REINVITE_FAILED', onFailed);
                 session.removeListener('RC_CALL_REINVITE_SUCCEEDED', onSucceeded);
             }
 
-            session.on('RC_CALL_REINVITE_SUCCEEDED', onSucceeded);
-            session.on('RC_CALL_REINVITE_FAILED', onFailed);
+            session.once('RC_CALL_REINVITE_SUCCEEDED', onSucceeded);
+            session.once('RC_CALL_REINVITE_FAILED', onFailed);
 
             if (flag) {
                 session.__hold();
@@ -484,23 +482,26 @@
         options.extraHeaders.push(session.ua.endpointHeader);
         options.extraHeaders.push(session.ua.clientIdHeader);
 
+        options.media = options.media || {};
+        options.media.constraints = options.media.constraints || {audio: true, video: false};
+
+        options.RTCConstraints = options.RTCConstraints || {optional: [{DtlsSrtpKeyAgreement: 'true'}]};
+
         return new Promise(function(resolve, reject) {
 
             function onAnswered() {
                 resolve(session);
-                session.removeListener('accepted', onAnswered);
                 session.removeListener('failed', onFail);
             }
 
             function onFail(e) {
                 reject(e);
                 session.removeListener('accepted', onAnswered);
-                session.removeListener('failed', onFail);
             }
 
-            //TODO More events
-            session.on('accepted', onAnswered);
-            session.on('failed', onFail);
+            //TODO More events?
+            session.once('accepted', onAnswered);
+            session.once('failed', onFail);
 
             session.__accept(options);
 
