@@ -96,9 +96,9 @@ platform
                     uuid: loginResponse.json().endpoint_id,
                     logLevel: 1, // error 0, warn 1, log: 2, debug: 3
                     audioHelper: {
-                        enabled: true,
-                        incoming: 'path-to-audio/incoming.ogg',
-                        outgoing: 'path-to-audio/outgoing.ogg'
+                        enabled: true, // enables audio feedback when web phone is ringing or making a call
+                        incoming: 'path-to-audio/incoming.ogg', // path to audio file for incoming call
+                        outgoing: 'path-to-audio/outgoing.ogg' // path to aduotfile for outgoing call
                     }
                 });
                 
