@@ -1,50 +1,65 @@
 # RingCentral WebPhone Library
 
+The RingCentral WebPhone Library includes a JavaScript WebRTC library and a WebRTC phone demo app.
+
+
+## Table of Contents
+
+1. [Installation](#installation)
+2. [Usage](#usage)
+  1. [Configuring your RingCentral app](#configuring-your-ringcentral-app)
+  1. [Include Library And HTML Elements](#include-library-and-html-elements)
+  2. [Application](#application)
+3. [API](#api)
+  1. [Initiating The Call](#initiating-the-call)
+  1. [Accepting Incoming Call](#accepting-incoming-call)
+  1. [DTMF](#dtmf)
+  1. [Hold Unhold](#hold-unhold)
+  1. [Mute Unmute](#mute-unmute)
+  1. [Park](#park)
+  1. [Flip](#flip)
+  1. [Transfer](#transfer)
+  1. [Forward](#forward)
+  1. [Start Stop Recording](#start-stop-recording)
+  1. [Barge Whisper](barge-whisper)
+4. [Development](#development)
+  1. [Demo app](#demo-app)
+  1. [Demo app structure](#demo-app-structure)
+
+---
+
 ## Installation
 
+Clone the repository and run bower install
+```ssh
+$ git clone https://github.com/ringcentral/ringcentral-web-phone.git
+$ bower install
+```
+or 
 ```ssh
 npm install ringcentral-web-phone
 // or
 bower install ringcentral-web-phone
 ```
 
-## Demo
-
-```sh
-git clone https://github.com/ringcentral/ringcentral-web-phone.git
-npm install
-bower install
-```
-
-WebRTC works with issues when served from file system directly to browser (e.g. `file://` protocol), you will need a
-local HTTP server. If you don't have local HTTP server, please install it as well:
-
-```sh
-$ sudo npm install http-server -g
-$ http-server
-```
-
-1. Open localhost:8080/demo/ in the browser
-2. Add your RC credentials and click on `Register Sip Configurations` .
-3. For making outbound calls, enter phone number and click on call. To disconnect to call, click on `Disconnect Call`.
-4. For recieve incoming calls, Click on Accept button when window pops up (will be visible when there is an incoming call).
-
-The demo app uses the sandbox environment. If there's any connection problems, you may need to switch to the  production environment.
-
-Functionalities included:
-
-1. Sip Register/UnRegister
-2. Make Outgoing Calls
-3. Accept Incoming calls
-4. Hold/UnHold calls
-5. Mute/Unmute calls
-6. Transfer calls
-7. Record/Stop recording calls
-8. Flip, park calls
-9. Send DTMF
-10. Forward incoming calls
+---
 
 ## Usage
+
+
+### Configuring your RingCentral app
+
+Ensure your app has the following properties set. If these are not set, the error specified will be returned.
+
+App Property  | Value           | Error if not set
+--------------|-----------------|-----------------
+Permissions   | `VoIP Calling` , `Interoperability` | `Specific application permission required`
+Platform type | `Browser-based` | `Client edition is not compatible with current Brand`
+
+You need to have a `DIGITAL LINE` attached to an extension. You can configure this in Online Web Portal [Production](https://service.ringcentral.com/) , [Sandbox](https://service.devtest.ringcentral.com/)
+
+These can be configured for your app in the [RingCentral Developer Portal](https://developers.ringcentral.com/). Fill this [Registration Form](https://docs.google.com/forms/d/15kK_zJ5FhyXiH8gwOqiaG7_BuTWGCeeVr4MAv4OBpUM/viewform) to get access to WebRTC permissions. Please contact devsupport@ringcentral.com to request these permissions.
+
 
 ### Include Library And HTML Elements
 
@@ -58,7 +73,7 @@ Functionalities included:
 
 ### Application
 
-Configure the web-phone:
+Configure the web-phone
 
 ```js
 var appKey = '...'; 
@@ -115,7 +130,10 @@ platform
     });
 ```
 
-### API
+---
+
+
+## API
 
 Except for some RingCentral-specific features the API is 100% the same as SIP.JS: http://sipjs.com/api/0.7.0: most of 
 the time you will be working with RC-flavored [UserAgent](http://sipjs.com/api/0.7.0/ua) and
@@ -124,7 +142,7 @@ the time you will be working with RC-flavored [UserAgent](http://sipjs.com/api/0
 We encourage you to take a look at [Guides](http://sipjs.com/guides) section, especially
 [Make A Call](http://sipjs.com/guides/make-call) and [Receive A Call](http://sipjs.com/guides/receive-call/) articles.
 
-#### Initiating The Call
+### Initiating The Call
 
 ```javascript
 var session = webPhone.userAgent.invite('PHONE_NUMBER', {
@@ -139,11 +157,10 @@ var session = webPhone.userAgent.invite('PHONE_NUMBER', {
 }).then(...);
 ```
 
-#### Accepting Incoming Call
+### Accepting Incoming Call
 
 ```javascript
 webPhone.userAgent.on('invite', function(session){
-
     session.accept({
         media: {
             render: {
@@ -152,11 +169,10 @@ webPhone.userAgent.on('invite', function(session){
             }
         }
     }).then(...);
-    
 });
 ```
 
-#### DTMF
+### DTMF
 
 Callee will be put on hold and the another person can join into the call by dialing the extension number announced within the call.
 
@@ -164,7 +180,7 @@ Callee will be put on hold and the another person can join into the call by dial
 session.dtmf('DTMF_DIGITS').then(...);
 ```
 
-#### Hold/Unhold
+### Hold Unhold
 
 Callee will be put on hold and the another person can join into the call by dialing the extension number announced within the call.
 
@@ -173,7 +189,16 @@ session.hold().then(...);
 session.unhold().then(...);
 ```
 
-#### Park
+### Mute Unmute
+
+Callee will be put on mute or unmute
+
+```js
+session.mute();
+session.unmute();
+```
+
+### Park
 
 Callee will be put on hold and the another person can join into the call by dialing the extension number announced within the call.
 
@@ -181,7 +206,7 @@ Callee will be put on hold and the another person can join into the call by dial
 session.park().then(...);
 ```
 
-#### Flip
+### Flip
 
 Caller can filp calls to different devices logged in through the same credentials.
 
@@ -189,25 +214,75 @@ Caller can filp calls to different devices logged in through the same credential
 session.flip('TARGET_NUMBER').then(...);
 ```
 
-#### Transfer
+### Transfer
 
 ```js
 session.transfer('TARGET_NUMBER').then(...);
 ```
 
-#### Forward
+### Forward
 
 ```js
 session.forward('TARGET_NUMBER').then(...);
 ```
 
-#### Start / Stop Recording
+### Start/Stop Recording
 
 ```js
 session.startRecord().then(...);
 session.stopRecord().then(...);
 ```
 
-#### Barge/Whisper
+### Barge/Whisper
 
 Not yet implemented. Could be done by dialing \*83. The account should be enabled for barge/whisper access through system admin.
+
+
+## Development
+
+### Demo app
+
+```sh
+git clone https://github.com/ringcentral/ringcentral-web-phone.git
+npm install
+bower install
+```
+
+WebRTC works with issues when served from file system directly to browser (e.g. `file://` protocol), you will need a
+local HTTP server. If you don't have local HTTP server, please install it as well:
+
+```sh
+$ sudo npm install http-server -g
+$ http-server
+```
+
+1. Open localhost:8080/demo/ in the browser
+2. Add your RC credentials and click on `Register Sip Configurations` .
+3. For making outbound calls, enter phone number and click on call. To disconnect to call, click on `Disconnect Call`.
+4. For receiving incoming calls, Click on Accept button when window pops up (will be visible when there is an incoming call).
+
+The demo app uses the sandbox environment. If there's any connection problems, you may need to switch to the  production environment.
+
+Functionalities included:
+
+1. Sip Register/UnRegister
+2. Make Outgoing Calls
+3. Accept Incoming calls
+4. Hold/UnHold calls
+5. Mute/Unmute calls
+6. Transfer calls
+7. Record/Stop recording calls
+8. Flip, park calls
+9. Send DTMF
+10. Forward incoming calls
+
+
+### Demo app structure
+```
+/src
+  /demo
+    /img
+    favicon.ico
+    index.html
+    index.js
+```
