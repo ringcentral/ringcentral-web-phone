@@ -135,6 +135,28 @@ the time you will be working with RC-flavored [UserAgent](http://sipjs.com/api/0
 We encourage you to take a look at [Guides](http://sipjs.com/guides) section, especially
 [Make A Call](http://sipjs.com/guides/make-call) and [Receive A Call](http://sipjs.com/guides/receive-call/) articles.
 
+### Constructor
+
+```js
+var webPhone = new RingCentral.WebPhone(provisionData, options);
+```
+
+- Provision Data &mdash; the JSON returned from `/client-info/sip-provision` API endpoint
+- Options &mdash; object with various configuration options that adjust WebPhone behavior
+    - `appKey` &mdash; your application key 
+    - `appName` &mdash; your application short code name 
+    - `appVersion` &mdash; your application version 
+    - `uuid` &mdash; manually provide the unique identifier of WebPhone instance (should persist between page reloads)
+    - `logLevel` &mdash; controls verboseness in browser console
+        - `0` &mdash; Errors only (good for production)
+        - `1` &mdash; Errors & warnings
+        - `2` &mdash; Errors, warnings, logs
+        - `3` &mdash; Everything including debug information (good for development)
+    - `audioHelper` &mdash; audio feedback when web phone is ringing or making a call
+        - `enabled` &mdash; turns feedback on and off
+        - `incoming` &mdash; path to `incoming.ogg`, audio file for incoming call
+        - `outgoing` &mdash; path to `outgoing.ogg`, audio file for outgoing call
+
 ### Initiating The Call
 
 ```javascript
