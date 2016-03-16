@@ -30,12 +30,6 @@ The RingCentral WebPhone Library includes a JavaScript WebRTC library and a WebR
 
 ## Installation
 
-Clone the repository and run bower install
-```ssh
-$ git clone https://github.com/ringcentral/ringcentral-web-phone.git
-$ bower install
-```
-or 
 ```ssh
 npm install ringcentral-web-phone
 // or
@@ -45,7 +39,6 @@ bower install ringcentral-web-phone
 ---
 
 ## Usage
-
 
 ### Configuring your RingCentral app
 
@@ -243,9 +236,10 @@ Not yet implemented. Could be done by dialing \*83. The account should be enable
 ### Demo app
 
 ```sh
-git clone https://github.com/ringcentral/ringcentral-web-phone.git
-npm install
-bower install
+$ git clone https://github.com/ringcentral/ringcentral-web-phone.git
+$ npm install
+$ npm install bower -g // skip this if you've already installed Bower
+$ bower install
 ```
 
 WebRTC works with issues when served from file system directly to browser (e.g. `file://` protocol), you will need a
