@@ -260,7 +260,7 @@ Not yet implemented. Could be done by dialing \*83. The account should be enable
 ```sh
 $ git clone https://github.com/ringcentral/ringcentral-web-phone.git
 $ npm install
-$ npm install bower -g // skip this if you've already installed Bower
+$ npm install bower -g # skip this if you've already installed Bower
 $ bower install
 ```
 
