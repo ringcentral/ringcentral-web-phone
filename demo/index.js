@@ -7,6 +7,7 @@ $(function() {
     /** @type {WebPhone} */
     var webPhone = null;
 
+    var logLevel = 0;
     var username = null;
     var extension = null;
     var sipInfo = null;
@@ -25,7 +26,7 @@ $(function() {
         return $($tpl.html());
     }
 
-    function login(server, appKey, appSecret, login, ext, password) {
+    function login(server, appKey, appSecret, login, ext, password, ll) {
 
         sdk = new RingCentral.SDK({
             appKey: appKey,
@@ -43,13 +44,16 @@ $(function() {
             })
             .then(function() {
 
+                logLevel = ll;
                 username = login;
 
+                localStorage.setItem('webPhoneServer', server || '');
                 localStorage.setItem('webPhoneAppKey', appKey || '');
                 localStorage.setItem('webPhoneAppSecret', appSecret || '');
                 localStorage.setItem('webPhoneLogin', login || '');
                 localStorage.setItem('webPhoneExtension', ext || '');
                 localStorage.setItem('webPhonePassword', password || '');
+                localStorage.setItem('webPhoneLogLevel', logLevel || 0);
 
                 return platform.get('/restapi/v1.0/account/~/extension/~');
 
@@ -87,7 +91,8 @@ $(function() {
                 enabled: true,
                 incoming: '../audio/incoming.ogg',
                 outgoing: '../audio/outgoing.ogg'
-            }
+            },
+            logLevel: parseInt(logLevel, 10)
         });
 
         webPhone.userAgent.on('invite', onInvite);
@@ -256,10 +261,25 @@ $(function() {
         session.on('dtmf', function() { console.log('Event: DTMF'); });
         session.on('muted', function() { console.log('Event: Muted'); });
         session.on('unmuted', function() { console.log('Event: Unmuted'); });
+        session.on('connecting', function() { console.log('Event: Connecting'); });
         session.on('bye', function() {
             console.log('Event: Bye');
             close();
         });
+
+        session.mediaHandler.on('iceConnection', function() { console.log('Event: ICE: iceConnection'); });
+        session.mediaHandler.on('iceConnectionChecking', function() { console.log('Event: ICE: iceConnectionChecking'); });
+        session.mediaHandler.on('iceConnectionConnected', function() { console.log('Event: ICE: iceConnectionConnected'); });
+        session.mediaHandler.on('iceConnectionCompleted', function() { console.log('Event: ICE: iceConnectionCompleted'); });
+        session.mediaHandler.on('iceConnectionFailed', function() { console.log('Event: ICE: iceConnectionFailed'); });
+        session.mediaHandler.on('iceConnectionDisconnected', function() { console.log('Event: ICE: iceConnectionDisconnected'); });
+        session.mediaHandler.on('iceConnectionClosed', function() { console.log('Event: ICE: iceConnectionClosed'); });
+        session.mediaHandler.on('iceGatheringComplete', function() { console.log('Event: ICE: iceGatheringComplete'); });
+        session.mediaHandler.on('iceGathering', function() { console.log('Event: ICE: iceGathering'); });
+        session.mediaHandler.on('iceCandidate', function() { console.log('Event: ICE: iceCandidate'); });
+        session.mediaHandler.on('userMedia', function() { console.log('Event: ICE: userMedia'); });
+        session.mediaHandler.on('userMediaRequest', function() { console.log('Event: ICE: userMediaRequest'); });
+        session.mediaHandler.on('userMediaFailed', function() { console.log('Event: ICE: userMediaFailed'); });
 
     }
 
@@ -317,6 +337,7 @@ $(function() {
         var $login = $form.find('input[name=login]').eq(0);
         var $ext = $form.find('input[name=extension]').eq(0);
         var $password = $form.find('input[name=password]').eq(0);
+        var $logLevel = $form.find('select[name=logLevel]').eq(0);
 
         $server.val(localStorage.getItem('webPhoneServer') || RingCentral.SDK.server.sandbox);
         $appKey.val(localStorage.getItem('webPhoneAppKey') || '');
@@ -324,13 +345,14 @@ $(function() {
         $login.val(localStorage.getItem('webPhoneLogin') || '');
         $ext.val(localStorage.getItem('webPhoneExtension') || '');
         $password.val(localStorage.getItem('webPhonePassword') || '');
+        $logLevel.val(localStorage.getItem('webPhoneLogLevel') || logLevel);
 
         $form.on('submit', function(e) {
 
             e.preventDefault();
             e.stopPropagation();
 
-            login($server.val(), $appKey.val(), $appSecret.val(), $login.val(), $ext.val(), $password.val());
+            login($server.val(), $appKey.val(), $appSecret.val(), $login.val(), $ext.val(), $password.val(), $logLevel.val());
 
         });
 

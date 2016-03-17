@@ -180,8 +180,11 @@
         if (session.__patched) return session;
 
         session.__patched = true;
+        session.__hasEarlyMedia = false;
 
         session.__receiveRequest = session.receiveRequest;
+        session.__receiveInviteResponse = session.receiveInviteResponse;
+        session.__receiveResponse = session.receiveResponse;
         session.__sendReinvite = session.sendReinvite;
         session.__accept = session.accept;
         session.__hold = session.hold;
@@ -189,6 +192,8 @@
         session.__dtmf = session.dtmf;
 
         session.receiveRequest = receiveRequest;
+        session.receiveInviteResponse = receiveInviteResponse;
+        session.receiveResponse = receiveResponse;
         session.sendReinvite = sendReinvite;
         session.accept = accept;
         session.hold = hold;
@@ -204,6 +209,7 @@
         session.flip = flip;
 
         session.on('replaced', patchSession);
+        // session.on('connecting', onConnecting);
 
         // Audio
         session.on('accepted', stopPlaying);
@@ -213,7 +219,9 @@
         session.on('cancel', stopPlaying);
         session.on('failed', stopPlaying);
         session.on('replaced', stopPlaying);
-        //TODO session.on('progress', stopPlaying); // if session has early media, find a way to detect it
+        session.mediaHandler.on('iceConnectionCompleted', onIceConnectionCompleted.bind(session));
+        session.mediaHandler.on('iceConnectionCompleted', stopPlaying);
+        session.mediaHandler.on('iceConnectionFailed', stopPlaying);
 
         function stopPlaying() {
             session.ua.audioHelper.playOutgoing(false);
@@ -225,6 +233,8 @@
             session.removeListener('cancel', stopPlaying);
             session.removeListener('failed', stopPlaying);
             session.removeListener('replaced', stopPlaying);
+            session.mediaHandler.removeListener('iceConnectionCompleted', stopPlaying);
+            session.mediaHandler.removeListener('iceConnectionFailed', stopPlaying);
         }
 
         return session;
@@ -305,6 +315,69 @@
 
         });
 
+    }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * Fired each time a provisional (100-199) response is received.
+     *
+     * Early media is supported by SIP.js library
+     * But in case it is sent without 100rel support we play it manually
+     * STATUS_EARLY_MEDIA === 11, it will be set by SIP.js if 100rel is supported
+     *
+     * FIXME Causes call to be dropped immediately after allowing to use microphone in FF
+     *
+     * @see https://bugzilla.mozilla.org/show_bug.cgi?id=1072388
+     * @param {SIP.Session} session
+     * @param response
+     */
+    function patch100rel(session, response) {
+
+        //Early media is supported by SIP.js library
+        //But in case it is sent without 100rel support we play it manually
+        //STATUS_EARLY_MEDIA === 11, it will be set by SIP.js if 100rel is supported
+        if (session.status !== SIP.Session.C.STATUS_EARLY_MEDIA && response.status_code === 183 && typeof(response.body) === 'string' && response.body.indexOf('\n') !== -1) {
+            if (!response.hasHeader('require')) response.setHeader('require', '100rel');
+        }
+
+        //FIXME Probably useless
+        // if (/^1[0-9]{2}$/.test(response.status_code) && session.__hasEarlyMedia) {
+        //     session.emit('progress', response);
+        //     return false;
+        // }
+
+        return true;
+
+    }
+
+    /**
+     * @this {SIP.Session}
+     * @param response
+     * @return {*}
+     */
+    function receiveInviteResponse(response) {
+        if (!patch100rel(this, response)) return;
+        return this.__receiveInviteResponse.apply(this, arguments);
+    }
+
+    /**
+     * @this {SIP.Session}
+     * @param response
+     * @return {*}
+     */
+    function receiveResponse(response) {
+        if (!patch100rel(this, response)) return;
+        return this.__receiveResponse.apply(this, arguments);
+    }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * @this {SIP.Session}
+     */
+    function onIceConnectionCompleted() {
+        this.__hasEarlyMedia = true;
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
