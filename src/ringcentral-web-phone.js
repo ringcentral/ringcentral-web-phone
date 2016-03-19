@@ -636,10 +636,11 @@
      */
     function blindTransfer(target, options) {
 
-        var session = this;
-        var extraHeaders = options.extraHeaders || [];
-        var originalTarget = target;
         options = options || {};
+
+        var session = this;
+        var extraHeaders  =  options.extraHeaders||[];
+        var originalTarget = target;
 
         return new Promise(function(resolve, reject) {
             //Blind Transfer is taken from SIP.js source
