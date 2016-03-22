@@ -7,7 +7,8 @@
         module.exports = factory(require('sip.js'));
         module.exports.default = module.exports; //ES6
     } else {
-        root.WebPhone = factory(root.SIP);
+        root.RingCentral = root.RingCentral || {};
+        root.RingCentral.WebPhone = factory(root.SIP);
     }
 }(this, function(SIP) {
 
@@ -105,8 +106,6 @@
 
         this.sipInfo = regData.sipInfo[0] || regData.sipInfo;
         this.sipFlags = regData.sipFlags;
-
-        console.log('Provisioning info', this.sipInfo, this.sipFlags);
 
         var id = options.uuid || localStorage.getItem('rc-webPhone-uuid') || uuid(); //TODO Make configurable
         localStorage.setItem('rc-webPhone-uuid', id);

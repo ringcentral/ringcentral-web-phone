@@ -85,7 +85,7 @@ $(function() {
 
         sipInfo = data.sipInfo[0] || data.sipInfo;
 
-        webPhone = new WebPhone(data, {
+        webPhone = new RingCentral.WebPhone(data, {
             appKey: localStorage.getItem('webPhoneAppKey'),
             audioHelper: {
                 enabled: true,

@@ -3,3 +3,4 @@ gulpfile.js
 src-leftovers
 typings
 tsd.json
+.chrome

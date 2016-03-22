@@ -1,7 +1,8 @@
 {
   "name": "ringcentral-web-phone",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "./node_modules/karma/bin/karma start",
+    "test-watch": "npm run test -- --no-single-run --auto-watch --log-level warn",
     "build": "./node_modules/.bin/gulp"
   },
   "dependencies": {
@@ -11,7 +12,17 @@
     "ringcentral": "^2.0.4"
   },
   "devDependencies": {
-    "gulp": "^3.9.1"
+    "chai": "^3.5.0",
+    "gulp": "^3.9.1",
+    "jquery": "^2.2.2",
+    "karma": "^0.13.22",
+    "karma-chai-plugins": "^0.7.0",
+    "karma-chrome-launcher": "^0.2.2",
+    "karma-mocha": "^0.2.2",
+    "karma-mocha-reporter": "^2.0.0",
+    "mocha": "^2.4.5",
+    "sinon": "^1.17.3",
+    "sinon-chai": "^2.8.0"
   },
   "preferGlobal": false,
   "private": false,
