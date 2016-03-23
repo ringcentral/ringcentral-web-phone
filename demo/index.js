@@ -36,6 +36,12 @@ $(function() {
 
         platform = sdk.platform();
 
+        // TODO: Improve later to support international phone number country codes
+        if (login) {
+            login = (login.match(/^\+?1/)) ? login : '1' + login;
+            login = login.replace(/\W/g, '')
+        }
+
         platform
             .login({
                 username: login,
