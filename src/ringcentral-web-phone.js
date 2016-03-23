@@ -179,8 +179,8 @@
         if (session.__patched) return session;
 
         session.__patched = true;
-        session.__hasEarlyMedia = false;
 
+        session.__sendRequest = session.sendRequest;
         session.__receiveRequest = session.receiveRequest;
         session.__receiveInviteResponse = session.receiveInviteResponse;
         session.__receiveResponse = session.receiveResponse;
@@ -190,6 +190,7 @@
         session.__unhold = session.unhold;
         session.__dtmf = session.dtmf;
 
+        session.sendRequest = sendRequest;
         session.receiveRequest = receiveRequest;
         session.receiveInviteResponse = receiveInviteResponse;
         session.receiveResponse = receiveResponse;
@@ -218,11 +219,11 @@
         session.on('cancel', stopPlaying);
         session.on('failed', stopPlaying);
         session.on('replaced', stopPlaying);
-        session.mediaHandler.on('iceConnectionCompleted', onIceConnectionCompleted.bind(session));
         session.mediaHandler.on('iceConnectionCompleted', stopPlaying);
         session.mediaHandler.on('iceConnectionFailed', stopPlaying);
 
         function stopPlaying() {
+            console.warn('STOPPED PLAYING');
             session.ua.audioHelper.playOutgoing(false);
             session.ua.audioHelper.playIncoming(false);
             session.removeListener('accepted', stopPlaying);
@@ -318,20 +319,27 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
+    function sendRequest(type, config){
+        if (type == SIP.C.PRACK) {
+            type = SIP.C.ACK;
+        }
+        return this.__sendRequest(type, config);
+    }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     /**
      * Fired each time a provisional (100-199) response is received.
-     *
      * Early media is supported by SIP.js library
      * But in case it is sent without 100rel support we play it manually
      * STATUS_EARLY_MEDIA === 11, it will be set by SIP.js if 100rel is supported
      *
-     * FIXME Causes call to be dropped immediately after allowing to use microphone in FF
-     *
      * @see https://bugzilla.mozilla.org/show_bug.cgi?id=1072388
      * @param {SIP.Session} session
      * @param response
+     * @param {funciton} cb
      */
-    function patch100rel(session, response) {
+    function patch100rel(session, response, cb) {
 
         //Early media is supported by SIP.js library
         //But in case it is sent without 100rel support we play it manually
@@ -340,13 +348,7 @@
             if (!response.hasHeader('require')) response.setHeader('require', '100rel');
         }
 
-        //FIXME Probably useless
-        // if (/^1[0-9]{2}$/.test(response.status_code) && session.__hasEarlyMedia) {
-        //     session.emit('progress', response);
-        //     return false;
-        // }
-
-        return true;
+        return cb.call(session, response);
 
     }
 
@@ -356,8 +358,7 @@
      * @return {*}
      */
     function receiveInviteResponse(response) {
-        if (!patch100rel(this, response)) return;
-        return this.__receiveInviteResponse.apply(this, arguments);
+        return patch100rel(this, response, this.__receiveInviteResponse);
     }
 
     /**
@@ -366,17 +367,7 @@
      * @return {*}
      */
     function receiveResponse(response) {
-        if (!patch100rel(this, response)) return;
-        return this.__receiveResponse.apply(this, arguments);
-    }
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-    /**
-     * @this {SIP.Session}
-     */
-    function onIceConnectionCompleted() {
-        this.__hasEarlyMedia = true;
+        return patch100rel(this, response, this.__receiveResponse);
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
