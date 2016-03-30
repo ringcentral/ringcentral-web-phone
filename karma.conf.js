@@ -11,6 +11,7 @@ module.exports = function(config) {
         ],
 
         files: [
+            {pattern: './audio/**/*.ogg', included: false},
             './credentials.js',
             './bower_components/ringcentral/build/ringcentral-bundle.js',
             './bower_components/sip.js/dist/sip.js',

@@ -10,7 +10,8 @@ The RingCentral WebPhone Library includes a JavaScript WebRTC library and a WebR
   1. [Configuring your RingCentral app](#configuring-your-ringcentral-app)
   1. [Include Library And HTML Elements](#include-library-and-html-elements)
   2. [Application](#application)
-3. [API](#api)
+3. [Demo](#demo)
+4. [API](#api)
   1. [Initiating The Call](#initiating-the-call)
   1. [Accepting Incoming Call](#accepting-incoming-call)
   1. [DTMF](#dtmf)
@@ -22,9 +23,6 @@ The RingCentral WebPhone Library includes a JavaScript WebRTC library and a WebR
   1. [Forward](#forward)
   1. [Start Stop Recording](#start-stop-recording)
   1. [Barge Whisper](barge-whisper)
-4. [Development](#development)
-  1. [Demo app](#demo-app)
-  1. [Demo app structure](#demo-app-structure)
 
 ---
 
@@ -49,7 +47,7 @@ App Property  | Value           | Error if not set
 Permissions   | `VoIP Calling` , `Interoperability` | `Specific application permission required`
 Platform type | `Browser-based` | `Client edition is not compatible with current Brand`
 
-You need to have a `DIGITAL LINE` attached to an extension. You can configure this in Online Web Portal [Production](https://service.ringcentral.com/) , [Sandbox](https://service.devtest.ringcentral.com/)
+You need to have a `DIGITAL LINE` attached to an extension. You can configure this in Online Web Portal [Production](https://service.ringcentral.com/) , [Sandbox](https://service.devtest.ringcentral.com/).
 
 These can be configured for your app in the [RingCentral Developer Portal](https://developers.ringcentral.com/). Fill this [Registration Form](https://docs.google.com/forms/d/15kK_zJ5FhyXiH8gwOqiaG7_BuTWGCeeVr4MAv4OBpUM/viewform) to get access to WebRTC permissions. Please contact devsupport@ringcentral.com to request these permissions.
 
@@ -125,6 +123,25 @@ platform
 
 ---
 
+## Demo
+
+```sh
+$ git clone https://github.com/ringcentral/ringcentral-web-phone.git
+$ npm install
+$ npm start
+```
+
+1. Open `http://localhost:8080/demo/` in the browser (port may change if `8080` will be already used by other app)
+2. Add your RC credentials and click on `Register`
+3. For making outbound calls, enter phone number and click on `Call`
+4. For receiving incoming calls, Click on `Accept` button when window pops up (will be visible when there is an incoming call)
+
+If there's any connection problems to Sandbox environment, you may need to switch to the Production environment.
+
+WebRTC works with issues when served from file system directly to browser (e.g. `file://` protocol), so you will
+need a local HTTP server (comes with this package).
+
+---
 
 ## API
 
@@ -156,6 +173,7 @@ var webPhone = new RingCentral.WebPhone(provisionData, options);
         - `enabled` &mdash; turns feedback on and off
         - `incoming` &mdash; path to `incoming.ogg`, audio file for incoming call
         - `outgoing` &mdash; path to `outgoing.ogg`, audio file for outgoing call
+    - `onSession` &mdash; this callback will be fired each time User Agent starts working with session (incoming or outgoing)
 
 ### Initiating The Call
 
@@ -251,54 +269,3 @@ session.stopRecord().then(...);
 ### Barge/Whisper
 
 Not yet implemented. Could be done by dialing \*83. The account should be enabled for barge/whisper access through system admin.
-
-
-## Development
-
-### Demo app
-
-```sh
-$ git clone https://github.com/ringcentral/ringcentral-web-phone.git
-$ npm install
-$ npm install bower -g # skip this if you've already installed Bower
-$ bower install
-```
-
-WebRTC works with issues when served from file system directly to browser (e.g. `file://` protocol), you will need a
-local HTTP server. If you don't have local HTTP server, please install it as well:
-
-```sh
-$ sudo npm install http-server -g
-$ http-server
-```
-
-1. Open localhost:8080/demo/ in the browser
-2. Add your RC credentials and click on `Register Sip Configurations` .
-3. For making outbound calls, enter phone number and click on call. To disconnect to call, click on `Disconnect Call`.
-4. For receiving incoming calls, Click on Accept button when window pops up (will be visible when there is an incoming call).
-
-The demo app uses the sandbox environment. If there's any connection problems, you may need to switch to the  production environment.
-
-Functionalities included:
-
-1. Sip Register/UnRegister
-2. Make Outgoing Calls
-3. Accept Incoming calls
-4. Hold/UnHold calls
-5. Mute/Unmute calls
-6. Transfer calls
-7. Record/Stop recording calls
-8. Flip, park calls
-9. Send DTMF
-10. Forward incoming calls
-
-
-### Demo app structure
-```
-/src
-  /demo
-    /img
-    favicon.ico
-    index.html
-    index.js
-```

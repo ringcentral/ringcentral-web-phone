@@ -99,6 +99,17 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
+    /**
+     * @param {object} regData
+     * @param {object} [options]
+     * @param {string} [options.uuid]
+     * @param {string} [options.appKey]
+     * @param {string} [options.appName]
+     * @param {string} [options.appVersion]
+     * @param {string} [options.audioHelper]
+     * @param {string} [options.onSession] fired each time UserAgent starts working with session
+     * @constructor
+     */
     function WebPhone(regData, options) {
 
         regData = regData || {};
@@ -163,11 +174,13 @@
 
         this.userAgent.audioHelper = new AudioHelper(options.audioHelper);
 
+        this.userAgent.onSession = options.onSession || null;
+
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-    WebPhone.version = '0.3.0';
+    WebPhone.version = '0.3.1';
     WebPhone.uuid = uuid;
     WebPhone.delay = delay;
     WebPhone.extend = extend;
@@ -223,7 +236,6 @@
         session.mediaHandler.on('iceConnectionFailed', stopPlaying);
 
         function stopPlaying() {
-            console.warn('STOPPED PLAYING');
             session.ua.audioHelper.playOutgoing(false);
             session.ua.audioHelper.playIncoming(false);
             session.removeListener('accepted', stopPlaying);
@@ -236,6 +248,8 @@
             session.mediaHandler.removeListener('iceConnectionCompleted', stopPlaying);
             session.mediaHandler.removeListener('iceConnectionFailed', stopPlaying);
         }
+
+        if (session.ua.onSession) session.ua.onSession(session);
 
         return session;
 
@@ -319,7 +333,7 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-    function sendRequest(type, config){
+    function sendRequest(type, config) {
         if (type == SIP.C.PRACK) {
             type = SIP.C.ACK;
         }
@@ -629,7 +643,7 @@
         options = options || {};
 
         var session = this;
-        var extraHeaders  =  options.extraHeaders||[];
+        var extraHeaders = options.extraHeaders || [];
         var originalTarget = target;
 
         return new Promise(function(resolve, reject) {

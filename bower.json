@@ -8,15 +8,12 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "ringcentral": "~2.0.5",
+    "ringcentral": "^2.0.5",
     "sip.js": "^0.7.3"
   },
   "devDependencies": {
     "jquery": "^2.2.1",
-    "bootstrap": "^3.3.6",
-    "chai": "^3.5.0",
-    "mocha": "^2.4.5",
-    "sinon": "^1.17.3"
+    "bootstrap": "^3.3.6"
   },
   "moduleType": [
     "amd",

@@ -1,8 +1,15 @@
 # Tests
 
+## Installation
+
+```sh
+$ git clone https://github.com/ringcentral/ringcentral-web-phone.git
+$ npm install
+```
+
 ## Prerequisites
 
-You need to have a file `credentials.js` with at least two accounts:
+You need to have a file `credentials.js` with at least two accounts and apps:
 
 ```js
 window.testCredentials = {
@@ -25,14 +32,20 @@ window.testCredentials = {
 };
 ```
 
+Accounts and apps must meet [requirements](https://github.com/ringcentral/ringcentral-web-phone#configuring-your-ringcentral-app).
+
+You may call from one environment to another.
+
 ## Test run
 
-From console:
+Single test run:
 
 ```sh
-npm test
+$ npm test
 ```
 
-From browser:
+Keep the browser open to manually refresh tests when needed (useful for debug):
 
-Open `tests/test.html`.
+```sh
+$ npm run test-persist
+```

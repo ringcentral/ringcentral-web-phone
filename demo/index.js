@@ -102,8 +102,13 @@ $(function() {
         });
 
         webPhone.userAgent.on('invite', onInvite);
+        webPhone.userAgent.on('connecting', function() { console.log('UA connecting'); });
         webPhone.userAgent.on('connected', function() { console.log('UA Connected'); });
+        webPhone.userAgent.on('disconnected', function() { console.log('UA Disconnected'); });
         webPhone.userAgent.on('registered', function() { console.log('UA Registered'); });
+        webPhone.userAgent.on('unregistered', function() { console.log('UA Unregistered'); });
+        webPhone.userAgent.on('registrationFailed', function() { console.log('UA RegistrationFailed', arguments); });
+        webPhone.userAgent.on('message', function() { console.log('UA Message', arguments); });
 
         return webPhone;
 
