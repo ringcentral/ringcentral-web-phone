@@ -58,11 +58,12 @@ These can be configured for your app in the [RingCentral Developer Portal](https
 <video id="remoteVideo" hidden="hidden"></video>
 <video id="localVideo" hidden="hidden" muted="muted"></video>
 
-<script src=".../ringcentral-bundle.js" type="text/javascript"></script>
 <script src=".../ringcentral-web-phone.js" type="text/javascript"></script>
 ```
 
 ### Application
+
+For this example you will also need to have [RingCentral JS SDK installed](https://github.com/ringcentral/ringcentral-js#installation).
 
 Configure the web-phone
 
