@@ -197,7 +197,6 @@
         session.__receiveRequest = session.receiveRequest;
         session.__receiveInviteResponse = session.receiveInviteResponse;
         session.__receiveResponse = session.receiveResponse;
-        session.__sendReinvite = session.sendReinvite;
         session.__accept = session.accept;
         session.__hold = session.hold;
         session.__unhold = session.unhold;
@@ -207,7 +206,6 @@
         session.receiveRequest = receiveRequest;
         session.receiveInviteResponse = receiveInviteResponse;
         session.receiveResponse = receiveResponse;
-        session.sendReinvite = sendReinvite;
         session.accept = accept;
         session.hold = hold;
         session.unhold = unhold;
@@ -419,23 +417,17 @@
     function setHold(session, flag) {
         return new Promise(function(resolve, reject) {
 
-            function onSucceeded() {
-                resolve();
-                session.removeListener('RC_CALL_REINVITE_FAILED', onFailed);
-            }
-
-            function onFailed(e) {
-                reject(e);
-                session.removeListener('RC_CALL_REINVITE_SUCCEEDED', onSucceeded);
-            }
-
-            session.once('RC_CALL_REINVITE_SUCCEEDED', onSucceeded);
-            session.once('RC_CALL_REINVITE_FAILED', onFailed);
+            var options = {
+                eventHandlers: {
+                    succeeded: resolve,
+                    failed: reject
+                }
+            };
 
             if (flag) {
-                session.__hold();
+                session.__hold(options);
             } else {
-                session.__unhold();
+                session.__unhold(options);
             }
 
         });
@@ -474,29 +466,6 @@
 
         return patchSession(ua.__invite(number, options));
 
-    }
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-    /**
-     * Monkey patching sendReinvite for better Hold handling
-     * @this {SIP.Session}
-     * @return {*}
-     */
-    function sendReinvite() {
-        var session = this;
-        var res = session.__sendReinvite.apply(session, arguments);
-        var __reinviteSucceeded = session.reinviteSucceeded,
-            __reinviteFailed = session.reinviteFailed;
-        session.reinviteSucceeded = function() {
-            session.emit('RC_CALL_REINVITE_SUCCEEDED', session);
-            return __reinviteSucceeded.apply(session, arguments);
-        };
-        session.reinviteFailed = function() {
-            session.emit('RC_CALL_REINVITE_FAILED', session);
-            return __reinviteFailed.apply(session, arguments);
-        };
-        return res;
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/

@@ -9,7 +9,7 @@
   ],
   "dependencies": {
     "ringcentral": "^2.0.5",
-    "sip.js": "^0.7.3"
+    "sip.js": "^0.7.4"
   },
   "devDependencies": {
     "jquery": "^2.2.1",
@@ -35,5 +35,5 @@
     "type": "git",
     "url": "git://github.com/ringcentral/ringcentral-web-phone.git"
   },
-  "version": "0.3.0"
+  "version": "0.3.1"
 }

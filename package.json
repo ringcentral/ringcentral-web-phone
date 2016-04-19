@@ -4,11 +4,12 @@
     "test": "./node_modules/karma/bin/karma start",
     "test-persist": "npm run test -- --no-single-run",
     "build": "./node_modules/.bin/gulp",
-    "prepublish": "./node_modules/.bin/bower install",
+    "bower": "./node_modules/.bin/bower install",
+    "prepublish": "npm run bower && npm run build",
     "start": "./node_modules/.bin/http-server"
   },
   "dependencies": {
-    "sip.js": "0.7.3"
+    "sip.js": "0.7.4"
   },
   "devDependencies": {
     "bower": "1.7.7",
@@ -49,5 +50,5 @@
     "node": ">=0.10.36"
   },
   "license": "MIT",
-  "version": "0.3.0"
+  "version": "0.3.1"
 }
