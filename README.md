@@ -128,6 +128,7 @@ platform
 
 ```sh
 $ git clone https://github.com/ringcentral/ringcentral-web-phone.git
+$ cd ringcentral-web-phone
 $ npm install
 $ npm start
 ```
@@ -270,3 +271,4 @@ session.stopRecord().then(...);
 ### Barge/Whisper
 
 Not yet implemented. Could be done by dialing \*83. The account should be enabled for barge/whisper access through system admin.
+
