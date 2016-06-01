@@ -44,13 +44,16 @@ Ensure your app has the following properties set. If these are not set, the erro
 
 App Property  | Value           | Error if not set
 --------------|-----------------|-----------------
-Permissions   | `VoIP Calling` , `Interoperability` | `Specific application permission required`
+Permissions   | `VoIP Calling`  | `Specific application permission required`
 Platform type | `Browser-based` | `Client edition is not compatible with current Brand`
 
-You need to have a `DIGITAL LINE` attached to an extension. You can configure this in Online Web Portal [Production](https://service.ringcentral.com/) , [Sandbox](https://service.devtest.ringcentral.com/).
+Since WebRTC enables dialing out, you need to have a `DIGITAL LINE` attached to an extension to use this capability. You can configure this in Online Web Portal for [Production](https://service.ringcentral.com/) and [Sandbox](https://service.devtest.ringcentral.com/) accounts. More information on Digital Lines and their configuration is available in the following RingCentral Knowledge Base article topics:
 
-These can be configured for your app in the [RingCentral Developer Portal](https://developers.ringcentral.com/). Fill this [Registration Form](https://docs.google.com/forms/d/15kK_zJ5FhyXiH8gwOqiaG7_BuTWGCeeVr4MAv4OBpUM/viewform) to get access to WebRTC permissions. Please contact devsupport@ringcentral.com to request these permissions.
+1. [Digital Line Overview (KB 5862)](http://success.ringcentral.com/articles/en_US/RC_Knowledge_Article/5862)
+2. [Adding a Digital Line (KB 3136)](http://success.ringcentral.com/articles/RC_Knowledge_Article/5-10-Adding-Phones-to-other-extensions-via-Web). A limited number of Digital Lines are free with each sandbox account which can be configured with the free RingCentral for Desktop softphone.
+3. [Reassigning an Existing Digital Line (KB 3748)](http://success.ringcentral.com/articles/en_US/RC_Knowledge_Article/How-to-Assign-an-Existing-Digital-Line-to-a-different-extension)
 
+These permissions be configured for your app in the [RingCentral Developer Portal](https://developers.ringcentral.com/). Fill this [Registration Form](https://docs.google.com/forms/d/15kK_zJ5FhyXiH8gwOqiaG7_BuTWGCeeVr4MAv4OBpUM/viewform) to get access to WebRTC permissions. Please contact devsupport@ringcentral.com to request these permissions.
 
 ### Include Library And HTML Elements
 
