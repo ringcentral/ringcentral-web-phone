@@ -47,9 +47,9 @@ App Property  | Value           | Error if not set
 Permissions   | `VoIP Calling`  | `Specific application permission required`
 Platform type | `Browser-based` | `Client edition is not compatible with current Brand`
 
-You need to have a `DIGITAL LINE` attached to an extension. You can configure this in Online Web Portal [Production](https://service.ringcentral.com/) , [Sandbox](https://service.devtest.ringcentral.com/). More information on Digital Lines and their configuraiton is available in the following RingCentral Knowledgebase articles:
+You need to have a `DIGITAL LINE` attached to an extension. You can configure this in Online Web Portal [Production](https://service.ringcentral.com/) , [Sandbox](https://service.devtest.ringcentral.com/). More information on Digital Lines and their configuraiton is available in the following RingCentral Knowledge Base articles:
 
-1. [DigitalLine Overview (KB 5862)](http://success.ringcentral.com/articles/en_US/RC_Knowledge_Article/5862)
+1. [Digital Line Overview (KB 5862)](http://success.ringcentral.com/articles/en_US/RC_Knowledge_Article/5862)
 2. [Purchasing an IP Phone or RingCentral Digital Line from the online account (KB 3136)](http://success.ringcentral.com/articles/RC_Knowledge_Article/5-10-Adding-Phones-to-other-extensions-via-Web). A limited number of Digital Lines are free with each sandbox account which can be configured with the free RingCentral for Desktop softphone.
 3. [Assigning a Digital Line to a Different Extension (KB 3748)](http://success.ringcentral.com/articles/en_US/RC_Knowledge_Article/How-to-Assign-an-Existing-Digital-Line-to-a-different-extension)
 
