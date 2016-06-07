@@ -4,8 +4,7 @@
     "test": "./node_modules/karma/bin/karma start",
     "test-persist": "npm run test -- --no-single-run",
     "build": "./node_modules/.bin/gulp",
-    "bower": "./node_modules/.bin/bower install",
-    "prepublish": "npm run bower && npm run build",
+    "prepublish": "npm run build",
     "start": "./node_modules/.bin/http-server"
   },
   "dependencies": {

@@ -125,12 +125,15 @@ function createWebPhone(credentials, id) {
                 webPhone.userAgent.on('invite', function() { console.log(uaId, 'Invite'); });
 
                 webPhone.userAgent.once('registered', function() {
-                    console.log(uaId, 'Registered');
-                    resolve({
-                        sdk: sdk,
-                        extension: extension,
-                        webPhone: webPhone
-                    });
+                    console.log(uaId, 'Registered event delayed');
+                    setTimeout(function(){
+                        console.log(uaId, 'Registered');
+                        resolve({
+                            sdk: sdk,
+                            extension: extension,
+                            webPhone: webPhone
+                        });
+                    }, 5000); // 5 sec delay to allow records to propagate in DB
                 });
 
                 webPhone.userAgent.once('registrationFailed', function(e) {
