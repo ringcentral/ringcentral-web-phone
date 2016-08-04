@@ -9,7 +9,7 @@
   ],
   "dependencies": {
     "ringcentral": "^2.0.5",
-    "sip.js": "^0.7.4"
+    "sip.js": "^0.7.5"
   },
   "devDependencies": {
     "jquery": "^2.2.1",
