@@ -94,12 +94,17 @@ $(function() {
         webPhone = new RingCentral.WebPhone(data, {
             appKey: localStorage.getItem('webPhoneAppKey'),
             audioHelper: {
-                enabled: true,
-                incoming: '../audio/incoming.ogg',
-                outgoing: '../audio/outgoing.ogg'
+                enabled: true
             },
             logLevel: parseInt(logLevel, 10)
         });
+
+        webPhone.userAgent.audioHelper.loadAudio({
+            incoming: '../audio/incoming.ogg',
+            outgoing: '../audio/outgoing.ogg'
+        })
+
+        webPhone.userAgent.audioHelper.setVolume(.3);
 
         webPhone.userAgent.on('invite', onInvite);
         webPhone.userAgent.on('connecting', function() { console.log('UA connecting'); });
@@ -189,6 +194,26 @@ $(function() {
             clearInterval(interval);
             $modal.modal('hide');
         }
+
+        $modal.find('.increase-volume').on('click', function() {
+            console.log(session)
+            console.log('click')
+            session.ua.audioHelper.setVolume(
+                (session.ua.audioHelper.volume != null?
+                    session.ua.audioHelper.volume : 
+                    .5
+                ) + .1
+            );
+        });
+
+        $modal.find('.decrease-volume').on('click', function() {
+            session.ua.audioHelper.setVolume(
+                (session.ua.audioHelper.volume != null?
+                    session.ua.audioHelper.volume : 
+                    .5
+                ) - .1
+            );
+        });
 
         $modal.find('.mute').on('click', function() {
             session.mute();
