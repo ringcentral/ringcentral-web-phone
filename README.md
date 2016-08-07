@@ -133,6 +133,7 @@ platform
 $ git clone https://github.com/ringcentral/ringcentral-web-phone.git
 $ cd ringcentral-web-phone
 $ npm install
+$ bower install
 $ npm start
 ```
 
@@ -143,16 +144,13 @@ $ npm start
 
 If there's any connection problems to Sandbox environment, you may need to switch to the Production environment.
 
-WebRTC works with issues when served from file system directly to browser (e.g. `file://` protocol), so you will
-need a local HTTP server (comes with this package).
+WebRTC works with issues when served from file system directly to browser (e.g. `file://` protocol), so you will need a local HTTP server (comes with this package).
 
 ---
 
 ## API
 
-Except for some RingCentral-specific features the API is 100% the same as SIP.JS: http://sipjs.com/api/0.7.0: most of 
-the time you will be working with RC-flavored [UserAgent](http://sipjs.com/api/0.7.0/ua) and
-[Session](http://sipjs.com/api/0.7.0/session) objects of SIP.JS.
+Except for some RingCentral-specific features the API is 100% the same as SIP.JS: http://sipjs.com/api/0.7.0: most of the time you will be working with RC-flavored [UserAgent](http://sipjs.com/api/0.7.0/ua) and [Session](http://sipjs.com/api/0.7.0/session) objects of SIP.JS.
 
 We encourage you to take a look at [Guides](http://sipjs.com/guides) section, especially
 [Make A Call](http://sipjs.com/guides/make-call) and [Receive A Call](http://sipjs.com/guides/receive-call/) articles.
