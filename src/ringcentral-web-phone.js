@@ -195,7 +195,7 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-    WebPhone.version = '0.3.1';
+    WebPhone.version = '0.3.2';
     WebPhone.uuid = uuid;
     WebPhone.delay = delay;
     WebPhone.extend = extend;
