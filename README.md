@@ -22,7 +22,7 @@ The RingCentral WebPhone Library includes a JavaScript WebRTC library and a WebR
   1. [Transfer](#transfer)
   1. [Forward](#forward)
   1. [Start Stop Recording](#start-stop-recording)
-  1. [Barge Whisper](barge-whisper)
+  1. [Barge/Whisper](#barge/whisper)
 
 ---
 
