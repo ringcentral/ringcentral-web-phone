@@ -26,7 +26,7 @@ $(function() {
         return $($tpl.html());
     }
 
-    function login(server, appKey, appSecret, login, ext, password, ll) {
+    function login(server, appKey, appSecret, redirectUri, ll) {
 
         sdk = new RingCentral.SDK({
             appKey: appKey,
@@ -36,55 +36,83 @@ $(function() {
 
         platform = sdk.platform();
 
-        // TODO: Improve later to support international phone number country codes better
-        if (login) {
-            login = (login.match(/^[\+1]/)) ? login : '1' + login;
-            login = login.replace(/\W/g, '')
+        // AuthUrl ()
+        var authUri = sdk.platform().authUrl({
+            redirectUri: redirectUri,
+            brandId: ''
+        })
+
+
+
+        this.loginPopupUri  = function(authUri, redirectUri) {
+            var win         = window.open(authUri, 'windowname1', 'width=800, height=600');
+
+            var pollOAuth   = window.setInterval(function() {
+                try {
+                    console.log(win.document.URL);
+                    if (win.document.URL.indexOf(redirectUri) != -1) {
+                        window.clearInterval(pollOAuth);
+
+                        var qs = sdk.platform().parseAuthRedirectUrl(win.document.URL);
+                        qs.redirectUri = redirectUri;
+
+                        if ('code' in qs) {
+                            var res = sdk.platform()
+                                .login(qs)
+                                .then(function(response) {
+                                    win.close();
+                                    this.postLogin();
+                                }).catch(function(e) {
+                                    console.log(e);
+                                    win.close();
+                                });
+                        } else {
+                            console.log("E_NO_CODE");
+                            win.close();
+                        }
+                    }
+                } catch(e) {
+                    console.log(e);
+                }
+            }, 100);
         }
 
-        platform
-            .login({
-                username: login,
-                extension: ext || null,
-                password: password
-            })
-            .then(function() {
+        this.loginPopupUri(authUri, redirectUri)
+
+            this.postLogin = function() {
 
                 logLevel = ll;
-                username = login;
-
                 localStorage.setItem('webPhoneServer', server || '');
                 localStorage.setItem('webPhoneAppKey', appKey || '');
                 localStorage.setItem('webPhoneAppSecret', appSecret || '');
-                localStorage.setItem('webPhoneLogin', login || '');
-                localStorage.setItem('webPhoneExtension', ext || '');
-                localStorage.setItem('webPhonePassword', password || '');
+                localStorage.setItem('webPhoneRedirectUri', redirectUri || '');
                 localStorage.setItem('webPhoneLogLevel', logLevel || 0);
 
-                return platform.get('/restapi/v1.0/account/~/extension/~');
+                platform.get('/restapi/v1.0/account/~/extension/~')
 
-            })
-            .then(function(res) {
+                    .then(function (res) {
 
-                extension = res.json();
+                        extension = res.json();
 
-                console.log('Extension info', extension);
+                        console.log('Extension info', extension);
 
-                return platform.post('/client-info/sip-provision', {
-                    sipInfo: [{
-                        transport: 'WSS'
-                    }]
-                });
+                        return platform.post('/client-info/sip-provision', {
+                            sipInfo: [{
+                                transport: 'WSS'
+                            }]
+                        });
 
-            })
-            .then(function(res) { return res.json(); })
-            .then(register)
-            .then(makeCallForm)
-            .catch(function(e) {
-                console.error('Error in main promise chain');
-                console.error(e.stack || e);
-            });
-
+                    })
+                    .then(function (res) {
+                        return res.json();
+                    })
+                    .then(register)
+                    .then(makeCallForm)
+                    .catch(function (e) {
+                        console.error('Error in main promise chain');
+                        console.error(e.stack || e);
+                    });
+            }
     }
 
     function register(data) {
@@ -393,25 +421,20 @@ $(function() {
         var $server = $form.find('input[name=server]').eq(0);
         var $appKey = $form.find('input[name=appKey]').eq(0);
         var $appSecret = $form.find('input[name=appSecret]').eq(0);
-        var $login = $form.find('input[name=login]').eq(0);
-        var $ext = $form.find('input[name=extension]').eq(0);
-        var $password = $form.find('input[name=password]').eq(0);
+        var $redirectUri = $form.find('input[name=redirectUri]').eq(0);
         var $logLevel = $form.find('select[name=logLevel]').eq(0);
 
         $server.val(localStorage.getItem('webPhoneServer') || RingCentral.SDK.server.sandbox);
         $appKey.val(localStorage.getItem('webPhoneAppKey') || '');
         $appSecret.val(localStorage.getItem('webPhoneAppSecret') || '');
-        $login.val(localStorage.getItem('webPhoneLogin') || '');
-        $ext.val(localStorage.getItem('webPhoneExtension') || '');
-        $password.val(localStorage.getItem('webPhonePassword') || '');
+        $redirectUri.val(localStorage.getItem('webPhoneRedirectUri') || '');
         $logLevel.val(localStorage.getItem('webPhoneLogLevel') || logLevel);
 
         $form.on('submit', function(e) {
 
             e.preventDefault();
             e.stopPropagation();
-
-            login($server.val(), $appKey.val(), $appSecret.val(), $login.val(), $ext.val(), $password.val(), $logLevel.val());
+            login($server.val(), $appKey.val(), $appSecret.val(), $redirectUri.val(), $logLevel.val());
 
         });
 
