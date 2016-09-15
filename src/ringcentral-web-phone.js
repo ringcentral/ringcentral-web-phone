@@ -195,7 +195,7 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-    WebPhone.version = '0.3.2';
+    WebPhone.version = '0.4.0-rc1';
     WebPhone.uuid = uuid;
     WebPhone.delay = delay;
     WebPhone.extend = extend;
@@ -226,6 +226,7 @@
         session.unhold = unhold;
         session.dtmf = dtmf;
 
+        session.warmTransfer = warmTransfer;
         session.blindTransfer = blindTransfer;
         session.transfer = transfer;
         session.park = park;
@@ -702,6 +703,59 @@
             });
 
         });
+    }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * @this {SIP.Session} session
+     * @param {string} target
+     * @param {object} inviteOptions
+     * @return {Promise}
+     */
+    function warmTransfer(target, inviteOptions) {
+
+        var session = this;
+
+        inviteOptions = inviteOptions || {};
+
+        return (session.isOnHold() ? Promise.resolve(null) : session.hold())
+            .then(function() { return delay(300); })
+            .then(function() {
+
+                return new Promise(function(res, rej) {
+
+                    var newSession = session.ua.invite(target, inviteOptions);
+
+                    newSession.on('accepted', function() {
+                        res({
+                            newSession: newSession,
+                            completeTransfer: function(transferOptions) {
+
+                                var referTo = '<' + newSession.dialog.remote_target.toString() +
+                                              '?Replaces=' + newSession.dialog.id.call_id +
+                                              '%3Bto-tag%3D' + newSession.dialog.id.remote_tag +
+                                              '%3Bfrom-tag%3D' + newSession.dialog.id.local_tag + '>';
+
+                                transferOptions = transferOptions || {};
+                                transferOptions.extraHeaders = transferOptions.extraHeaders || [];
+                                transferOptions.extraHeaders.push('Refer-By: ' + session.dialog.remote_target.toString());
+
+                                //TODO return session.refer(newSession);
+                                session.blindTransfer(referTo, transferOptions);
+
+                            }
+                        });
+                    });
+
+                    newSession.on('bye', function() {
+                        rej(new Error('New session was disconnected'));
+                    });
+
+                });
+
+            });
+
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/

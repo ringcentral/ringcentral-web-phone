@@ -199,18 +199,18 @@ $(function() {
             console.log(session)
             console.log('click')
             session.ua.audioHelper.setVolume(
-                (session.ua.audioHelper.volume != null?
-                    session.ua.audioHelper.volume : 
-                    .5
+                (session.ua.audioHelper.volume != null ?
+                 session.ua.audioHelper.volume :
+                 .5
                 ) + .1
             );
         });
 
         $modal.find('.decrease-volume').on('click', function() {
             session.ua.audioHelper.setVolume(
-                (session.ua.audioHelper.volume != null?
-                    session.ua.audioHelper.volume : 
-                    .5
+                (session.ua.audioHelper.volume != null ?
+                 session.ua.audioHelper.volume :
+                 .5
                 ) - .1
             );
         });
@@ -246,6 +246,27 @@ $(function() {
             e.preventDefault();
             e.stopPropagation();
             session.transfer($transfer.val().trim()).then(function() { console.log('Transferred'); }).catch(function(e) { console.error('Transfer failed', e.stack || e); });
+            $transfer.val('');
+        });
+
+        $modal.find('.transfer-form button.warm').on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var inviteOptons = {
+                media: {
+                    render: {
+                        remote: document.getElementById('remoteVideo'),
+                        local: document.getElementById('localVideo')
+                    }
+                }
+            };
+            session.warmTransfer($transfer.val().trim(), inviteOptons)
+                .then(function(transfer) {
+                    console.log('New session', transfer.newSession);
+                    return transfer.completeTransfer();
+                })
+                .then(function(){ console.log('Transferred'); })
+                .catch(function(e) { console.error('Transfer failed', e.stack || e); });
             $transfer.val('');
         });
 

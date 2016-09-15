@@ -20,6 +20,7 @@ The RingCentral WebPhone Library includes a JavaScript WebRTC library and a WebR
   1. [Park](#park)
   1. [Flip](#flip)
   1. [Transfer](#transfer)
+  1. [Warm Transfer](#warm-transfer)
   1. [Forward](#forward)
   1. [Start/Stop Recording](#startstop-recording)
   1. [Barge/Whisper](#bargewhisper)
@@ -254,6 +255,19 @@ session.flip('TARGET_NUMBER').then(...);
 
 ```js
 session.transfer('TARGET_NUMBER').then(...);
+```
+
+### Warm Transfer
+
+```js
+session.warmTransfer('TARGET_NUMBER', {...inviteOptions}) // same as for invite/accept
+    .then(function(pendingTransfer){
+        console.log(pendingTransfer.newSession.toString());
+        // When client will be ready to complete transfer next line should be called
+        return pendingTransfer.completeTransfer({...transferOptions})
+    })
+    .then(...)
+    .catch(...);
 ```
 
 ### Forward
