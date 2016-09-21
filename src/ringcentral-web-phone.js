@@ -91,7 +91,7 @@
         this._incoming = options.incoming;
         this._outgoing = options.outgoing;
         this._audio = {};
-    }
+    };
 
     AudioHelper.prototype.setVolume = function(volume) {
         if (volume < 0) { volume = 0; }
@@ -102,7 +102,7 @@
                 this._audio[url].volume = volume;
             }
         }
-    }
+    };
 
     AudioHelper.prototype.playIncoming = function(val) {
         return this._playSound(this._incoming, val, (this.volume || 0.5));
@@ -709,50 +709,29 @@
 
     /**
      * @this {SIP.Session} session
-     * @param {string} target
-     * @param {object} inviteOptions
+     * @param {SIP.Session} target
+     * @param {object} transferOptions
      * @return {Promise}
      */
-    function warmTransfer(target, inviteOptions) {
+    function warmTransfer(target, transferOptions) {
 
         var session = this;
-
-        inviteOptions = inviteOptions || {};
 
         return (session.isOnHold() ? Promise.resolve(null) : session.hold())
             .then(function() { return delay(300); })
             .then(function() {
 
-                return new Promise(function(res, rej) {
+                var referTo = '<' + target.dialog.remote_target.toString() +
+                              '?Replaces=' + target.dialog.id.call_id +
+                              '%3Bto-tag%3D' + target.dialog.id.remote_tag +
+                              '%3Bfrom-tag%3D' + target.dialog.id.local_tag + '>';
 
-                    var newSession = session.ua.invite(target, inviteOptions);
+                transferOptions = transferOptions || {};
+                transferOptions.extraHeaders = transferOptions.extraHeaders || [];
+                transferOptions.extraHeaders.push('Refer-By: ' + session.dialog.remote_target.toString());
 
-                    newSession.on('accepted', function() {
-                        res({
-                            newSession: newSession,
-                            completeTransfer: function(transferOptions) {
-
-                                var referTo = '<' + newSession.dialog.remote_target.toString() +
-                                              '?Replaces=' + newSession.dialog.id.call_id +
-                                              '%3Bto-tag%3D' + newSession.dialog.id.remote_tag +
-                                              '%3Bfrom-tag%3D' + newSession.dialog.id.local_tag + '>';
-
-                                transferOptions = transferOptions || {};
-                                transferOptions.extraHeaders = transferOptions.extraHeaders || [];
-                                transferOptions.extraHeaders.push('Refer-By: ' + session.dialog.remote_target.toString());
-
-                                //TODO return session.refer(newSession);
-                                session.blindTransfer(referTo, transferOptions);
-
-                            }
-                        });
-                    });
-
-                    newSession.on('bye', function() {
-                        rej(new Error('New session was disconnected'));
-                    });
-
-                });
+                //TODO return session.refer(newSession);
+                return session.blindTransfer(referTo, transferOptions);
 
             });
 

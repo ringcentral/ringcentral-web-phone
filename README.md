@@ -191,7 +191,7 @@ var session = webPhone.userAgent.invite('PHONE_NUMBER', {
     },
     fromNumber: 'PHONE_NUMBER', // Optional, Company Number will be used as default
     homeCountryId: '1' // Optional, the value of
-}).then(...);
+});
 ```
 
 ### Accepting Incoming Call
@@ -259,15 +259,29 @@ session.transfer('TARGET_NUMBER').then(...);
 
 ### Warm Transfer
 
+If an agent has an active call with a customer and needs to transfer this call to a supervisor, then agent puts existing
+call on hold, makes a call to a supervisor and when ready performs a warm transfer. Customer will be connected to
+supervisor and the call between customer and agent will be disconnected.
+
+Warm transfer puts current line on hold (if not done yet) then takes an existing line from arguments and makes transfer.
+
 ```js
-session.warmTransfer('TARGET_NUMBER', {...inviteOptions}) // same as for invite/accept
-    .then(function(pendingTransfer){
-        console.log(pendingTransfer.newSession.toString());
-        // When client will be ready to complete transfer next line should be called
-        return pendingTransfer.completeTransfer({...transferOptions})
-    })
-    .then(...)
-    .catch(...);
+session.hold().then(function(){
+    
+    return new Promise(function(resolve, reject){
+            
+        var newSession = webPhone.userAgent.invite('PHONE_NUMBER', {
+            media: {}
+        });
+        
+        // when ready call the following code, for example when user clicks "Complete Transfer" button
+        document.getElementById('complete-transfer').addEventListener('click', function(){
+            resolve(session.warmTransfer(newSession));
+        });
+
+    });
+        
+}).then(...).catch(...);
 ```
 
 ### Forward
