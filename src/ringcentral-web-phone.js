@@ -349,7 +349,8 @@
 
     function sendRequest(type, config) {
         if (type == SIP.C.PRACK) {
-            type = SIP.C.ACK;
+            // type = SIP.C.ACK;
+            return this;
         }
         return this.__sendRequest(type, config);
     }
