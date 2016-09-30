@@ -26,7 +26,7 @@ $(function() {
         return $($tpl.html());
     }
 
-    function login(server, appKey, appSecret, login, ext, password, ll) {
+    function login(server, appKey, appSecret, redirectUri, ll) {
 
         sdk = new RingCentral.SDK({
             appKey: appKey,
@@ -36,12 +36,9 @@ $(function() {
 
         platform = sdk.platform();
 
-        // Specify  the redirect URI
-        var redirectUri = 'http://localhost:8080/callback.html';
-
         // AuthUrl ()
         var authUri = sdk.platform().authUrl({
-            redirectUri: 'http://localhost:8080/callback.html',
+            redirectUri: redirectUri,
             brandId: ''
         })
 
@@ -85,14 +82,10 @@ $(function() {
             this.postLogin = function() {
 
                 logLevel = ll;
-                //username = login;
-
                 localStorage.setItem('webPhoneServer', server || '');
                 localStorage.setItem('webPhoneAppKey', appKey || '');
                 localStorage.setItem('webPhoneAppSecret', appSecret || '');
-                //localStorage.setItem('webPhoneLogin', login || '');
-                //localStorage.setItem('webPhoneExtension', ext || '');
-                //localStorage.setItem('webPhonePassword', password || '');
+                localStorage.setItem('webPhoneRedirectUri', redirectUri || '');
                 localStorage.setItem('webPhoneLogLevel', logLevel || 0);
 
                 platform.get('/restapi/v1.0/account/~/extension/~')
@@ -380,24 +373,20 @@ $(function() {
         var $server = $form.find('input[name=server]').eq(0);
         var $appKey = $form.find('input[name=appKey]').eq(0);
         var $appSecret = $form.find('input[name=appSecret]').eq(0);
-        //var $login = $form.find('input[name=login]').eq(0);
-        //var $ext = $form.find('input[name=extension]').eq(0);
-        //var $password = $form.find('input[name=password]').eq(0);
+        var $redirectUri = $form.find('input[name=redirectUri]').eq(0);
         var $logLevel = $form.find('select[name=logLevel]').eq(0);
 
         $server.val(localStorage.getItem('webPhoneServer') || RingCentral.SDK.server.sandbox);
         $appKey.val(localStorage.getItem('webPhoneAppKey') || '');
         $appSecret.val(localStorage.getItem('webPhoneAppSecret') || '');
-        //$login.val(localStorage.getItem('webPhoneLogin') || '');
-        //$ext.val(localStorage.getItem('webPhoneExtension') || '');
-        //$password.val(localStorage.getItem('webPhonePassword') || '');
+        $redirectUri.val(localStorage.getItem('webPhoneRedirectUri') || '');
         $logLevel.val(localStorage.getItem('webPhoneLogLevel') || logLevel);
 
         $form.on('submit', function(e) {
 
             e.preventDefault();
             e.stopPropagation();
-            login($server.val(), $appKey.val(), $appSecret.val(), $logLevel.val());
+            login($server.val(), $appKey.val(), $appSecret.val(), $redirectUri.val(), $logLevel.val());
 
         });
 
