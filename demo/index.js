@@ -36,83 +36,59 @@ $(function() {
 
         platform = sdk.platform();
 
-        // AuthUrl ()
-        var authUri = sdk.platform().authUrl({
-            redirectUri: redirectUri,
-            brandId: ''
-        })
+        var loginUrl = platform.loginUrl({implicit: false, redirectUri: redirectUri});
 
+        this.loginPopupUri  = function(loginUrl, redirectUri) {
 
-
-        this.loginPopupUri  = function(authUri, redirectUri) {
-            var win         = window.open(authUri, 'windowname1', 'width=800, height=600');
-
-            var pollOAuth   = window.setInterval(function() {
-                try {
-                    console.log(win.document.URL);
-                    if (win.document.URL.indexOf(redirectUri) != -1) {
-                        window.clearInterval(pollOAuth);
-
-                        var qs = sdk.platform().parseAuthRedirectUrl(win.document.URL);
-                        qs.redirectUri = redirectUri;
-
-                        if ('code' in qs) {
-                            var res = sdk.platform()
-                                .login(qs)
-                                .then(function(response) {
-                                    win.close();
-                                    this.postLogin();
-                                }).catch(function(e) {
-                                    console.log(e);
-                                    win.close();
-                                });
-                        } else {
-                            console.log("E_NO_CODE");
-                            win.close();
-                        }
-                    }
-                } catch(e) {
-                    console.log(e);
-                }
-            }, 100);
+            platform
+                .loginWindow({url: loginUrl, redirectUri: redirectUri}) // this method also allows to supply more options to control window position
+                .then(function (loginOptions){
+                    loginOptions.redirectUri = redirectUri;
+                    return platform.login(loginOptions);
+                })
+                .then(function(response) {
+                    this.postLogin();
+                }).catch(function(e) {
+                console.error(e.stack || e);
+            });
         }
 
-        this.loginPopupUri(authUri, redirectUri)
+        this.loginPopupUri(loginUrl, redirectUri)
 
-            this.postLogin = function() {
+        this.postLogin = function() {
 
-                logLevel = ll;
-                localStorage.setItem('webPhoneServer', server || '');
-                localStorage.setItem('webPhoneAppKey', appKey || '');
-                localStorage.setItem('webPhoneAppSecret', appSecret || '');
-                localStorage.setItem('webPhoneRedirectUri', redirectUri || '');
-                localStorage.setItem('webPhoneLogLevel', logLevel || 0);
+            logLevel = ll;
+            localStorage.setItem('webPhoneServer', server || '');
+            localStorage.setItem('webPhoneAppKey', appKey || '');
+            localStorage.setItem('webPhoneAppSecret', appSecret || '');
+            localStorage.setItem('webPhoneRedirectUri', redirectUri || '');
+            localStorage.setItem('webPhoneLogLevel', logLevel || 0);
 
-                platform.get('/restapi/v1.0/account/~/extension/~')
+            platform.get('/restapi/v1.0/account/~/extension/~')
 
-                    .then(function (res) {
+                .then(function (res) {
 
-                        extension = res.json();
+                    extension = res.json();
 
-                        console.log('Extension info', extension);
+                    console.log('Extension info', extension);
 
-                        return platform.post('/client-info/sip-provision', {
-                            sipInfo: [{
-                                transport: 'WSS'
-                            }]
-                        });
-
-                    })
-                    .then(function (res) {
-                        return res.json();
-                    })
-                    .then(register)
-                    .then(makeCallForm)
-                    .catch(function (e) {
-                        console.error('Error in main promise chain');
-                        console.error(e.stack || e);
+                    return platform.post('/client-info/sip-provision', {
+                        sipInfo: [{
+                            transport: 'WSS'
+                        }]
                     });
-            }
+
+                })
+                .then(function (res) {
+                    return res.json();
+                })
+                .then(register)
+                .then(makeCallForm)
+                .catch(function (e) {
+                    console.error('Error in main promise chain');
+                    console.error(e.stack || e);
+                });
+        }
     }
 
     function register(data) {
@@ -421,13 +397,13 @@ $(function() {
         var $server = $form.find('input[name=server]').eq(0);
         var $appKey = $form.find('input[name=appKey]').eq(0);
         var $appSecret = $form.find('input[name=appSecret]').eq(0);
-        var $redirectUri = $form.find('input[name=redirectUri]').eq(0);
+        var $redirectUri = $form.find('input[name=redirectUri]');
         var $logLevel = $form.find('select[name=logLevel]').eq(0);
 
         $server.val(localStorage.getItem('webPhoneServer') || RingCentral.SDK.server.sandbox);
         $appKey.val(localStorage.getItem('webPhoneAppKey') || '');
         $appSecret.val(localStorage.getItem('webPhoneAppSecret') || '');
-        $redirectUri.val(localStorage.getItem('webPhoneRedirectUri') || '');
+        $redirectUri.val(localStorage.getItem('webPhoneRedirectUri') || $redirectUri.attr('value'));
         $logLevel.val(localStorage.getItem('webPhoneLogLevel') || logLevel);
 
         $form.on('submit', function(e) {
