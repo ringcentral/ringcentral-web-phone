@@ -137,6 +137,8 @@ $(function() {
         };
 
         $modal.find('.answer').on('click', function() {
+            $modal.find('.before-answer').css('display', 'none');
+            $modal.find('.answered').css('display', '');
             session.accept(acceptOptions)
                 .then(function() {
                     $modal.modal('hide');
@@ -196,22 +198,14 @@ $(function() {
         }
 
         $modal.find('.increase-volume').on('click', function() {
-            console.log(session)
-            console.log('click')
             session.ua.audioHelper.setVolume(
-                (session.ua.audioHelper.volume != null ?
-                 session.ua.audioHelper.volume :
-                 .5
-                ) + .1
+                (session.ua.audioHelper.volume != null ? session.ua.audioHelper.volume : .5) + .1
             );
         });
 
         $modal.find('.decrease-volume').on('click', function() {
             session.ua.audioHelper.setVolume(
-                (session.ua.audioHelper.volume != null ?
-                 session.ua.audioHelper.volume :
-                 .5
-                ) - .1
+                (session.ua.audioHelper.volume != null ? session.ua.audioHelper.volume : .5) - .1
             );
         });
 

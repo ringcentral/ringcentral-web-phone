@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>WebPhone</title>
-    <link rel="stylesheet" href="../bower_components/bootstrap/dist/css/bootstrap.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/bootstrap/3.3.7/css/bootstrap.css" crossorigin="anonymous">
     <link rel="apple-touch-icon" sizes="57x57" href="img/apple-touch-icon-57x57.png">
     <link rel="apple-touch-icon" sizes="60x60" href="img/apple-touch-icon-60x60.png">
     <link rel="apple-touch-icon" sizes="72x72" href="img/apple-touch-icon-72x72.png">
@@ -53,10 +53,11 @@
                         <button class="btn btn-primary" type="submit">Forward</button>
                     </form>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer before-answer">
                     <button class="btn btn-success answer">Answer</button>
                     <button class="btn btn-danger decline">Decline</button>
                 </div>
+                <div class="modal-footer answered" style="display: none">Connecting...</div>
             </div>
         </div>
     </div>
@@ -195,13 +196,13 @@
 
 </script>
 
-<script type="text/javascript" src="../bower_components/jquery/dist/jquery.js"></script>
-<script type="text/javascript" src="../bower_components/bootstrap/dist/js/bootstrap.js"></script>
-<script type="text/javascript" src="../bower_components/sip.js/dist/sip.js"></script>
-<script type="text/javascript" src="../bower_components/fetch/fetch.js"></script>
-<script type="text/javascript" src="../bower_components/es6-promise/promise.js"></script>
-<script type="text/javascript" src="../bower_components/pubnub/web/pubnub.js"></script>
-<script type="text/javascript" src="../bower_components/ringcentral/build/ringcentral.js"></script>
+<script type="text/javascript" src="//cdn.jsdelivr.net/jquery/3.1.1/jquery.js"></script>
+<script type="text/javascript" src="//cdn.jsdelivr.net/bootstrap/3.3.7/js/bootstrap.js"></script>
+<script type="text/javascript" src="//cdn.jsdelivr.net/fetch/0.9.0/fetch.min.js"></script>
+<script type="text/javascript" src="//cdn.jsdelivr.net/es6-promise/3.1.2/es6-promise.js"></script>
+<script type="text/javascript" src="//cdn.pubnub.com/pubnub-3.15.2.js"></script>
+<script type="text/javascript" src="//cdn.rawgit.com/onsip/SIP.js/0.7.5/dist/sip-0.7.5.js"></script>
+<script type="text/javascript" src="//cdn.rawgit.com/ringcentral/ringcentral-js/master/build/ringcentral.js"></script>
 <script type="text/javascript" src="../src/ringcentral-web-phone.js"></script>
 <script type="text/javascript" src="index.js"></script>
 

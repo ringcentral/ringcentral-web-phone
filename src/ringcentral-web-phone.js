@@ -154,7 +154,7 @@
             domain: this.sipInfo.domain,
             autostart: true,
             register: true,
-            iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || 3000
+            iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 3000
         };
 
         this.appKey = options.appKey;
