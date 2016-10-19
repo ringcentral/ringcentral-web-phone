@@ -127,8 +127,6 @@
      */
     function WebPhone(regData, options) {
 
-        var rcMediaHandler;
-
         regData = regData || {};
         options = options || {};
 
@@ -141,8 +139,8 @@
         this.endpointHeader = 'P-rc-endpoint-id: ' + id;
 
         var rcMediaHandlerFactory = function(session, options) {
-          rcMediaHandler = new SIP.WebRTC.MediaHandler(session, options);
-          return rcMediaHandler;
+            //TODO Override MediaHandler functions in order to disable TCP candidates
+            return new SIP.WebRTC.MediaHandler(session, options);
         };
 
         var configuration = {
@@ -244,9 +242,9 @@
 
         // Audio
         session.on('progress', function(incomingResponse) {
-          if (incomingResponse.statusCode === 183 && incomingResponse.body) {
-            rcMediaHandler.setDescription(incomingResponse.body);
-          }
+            if (incomingResponse.status_code === 183 && incomingResponse.body) {
+                session.mediaHandler.setDescription(incomingResponse.body);
+            }
         });
         session.on('accepted', stopPlaying);
         session.on('rejected', stopPlaying);
