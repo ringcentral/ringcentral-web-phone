@@ -35,7 +35,13 @@ npm install ringcentral-web-phone
 bower install ringcentral-web-phone
 ```
 
-Or just use this [direct link](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/src/ringcentral-web-phone.js).
+### If you are not using Bower or NPM:
+
+1. Download SIP.JS: [http://sipjs.com/download/sip-0.7.5.js](http://sipjs.com/download/sip-0.7.5.js)
+2. Download WebPhone SDK: [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/src/ringcentral-web-phone.js](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/src/ringcentral-web-phone.js)
+3. Download audio files:
+    1. [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/incoming.ogg](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/incoming.ogg)
+    2. [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/outgoing.ogg](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/outgoing.ogg)
 
 ---
 
@@ -64,6 +70,7 @@ These permissions be configured for your app in the [RingCentral Developer Porta
 <video id="remoteVideo" hidden="hidden"></video>
 <video id="localVideo" hidden="hidden" muted="muted"></video>
 
+<script src=".../sip.js" type="text/javascript"></script>
 <script src=".../ringcentral-web-phone.js" type="text/javascript"></script>
 ```
 
@@ -100,7 +107,7 @@ platform
             .post('/client-info/sip-provision', {
                 sipInfo: [{transport: 'WSS'}]
             })
-            .then(function(res) {
+            .then(function(res) { // Doing nested then because we need loginResponse in a simple way
             
                 return new RingCentral.WebPhone(res.json(), { // optional
                     appKey: appKey,
