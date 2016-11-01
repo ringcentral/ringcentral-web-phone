@@ -138,11 +138,6 @@
 
         this.endpointHeader = 'P-rc-endpoint-id: ' + id;
 
-        var rcMediaHandlerFactory = function(session, options) {
-            //TODO Override MediaHandler functions in order to disable TCP candidates
-            return new SIP.WebRTC.MediaHandler(session, options);
-        };
-
         var configuration = {
             uri: 'sip:' + this.sipInfo.username + '@' + this.sipInfo.domain,
             wsServers: this.sipInfo.outboundProxy && this.sipInfo.transport
@@ -159,8 +154,7 @@
             domain: this.sipInfo.domain,
             autostart: true,
             register: true,
-            iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 3000,
-            mediaHandlerFactory: rcMediaHandlerFactory
+            iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 3000
         };
 
         this.appKey = options.appKey;
@@ -216,6 +210,8 @@
 
         session.__sendRequest = session.sendRequest;
         session.__receiveRequest = session.receiveRequest;
+        session.__receiveInviteResponse = session.receiveInviteResponse;
+        session.__receiveResponse = session.receiveResponse;
         session.__accept = session.accept;
         session.__hold = session.hold;
         session.__unhold = session.unhold;
@@ -223,6 +219,8 @@
 
         session.sendRequest = sendRequest;
         session.receiveRequest = receiveRequest;
+        session.receiveInviteResponse = receiveInviteResponse;
+        session.receiveResponse = receiveResponse;
         session.accept = accept;
         session.hold = hold;
         session.unhold = unhold;
@@ -241,11 +239,6 @@
         // session.on('connecting', onConnecting);
 
         // Audio
-        session.on('progress', function(incomingResponse) {
-            if (incomingResponse.status_code === 183 && incomingResponse.body) {
-                session.mediaHandler.setDescription(incomingResponse.body);
-            }
-        });
         session.on('accepted', stopPlaying);
         session.on('rejected', stopPlaying);
         session.on('bye', stopPlaying);
@@ -360,6 +353,50 @@
             return this;
         }
         return this.__sendRequest(type, config);
+    }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * Fired each time a provisional (100-199) response is received.
+     * Early media is supported by SIP.js library
+     * But in case it is sent without 100rel support we play it manually
+     * STATUS_EARLY_MEDIA === 11, it will be set by SIP.js if 100rel is supported
+     *
+     * @see https://bugzilla.mozilla.org/show_bug.cgi?id=1072388
+     * @param {SIP.Session} session
+     * @param response
+     * @param {funciton} cb
+     */
+    function patch100rel(session, response, cb) {
+
+        //Early media is supported by SIP.js library
+        //But in case it is sent without 100rel support we play it manually
+        //STATUS_EARLY_MEDIA === 11, it will be set by SIP.js if 100rel is supported
+        if (session.status !== SIP.Session.C.STATUS_EARLY_MEDIA && response.status_code === 183 && typeof(response.body) === 'string' && response.body.indexOf('\n') !== -1) {
+            if (!response.hasHeader('require')) response.setHeader('require', '100rel');
+        }
+
+        return cb.call(session, response);
+
+    }
+
+    /**
+     * @this {SIP.Session}
+     * @param response
+     * @return {*}
+     */
+    function receiveInviteResponse(response) {
+        return patch100rel(this, response, this.__receiveInviteResponse);
+    }
+
+    /**
+     * @this {SIP.Session}
+     * @param response
+     * @return {*}
+     */
+    function receiveResponse(response) {
+        return patch100rel(this, response, this.__receiveResponse);
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
