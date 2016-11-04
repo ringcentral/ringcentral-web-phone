@@ -336,11 +336,11 @@ $(function() {
 
     }
 
-    function makeCall(number) {
+    function makeCall(number, homeCountryId) {
 
-        var homeCountry = (extension && extension.regionalSettings && extension.regionalSettings.homeCountry)
-            ? extension.regionalSettings.homeCountry.id
-            : null;
+        homeCountryId = homeCountryId
+                      || (extension && extension.regionalSettings && extension.regionalSettings.homeCountry && extension.regionalSettings.homeCountry.id)
+                      || null;
 
         var session = webPhone.userAgent.invite(number, {
             media: {
@@ -350,7 +350,7 @@ $(function() {
                 }
             },
             fromNumber: username,
-            homeCountryId: homeCountry
+            homeCountryId: homeCountryId
         });
 
         onAccepted(session);
@@ -362,6 +362,7 @@ $(function() {
         var $form = cloneTemplate($callTemplate);
 
         var $number = $form.find('input[name=number]').eq(0);
+        var $homeCountry = $form.find('input[name=homeCountry]').eq(0);
 
         $number.val(localStorage.getItem('webPhoneLastNumber') || '');
 
@@ -372,7 +373,7 @@ $(function() {
 
             localStorage.setItem('webPhoneLastNumber', $number.val() || '');
 
-            makeCall($number.val());
+            makeCall($number.val(), $homeCountry.val());
 
         });
 
