@@ -2,6 +2,9 @@
 
 The RingCentral WebPhone Library includes a JavaScript WebRTC library and a WebRTC phone demo app.
 
+## Prerequisites
+
+You will need an active RingCentral account. Don't have an account? [Get your Free RingCentral Developer Account Now!](https://developers.ringcentral.com)
 
 ## Table of Contents
 
@@ -35,6 +38,14 @@ npm install ringcentral-web-phone
 bower install ringcentral-web-phone
 ```
 
+### If you are not using Bower or NPM:
+
+1. Download SIP.JS: [http://sipjs.com/download/sip-0.7.5.js](http://sipjs.com/download/sip-0.7.5.js)
+2. Download WebPhone SDK: [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/src/ringcentral-web-phone.js](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/src/ringcentral-web-phone.js)
+3. Download audio files:
+    1. [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/incoming.ogg](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/incoming.ogg)
+    2. [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/outgoing.ogg](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/outgoing.ogg)
+
 ---
 
 ## Usage
@@ -62,6 +73,7 @@ These permissions be configured for your app in the [RingCentral Developer Porta
 <video id="remoteVideo" hidden="hidden"></video>
 <video id="localVideo" hidden="hidden" muted="muted"></video>
 
+<script src=".../sip.js" type="text/javascript"></script>
 <script src=".../ringcentral-web-phone.js" type="text/javascript"></script>
 ```
 
@@ -98,7 +110,7 @@ platform
             .post('/client-info/sip-provision', {
                 sipInfo: [{transport: 'WSS'}]
             })
-            .then(function(res) {
+            .then(function(res) { // Doing nested then because we need loginResponse in a simple way
             
                 return new RingCentral.WebPhone(res.json(), { // optional
                     appKey: appKey,
@@ -133,8 +145,6 @@ platform
 ```sh
 $ git clone https://github.com/ringcentral/ringcentral-web-phone.git
 $ cd ringcentral-web-phone
-$ npm install
-$ bower install
 $ npm start
 ```
 
@@ -146,6 +156,8 @@ $ npm start
 If there's any connection problems to Sandbox environment, you may need to switch to the Production environment.
 
 WebRTC works with issues when served from file system directly to browser (e.g. `file://` protocol), so you will need a local HTTP server (comes with this package).
+
+Online demo is hosted at [https://ringcentral-web-phone.herokuapp.com/demo](https://ringcentral-web-phone.herokuapp.com/demo).
 
 ---
 

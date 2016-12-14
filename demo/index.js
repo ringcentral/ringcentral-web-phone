@@ -1,6 +1,6 @@
 $(function() {
 
-    /** @type {RingCentral.SDK} */
+    /** @type {RingCentral.SDK-v1.0 } */
     var sdk = null;
     /** @type {Platform} */
     var platform = null;
@@ -12,6 +12,7 @@ $(function() {
     var extension = null;
     var sipInfo = null;
     var $app = $('#app');
+    var location = window.location.href;
 
     var $loginTemplate = $('#template-login');
     var $callTemplate = $('#template-call');
@@ -26,36 +27,34 @@ $(function() {
         return $($tpl.html());
     }
 
+
     function login(server, appKey, appSecret, redirectUri, ll) {
+
+        console.log('The redirect uri value :',redirectUri);
 
         sdk = new RingCentral.SDK({
             appKey: appKey,
             appSecret: appSecret,
-            server: server
+            server: server,
+            redirectUri: redirectUri
         });
 
         platform = sdk.platform();
 
-        var loginUrl = platform.loginUrl({implicit: false, redirectUri: redirectUri});
-
-        this.loginPopupUri  = function(loginUrl, redirectUri) {
+        var loginUrl = platform.loginUrl();
 
             platform
-                .loginWindow({url: loginUrl, redirectUri: redirectUri}) // this method also allows to supply more options to control window position
-                .then(function (loginOptions){
-                    loginOptions.redirectUri = redirectUri;
-                    return platform.login(loginOptions);
-                })
-                .then(function(response) {
-                    this.postLogin();
-                }).catch(function(e) {
+                .loginWindow({url: loginUrl})                       // this method also allows to supply more options to control window position
+                .then(platform.login.bind(platform))
+                .then(postLogin(server, appKey, appSecret, redirectUri, ll))
+                .catch(function(e) {
                 console.error(e.stack || e);
             });
-        }
+    }
 
-        this.loginPopupUri(loginUrl, redirectUri)
 
-        this.postLogin = function() {
+    function postLogin(server, appKey, appSecret, redirectUri, ll) {
+
 
             logLevel = ll;
             localStorage.setItem('webPhoneServer', server || '');
@@ -88,8 +87,8 @@ $(function() {
                     console.error('Error in main promise chain');
                     console.error(e.stack || e);
                 });
-        }
     }
+
 
     function register(data) {
 
@@ -141,6 +140,8 @@ $(function() {
         };
 
         $modal.find('.answer').on('click', function() {
+            $modal.find('.before-answer').css('display', 'none');
+            $modal.find('.answered').css('display', '');
             session.accept(acceptOptions)
                 .then(function() {
                     $modal.modal('hide');
@@ -200,22 +201,14 @@ $(function() {
         }
 
         $modal.find('.increase-volume').on('click', function() {
-            console.log(session)
-            console.log('click')
             session.ua.audioHelper.setVolume(
-                (session.ua.audioHelper.volume != null ?
-                 session.ua.audioHelper.volume :
-                 .5
-                ) + .1
+                (session.ua.audioHelper.volume != null ? session.ua.audioHelper.volume : .5) + .1
             );
         });
 
         $modal.find('.decrease-volume').on('click', function() {
             session.ua.audioHelper.setVolume(
-                (session.ua.audioHelper.volume != null ?
-                 session.ua.audioHelper.volume :
-                 .5
-                ) - .1
+                (session.ua.audioHelper.volume != null ? session.ua.audioHelper.volume : .5) - .1
             );
         });
 
@@ -346,11 +339,11 @@ $(function() {
 
     }
 
-    function makeCall(number) {
+    function makeCall(number, homeCountryId) {
 
-        var homeCountry = (extension && extension.regionalSettings && extension.regionalSettings.homeCountry)
-            ? extension.regionalSettings.homeCountry.id
-            : null;
+        homeCountryId = homeCountryId
+                      || (extension && extension.regionalSettings && extension.regionalSettings.homeCountry && extension.regionalSettings.homeCountry.id)
+                      || null;
 
         var session = webPhone.userAgent.invite(number, {
             media: {
@@ -360,7 +353,7 @@ $(function() {
                 }
             },
             fromNumber: username,
-            homeCountryId: homeCountry
+            homeCountryId: homeCountryId
         });
 
         onAccepted(session);
@@ -372,6 +365,7 @@ $(function() {
         var $form = cloneTemplate($callTemplate);
 
         var $number = $form.find('input[name=number]').eq(0);
+        var $homeCountry = $form.find('input[name=homeCountry]').eq(0);
 
         $number.val(localStorage.getItem('webPhoneLastNumber') || '');
 
@@ -382,7 +376,7 @@ $(function() {
 
             localStorage.setItem('webPhoneLastNumber', $number.val() || '');
 
-            makeCall($number.val());
+            makeCall($number.val(), $homeCountry.val());
 
         });
 
@@ -397,20 +391,19 @@ $(function() {
         var $server = $form.find('input[name=server]').eq(0);
         var $appKey = $form.find('input[name=appKey]').eq(0);
         var $appSecret = $form.find('input[name=appSecret]').eq(0);
-        var $redirectUri = $form.find('input[name=redirectUri]');
+        var $redirectUri = decodeURIComponent(window.location.href.split('login', 1) + 'callback.html')
         var $logLevel = $form.find('select[name=logLevel]').eq(0);
 
         $server.val(localStorage.getItem('webPhoneServer') || RingCentral.SDK.server.sandbox);
         $appKey.val(localStorage.getItem('webPhoneAppKey') || '');
         $appSecret.val(localStorage.getItem('webPhoneAppSecret') || '');
-        $redirectUri.val(localStorage.getItem('webPhoneRedirectUri') || $redirectUri.attr('value'));
         $logLevel.val(localStorage.getItem('webPhoneLogLevel') || logLevel);
 
         $form.on('submit', function(e) {
 
             e.preventDefault();
             e.stopPropagation();
-            login($server.val(), $appKey.val(), $appSecret.val(), $redirectUri.val(), $logLevel.val());
+            login($server.val(), $appKey.val(), $appSecret.val(), $redirectUri, $logLevel.val());
 
         });
 
