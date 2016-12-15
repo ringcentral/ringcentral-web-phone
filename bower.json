@@ -8,7 +8,7 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "ringcentral": "^3.0.0-rc3",
+    "ringcentral": "master",
     "sip.js": "^0.7.5"
   },
   "devDependencies": {
