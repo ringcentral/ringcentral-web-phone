@@ -1,3 +1,63 @@
+describe('RingCentral.WebPhone', function() {
+
+    it('initiates and receives a call', function() {
+
+        var timeout = 60000;
+        var env = __karma__.config.env;
+        var receiver = {
+            username: env.RC_WP_RECEIVER_USERNAME,
+            password: env.RC_WP_RECEIVER_PASSWORD,
+            appKey: env.RC_WP_RECEIVER_APPKEY,
+            appSecret: env.RC_WP_RECEIVER_APPSECRET,
+            server: env.RC_WP_RECEIVER_SERVER
+        };
+        var caller = {
+            username: env.RC_WP_CALLER_USERNAME,
+            password: env.RC_WP_CALLER_PASSWORD,
+            appKey: env.RC_WP_CALLER_APPKEY,
+            appSecret: env.RC_WP_CALLER_APPSECRET,
+            server: env.RC_WP_CALLER_SERVER
+        };
+        var callerPhone;
+
+        this.timeout(timeout);
+
+        return createWebPhone(caller, 'caller')
+            .then(function(phone) {
+                callerPhone = phone;
+                return createWebPhone(receiver, 'receiver');
+            })
+            .then(function(receiverPhone) {
+
+                return new Promise(function(resolve, reject) {
+
+                    // Second phone should just accept the call
+                    receiverPhone.webPhone.userAgent.on('invite', function(session) {
+                        resolve(session.accept(getAcceptOptions()).then(function() {
+                            setTimeout(function() {
+                                session.bye();
+                            }, 1000);
+                        }));
+                    });
+
+                    // Call first phone
+                    var session = callerPhone.webPhone.userAgent.invite(
+                        receiver.username,
+                        getAcceptOptions(caller.username, callerPhone.extension.regionalSettings.homeCountry.id)
+                    );
+
+                    setTimeout(function() {
+                        session.bye();
+                    }, timeout);
+
+                });
+
+            });
+
+    });
+
+});
+
 function getAcceptOptions(fromNumber, homeCountryId) {
 
     var remote = document.createElement('video');
@@ -26,7 +86,7 @@ function createWebPhone(credentials, id) {
 
     var uaId = 'UserAgent [' + id + '] event:';
 
-    console.log(uaId, 'Creating', credentials.username); //TODO Remove some digits for privacy in logs
+    // console.log(uaId, 'Creating', credentials.username); //TODO Remove some digits for privacy in logs
 
     var sdk = new RingCentral.SDK({
         appKey: credentials.appKey,
@@ -77,8 +137,8 @@ function createWebPhone(credentials, id) {
                     var sessionId = 'Session [' + id + '] event:';
 
                     console.log('Binding to session', id);
-                    console.log('From', session.request.from.displayName, session.request.from.friendlyName);
-                    console.log('To', session.request.to.displayName, session.request.to.friendlyName);
+                    // console.log('From', session.request.from.displayName, session.request.from.friendlyName);
+                    // console.log('To', session.request.to.displayName, session.request.to.friendlyName);
 
                     session.on('accepted', function() { console.log(sessionId, 'Accepted'); });
                     session.on('progress', function() { console.log(sessionId, 'Progress'); });
@@ -126,7 +186,7 @@ function createWebPhone(credentials, id) {
 
                 webPhone.userAgent.once('registered', function() {
                     console.log(uaId, 'Registered event delayed');
-                    setTimeout(function(){
+                    setTimeout(function() {
                         console.log(uaId, 'Registered');
                         resolve({
                             sdk: sdk,

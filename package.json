@@ -3,26 +3,31 @@
   "scripts": {
     "test": "./node_modules/karma/bin/karma start",
     "test-persist": "npm run test -- --no-single-run",
-    "build": "./node_modules/.bin/gulp",
+    "build": "node version.js",
     "start": "./node_modules/.bin/http-server"
   },
   "dependencies": {
-    "sip.js": "0.7.5"
+    "sip.js": "^0.7.5"
   },
   "devDependencies": {
     "bower": "1.7.7",
     "chai": "3.5.0",
-    "gulp": "3.9.1",
+    "dotenv": "2.0.0",
+    "es6-promise": "4.0.5",
     "http-server": "0.9.0",
     "jquery": "2.2.2",
     "karma": "0.13.22",
     "karma-chai-plugins": "0.7.0",
     "karma-chrome-launcher": "0.2.2",
+    "karma-env": "0.1.0",
     "karma-mocha": "0.2.2",
     "karma-mocha-reporter": "2.0.0",
     "mocha": "2.4.5",
+    "pubnub": "3.16.5",
+    "ringcentral": "3.0.0",
     "sinon": "1.17.3",
-    "sinon-chai": "2.8.0"
+    "sinon-chai": "2.8.0",
+    "whatwg-fetch": "2.0.1"
   },
   "preferGlobal": false,
   "private": false,
@@ -48,5 +53,5 @@
     "node": ">=0.10.36"
   },
   "license": "MIT",
-  "version": "0.4.0-rc1"
+  "version": "0.4.0"
 }
