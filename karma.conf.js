@@ -19,6 +19,7 @@ module.exports = function(config) {
             require.resolve('whatwg-fetch'),
             require.resolve('ringcentral/build/ringcentral'),
             {pattern: './audio/**/*.ogg', included: false},
+            './src/fake.js',
             './src/ringcentral-web-phone.js',
             './src/**/*.spec.js'
         ],
