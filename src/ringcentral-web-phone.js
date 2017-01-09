@@ -159,7 +159,7 @@
             domain: this.sipInfo.domain,
             autostart: true,
             register: true,
-            iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 3000,
+            iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 500,
             mediaHandlerFactory: rcMediaHandlerFactory
         };
 
@@ -201,7 +201,7 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-    WebPhone.version = '0.4.0-rc1';
+    WebPhone.version = '0.4.0';
     WebPhone.uuid = uuid;
     WebPhone.delay = delay;
     WebPhone.extend = extend;

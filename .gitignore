@@ -1,5 +1,5 @@
 .idea
+.env
 *npm-debug*
 node_modules
 bower_components
-credentials.js

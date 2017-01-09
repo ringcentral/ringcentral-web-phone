@@ -1,0 +1,31 @@
+language: node_js
+node_js:
+- 6
+cache:
+  directories:
+  - $HOME/.npm
+  - node_modules
+deploy:
+- provider: npm
+  email: kirill.konshin@gmail.com
+  api_key:
+    secure: iWeUBpPf91pPT3JiUlxgxdX2Bft5U3S3ZgtMJ+c3d50vv2antczIjhfV8tdtxRA313akBWwEfVEitjuYL3cxbrxCcnuxpudZgvczngc8H9vgixBwYIzZALHRWyP6Ok8rkQzASDDnVj9C4E1KJTwhKeu/sRWuM1XGqrT8UrtQa4E=
+  skip_cleanup: true
+  on:
+    node: 6
+    tags: true
+    repo: ringcentral/ringcentral-web-phone
+- provider: releases
+  api_key:
+    secure: fxzvMpV/fAysyoOacCe1GM+zSs9YWIte8lEcLYgFXUbNYdA7L1uMxW1moLas1tOEJUzRdkFW/yJMC4xkoZVqfH6D3hjuue6B3LNzg5R3X10k+QO+i0XAjl5FJ3sF2V4Vb4pSH42TY2VxdMpKfUffesryK2r9z1dJtDm4YA1iDqI=
+  skip_cleanup: true
+  file:
+  - src/ringcentral-web-phone.js
+  on:
+    node: 6
+    tags: true
+    repo: ringcentral/ringcentral-web-phone
+before_install:
+- export CHROME_BIN=chromium-browser
+- export DISPLAY=:99.0
+- sh -e /etc/init.d/xvfb start
