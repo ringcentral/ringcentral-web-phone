@@ -84,58 +84,66 @@ For this example you will also need to have [RingCentral JS SDK installed](https
 Configure the web-phone
 
 ```js
-var appKey = '...'; 
-var appSecret = '...';
-var appName = '...';
-var appVersion = '...';
- 
-var sdk = new RingCentral.SDK({
-    appKey: appKey,
-    appSecret: appSecret,
-    appName: appName,
-    appVersion: appVersion,
-    server: RingCentral.SDK.server.production // or .sandbox
-});
+function login(server, appKey, appSecret, redirectUri, ll) {
 
-var platform = sdk.platform();
+        sdk = new RingCentral.SDK({
+            appKey: appKey,
+            appSecret: appSecret,
+            server: server,
+            redirectUri: redirectUri
+        });
 
-platform
-    .login({
-        username: '...',
-        password: '...'
-    })
-    .then(function(loginResponse) {
-    
-        return platform
-            .post('/client-info/sip-provision', {
-                sipInfo: [{transport: 'WSS'}]
+        platform = sdk.platform();
+
+        var loginUrl = platform.loginUrl();
+
+        platform
+            .loginWindow({url: loginUrl})                       // this method also allows to supply more options to control window position
+            .then(platform.login.bind(platform))
+            .then(function () {
+                return postLogin(server, appKey, appSecret, redirectUri, ll);
             })
-            .then(function(res) { // Doing nested then because we need loginResponse in a simple way
-            
-                return new RingCentral.WebPhone(res.json(), { // optional
-                    appKey: appKey,
-                    appName: appName,
-                    appVersion: appVersion,
-                    uuid: loginResponse.json().endpoint_id,
-                    logLevel: 1, // error 0, warn 1, log: 2, debug: 3
-                    audioHelper: {
-                        enabled: true, // enables audio feedback when web phone is ringing or making a call
-                        incoming: 'path-to-audio/incoming.ogg', // path to audio file for incoming call
-                        outgoing: 'path-to-audio/outgoing.ogg' // path to aduotfile for outgoing call
-                    }
-                });
-                
+            .catch(function (e) {
+                console.error(e.stack || e);
             });
-        
-    })
-    .then(function(webPhone){
-    
-        // YOUR CODE HERE
-    
-    })
-    .catch(function(e){
-        console.error(e.stack);
-    });
+    }
+
+
+    function postLogin(server, appKey, appSecret, redirectUri, ll) {
+
+        logLevel = ll;
+        username = login;
+        localStorage.setItem('webPhoneServer', server || '');
+        localStorage.setItem('webPhoneAppKey', appKey || '');
+        localStorage.setItem('webPhoneAppSecret', appSecret || '');
+        localStorage.setItem('webPhoneRedirectUri', redirectUri || '');
+        localStorage.setItem('webPhoneLogLevel', logLevel || 0);
+
+        return platform.get('/restapi/v1.0/account/~/extension/~')
+
+            .then(function (res) {
+
+                extension = res.json();
+
+                console.log('Extension info', extension);
+
+                return platform.post('/client-info/sip-provision', {
+                    sipInfo: [{
+                        transport: 'WSS'
+                    }]
+                });
+
+            })
+            .then(function (res) {
+                return res.json();
+            })
+            .then(register)
+            .then(makeCallForm)
+            .catch(function (e) {
+                console.error('Error in main promise chain');
+                console.error(e.stack || e);
+            });
+    }
 ```
 
 ---
