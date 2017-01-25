@@ -7,7 +7,7 @@
     "start": "./node_modules/.bin/http-server"
   },
   "dependencies": {
-    "sip.js": "^0.7.5"
+    "sip.js": "^0.7.6"
   },
   "devDependencies": {
     "bower": "1.7.7",

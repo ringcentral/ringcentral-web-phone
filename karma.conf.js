@@ -13,7 +13,7 @@ module.exports = function(config) {
         ],
 
         files: [
-            'http://cdn.rawgit.com/onsip/SIP.js/0.7.5/dist/sip-0.7.5.js', //FIXME We use CDN because SIP.JS NPM does not have build version
+            'http://cdn.rawgit.com/onsip/SIP.js/0.7.5/dist/sip-0.7.6.js', //FIXME We use CDN because SIP.JS NPM does not have build version
             require.resolve('es6-promise/dist/es6-promise.auto'),
             require.resolve('pubnub/modern/dist/pubnub'),
             require.resolve('whatwg-fetch'),
