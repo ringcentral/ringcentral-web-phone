@@ -1,23 +1,26 @@
 describe('RingCentral.WebPhone', function() {
 
-    it('initiates and receives a call', function() {
+    var env = __karma__.config.env;
+
+    var receiver = {
+        username: env.RC_WP_RECEIVER_USERNAME,
+        password: env.RC_WP_RECEIVER_PASSWORD,
+        appKey: env.RC_WP_RECEIVER_APPKEY,
+        appSecret: env.RC_WP_RECEIVER_APPSECRET,
+        server: env.RC_WP_RECEIVER_SERVER
+    };
+
+    var caller = {
+        username: env.RC_WP_CALLER_USERNAME,
+        password: env.RC_WP_CALLER_PASSWORD,
+        appKey: env.RC_WP_CALLER_APPKEY,
+        appSecret: env.RC_WP_CALLER_APPSECRET,
+        server: env.RC_WP_CALLER_SERVER
+    };
+
+    it.skip('initiates and receives a call', function() {
 
         var timeout = 60000;
-        var env = __karma__.config.env;
-        var receiver = {
-            username: env.RC_WP_RECEIVER_USERNAME,
-            password: env.RC_WP_RECEIVER_PASSWORD,
-            appKey: env.RC_WP_RECEIVER_APPKEY,
-            appSecret: env.RC_WP_RECEIVER_APPSECRET,
-            server: env.RC_WP_RECEIVER_SERVER
-        };
-        var caller = {
-            username: env.RC_WP_CALLER_USERNAME,
-            password: env.RC_WP_CALLER_PASSWORD,
-            appKey: env.RC_WP_CALLER_APPKEY,
-            appSecret: env.RC_WP_CALLER_APPSECRET,
-            server: env.RC_WP_CALLER_SERVER
-        };
         var callerPhone;
 
         this.timeout(timeout);
@@ -197,7 +200,7 @@ function createWebPhone(credentials, id) {
                 });
 
                 webPhone.userAgent.once('registrationFailed', function(e) {
-                    console.error(id, 'UA RegistrationFailed', arguments);
+                    console.error(uaId, 'UA RegistrationFailed', arguments);
                     reject(e);
                 });
 
