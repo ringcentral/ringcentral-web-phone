@@ -15,7 +15,7 @@ module.exports = function(config) {
         files: [
             'http://cdn.rawgit.com/onsip/SIP.js/0.7.6/dist/sip-0.7.6.js', //FIXME We use CDN because SIP.JS NPM does not have build version
             require.resolve('es6-promise/dist/es6-promise.auto'),
-            require.resolve('pubnub/modern/dist/pubnub'),
+            require.resolve('pubnub/dist/web/pubnub'),
             require.resolve('whatwg-fetch'),
             require.resolve('ringcentral/build/ringcentral'),
             {pattern: './audio/**/*.ogg', included: false},
