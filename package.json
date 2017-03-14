@@ -2,31 +2,30 @@
   "name": "ringcentral-web-phone",
   "scripts": {
     "test": "./node_modules/karma/bin/karma start",
-    "test-persist": "npm run test -- --no-single-run",
+    "test-watch": "npm run test -- --no-single-run",
     "build": "node version.js",
     "start": "./node_modules/.bin/http-server"
   },
   "dependencies": {
-    "sip.js": "^0.7.6"
+    "sip.js": "^0.7.7"
   },
   "devDependencies": {
-    "bower": "1.7.7",
     "chai": "3.5.0",
-    "dotenv": "2.0.0",
-    "es6-promise": "4.0.5",
+    "dotenv": "4.0.0",
+    "es6-promise": "4.1.0",
     "http-server": "0.9.0",
-    "jquery": "2.2.2",
-    "karma": "0.13.22",
-    "karma-chai-plugins": "0.7.0",
-    "karma-chrome-launcher": "0.2.2",
+    "jquery": "3.1.1",
+    "karma": "1.5.0",
+    "karma-chai-plugins": "0.8.0",
+    "karma-chrome-launcher": "2.0.0",
     "karma-env": "0.1.0",
-    "karma-mocha": "0.2.2",
-    "karma-mocha-reporter": "2.0.0",
-    "mocha": "2.4.5",
-    "ringcentral": "3.1.0",
-    "sinon": "1.17.3",
+    "karma-mocha": "1.3.0",
+    "karma-mocha-reporter": "2.2.2",
+    "mocha": "3.2.0",
+    "ringcentral": "3.1.1",
+    "sinon": "1.17.7",
     "sinon-chai": "2.8.0",
-    "whatwg-fetch": "2.0.1"
+    "whatwg-fetch": "2.0.3"
   },
   "preferGlobal": false,
   "private": false,
@@ -52,5 +51,5 @@
     "node": ">=0.10.36"
   },
   "license": "MIT",
-  "version": "0.4.0"
+  "version": "0.4.1"
 }

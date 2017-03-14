@@ -37,6 +37,11 @@ describe('SIP.JS', function() {
 
     it('makes a call using bare SIP.JS', function() {
 
+        if (env.CI || env.TRAVIS) {
+            console.log('REAL CALLS ARE NOT SUPPORTED BY CHROME IN TRAVIS.CI');
+            return;
+        }
+
         var timeout = 60000;
         var callerPhone;
 

@@ -160,7 +160,8 @@
             autostart: true,
             register: true,
             iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 500,
-            mediaHandlerFactory: rcMediaHandlerFactory
+            mediaHandlerFactory: rcMediaHandlerFactory,
+            rtcpMuxPolicy : "negotiate"
         };
 
         this.appKey = options.appKey;
@@ -201,7 +202,7 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-    WebPhone.version = '0.4.0';
+    WebPhone.version = '0.4.1';
     WebPhone.uuid = uuid;
     WebPhone.delay = delay;
     WebPhone.extend = extend;

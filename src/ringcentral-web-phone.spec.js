@@ -18,7 +18,14 @@ describe('RingCentral.WebPhone', function() {
         server: env.RC_WP_CALLER_SERVER
     };
 
-    it.skip('initiates and receives a call', function() {
+    console.log('xxx', env.RC_WP_RECEIVER_SERVER);
+
+    it('initiates and receives a call', function() {
+
+        if (env.CI || env.TRAVIS) {
+            console.log('REAL CALLS ARE NOT SUPPORTED BY CHROME IN TRAVIS.CI');
+            return;
+        }
 
         var timeout = 60000;
         var callerPhone;

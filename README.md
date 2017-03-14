@@ -40,7 +40,7 @@ bower install ringcentral-web-phone
 
 ### If you are not using Bower or NPM:
 
-1. Download SIP.JS: [http://sipjs.com/download/sip-0.7.5.js](http://sipjs.com/download/sip-0.7.5.js)
+1. Download SIP.JS: [http://sipjs.com/download/sip-0.7.7.js](http://sipjs.com/download/sip-0.7.7.js)
 2. Download WebPhone SDK: [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/src/ringcentral-web-phone.js](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/src/ringcentral-web-phone.js)
 3. Download audio files:
     1. [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/incoming.ogg](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/incoming.ogg)
