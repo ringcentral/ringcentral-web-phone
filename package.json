@@ -7,7 +7,7 @@
     "start": "./node_modules/.bin/http-server"
   },
   "dependencies": {
-    "sip.js": "^0.7.5"
+    "sip.js": "^0.7.6"
   },
   "devDependencies": {
     "bower": "1.7.7",
@@ -23,8 +23,7 @@
     "karma-mocha": "0.2.2",
     "karma-mocha-reporter": "2.0.0",
     "mocha": "2.4.5",
-    "pubnub": "3.16.5",
-    "ringcentral": "3.0.0",
+    "ringcentral": "3.1.0",
     "sinon": "1.17.3",
     "sinon-chai": "2.8.0",
     "whatwg-fetch": "2.0.1"

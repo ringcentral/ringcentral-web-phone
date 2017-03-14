@@ -13,13 +13,12 @@ module.exports = function(config) {
         ],
 
         files: [
-            'http://cdn.rawgit.com/onsip/SIP.js/0.7.5/dist/sip-0.7.5.js', //FIXME We use CDN because SIP.JS NPM does not have build version
+            'http://cdn.rawgit.com/onsip/SIP.js/0.7.6/dist/sip-0.7.6.js', //FIXME We use CDN because SIP.JS NPM does not have build version
             require.resolve('es6-promise/dist/es6-promise.auto'),
-            require.resolve('pubnub/modern/dist/pubnub'),
+            require.resolve('pubnub/dist/web/pubnub'),
             require.resolve('whatwg-fetch'),
             require.resolve('ringcentral/build/ringcentral'),
             {pattern: './audio/**/*.ogg', included: false},
-            './src/fake.js',
             './src/ringcentral-web-phone.js',
             './src/**/*.spec.js'
         ],
@@ -37,8 +36,10 @@ module.exports = function(config) {
             ChromeNoSecurity: {
                 flags: [
                     '--use-fake-ui-for-media-stream',
+                    '--use-fake-device-for-media-stream',
                     '--allow-http-screen-capture',
-                    '--disable-web-security'
+                    '--disable-web-security',
+                    '--no-sandbox'
                 ].concat(process.env.CI || process.env.TRAVIS ? ['--no-sandbox'] : []),
                 chromeDataDir: path.resolve(__dirname, '.chrome'),
                 base: 'Chrome'

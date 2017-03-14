@@ -244,7 +244,7 @@
         session.on('progress', function(incomingResponse) {
             if (incomingResponse.status_code === 183 && incomingResponse.body) {
                 session.createDialog(incomingResponse, 'UAC');
-                session.mediaHandler.setDescription(incomingResponse.body).then(function() {
+                session.mediaHandler.setDescription(incomingResponse).then(function() {
                     session.status = 11; //C.STATUS_EARLY_MEDIA;
                     session.hasAnswer = true;
                 });
