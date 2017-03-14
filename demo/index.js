@@ -26,45 +26,44 @@ $(function() {
         return $($tpl.html());
     }
 
-    function login(server, appKey, appSecret, login, ext, password, ll) {
+    function login(server, appKey, appSecret, redirectUri, ll) {
 
         sdk = new RingCentral.SDK({
             appKey: appKey,
             appSecret: appSecret,
-            server: server
+            server: server,
+            redirectUri: redirectUri
         });
 
         platform = sdk.platform();
 
-        // TODO: Improve later to support international phone number country codes better
-        if (login) {
-            login = (login.match(/^[\+1]/)) ? login : '1' + login;
-            login = login.replace(/\W/g, '')
-        }
+        var loginUrl = platform.loginUrl();
 
         platform
-            .login({
-                username: login,
-                extension: ext || null,
-                password: password
+            .loginWindow({url: loginUrl})                       // this method also allows to supply more options to control window position
+            .then(platform.login.bind(platform))
+            .then(function () {
+                return postLogin(server, appKey, appSecret, redirectUri, ll);
             })
-            .then(function() {
+            .catch(function (e) {
+                console.error(e.stack || e);
+            });
+    }
 
-                logLevel = ll;
-                username = login;
 
-                localStorage.setItem('webPhoneServer', server || '');
-                localStorage.setItem('webPhoneAppKey', appKey || '');
-                localStorage.setItem('webPhoneAppSecret', appSecret || '');
-                localStorage.setItem('webPhoneLogin', login || '');
-                localStorage.setItem('webPhoneExtension', ext || '');
-                localStorage.setItem('webPhonePassword', password || '');
-                localStorage.setItem('webPhoneLogLevel', logLevel || 0);
+    function postLogin(server, appKey, appSecret, redirectUri, ll) {
 
-                return platform.get('/restapi/v1.0/account/~/extension/~');
+        logLevel = ll;
+        username = login;
+        localStorage.setItem('webPhoneServer', server || '');
+        localStorage.setItem('webPhoneAppKey', appKey || '');
+        localStorage.setItem('webPhoneAppSecret', appSecret || '');
+        localStorage.setItem('webPhoneRedirectUri', redirectUri || '');
+        localStorage.setItem('webPhoneLogLevel', logLevel || 0);
 
-            })
-            .then(function(res) {
+        return platform.get('/restapi/v1.0/account/~/extension/~')
+
+            .then(function (res) {
 
                 extension = res.json();
 
@@ -77,14 +76,15 @@ $(function() {
                 });
 
             })
-            .then(function(res) { return res.json(); })
+            .then(function (res) {
+                return res.json();
+            })
             .then(register)
             .then(makeCallForm)
-            .catch(function(e) {
+            .catch(function (e) {
                 console.error('Error in main promise chain');
                 console.error(e.stack || e);
             });
-
     }
 
     function register(data) {
