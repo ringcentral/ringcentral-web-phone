@@ -160,7 +160,8 @@
             autostart: true,
             register: true,
             iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 500,
-            mediaHandlerFactory: rcMediaHandlerFactory
+            mediaHandlerFactory: rcMediaHandlerFactory,
+            rtcpMuxPolicy : "negotiate"
         };
 
         this.appKey = options.appKey;
