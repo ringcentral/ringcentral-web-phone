@@ -85,10 +85,10 @@
 
 </script>
 
-<script type="text/html" id="template-login">
+<script type="text/html" id="template-auth-flow">
 
-    <form class="panel panel-default">
-        <div class="panel-heading"><h3 class="panel-title">Login</h3></div>
+    <form class="panel panel-default" name="authorize-code">
+        <div class="panel-heading"><h3 class="panel-title">Application Key</h3></div>
         <div class="panel-body">
             <div class="form-group">
                 <label>Server:</label>
@@ -103,18 +103,6 @@
                 <input type="text" class="form-control" name="appSecret">
             </div>
             <div class="form-group">
-                <label>Login:</label>
-                <input type="text" class="form-control" name="login" placeholder="18881234567">
-            </div>
-            <div class="form-group">
-                <label>Extension:</label>
-                <input type="text" class="form-control" name="extension" placeholder="101">
-            </div>
-            <div class="form-group">
-                <label>Password:</label>
-                <input type="password" class="form-control" name="password">
-            </div>
-            <div class="form-group">
                 <label>LogLevel:</label>
                 <select class="form-control" name="logLevel">
                     <option value="0">0 - Error</option>
@@ -124,11 +112,43 @@
                 </select>
             </div>
         </div>
-        <div class="panel-footer">
-            <button class="btn btn-primary" type="submit">Login</button>
+        <div class="panel-footer text-center">
+            <button class="btn btn-primary"  type="submit">Authorization Code</button>
         </div>
     </form>
+</script>
 
+<script type="text/html" id="template-login">
+    <form name="login-form">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 class="panel-title">
+                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">
+                        Simple Login
+                    </a><i class="indicator glyphicon glyphicon-chevron-down  pull-right"></i>
+                </h4>
+            </div>
+            <div id="collapseTwo" class="panel-collapse collapse">
+                <div class="panel-body">
+                    <div class="form-group">
+                    <label>Login:</label>
+                    <input type="text" class="form-control" name="login" placeholder="18881234567">
+                    </div>
+                    <div class="form-group">
+                    <label>Extension:</label>
+                    <input type="text" class="form-control" name="extension" placeholder="101">
+                    </div>
+                    <div class="form-group">
+                    <label>Password:</label>
+                    <input type="password" class="form-control" name="password">
+                    </div>
+                </div>
+                <div class="panel-footer text-center">
+                    <button class="btn btn-primary" type="submit">Login</button>
+                </div>
+            </div>
+        </div>
+    </form>
 </script>
 
 <script type="text/html" id="template-accepted">
