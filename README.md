@@ -4,7 +4,11 @@ The RingCentral WebPhone Library includes a JavaScript WebRTC library and a WebR
 
 ## Prerequisites
 
-You will need an active RingCentral account. Don't have an account? [Get your Free RingCentral Developer Account Now!](https://developers.ringcentral.com)
+- You will need an active RingCentral account. Don't have an account? [Get your Free RingCentral Developer Account Now!](https://developers.ringcentral.com)
+- App type should be either :  
+    - Browser-Based
+    - Server/Web
+    
 
 ## Table of Contents
 
@@ -149,15 +153,21 @@ $ npm start
 ```
 
 1. Open `http://localhost:8080/demo/` in the browser (port may change if `8080` will be already used by other app)
-2. Add your RC credentials and click on `Register`
-3. For making outbound calls, enter phone number and click on `Call`
-4. For receiving incoming calls, Click on `Accept` button when window pops up (will be visible when there is an incoming call)
+2. If your Application is of the Scope  
+   `Server/Web`  
+   `Browser-Based`  
+    Then you would need to add `http://localhost:8080/demo/callback.html` as the OAuth Redirect URI for the application in [Developer Portal](https://developer.ringcentral.com)   
+3. Add your RC credentials and click on `Register`
+4. For making outbound calls, enter phone number and click on `Call`
+5. For receiving incoming calls, Click on `Accept` button when window pops up (will be visible when there is an incoming call)
 
 If there's any connection problems to Sandbox environment, you may need to switch to the Production environment.
 
 WebRTC works with issues when served from file system directly to browser (e.g. `file://` protocol), so you will need a local HTTP server (comes with this package).
 
-Online demo is hosted at [https://ringcentral-web-phone.herokuapp.com/demo](https://ringcentral-web-phone.herokuapp.com/demo).
+Online demo is hosted at [https://ringcentral-web-phone.herokuapp.com/demo](https://ringcentral-web-phone.herokuapp.com/demo)
+
+** NOTE : If you are using the online demo, please add `https://ringcentral-web-phone.herokuapp.com/demo/callback.html` to the app's OAuth Redirect URI
 
 ---
 
