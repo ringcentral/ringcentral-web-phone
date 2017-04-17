@@ -802,6 +802,23 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
+    /**
+     * @this {SIP.UA}
+     * @return {Promise}
+     */
+    function unregister(options) {
+        return this.unregister(options);
+    }
+
+    /**
+     * @this {SIP.UA}
+     * @return {Promise}
+     */
+    function isRegistered(){
+        return this.isRegistered();
+    }
+
+    
     return WebPhone;
 
 }));
