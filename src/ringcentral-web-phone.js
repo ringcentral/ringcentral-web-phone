@@ -136,12 +136,14 @@
         var id = options.uuid || localStorage.getItem('rc-webPhone-uuid') || uuid(); //TODO Make configurable
         localStorage.setItem('rc-webPhone-uuid', id);
 
-        this.endpointHeader = 'P-rc-endpoint-id: ' + id;
-
         var rcMediaHandlerFactory = function(session, options) {
             //TODO Override MediaHandler functions in order to disable TCP candidates
             return new SIP.WebRTC.MediaHandler(session, options);
         };
+
+        this.appKey = options.appKey;
+        this.appName = options.appName;
+        this.appVersion = options.appVersion;
 
         var configuration = {
             uri: 'sip:' + this.sipInfo.username + '@' + this.sipInfo.domain,
@@ -161,33 +163,30 @@
             register: true,
             iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 500,
             mediaHandlerFactory: rcMediaHandlerFactory,
-            rtcpMuxPolicy : "negotiate"
+            rtcpMuxPolicy: "negotiate"
         };
 
-        this.appKey = options.appKey;
-        this.appName = options.appName;
-        this.appVersion = options.appVersion;
-        this.userAgentHeader = 'RC-User-Agent: ' +
-                               (options.appName ? (options.appName + (options.appVersion ? '/' + options.appVersion : '')) + ' ' : '') +
-                               'RCWEBPHONE/' + WebPhone.version;
 
-        this.clientIdHeader = 'Client-id:' + options.appKey;
+        this.userAgent = new SIP.UA(configuration);
 
-        this.userAgent = new SIP.UA(configuration).register({
-            extraHeaders: [
-                this.endpointHeader,
-                this.userAgentHeader,
-                this.clientIdHeader
-            ]
-        });
+        this.userAgent.defaultHeaders = [
+            'P-rc-endpoint-id: ' + id,
+            'RC-User-Agent: ' + (
+            (options.appName ? (options.appName + (options.appVersion ? '/' + options.appVersion : '')) + ' ' : '') +
+            'RCWEBPHONE/' + WebPhone.version),
+            'Client-id:' + options.appKey
+        ];
 
-        this.userAgent.endpointHeader = this.endpointHeader;
-        this.userAgent.userAgentHeader = this.userAgentHeader;
-        this.userAgent.clientIdHeader = this.clientIdHeader;
         this.userAgent.sipInfo = this.sipInfo;
 
         this.userAgent.__invite = this.userAgent.invite;
         this.userAgent.invite = invite;
+
+        this.userAgent.__register = this.userAgent.register;
+        this.userAgent.register = register;
+
+        this.userAgent.__unregister = this.userAgent.unregister;
+        this.userAgent.unregister = unregister;
 
         this.userAgent.on('invite', function(session) {
             this.userAgent.audioHelper.playIncoming(true);
@@ -198,11 +197,13 @@
 
         this.userAgent.onSession = options.onSession || null;
 
+        this.userAgent.register();
+
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-    WebPhone.version = '0.4.1';
+    WebPhone.version = '0.4.2';
     WebPhone.uuid = uuid;
     WebPhone.delay = delay;
     WebPhone.extend = extend;
@@ -300,16 +301,15 @@
 
         return new Promise(function(resolve, reject) {
 
+            var extraHeaders = (options.extraHeaders || []).concat(session.ua.defaultHeaders).concat([
+                'Content-Type: application/json;charset=utf-8'
+            ]);
+
             session.sendRequest(SIP.C.INFO, {
                 body: JSON.stringify({
                     request: command
                 }),
-                extraHeaders: [
-                    "Content-Type: application/json;charset=utf-8",
-                    session.ua.userAgentHeader,
-                    session.ua.endpointHeader,
-                    session.ua.clientIdHeader
-                ],
+                extraHeaders: extraHeaders,
                 receiveResponse: function(response) {
                     var timeout = null;
                     if (response.status_code === 200) {
@@ -355,6 +355,22 @@
 
         });
 
+    }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    function register(options) {
+        options = options || {};
+        options.extraHeaders = (options.extraHeaders || []).concat(this.defaultHeaders);
+        return this.__register.call(this, options);
+    }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    function unregister(options) {
+        options = options || {};
+        options.extraHeaders = (options.extraHeaders || []).concat(this.defaultHeaders);
+        return this.__unregister.call(this, options);
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
@@ -431,11 +447,7 @@
         var ua = this;
 
         options = options || {};
-        options.extraHeaders = options.extraHeaders || [];
-
-        options.extraHeaders.push(ua.userAgentHeader);
-        options.extraHeaders.push(ua.endpointHeader);
-        options.extraHeaders.push(ua.clientIdHeader);
+        options.extraHeaders = (options.extraHeaders || []).concat(ua.defaultHeaders);
 
         options.extraHeaders.push('P-Asserted-Identity: sip:' + (options.fromNumber || ua.sipInfo.username) + '@' + ua.sipInfo.domain); //FIXME Phone Number
 
@@ -511,12 +523,7 @@
         var session = this;
 
         options = options || {};
-        options.extraHeaders = options.extraHeaders || [];
-
-        options.extraHeaders.push(session.ua.userAgentHeader);
-        options.extraHeaders.push(session.ua.endpointHeader);
-        options.extraHeaders.push(session.ua.clientIdHeader);
-
+        options.extraHeaders = (options.extraHeaders || []).concat(session.ua.defaultHeaders);
         options.media = options.media || {};
         options.media.constraints = options.media.constraints || {audio: true, video: false};
 
@@ -623,12 +630,11 @@
                 throw new TypeError('Invalid target: ' + originalTarget);
             }
 
-            extraHeaders.push('Contact: ' + session.contact);
-            extraHeaders.push('Allow: ' + SIP.UA.C.ALLOWED_METHODS.toString());
-            extraHeaders.push('Refer-To: ' + target);
-            extraHeaders.push(session.ua.userAgentHeader);
-            extraHeaders.push(session.ua.endpointHeader);
-            extraHeaders.push(session.ua.clientIdHeader);
+            extraHeaders = extraHeaders.concat(session.ua.defaultHeaders).concat([
+                'Contact: ' + session.contact,
+                'Allow: ' + SIP.UA.C.ALLOWED_METHODS.toString(),
+                'Refer-To: ' + target
+            ]);
 
             // Send the request
             session.sendRequest(SIP.C.REFER, {
@@ -696,8 +702,9 @@
                               '%3Bfrom-tag%3D' + target.dialog.id.local_tag + '>';
 
                 transferOptions = transferOptions || {};
-                transferOptions.extraHeaders = transferOptions.extraHeaders || [];
-                transferOptions.extraHeaders.push('Refer-By: ' + session.dialog.remote_target.toString());
+                transferOptions.extraHeaders = (transferOptions.extraHeaders || [])
+                    .concat(session.ua.defaultHeaders)
+                    .concat(['Refer-By: ' + session.dialog.remote_target.toString()]);
 
                 //TODO return session.refer(newSession);
                 return session.blindTransfer(referTo, transferOptions);
