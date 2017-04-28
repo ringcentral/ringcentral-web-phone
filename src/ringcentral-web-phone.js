@@ -20,7 +20,10 @@
         monitor: {reqid: 4, command: 'monitor'},
         barge: {reqid: 5, command: 'barge'},
         whisper: {reqid: 6, command: 'whisper'},
-        takeover: {reqid: 7, command: 'takeover'}
+        takeover: {reqid: 7, command: 'takeover'},
+        toVoicemail: {reqid: 11, command: 'toVoicemail'},
+        receiveConfirm: {reqid: 17, command: 'receiveConfirm'},
+        replyWithMessage: {reqid: 14, command: 'replyWithMessage'},
     };
 
     var responseTimeout = 10000;
@@ -214,12 +217,23 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
+    /**
+     * @param {object} options
+     * @return {String}
+     */
     function createRcMessage(options) {
         options.body = options.body || '';
-        var msgBody = '<Msg><Hdr SID="' + options.sid + '" Req="' + options.request + '" From="' + options.from + '" To="' + options.to +'" Cmd="' + options.cmd + '"/> <Bdy Cln="' + this.sipInfo.authorizationId + '" ' + options.body + '/></Msg>';
+        var msgBody = '<Msg><Hdr SID="' + options.sid + '" Req="' + options.request + '" From="' + options.from + '" To="' + options.to +'" Cmd="' + options.reqid + '"/> <Bdy Cln="' + this.sipInfo.authorizationId + '" ' + options.body + '/></Msg>';
         return msgBody;
     }
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * @this {SIP.UserAgent}
+     * @param {object} options
+     * @return {Promise}
+     */
     function sendMessage(to, messageData) {
         var userAgent = this;
         var sipOptions = {};
@@ -238,6 +252,8 @@
             });
         });
     }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     function onMessage(e) {
         // This is a temporary solution to avoid timeout errors for MESSAGE responses.
@@ -269,6 +285,7 @@
 
         return this._onMessage.apply(this, [e]);
     }
+
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     function patchSession(session) {
@@ -355,9 +372,11 @@
         session.createSessionMessage = createSessionMessage;
         session.sendSessionMessage = sendSessionMessage;
         session.sendReceiveConfirm = sendReceiveConfirm;
-        session.toVoiceMail = toVoiceMail;
+        session.toVoicemail = toVoicemail;
         session.replyWithMessage = replyWithMessage;
     }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     function parseRcHeader(session) {
       var prc = session.request.headers['P-Rc'];
@@ -378,10 +397,23 @@
       }
     }
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * @this {SIP.Session}
+     * @return {Bool}
+     */
     function canUseRCMCallControl() {
         return !!this.rcHeaders;
     }
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * @this {SIP.Session}
+     * @param {object} options
+     * @return {String}
+     */
     function createSessionMessage(options) {
         if (!this.rcHeaders) {
             return undefined;
@@ -395,6 +427,13 @@
         return this.ua.createRcMessage(options);
     }
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * @this {SIP.Session}
+     * @param {object} options
+     * @return {Promise}
+     */
     function sendSessionMessage(options) {
         if (!this.rcHeaders) {
             return Promise.reject(new Error('Can\'t send SIP MESSAGE related to session: no RC headers available'));
@@ -405,27 +444,45 @@
         return this.ua.sendMessage(to, this.createSessionMessage(options));
     }
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * @this {SIP.Session}
+     * @return {Promise}
+     */
     function sendReceiveConfirm() {
-        return this.sendSessionMessage({ cmd: 17 });
+        return this.sendSessionMessage(messages.receiveConfirm);
     }
 
-    function toVoiceMail() {
-        return this.sendSessionMessage({ cmd: 11 });
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * @this {SIP.Session}
+     * @return {Promise}
+     */
+    function toVoicemail() {
+        return this.sendSessionMessage(messages.toVoicemail);
     }
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * @this {SIP.Session}
+     * @param {object} replyOptions
+     * @return {Promise}
+     */
     function replyWithMessage(replyOptions) {
         var body = 'RepTp="'+ replyOptions.replyType +'"';
 
         if (replyOptions.replyType === 0) {
             body += ' Bdy="'+ replyOptions.replyText +'"';
-        }
-        else if (replyOptions.replyType === 1){
+        } else if (replyOptions.replyType === 1){
             body += ' Vl="'+ replyOptions.timeValue +'"';
             body += ' Units="'+ replyOptions.timeUnits +'"';
             body += ' Dir="'+ replyOptions.callbackDirection +'"';
         }
 
-        return this.sendSessionMessage({ cmd: 14, body: body });
+        return this.sendSessionMessage({ reqid: messages.replyWithMessage.reqid, body: body });
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
