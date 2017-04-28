@@ -239,7 +239,7 @@
         var sipOptions = {};
         sipOptions.contentType = 'x-rc/agent';
         sipOptions.extraHeaders = [];
-        sipOptions.extraHeaders.push(`P-rc-ws: ${this.contact}`);
+        sipOptions.extraHeaders.push('P-rc-ws: ' + this.contact);
 
         return new Promise(function(resolve, reject) {
             var message = userAgent.message(to, messageData, sipOptions);
