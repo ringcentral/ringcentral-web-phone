@@ -187,8 +187,8 @@ $(function() {
             session.reject();
         });
 
-        $modal.find('.toVoiceMail').on('click', function() {
-            session.toVoiceMail();
+        $modal.find('.toVoicemail').on('click', function() {
+            session.toVoicemail();
         });
 
         $modal.find('.forward-form').on('submit', function(e) {
@@ -200,6 +200,17 @@ $(function() {
                     $modal.modal('hide');
                 })
                 .catch(function(e) { console.error('Forward failed', e.stack || e); });
+        });
+
+        $modal.find('.reply-form').on('submit', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            session.replyWithMessage({ replyType: 0, replyText: $modal.find('input[name=reply]').val() })
+                .then(function() {
+                    console.log('Replied');
+                    $modal.modal('hide');
+                })
+                .catch(function(e) { console.error('Reply failed', e.stack || e); });
         });
 
         session.on('rejected', function() {
