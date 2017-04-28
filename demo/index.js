@@ -178,7 +178,6 @@ $(function() {
                 .then(function() {
                     $modal.modal('hide');
                     onAccepted(session);
-                    console.log(session);
                 })
                 .catch(function(e) { console.error('Accept failed', e.stack || e); });
         });
