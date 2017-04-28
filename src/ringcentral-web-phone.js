@@ -191,12 +191,16 @@
         this.userAgent.on('invite', function(session) {
             this.userAgent.audioHelper.playIncoming(true);
             patchSession(session);
+            patchIncomingSession(session);
         }.bind(this));
 
         this.userAgent.audioHelper = new AudioHelper(options.audioHelper);
 
         this.userAgent.onSession = options.onSession || null;
-
+        this.userAgent.createRcMessage = createRcMessage;
+        this.userAgent.sendMessage = sendMessage;
+        this.userAgent.transport._onMessage = this.userAgent.transport.onMessage;
+        this.userAgent.transport.onMessage = onMessage;
         this.userAgent.register();
 
     }
@@ -208,6 +212,63 @@
     WebPhone.delay = delay;
     WebPhone.extend = extend;
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    function createRcMessage(options) {
+        options.body = options.body || '';
+        var msgBody = '<Msg><Hdr SID="' + options.sid + '" Req="' + options.request + '" From="' + options.from + '" To="' + options.to +'" Cmd="' + options.cmd + '"/> <Bdy Cln="' + this.sipInfo.authorizationId + '" ' + options.body + '/></Msg>';
+        return msgBody;
+    }
+
+    function sendMessage(to, messageData) {
+        var userAgent = this;
+        var sipOptions = {};
+        sipOptions.contentType = 'x-rc/agent';
+        sipOptions.extraHeaders = [];
+        sipOptions.extraHeaders.push(`P-rc-ws: ${this.contact}`);
+
+        return new Promise(function(resolve, reject) {
+            var message = userAgent.message(to, messageData, sipOptions);
+
+            message.once('accepted', function(response, cause) {
+                resolve();
+            });
+            message.once('failed', function(response, cause) {
+                reject(new Error(cause));
+            });
+        });
+    }
+
+    function onMessage(e) {
+        // This is a temporary solution to avoid timeout errors for MESSAGE responses.
+        // Timeout is caused by port specification in host field within Via header.
+        // sip.js requires received viaHost in a response to be the same as ours via host therefore
+        // messages with the same host but with port are ignored.
+        // This is the exact case for WSX: it send host:port inn via header in MESSAGE responses.
+        // To overcome this, we will preprocess MESSAGE messages and remove port from viaHost field.
+        var data = e.data;
+
+        // WebSocket binary message.
+        if (typeof data !== 'string') {
+            try {
+                data = String.fromCharCode.apply(null, new Uint8Array(data));
+            }
+            catch(error) {
+                return this._onMessage.apply(this, [e]);
+            }
+        }
+
+        if (data.match(/CSeq:\s*\d+\s+MESSAGE/i)) {
+            var re = new RegExp(this.ua.configuration.viaHost + ':\\d+',"g");
+            var newData = e.data.replace(re, this.ua.configuration.viaHost);
+            Object.defineProperty(e, "data", {
+                value: newData,
+                writable: false
+            });
+        }
+
+        return this._onMessage.apply(this, [e]);
+    }
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     function patchSession(session) {
@@ -280,6 +341,91 @@
 
         return session;
 
+    }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    function patchIncomingSession(session) {
+        try {
+            parseRcHeader(session);
+        } catch (e) {
+            console.error('Can\'t parse RC headers from invite request due to ', e);
+        }
+        session.canUseRCMCallControl = canUseRCMCallControl;
+        session.createSessionMessage = createSessionMessage;
+        session.sendSessionMessage = sendSessionMessage;
+        session.sendReceiveConfirm = sendReceiveConfirm;
+        session.toVoiceMail = toVoiceMail;
+        session.replyWithMessage = replyWithMessage;
+    }
+
+    function parseRcHeader(session) {
+      var prc = session.request.headers['P-Rc'];
+      if (prc && prc.length) {
+        var rawInviteMsg = prc[0].raw;
+        var parser = new DOMParser();
+        var xmlDoc = parser.parseFromString(rawInviteMsg, 'text/xml');
+        var hdrNode = xmlDoc.getElementsByTagName('Hdr')[0];
+
+        if (hdrNode) {
+          session.rcHeaders = {
+            sid: hdrNode.getAttribute('SID'),
+            request: hdrNode.getAttribute('Req'),
+            from: hdrNode.getAttribute('From'),
+            to: hdrNode.getAttribute('To'),
+          };
+        }
+      }
+    }
+
+    function canUseRCMCallControl() {
+        return !!this.rcHeaders;
+    }
+
+    function createSessionMessage(options) {
+        if (!this.rcHeaders) {
+            return undefined;
+        }
+        extend(options, {
+            sid: this.rcHeaders.sid,
+            request: this.rcHeaders.request,
+            from: this.rcHeaders.to,
+            to: this.rcHeaders.from,
+        });
+        return this.ua.createRcMessage(options);
+    }
+
+    function sendSessionMessage(options) {
+        if (!this.rcHeaders) {
+            return Promise.reject(new Error('Can\'t send SIP MESSAGE related to session: no RC headers available'));
+        }
+
+        var to = this.rcHeaders.from;
+
+        return this.ua.sendMessage(to, this.createSessionMessage(options));
+    }
+
+    function sendReceiveConfirm() {
+        return this.sendSessionMessage({ cmd: 17 });
+    }
+
+    function toVoiceMail() {
+        return this.sendSessionMessage({ cmd: 11 });
+    }
+
+    function replyWithMessage(replyOptions) {
+        var body = 'RepTp="'+ replyOptions.replyType +'"';
+
+        if (replyOptions.replyType === 0) {
+            body += ' Bdy="'+ replyOptions.replyText +'"';
+        }
+        else if (replyOptions.replyType === 1){
+            body += ' Vl="'+ replyOptions.timeValue +'"';
+            body += ' Units="'+ replyOptions.timeUnits +'"';
+            body += ' Dir="'+ replyOptions.callbackDirection +'"';
+        }
+
+        return this.sendSessionMessage({ cmd: 14, body: body });
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/

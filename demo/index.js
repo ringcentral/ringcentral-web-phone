@@ -178,12 +178,17 @@ $(function() {
                 .then(function() {
                     $modal.modal('hide');
                     onAccepted(session);
+                    console.log(session);
                 })
                 .catch(function(e) { console.error('Accept failed', e.stack || e); });
         });
 
         $modal.find('.decline').on('click', function() {
             session.reject();
+        });
+
+        $modal.find('.toVoiceMail').on('click', function() {
+            session.toVoiceMail();
         });
 
         $modal.find('.forward-form').on('submit', function(e) {
