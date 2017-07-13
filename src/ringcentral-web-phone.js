@@ -26,6 +26,8 @@
         replyWithMessage: {reqid: 14, command: 'replyWithMessage'},
     };
 
+    var uuidKey = 'rc-webPhone-uuid';
+
     var responseTimeout = 10000;
 
     function uuid() {
@@ -136,8 +138,10 @@
         this.sipInfo = regData.sipInfo[0] || regData.sipInfo;
         this.sipFlags = regData.sipFlags;
 
-        var id = options.uuid || localStorage.getItem('rc-webPhone-uuid') || uuid(); //TODO Make configurable
-        localStorage.setItem('rc-webPhone-uuid', id);
+        this.uuidKey = options.uuidKey || uuidKey;
+
+        var id = options.uuid || localStorage.getItem(this.uuidKey) || uuid(); //TODO Make configurable
+        localStorage.setItem(this.uuidKey, id);
 
         var rcMediaHandlerFactory = function(session, options) {
             //TODO Override MediaHandler functions in order to disable TCP candidates
