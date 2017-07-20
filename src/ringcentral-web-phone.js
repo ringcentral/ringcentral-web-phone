@@ -143,10 +143,10 @@
         var id = options.uuid || localStorage.getItem(this.uuidKey) || uuid(); //TODO Make configurable
         localStorage.setItem(this.uuidKey, id);
 
-        var rcMediaHandlerFactory = function(session, options) {
-            //TODO Override MediaHandler functions in order to disable TCP candidates
-            return new SIP.WebRTC.MediaHandler(session, options);
-        };
+        // var rcMediaHandlerFactory = function(session, options) {
+        //     //TODO Override MediaHandler functions in order to disable TCP candidates
+        //     return new SIP.WebRTC.MediaHandler(session, options);
+        // };
 
         this.appKey = options.appKey;
         this.appName = options.appName;
@@ -169,8 +169,10 @@
             autostart: true,
             register: true,
             iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 500,
-            mediaHandlerFactory: rcMediaHandlerFactory,
-            rtcpMuxPolicy: "negotiate"
+            // mediaHandlerFactory: rcMediaHandlerFactory,
+            rtcpMuxPolicy: "negotiate",
+            //disable TCP candidates
+            hackStripTcp:true
         };
 
 
