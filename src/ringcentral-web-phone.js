@@ -82,9 +82,13 @@
         } else {
             if (val) {
                 this._audio[url].currentTime = 0;
-                this._audio[url].play();
+                this._audio.playPromise = this._audio[url].play();
             } else {
-                this._audio[url].pause();
+                if (this._audio.playPromise !== undefined) {
+                    this._audio.playPromise.then(function() {
+                        this._audio[url].pause();
+                    });
+                }
             }
         }
 
