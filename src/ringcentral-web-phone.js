@@ -77,14 +77,19 @@
                 this._audio[url].src = url;
                 this._audio[url].loop = true;
                 this._audio[url].volume = volume;
-                this._audio[url].play();
+                this._audio.playPromise = this._audio[url].play();
             }
         } else {
             if (val) {
                 this._audio[url].currentTime = 0;
-                this._audio[url].play();
+                this._audio.playPromise = this._audio[url].play();
             } else {
-                this._audio[url].pause();
+                if (this._audio.playPromise !== undefined) {
+                    var audio = this._audio[url];
+                    this._audio.playPromise.then(function() {
+                        audio.pause();
+                    });
+                }
             }
         }
 
