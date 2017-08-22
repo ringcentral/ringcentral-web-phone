@@ -28,7 +28,7 @@
 
     var uuidKey = 'rc-webPhone-uuid';
 
-    var responseTimeout = 10000;
+    var responseTimeout = 60000;
 
     function uuid() {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
