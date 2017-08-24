@@ -9,6 +9,15 @@ The RingCentral WebPhone Library includes a JavaScript WebRTC library and a WebR
     - Browser-Based
     - Server/Web
     
+## Browser Compatibility
+
+Currently, we officialy support Google Chrome browser. Official support for Firefox and Safari browsers are coming soon.    
+    
+## Network Requirements 
+
+Please visit Network Requirement links below
+1. Condensed Requirements: [https://netstorage.ringcentral.com/guides/network_condensed.pdf](https://netstorage.ringcentral.com/guides/network_condensed.pdf)
+2. Extended Requirements: [https://netstorage.ringcentral.com/guides/network_extended.pdf](https://netstorage.ringcentral.com/guides/network_extended.pdf)
 
 ## Table of Contents
 
