@@ -206,6 +206,11 @@
             this.userAgent.audioHelper.playIncoming(true);
             patchSession(session);
             patchIncomingSession(session);
+            session.sendReceiveConfirm().then(function() {
+                session.logger.log('sendReceiveConfirm success');
+            }).catch(function(error){
+                console.error('failed to send receive confirmation via SIP MESSAGE due to ' + error);
+            });
         }.bind(this));
 
         this.userAgent.audioHelper = new AudioHelper(options.audioHelper);
