@@ -209,7 +209,7 @@
             session.sendReceiveConfirm().then(function() {
                 session.logger.log('sendReceiveConfirm success');
             }).catch(function(error){
-                console.error('failed to send receive confirmation via SIP MESSAGE due to ' + error);
+                session.logger.error('failed to send receive confirmation via SIP MESSAGE due to ' + error);
             });
         }.bind(this));
 
@@ -382,7 +382,7 @@
         try {
             parseRcHeader(session);
         } catch (e) {
-            console.error('Can\'t parse RC headers from invite request due to ', e);
+            session.logger.error('Can\'t parse RC headers from invite request due to ', e);
         }
         session.canUseRCMCallControl = canUseRCMCallControl;
         session.createSessionMessage = createSessionMessage;
