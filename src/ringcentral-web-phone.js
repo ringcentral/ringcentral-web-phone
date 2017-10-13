@@ -382,7 +382,7 @@
         try {
             parseRcHeader(session);
         } catch (e) {
-            session.logger.error('Can\'t parse RC headers from invite request due to ', e);
+            session.logger.error('Can\'t parse RC headers from invite request due to ' + e);
         }
         session.canUseRCMCallControl = canUseRCMCallControl;
         session.createSessionMessage = createSessionMessage;
