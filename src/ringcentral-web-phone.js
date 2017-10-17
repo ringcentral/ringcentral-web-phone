@@ -206,6 +206,12 @@
             this.userAgent.audioHelper.playIncoming(true);
             patchSession(session);
             patchIncomingSession(session);
+            session._sendReceiveConfirmPromise = session.sendReceiveConfirm().then(function() {
+                session.logger.log('sendReceiveConfirm success');
+            }).catch(function(error){
+                session.logger.error('failed to send receive confirmation via SIP MESSAGE due to ' + error);
+                throw error;
+            });
         }.bind(this));
 
         this.userAgent.audioHelper = new AudioHelper(options.audioHelper);
@@ -377,7 +383,7 @@
         try {
             parseRcHeader(session);
         } catch (e) {
-            console.error('Can\'t parse RC headers from invite request due to ', e);
+            session.logger.error('Can\'t parse RC headers from invite request due to ' + e);
         }
         session.canUseRCMCallControl = canUseRCMCallControl;
         session.createSessionMessage = createSessionMessage;
@@ -472,7 +478,10 @@
      * @return {Promise}
      */
     function toVoicemail() {
-        return this.sendSessionMessage(messages.toVoicemail);
+        var session = this;
+        return session._sendReceiveConfirmPromise.then(function () {
+            return session.sendSessionMessage(messages.toVoicemail);
+        });
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
@@ -492,8 +501,10 @@
             body += ' Units="'+ replyOptions.timeUnits +'"';
             body += ' Dir="'+ replyOptions.callbackDirection +'"';
         }
-
-        return this.sendSessionMessage({ reqid: messages.replyWithMessage.reqid, body: body });
+        var session = this;
+        return session._sendReceiveConfirmPromise.then(function () {
+            return session.sendSessionMessage({ reqid: messages.replyWithMessage.reqid, body: body });
+        });
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
