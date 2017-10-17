@@ -210,7 +210,7 @@
                 session.logger.log('sendReceiveConfirm success');
             }).catch(function(error){
                 session.logger.error('failed to send receive confirmation via SIP MESSAGE due to ' + error);
-                return Promise.reject(error);
+                throw error;
             });
         }.bind(this));
 
