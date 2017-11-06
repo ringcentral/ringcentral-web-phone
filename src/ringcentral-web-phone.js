@@ -227,7 +227,7 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-    WebPhone.version = '0.4.4';
+    WebPhone.version = '0.4.5';
     WebPhone.uuid = uuid;
     WebPhone.delay = delay;
     WebPhone.extend = extend;
