@@ -929,7 +929,7 @@
                 transferOptions = transferOptions || {};
                 transferOptions.extraHeaders = (transferOptions.extraHeaders || [])
                     .concat(session.ua.defaultHeaders)
-                    .concat(['Refer-By: ' + session.dialog.remote_target.toString()]);
+                    .concat(['Referred-By: ' + session.dialog.remote_target.toString()]);
 
                 //TODO return session.refer(newSession);
                 return session.blindTransfer(referTo, transferOptions);
