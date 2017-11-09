@@ -453,6 +453,15 @@ $(function() {
                 showCallWindow(callId);
             }
         });
+
+        $item.find('.call-item-add-to-conference').on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            //TODO: add call to conference;
+            console.warn('NOT IMPLEMENTED');
+        })
+
         $item.find('.call-item-mute').on('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
