@@ -20,9 +20,11 @@ $(function() {
     var $acceptedTemplate = $('#template-accepted');
     var $incomingCallItemTemplate = $('#template-incoming-call-item');
     var $activeCallItemTemplate = $('#template-active-call-item');
+    var $conferenceItemTemplate = $('#template-conference-item');
 
     window.calls = {};
     var nextCallID = 0;
+    var conference = {};
 
     /**
      * @param {jQuery|HTMLElement} $tpl
@@ -158,17 +160,41 @@ $(function() {
         return webPhone;
     }
 
-    function createCall(callId, session) {
+    function createCallAudioElements(callId) {
+
+        var audioElements = document.getElementById('audio-elements-root');
+        var localAudio = document.createElement('video');
+        localAudio.setAttribute('autoplay', 'true');
+        localAudio.setAttribute('hidden', 'true');
+        localAudio.setAttribute('muted', '');
+        localAudio.setAttribute('id', 'local-audio-' + callId);
+        localAudio.className = 'rc-phone-audio';
+        localAudio.volume = 1;
+
+        audioElements.appendChild(localAudio);
+
+        var remoteAudio = document.createElement('video');
+        remoteAudio.setAttribute('autoplay', 'true');
+        remoteAudio.setAttribute('hidden', 'true');
+        remoteAudio.setAttribute('id', 'remote-audio-' + callId);
+        remoteAudio.className = 'rc-phone-audio';
+        remoteAudio.volume = 1;
+
+        audioElements.appendChild(remoteAudio);
+
+        return { remote: remoteAudio, local: localAudio };
+    }
+
+    function registerCall(callId, session) {
         var call = {
             callId : callId,
             session: session
         };
 
         calls[callId] = call;
-
     }
 
-    function endCall(callId) {
+    function unregisterCall(callId) {
         
         var call = calls[callId];
         if(!call) {
@@ -203,12 +229,175 @@ $(function() {
         var newCallId = nextCallID++;
 
         session.on('rejected', function () {
-            endCall(newCallId);
+            unregisterCall(newCallId);
         });
 
-        createCall(newCallId, session);
+        registerCall(newCallId, session);
 
         createIncomingCallItem(newCallId);
+    }
+
+    function sendInvite(number, homeCountryId) {
+        var newCallId = nextCallID++;
+
+        homeCountryId = homeCountryId
+                      || (extension && extension.regionalSettings && extension.regionalSettings.homeCountry && extension.regionalSettings.homeCountry.id)
+                      || null;
+
+        var audioElements = createCallAudioElements(newCallId);
+
+        var session = webPhone.userAgent.invite(number, {
+            media: {
+                render: {
+                    remote: audioElements.remote,
+                    local: audioElements.local
+                }
+            },
+            fromNumber: username,
+            homeCountryId: homeCountryId
+        });
+
+        registerCall(newCallId, session);
+
+        return newCallId;
+    }    
+
+    function onAnswer(callId) {
+
+        var call = calls[callId];
+
+
+        var audioElements = createCallAudioElements(callId);
+
+        call.session.accept({
+            media: {
+                render: {
+                    remote: audioElements.remote,
+                    local: audioElements.local
+                }
+            }
+        })
+        .then(function () {
+
+            if(call.$modal) {
+                call.$modal.modal('hide');
+                delete call.$modal;
+            }
+            onAccepted(callId);
+            createCallItem(callId);
+            $('#incoming-call-item-' + callId).remove();
+        })
+        .catch(function(e) { console.error('Accept failed', e.stack || e); });
+    }
+
+    function onAccepted(callId) {
+
+        var call = calls[callId];
+        var session = call.session;
+
+        console.log('EVENT: Accepted', session.request);
+        console.log('To', session.request.to.displayName, session.request.to.friendlyName);
+        console.log('From', session.request.from.displayName, session.request.from.friendlyName);
+
+        session.on('accepted', function() { console.log('Event: Accepted'); });
+        session.on('progress', function() { console.log('Event: Progress'); });
+        session.on('rejected', function() {
+            console.log('Event: Rejected');
+            unregisterCall(callId);
+        });
+        session.on('failed', function() {
+            console.log('Event: Failed');
+            unregisterCall(callId);
+        });
+        session.on('terminated', function() {
+            console.log('Event: Terminated');
+            unregisterCall(callId);
+        });
+        session.on('cancel', function() {
+            console.log('Event: Cancel');
+            unregisterCall(callId);
+        });
+        session.on('refer', function() {
+            console.log('Event: Refer');
+            unregisterCall(callId);
+        });
+        session.on('replaced', function(newSession) {
+            console.log('Event: Replaced: old session', session, 'has been replaced with', newSession);
+            unregisterCall(callId);
+            onAccepted(callId);
+            createCallItem(callId);
+        });
+        session.on('dtmf', function() { console.log('Event: DTMF'); });
+        session.on('muted', function() { console.log('Event: Muted'); });
+        session.on('unmuted', function() { console.log('Event: Unmuted'); });
+        session.on('connecting', function() { console.log('Event: Connecting'); });
+        session.on('bye', function() {
+            console.log('Event: Bye');
+        });
+
+        session.mediaHandler.on('iceConnection', function() { console.log('Event: ICE: iceConnection'); });
+        session.mediaHandler.on('iceConnectionChecking', function() { console.log('Event: ICE: iceConnectionChecking'); });
+        session.mediaHandler.on('iceConnectionConnected', function() { console.log('Event: ICE: iceConnectionConnected'); });
+        session.mediaHandler.on('iceConnectionCompleted', function() { console.log('Event: ICE: iceConnectionCompleted'); });
+        session.mediaHandler.on('iceConnectionFailed', function() { console.log('Event: ICE: iceConnectionFailed'); });
+        session.mediaHandler.on('iceConnectionDisconnected', function() { console.log('Event: ICE: iceConnectionDisconnected'); });
+        session.mediaHandler.on('iceConnectionClosed', function() { console.log('Event: ICE: iceConnectionClosed'); });
+        session.mediaHandler.on('iceGatheringComplete', function() { console.log('Event: ICE: iceGatheringComplete'); });
+        session.mediaHandler.on('iceGathering', function() { console.log('Event: ICE: iceGathering'); });
+        session.mediaHandler.on('iceCandidate', function() { console.log('Event: ICE: iceCandidate'); });
+        session.mediaHandler.on('userMedia', function() { console.log('Event: ICE: userMedia'); });
+        session.mediaHandler.on('userMediaRequest', function() { console.log('Event: ICE: userMediaRequest'); });
+        session.mediaHandler.on('userMediaFailed', function() { console.log('Event: ICE: userMediaFailed'); });
+    }
+
+    function createConferenceItem(callId) {
+        var call = calls[callId];
+        
+        var $item = cloneTemplate($conferenceItemTemplate);
+
+        call.session.once('terminated', function(){
+            $('#make-conference').show();
+            $item.remove();
+        });
+        
+        $item.attr('id', 'conference-call-item-' + callId);
+        $item.find('.call-item-info').text('Conference call ' + callId);
+        $item.find('.call-item-delete').on('click', function(e){
+            e.preventDefault();
+            e.stopPropagation();
+
+            console.log('CONFERENCE DELETE');
+            var uri = '/account/~/telephony/sessions/' + conference.sessionid;
+            platform.delete(uri,{})
+            .then(function(apiResponse){
+                console.log(apiResponse.json());
+
+            })
+            .catch(function (e) {
+                console.error(e.stack || e);
+            })
+
+        }); 
+ 
+        $item.find('.call-item-status').on('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('CONFERENCE STATUS REQUEST');
+            var uri = '/account/~/telephony/sessions/' + conference.sessionid;
+            platform.get(uri,{})
+            .then(function(apiResponse){
+                console.log(apiResponse.json());
+            })
+            .catch(function (e) {
+                console.error(e.stack || e);
+            });
+
+
+        });       
+ 
+        $('#make-conference').hide();
+        var $callItems = $('#conference-header');
+        $callItems.append($item);
     }
 
     function createIncomingCallItem(callId) {
@@ -335,7 +524,7 @@ $(function() {
             })
             .then(function() {
                 console.log('Forwarded');
-                endCall(callId);
+                unregisterCall(callId);
             })
             .catch(function(e) { console.error('Forward failed', e.stack || e); });
         });
@@ -346,12 +535,10 @@ $(function() {
             session.replyWithMessage({ replyType: 0, replyText: $modal.find('input[name=reply]').val() })
                 .then(function() {
                     console.log('Replied');
-                    endCall(callId);  
+                    unregisterCall(callId);  
                 })
                 .catch(function(e) { console.error('Reply failed', e.stack || e); });
         });
-
-
     }
 
     function hideCallWindow(callId) {
@@ -442,21 +629,19 @@ $(function() {
             e.stopPropagation();
             session.hold().then(function() {
 
-                var newSession = session.ua.invite($transfer.val().trim(), {
-                    media: {
-                        render: {
-                            remote: document.getElementById('remoteVideo'),
-                            local: document.getElementById('localVideo')
-                        }
-                    }
-                });
+                var newCallId = sendInvite($transfer.val().trim());
+
+                var newSession = calls[newCallId].session;
 
                 newSession.once('accepted', function() {
                     session.warmTransfer(newSession)
-                        .then(function() { console.log('Transferred'); })
-                        .catch(function(e) { console.error('Transfer failed', e.stack || e); });
+                        .then(function() { 
+                            console.log('Transferred'); 
+                        })
+                        .catch(function(e) { 
+                            console.error('Transfer failed', e.stack || e); 
+                        });
                 });
-
             });
 
         });
@@ -480,143 +665,7 @@ $(function() {
         });
     }
 
-    function onAnswer(callId) {
 
-        var call = calls[callId];
-
-        
-        var audioElements = createCallAudioElements(callId);
-
-        call.session.accept({
-            media: {
-                render: {
-                    remote: audioElements.remote,
-                    local: audioElements.local
-                }
-            }
-        })
-        .then(function () {
-
-            if(call.$modal) {
-                call.$modal.modal('hide');
-                delete call.$modal;
-            }
-            onAccepted(callId);
-            $('#incoming-call-item-' + callId).remove();
-        })
-        .catch(function(e) { console.error('Accept failed', e.stack || e); });
-    }
-
-    function onAccepted(callId) {
-
-        var call = calls[callId];
-        var session = call.session;
-
-        console.log('EVENT: Accepted', session.request);
-        console.log('To', session.request.to.displayName, session.request.to.friendlyName);
-        console.log('From', session.request.from.displayName, session.request.from.friendlyName);
-
-        session.on('accepted', function() { console.log('Event: Accepted'); });
-        session.on('progress', function() { console.log('Event: Progress'); });
-        session.on('rejected', function() {
-            console.log('Event: Rejected');
-            endCall(callId);
-        });
-        session.on('failed', function() {
-            console.log('Event: Failed');
-            endCall(callId);
-        });
-        session.on('terminated', function() {
-            console.log('Event: Terminated');
-            endCall(callId);
-        });
-        session.on('cancel', function() {
-            console.log('Event: Cancel');
-            endCall(callId);
-        });
-        session.on('refer', function() {
-            console.log('Event: Refer');
-            endCall(callId);
-        });
-        session.on('replaced', function(newSession) {
-            console.log('Event: Replaced: old session', session, 'has been replaced with', newSession);
-            endCall(callId);
-            onAccepted(newSession);
-        });
-        session.on('dtmf', function() { console.log('Event: DTMF'); });
-        session.on('muted', function() { console.log('Event: Muted'); });
-        session.on('unmuted', function() { console.log('Event: Unmuted'); });
-        session.on('connecting', function() { console.log('Event: Connecting'); });
-        session.on('bye', function() {
-            console.log('Event: Bye');
-        });
-
-        session.mediaHandler.on('iceConnection', function() { console.log('Event: ICE: iceConnection'); });
-        session.mediaHandler.on('iceConnectionChecking', function() { console.log('Event: ICE: iceConnectionChecking'); });
-        session.mediaHandler.on('iceConnectionConnected', function() { console.log('Event: ICE: iceConnectionConnected'); });
-        session.mediaHandler.on('iceConnectionCompleted', function() { console.log('Event: ICE: iceConnectionCompleted'); });
-        session.mediaHandler.on('iceConnectionFailed', function() { console.log('Event: ICE: iceConnectionFailed'); });
-        session.mediaHandler.on('iceConnectionDisconnected', function() { console.log('Event: ICE: iceConnectionDisconnected'); });
-        session.mediaHandler.on('iceConnectionClosed', function() { console.log('Event: ICE: iceConnectionClosed'); });
-        session.mediaHandler.on('iceGatheringComplete', function() { console.log('Event: ICE: iceGatheringComplete'); });
-        session.mediaHandler.on('iceGathering', function() { console.log('Event: ICE: iceGathering'); });
-        session.mediaHandler.on('iceCandidate', function() { console.log('Event: ICE: iceCandidate'); });
-        session.mediaHandler.on('userMedia', function() { console.log('Event: ICE: userMedia'); });
-        session.mediaHandler.on('userMediaRequest', function() { console.log('Event: ICE: userMediaRequest'); });
-        session.mediaHandler.on('userMediaFailed', function() { console.log('Event: ICE: userMediaFailed'); });
-
-        createCallItem(callId);
-    }
-
-    function createCallAudioElements(callId) {
-
-        var audioElements = document.getElementById('audio-elements-root');
-        var localAudio = document.createElement('video');
-        localAudio.setAttribute('autoplay', 'true');
-        localAudio.setAttribute('hidden', 'true');
-        localAudio.setAttribute('muted', '');
-        localAudio.setAttribute('id', 'local-audio-' + callId);
-        localAudio.className = 'rc-phone-audio';
-        localAudio.volume = 1;
-
-        audioElements.appendChild(localAudio);
-
-        var remoteAudio = document.createElement('video');
-        remoteAudio.setAttribute('autoplay', 'true');
-        remoteAudio.setAttribute('hidden', 'true');
-        remoteAudio.setAttribute('id', 'remote-audio-' + callId);
-        remoteAudio.className = 'rc-phone-audio';
-        remoteAudio.volume = 1;
-
-        audioElements.appendChild(remoteAudio);
-
-        return { remote: remoteAudio, local: localAudio };
-    }
-
-    function makeCall(number, homeCountryId) {
-        var newCallId = nextCallID++;
-
-        homeCountryId = homeCountryId
-                      || (extension && extension.regionalSettings && extension.regionalSettings.homeCountry && extension.regionalSettings.homeCountry.id)
-                      || null;
-
-        var audioElements = createCallAudioElements(newCallId);
-
-        var session = webPhone.userAgent.invite(number, {
-            media: {
-                render: {
-                    remote: audioElements.remote,
-                    local: audioElements.local
-                }
-            },
-            fromNumber: username,
-            homeCountryId: homeCountryId
-        });
-
-        createCall(newCallId, session);
-
-        onAccepted(newCallId);
-    }
 
     function makeCallForm() {
 
@@ -634,8 +683,34 @@ $(function() {
 
             localStorage.setItem('webPhoneLastNumber', $number.val() || '');
 
-            makeCall($number.val(), $homeCountry.val());
+            var callId = sendInvite($number.val().trim(), $homeCountry.val().trim());
 
+            onAccepted(callId);
+            createCallItem(callId);
+        });
+
+        $form.find('#make-conference').on('click', function(e) {
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            var number = '';
+            var sessionid= '';
+            conference = {};
+            platform.post('/account/~/telephony/conference',{})
+                .then(function(apiResponse){
+                    console.log(apiResponse.json().session.voiceCallToken);
+                    conference.number = apiResponse.json().session.voiceCallToken;
+                    conference.sessionid = apiResponse.json().session.id;
+                })
+                .then(function(){
+                    var conferenceCallId = sendInvite(conference.number, 1);
+
+                    conference.callId = conferenceCallId;
+  
+                    onAccepted(conferenceCallId);
+                    createConferenceItem(conferenceCallId);
+                });
         });
 
         $app.empty().append($form);

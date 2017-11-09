@@ -76,42 +76,63 @@
 </script>
 
 <script type="text/html" id="template-call">
-<div>
-    <form class="panel panel-default">
-        <div class="panel-heading"><h3 class="panel-title">Make A Call</h3></div>
-        <div class="panel-body">
-            <div class="form-inline">
-                <div class="form-group">
-                    <label>Phone Number:</label>
-                    <input type="text" class="form-control" name="number" placeholder="+1 (234) 567-8901">
+    <div>
+        <form class="panel panel-default">
+            <div class="panel-heading"><h3 class="panel-title">Make A Call</h3></div>
+            <div class="panel-body">
+                <div class="form-inline">
+                    <div class="form-group">
+                        <label>Phone Number:</label>
+                        <input type="text" class="form-control" name="number" placeholder="+1 (234) 567-8901">
+                    </div>
+                    <div class="form-group">
+                        <label>Home Country:</label>
+                        <input type="text" class="form-control" name="homeCountry" value="1">
+                    </div>
+                    <button id='make-call' class="btn btn-primary" type="submit">Call</button>
                 </div>
-                <div class="form-group">
-                    <label>Home Country:</label>
-                    <input type="text" class="form-control" name="homeCountry" value="1">
+            </div>
+        </form>
+        <form class="panel panel-default">
+            <div id="conference-header" class="panel-heading">
+                <button id='make-conference' class="btn btn-primary" type="submit">Create Conference</button>
+            </div>
+            <div class="panel-body">
+                <div class="form-inline">
+                    <ul id="conference-items" class="list-group">
+                    </ul>
                 </div>
-                <button id='make-call' class="btn btn-primary" type="submit">Call</button>
             </div>
-        </div>
-    </form>
-    <form class="panel panel-default">
-        <div class="panel-heading"><h3 class="panel-title">Incoming Calls</h3></div>
-        <div class="panel-body">
-            <div class="form-inline">
-                <ul id="incoming-call-items" class="list-group">
-                </ul>
+        </form>
+        <form class="panel panel-default">
+            <div class="panel-heading"><h3 class="panel-title">Incoming Calls</h3></div>
+            <div class="panel-body">
+                <div class="form-inline">
+                    <ul id="incoming-call-items" class="list-group">
+                    </ul>
+                </div>
             </div>
-        </div>
-    </form>
-    <form class="panel panel-default">
-        <div class="panel-heading"><h3 class="panel-title">Active Calls</h3></div>
-        <div class="panel-body">
-            <div class="form-inline">
-                <ul id="active-call-items" class="list-group">
-                </ul>
+        </form>
+        <form class="panel panel-default">
+            <div class="panel-heading"><h3 class="panel-title">Active Calls</h3></div>
+            <div class="panel-body">
+                <div class="form-inline">
+                    <ul id="active-call-items" class="list-group">
+                    </ul>
+                </div>
             </div>
+        </form>
+    </div>    
+</script>
+
+<script type="text/html" id="template-conference-item">
+    <a href="#" class="list-group-item call-item-info">
+        <label class='call-item-info'></label>
+        <div class="btn-toolbar">
+                <button class="btn btn-default call-item-status">Status</button>
+                <button class="btn btn-danger call-item-delete">Delete</button>
         </div>
-    </form>
-</div>    
+    </a>
 </script>
 
 <script type="text/html" id="template-incoming-call-item">
@@ -124,6 +145,7 @@
         </div>
     </a>
 </script>
+
 
 <script type="text/html" id="template-active-call-item">
    
