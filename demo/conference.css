@@ -1,0 +1,9 @@
+.list-group-item .btn-toolbar {
+    position: absolute;
+    right: 10px;
+    top: 5px;
+}
+
+.list-group-item .call-item-info:hover {
+    cursor: pointer;
+}
