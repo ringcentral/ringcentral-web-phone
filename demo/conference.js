@@ -368,7 +368,7 @@ $(function() {
 
             console.log('CONFERENCE DELETE');
             var uri = '/account/~/telephony/sessions/' + conference.sessionid;
-            platform.delete(uri,{})
+            platform.delete(uri)
             .then(function(apiResponse){
                 console.log(apiResponse.json());
 
@@ -384,7 +384,7 @@ $(function() {
             e.stopPropagation();
             console.log('CONFERENCE STATUS REQUEST');
             var uri = '/account/~/telephony/sessions/' + conference.sessionid;
-            platform.get(uri,{})
+            platform.get(uri)
             .then(function(apiResponse){
                 console.log(apiResponse.json());
             })
