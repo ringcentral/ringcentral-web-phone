@@ -435,6 +435,12 @@ $(function() {
     function createCallItem(callId) {
 
         var call = calls[callId];
+        var session =  call.session;
+        var data = '';
+
+        session.on('accepted',function(incomingResponse){
+            data = incomingResponse;
+        });
 
         var $item = cloneTemplate($activeCallItemTemplate);
 
@@ -457,10 +463,27 @@ $(function() {
         $item.find('.call-item-add-to-conference').on('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            
+
+            var map = data.headers['P-Rc-Api-Ids'][0]['raw'].split(';')
+                .map(function(sub) {
+                    return sub.split('=')
+                });
+
+            var partyid = map[0][1];
+            var sessionid = map[1][1];
+
+            platform.post('/account/~/telephony/sessions/'+conference.sessionid+'/parties/bring-in',
+                {
+                    "sessionId": sessionid,
+                    "partyId": partyid
+                })
+                .then(function(apiResponse){
+                    console.warn(apiResponse.json());
+                });
+
             //TODO: add call to conference;
-            console.warn('NOT IMPLEMENTED');
-        })
+            // console.warn('NOT IMPLEMENTED');
+        });
 
         $item.find('.call-item-mute').on('click', function(e) {
             e.preventDefault();
