@@ -422,6 +422,11 @@ $(function() {
             if(party.conferenceRole === 'Host') {
                 return;
             }
+
+            if(party.status && party.status.code === 'Disconnected') {
+                return;
+            }
+
             var $newPartyItem = createConferencePartyItem(party);
             
             $conferenceItems.append($newPartyItem);
