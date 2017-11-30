@@ -21,10 +21,11 @@ $(function() {
     var $incomingCallItemTemplate = $('#template-incoming-call-item');
     var $activeCallItemTemplate = $('#template-active-call-item');
     var $conferenceItemTemplate = $('#template-conference-item');
+    var $conferencePartyItemTemplate = $('#template-conference-party-item');
 
     window.calls = {};
-    var nextCallID = 0;
-    var conference = {};
+    window.nextCallID = 0;
+    window.conference = {};
 
     /**
      * @param {jQuery|HTMLElement} $tpl
@@ -49,7 +50,7 @@ $(function() {
             login = (login.match(/^[\+1]/)) ? login : '1' + login;
             login = login.replace(/\W/g, '')
         }
-
+        
         platform
             .login({
                 username: login,
@@ -60,8 +61,8 @@ $(function() {
                 return postLogin(server, appKey, appSecret, login, ext, password, ll);
             }).catch(function (e) {
             console.error(e.stack || e);
-        });
-    }
+            });
+        }
 
     // Redirect function
     function show3LeggedLogin(server, appKey, appSecret, ll) {
@@ -358,6 +359,9 @@ $(function() {
         call.session.once('terminated', function(){
             $('#make-conference').show();
             $item.remove();
+            conference = {};
+            updateConferenceItem();
+
         });
         
         $item.attr('id', 'conference-call-item-' + callId);
@@ -367,37 +371,94 @@ $(function() {
             e.stopPropagation();
 
             console.log('CONFERENCE DELETE');
-            var uri = '/account/~/telephony/sessions/' + conference.sessionid;
+            var uri = '/account/~/telephony/sessions/' + conference.id;
             platform.delete(uri)
             .then(function(apiResponse){
                 console.log(apiResponse.json());
+                conference = {};
+                updateConferenceItem();
 
             })
             .catch(function (e) {
                 console.error(e.stack || e);
             })
-
         }); 
  
-        $item.find('.call-item-status').on('click', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('CONFERENCE STATUS REQUEST');
-            var uri = '/account/~/telephony/sessions/' + conference.sessionid;
-            platform.get(uri)
-            .then(function(apiResponse){
-                console.log(apiResponse.json());
-            })
-            .catch(function (e) {
-                console.error(e.stack || e);
-            });
-
-
+        $item.find('.call-item-status').on('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            updateConferenceStatus();
         });       
  
         $('#make-conference').hide();
         var $callItems = $('#conference-header');
         $callItems.append($item);
+    }
+
+    function updateConferenceStatus() {
+        platform.get('/account/~/telephony/sessions/' + conference.id)
+        .then(function(apiResponse){
+            console.log(apiResponse.json());
+            conference = apiResponse.json();
+            updateConferenceItem();
+        })
+        .catch(function (e) {
+            console.error(e.stack || e);
+        });
+    }
+
+    function updateConferenceItem() {
+        
+        var $conferenceItems = $('#conference-items');
+        $conferenceItems.empty();
+        
+        var parties = conference.parties;
+        if(!parties) {
+            return;
+        }
+
+        parties.forEach(function(party) {
+            if(party.conferenceRole === 'Host') {
+                return;
+            }
+            var $newPartyItem = createConferencePartyItem(party);
+            
+            $conferenceItems.append($newPartyItem);
+        });
+    }
+
+    function createConferencePartyItem(party) {
+        var $item = cloneTemplate($conferencePartyItemTemplate);
+        $item.attr('id', 'conference-party-item' + party.id);
+        var id = '';
+        var ext = '';
+        var num = '';
+        // if(party && party.from) {
+        //     id = party.id;
+        //     ext = party.from.extensionNumber || '';
+        //     num = party.from.phoneNumber || '';
+        // }
+        // $item.find('.call-item-info').html('Party: ' + id +'<br>Extension: ' + ext + '<br>Number: ' + num);
+        $item.find('.call-item-info').html('Party: ' + party.id);
+
+        $item.find('.call-item-remove-from-conference').on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('remove from conference');
+
+            platform.delete('/account/~/telephony/sessions/' + conference.id + '/parties/' + party.id)
+                .then(function(apiResponse) {
+                    console.log(apiResponse.json());
+                    updateConferenceStatus();
+                })
+                .catch(function (e) {
+                    console.error(e.stack || e);
+                });
+            }
+        );
+
+        return $item;
     }
 
     function createIncomingCallItem(callId) {
@@ -436,10 +497,10 @@ $(function() {
 
         var call = calls[callId];
         var session =  call.session;
-        var data = '';
+        call.data = '';
 
         session.on('accepted',function(incomingResponse){
-            data = incomingResponse;
+            call.data = incomingResponse;
         });
 
         var $item = cloneTemplate($activeCallItemTemplate);
@@ -464,7 +525,7 @@ $(function() {
             e.preventDefault();
             e.stopPropagation();
 
-            var map = data.headers['P-Rc-Api-Ids'][0]['raw'].split(';')
+            var map = call.data.headers['P-Rc-Api-Ids'][0]['raw'].split(';')
                 .map(function(sub) {
                     return sub.split('=')
                 });
@@ -472,13 +533,14 @@ $(function() {
             var partyid = map[0][1];
             var sessionid = map[1][1];
 
-            platform.post('/account/~/telephony/sessions/'+conference.sessionid+'/parties/bring-in',
+            platform.post('/account/~/telephony/sessions/'+conference.id+'/parties/bring-in',
                 {
                     "sessionId": sessionid,
                     "partyId": partyid
                 })
                 .then(function(apiResponse){
-                    console.warn(apiResponse.json());
+                    console.log(apiResponse.json());
+                    updateConferenceStatus();
                 });
 
             //TODO: add call to conference;
@@ -731,12 +793,11 @@ $(function() {
             conference = {};
             platform.post('/account/~/telephony/conference',{})
                 .then(function(apiResponse){
-                    console.log(apiResponse.json().session.voiceCallToken);
-                    conference.number = apiResponse.json().session.voiceCallToken;
-                    conference.sessionid = apiResponse.json().session.id;
+                    console.log(apiResponse.json());
+                    conference = apiResponse.json().session;
                 })
                 .then(function(){
-                    var conferenceCallId = sendInvite(conference.number, 1);
+                    var conferenceCallId = sendInvite(conference.voiceCallToken, 1);
 
                     conference.callId = conferenceCallId;
   
