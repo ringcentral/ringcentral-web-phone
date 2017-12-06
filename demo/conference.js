@@ -26,6 +26,7 @@ $(function() {
     window.calls = {};
     window.nextCallID = 0;
     window.conference = {};
+    window.cached_users = {};
 
     /**
      * @param {jQuery|HTMLElement} $tpl
@@ -360,6 +361,7 @@ $(function() {
             $('#make-conference').show();
             $item.remove();
             conference = {};
+            cached_users = {};
             updateConferenceItem();
 
         });
@@ -376,6 +378,7 @@ $(function() {
             .then(function(apiResponse){
                 console.log(apiResponse.json());
                 conference = {};
+                cached_users = {};
                 updateConferenceItem();
 
             })
@@ -436,16 +439,8 @@ $(function() {
     function createConferencePartyItem(party) {
         var $item = cloneTemplate($conferencePartyItemTemplate);
         $item.attr('id', 'conference-party-item' + party.id);
-        var id = '';
-        var ext = '';
-        var num = '';
-        // if(party && party.from) {
-        //     id = party.id;
-        //     ext = party.from.extensionNumber || '';
-        //     num = party.from.phoneNumber || '';
-        // }
-        // $item.find('.call-item-info').html('Party: ' + id +'<br>Extension: ' + ext + '<br>Number: ' + num);
-        $item.find('.call-item-info').html('Party: ' + party.id);
+        var user = cached_users && cached_users[party.id] ? cached_users[party.id] : '';
+         $item.find('.call-item-info').html('Party: ' + party.id + '<br>User: ' + user);
 
         $item.find('.call-item-remove-from-conference').on('click', function(e) {
             e.preventDefault();
@@ -530,6 +525,10 @@ $(function() {
             e.preventDefault();
             e.stopPropagation();
 
+            if(!conference) {
+                return;
+            }
+  
             var map = call.data.headers['P-Rc-Api-Ids'][0]['raw'].split(';')
                 .map(function(sub) {
                     return sub.split('=')
@@ -538,13 +537,17 @@ $(function() {
             var partyid = map[0][1];
             var sessionid = map[1][1];
 
+            var user = call.session.remoteIdentity.uri.user;
+
             platform.post('/account/~/telephony/sessions/'+conference.id+'/parties/bring-in',
                 {
                     "sessionId": sessionid,
                     "partyId": partyid
                 })
                 .then(function(apiResponse){
-                    console.log(apiResponse.json());
+                    var res = apiResponse.json();
+                    console.log(res);
+                    cached_users[res.id] = user;
                     updateConferenceStatus();
                 });
 
