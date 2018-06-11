@@ -131,13 +131,15 @@ $(function() {
             audioHelper: {
                 enabled: true
             },
-            logLevel: parseInt(logLevel, 10)
+            logLevel: parseInt(logLevel, 10),
+            appName: 'WebPhoneDemo',
+            appVersion: '1.0.0'
         });
 
         webPhone.userAgent.audioHelper.loadAudio({
             incoming: '../audio/incoming.ogg',
             outgoing: '../audio/outgoing.ogg'
-        })
+        });
 
         webPhone.userAgent.audioHelper.setVolume(.3);
 

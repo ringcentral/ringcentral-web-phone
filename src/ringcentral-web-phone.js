@@ -157,6 +157,11 @@
         this.appName = options.appName;
         this.appVersion = options.appVersion;
 
+        var userAgentString = (
+                    (options.appName ? (options.appName + (options.appVersion ? '/' + options.appVersion : '')) + ' ' : '') +
+                    'RCWEBPHONE/' + WebPhone.version
+        );
+
         var configuration = {
             uri: 'sip:' + this.sipInfo.username + '@' + this.sipInfo.domain,
             wsServers: this.sipInfo.outboundProxy && this.sipInfo.transport
@@ -177,17 +182,14 @@
             // mediaHandlerFactory: rcMediaHandlerFactory,
             rtcpMuxPolicy: "negotiate",
             //disable TCP candidates
-            hackStripTcp:true
+            hackStripTcp:true,
+            userAgentString: userAgentString
         };
-
 
         this.userAgent = new SIP.UA(configuration);
 
         this.userAgent.defaultHeaders = [
             'P-rc-endpoint-id: ' + id,
-            'RC-User-Agent: ' + (
-            (options.appName ? (options.appName + (options.appVersion ? '/' + options.appVersion : '')) + ' ' : '') +
-            'RCWEBPHONE/' + WebPhone.version),
             'Client-id:' + options.appKey
         ];
 
@@ -227,7 +229,7 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-    WebPhone.version = '0.4.5';
+    WebPhone.version = '0.4.6';
     WebPhone.uuid = uuid;
     WebPhone.delay = delay;
     WebPhone.extend = extend;
