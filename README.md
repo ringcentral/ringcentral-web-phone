@@ -53,7 +53,7 @@ bower install ringcentral-web-phone
 
 ### If you are not using Bower or NPM:
 
-1. Download SIP.JS: [http://sipjs.com/download/sip-0.7.8.js](http://sipjs.com/download/sip-0.7.8.js)
+1. Download SIP.JS: [http://sipjs.com/download/sip-10.0.js](http://sipjs.com/download/sip-0.10.0.js)
 2. Download WebPhone SDK: [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/src/ringcentral-web-phone.js](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/src/ringcentral-web-phone.js)
 3. Download audio files:
     1. [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/incoming.ogg](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/incoming.ogg)
@@ -110,6 +110,9 @@ var sdk = new RingCentral.SDK({
     server: RingCentral.SDK.server.production // or .sandbox
 });
 
+var remoteVideoElement =  document.getElementById('remoteVideo');
+var localVideoElement  = document.getElementById('localVideo');
+
 var platform = sdk.platform();
 
 platform
@@ -135,6 +138,10 @@ platform
                         enabled: true, // enables audio feedback when web phone is ringing or making a call
                         incoming: 'path-to-audio/incoming.ogg', // path to audio file for incoming call
                         outgoing: 'path-to-audio/outgoing.ogg' // path to aduotfile for outgoing call
+                    },
+                    media:{
+                        remote: remoteVideoElement,
+                        local: localVideoElement
                     }
                 });
                 
@@ -210,16 +217,14 @@ var webPhone = new RingCentral.WebPhone(provisionData, options);
         - `outgoing` &mdash; path to `outgoing.ogg`, audio file for outgoing call
     - `onSession` &mdash; this callback will be fired each time User Agent starts working with session (incoming or outgoing)
 
+### Attaching Media Streams
+
+For futher information, refer SIP.js guide to [attach media](https://sipjs.com/guides/attach-media/)
+
 ### Initiating The Call
 
 ```javascript
 var session = webPhone.userAgent.invite('PHONE_NUMBER', {
-    media: {
-        render: {
-            remote: document.getElementById('remoteVideo'),
-            local: document.getElementById('localVideo')
-        }
-    },
     fromNumber: 'PHONE_NUMBER', // Optional, Company Number will be used as default
     homeCountryId: '1' // Optional, the value of
 });
@@ -229,14 +234,7 @@ var session = webPhone.userAgent.invite('PHONE_NUMBER', {
 
 ```javascript
 webPhone.userAgent.on('invite', function(session){
-    session.accept({
-        media: {
-            render: {
-                remote: document.getElementById('remoteVideo'),
-                local: document.getElementById('localVideo')
-            }
-        }
-    }).then(...);
+    session.accept().then(...);
 });
 ```
 
@@ -254,7 +252,7 @@ Callee will be put on hold and the another person can join into the call by dial
 
 ```js
 session.hold().then(...);
-session.unhold().then(...);
+session.unhold().then(...); 
 ```
 
 ### Mute Unmute
@@ -332,3 +330,97 @@ session.stopRecord().then(...);
 
 Not yet implemented. Could be done by dialing \*83. The account should be enabled for barge/whisper access through system admin.
 
+### Upgrade Procedure from v0.4.X to 0.5.0
+
+- SDK constructor now allows to add custom UA Configuration parameters like `sessionDescriptionHandlerFactory` , `sessionDescriptionHandlerFactoryOptions` ,  `wsServerReconnectionTimeout` ,  `wsServerMaxReconnection`, `connectionRecoveryMaxInterval` and `connectionRecoveryMinInterval`
+
+- SDK now handles rendering HTML Media Elements. Pass remoteVideo and localVideo elements via SDK constructor
+
+#### Initialization
+
+Before: 
+```javascript
+webPhone = new RingCentral.WebPhone(data, {
+            appKey: localStorage.getItem('webPhoneAppKey'),
+            audioHelper: {
+                enabled: true
+            },
+            logLevel: parseInt(logLevel, 10),
+            appName: 'WebPhoneDemo',
+            appVersion: '1.0.0',
+        });
+```
+
+
+After: 
+```javascript
+
+var remoteVideoElement =  document.getElementById('remoteVideo');
+var localVideoElement  = document.getElementById('localVideo');
+webPhone = new RingCentral.WebPhone(data, {
+            appKey: localStorage.getItem('webPhoneAppKey'),
+            audioHelper: {
+                enabled: true
+            },
+            logLevel: parseInt(logLevel, 10),
+            appName: 'WebPhoneDemo',
+            appVersion: '1.0.0',
+            media: {
+                remote: remoteVideoElement,
+                local: localVideoElement
+            }
+        });
+```
+
+#### Accept Invites:
+ 
+Before:
+```javascript
+var acceptOptions = {	
+            media: {	
+                render: {	
+                    remote: document.getElementById('remoteVideo'),	
+                    local: document.getElementById('localVideo')	
+                }	
+            }	
+      };
+...
+...
+session.accept(acceptOptions).then(function() {
+...    
+});;
+```
+
+After:
+```javascript
+session.accept().then(function() {
+...    
+})
+```
+
+#### Send Invite:
+
+Before:
+```javascript
+var session = webPhone.userAgent.invite(number, {
+            media: {
+                render: {
+                    remote: document.getElementById('remoteVideo'),
+                    local: document.getElementById('localVideo')
+                }
+            },
+            fromNumber: username,
+            homeCountryId: homeCountryId
+        });
+```
+
+After:
+```javascript
+var session = webPhone.userAgent.invite(number, {
+            fromNumber: username,
+            homeCountryId: homeCountryId
+        });
+```
+ 
+          
+                                                                                                                                                                            
