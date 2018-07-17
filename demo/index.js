@@ -19,6 +19,9 @@ $(function() {
     var $incomingTemplate = $('#template-incoming');
     var $acceptedTemplate = $('#template-accepted');
 
+    var remoteVideoElement =  document.getElementById('remoteVideo');
+    var localVideoElement  = document.getElementById('localVideo');
+
     /**
      * @param {jQuery|HTMLElement} $tpl
      * @return {jQuery|HTMLElement}
@@ -133,7 +136,11 @@ $(function() {
             },
             logLevel: parseInt(logLevel, 10),
             appName: 'WebPhoneDemo',
-            appVersion: '1.0.0'
+            appVersion: '1.0.0',
+            media: {
+                remote: remoteVideoElement,
+                local: localVideoElement
+            }
         });
 
         webPhone.userAgent.audioHelper.loadAudio({
@@ -142,7 +149,6 @@ $(function() {
         });
 
         webPhone.userAgent.audioHelper.setVolume(.3);
-
         webPhone.userAgent.on('invite', onInvite);
         webPhone.userAgent.on('connecting', function() { console.log('UA connecting'); });
         webPhone.userAgent.on('connected', function() { console.log('UA Connected'); });
@@ -164,19 +170,10 @@ $(function() {
 
         var $modal = cloneTemplate($incomingTemplate).modal({backdrop: 'static'});
 
-        var acceptOptions = {
-            media: {
-                render: {
-                    remote: document.getElementById('remoteVideo'),
-                    local: document.getElementById('localVideo')
-                }
-            }
-        };
-
         $modal.find('.answer').on('click', function() {
             $modal.find('.before-answer').css('display', 'none');
             $modal.find('.answered').css('display', '');
-            session.accept(acceptOptions)
+            session.accept()
                 .then(function() {
                     $modal.modal('hide');
                     onAccepted(session);
@@ -195,7 +192,7 @@ $(function() {
         $modal.find('.forward-form').on('submit', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            session.forward($modal.find('input[name=forward]').val().trim(), acceptOptions)
+            session.forward($modal.find('input[name=forward]').val().trim())
                 .then(function() {
                     console.log('Forwarded');
                     $modal.modal('hide');
@@ -299,14 +296,7 @@ $(function() {
             e.stopPropagation();
             session.hold().then(function() {
 
-                var newSession = session.ua.invite($transfer.val().trim(), {
-                    media: {
-                        render: {
-                            remote: document.getElementById('remoteVideo'),
-                            local: document.getElementById('localVideo')
-                        }
-                    }
-                });
+                var newSession = session.ua.invite($transfer.val().trim());
 
                 newSession.once('accepted', function() {
                     session.warmTransfer(newSession)
@@ -371,21 +361,6 @@ $(function() {
             console.log('Event: Bye');
             close();
         });
-
-        session.mediaHandler.on('iceConnection', function() { console.log('Event: ICE: iceConnection'); });
-        session.mediaHandler.on('iceConnectionChecking', function() { console.log('Event: ICE: iceConnectionChecking'); });
-        session.mediaHandler.on('iceConnectionConnected', function() { console.log('Event: ICE: iceConnectionConnected'); });
-        session.mediaHandler.on('iceConnectionCompleted', function() { console.log('Event: ICE: iceConnectionCompleted'); });
-        session.mediaHandler.on('iceConnectionFailed', function() { console.log('Event: ICE: iceConnectionFailed'); });
-        session.mediaHandler.on('iceConnectionDisconnected', function() { console.log('Event: ICE: iceConnectionDisconnected'); });
-        session.mediaHandler.on('iceConnectionClosed', function() { console.log('Event: ICE: iceConnectionClosed'); });
-        session.mediaHandler.on('iceGatheringComplete', function() { console.log('Event: ICE: iceGatheringComplete'); });
-        session.mediaHandler.on('iceGathering', function() { console.log('Event: ICE: iceGathering'); });
-        session.mediaHandler.on('iceCandidate', function() { console.log('Event: ICE: iceCandidate'); });
-        session.mediaHandler.on('userMedia', function() { console.log('Event: ICE: userMedia'); });
-        session.mediaHandler.on('userMediaRequest', function() { console.log('Event: ICE: userMediaRequest'); });
-        session.mediaHandler.on('userMediaFailed', function() { console.log('Event: ICE: userMediaFailed'); });
-
     }
 
     function makeCall(number, homeCountryId) {
@@ -395,12 +370,6 @@ $(function() {
                       || null;
 
         var session = webPhone.userAgent.invite(number, {
-            media: {
-                render: {
-                    remote: document.getElementById('remoteVideo'),
-                    local: document.getElementById('localVideo')
-                }
-            },
             fromNumber: username,
             homeCountryId: homeCountryId
         });
