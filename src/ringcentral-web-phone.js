@@ -30,6 +30,12 @@
 
     var responseTimeout = 60000;
 
+    var defaultMediaConstraints   =  {
+        audio: true,
+        video: false
+    };
+
+
     function uuid() {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
             var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -64,7 +70,6 @@
 
         this._enabled = !!options.enabled;
         this.loadAudio(options);
-
     }
 
     AudioHelper.prototype._playSound = function(url, val, volume) {
@@ -148,19 +153,47 @@
         var id = options.uuid || localStorage.getItem(this.uuidKey) || uuid(); //TODO Make configurable
         localStorage.setItem(this.uuidKey, id);
 
-        // var rcMediaHandlerFactory = function(session, options) {
-        //     //TODO Override MediaHandler functions in order to disable TCP candidates
-        //     return new SIP.WebRTC.MediaHandler(session, options);
-        // };
-
         this.appKey = options.appKey;
         this.appName = options.appName;
         this.appVersion = options.appVersion;
 
         var userAgentString = (
-                    (options.appName ? (options.appName + (options.appVersion ? '/' + options.appVersion : '')) + ' ' : '') +
-                    'RCWEBPHONE/' + WebPhone.version
+            (options.appName ? (options.appName + (options.appVersion ? '/' + options.appVersion : '')) + ' ' : '') +
+            'RCWEBPHONE/' + WebPhone.version
         );
+
+        var modifiers = options.modifiers || [];
+        modifiers.push(SIP.WebRTC.Modifiers.stripTcpCandidates);
+
+
+
+        var sessionDescriptionHandlerFactoryOptions = options.sessionDescriptionHandlerFactory || {
+            peerConnectionOptions: {
+                iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 500,
+                    rtcConfiguration: {
+                    rtcpMuxPolicy: 'negotiate'
+                }
+            },
+            constraints: defaultMediaConstraints,
+            modifiers: modifiers
+        };
+
+
+        var browserUa = navigator.userAgent.toLowerCase();
+        var isSafari = false;
+        var isFirefox = false;
+
+        if (browserUa.indexOf('safari') > -1 && browserUa.indexOf('chrome') < 0) {
+            isSafari = true;
+        } else if (browserUa.indexOf('firefox') > -1 && browserUa.indexOf('chrome') < 0) {
+            isFirefox = true;
+        }
+
+        if (isFirefox) {
+            sessionDescriptionHandlerFactoryOptions.alwaysAcquireMediaFirst = true;
+        }
+
+        var sessionDescriptionHandlerFactory =  options.sessionDescriptionHandlerFactory || [];
 
         var configuration = {
             uri: 'sip:' + this.sipInfo.username + '@' + this.sipInfo.domain,
@@ -178,20 +211,29 @@
             domain: this.sipInfo.domain,
             autostart: true,
             register: true,
-            iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 500,
-            // mediaHandlerFactory: rcMediaHandlerFactory,
-            rtcpMuxPolicy: "negotiate",
-            //disable TCP candidates
-            hackStripTcp:true,
-            userAgentString: userAgentString
-        };
+            userAgentString: userAgentString,
 
+            wsServerMaxReconnection: options.wsServerMaxReconnection || 3,
+            connectionRecoveryMaxInterval: options.connectionRecoveryMaxInterval || 60,
+            connectionRecoveryMinInterval: options.connectionRecoveryMinInterval || 2,
+            sessionDescriptionHandlerFactoryOptions: sessionDescriptionHandlerFactoryOptions,
+            sessionDescriptionHandlerFactory : sessionDescriptionHandlerFactory
+        };
         this.userAgent = new SIP.UA(configuration);
 
         this.userAgent.defaultHeaders = [
             'P-rc-endpoint-id: ' + id,
             'Client-id:' + options.appKey
         ];
+
+        this.userAgent.media = {};
+
+        if (options.media !== undefined && options.media.remote && options.media.local) {
+            this.userAgent.media.remote = options.media.remote ;
+            this.userAgent.media.local = options.media.local;
+        }
+        else
+            throw new Error('HTML Media Element not Defined');
 
         this.userAgent.sipInfo = this.sipInfo;
 
@@ -307,6 +349,9 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
+
+
+
     function patchSession(session) {
 
         if (session.__patched) return session;
@@ -319,6 +364,7 @@
         session.__hold = session.hold;
         session.__unhold = session.unhold;
         session.__dtmf = session.dtmf;
+        session.__reinvite=session.reinvite;
 
         session.sendRequest = sendRequest;
         session.receiveRequest = receiveRequest;
@@ -326,6 +372,7 @@
         session.hold = hold;
         session.unhold = unhold;
         session.dtmf = dtmf;
+        session.reinvite=reinvite;
 
         session.warmTransfer = warmTransfer;
         session.blindTransfer = blindTransfer;
@@ -336,19 +383,29 @@
         session.stopRecord = stopRecord;
         session.flip = flip;
 
+        session.mute = mute;
+        session.unmute = unmute;
+        session.onLocalHold = onLocalHold;
+
+        session.media = session.ua.media;
+        session.addTrack = addTrack;
+
         session.on('replaced', patchSession);
-        // session.on('connecting', onConnecting);
 
         // Audio
         session.on('progress', function(incomingResponse) {
+            stopPlaying();
             if (incomingResponse.status_code === 183 && incomingResponse.body) {
                 session.createDialog(incomingResponse, 'UAC');
-                session.mediaHandler.setDescription(incomingResponse).then(function() {
+                session.sessionDescriptionHandler.setDescription(incomingResponse.body).then(function() {
                     session.status = 11; //C.STATUS_EARLY_MEDIA;
                     session.hasAnswer = true;
                 });
             }
         });
+
+        session.on('trackAdded',addTrack);
+
         session.on('accepted', stopPlaying);
         session.on('rejected', stopPlaying);
         session.on('bye', stopPlaying);
@@ -356,8 +413,7 @@
         session.on('cancel', stopPlaying);
         session.on('failed', stopPlaying);
         session.on('replaced', stopPlaying);
-        session.mediaHandler.on('iceConnectionCompleted', stopPlaying);
-        session.mediaHandler.on('iceConnectionFailed', stopPlaying);
+
 
         function stopPlaying() {
             session.ua.audioHelper.playOutgoing(false);
@@ -369,8 +425,6 @@
             session.removeListener('cancel', stopPlaying);
             session.removeListener('failed', stopPlaying);
             session.removeListener('replaced', stopPlaying);
-            session.mediaHandler.removeListener('iceConnectionCompleted', stopPlaying);
-            session.mediaHandler.removeListener('iceConnectionFailed', stopPlaying);
         }
 
         if (session.ua.onSession) session.ua.onSession(session);
@@ -398,22 +452,22 @@
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     function parseRcHeader(session) {
-      var prc = session.request.headers['P-Rc'];
-      if (prc && prc.length) {
-        var rawInviteMsg = prc[0].raw;
-        var parser = new DOMParser();
-        var xmlDoc = parser.parseFromString(rawInviteMsg, 'text/xml');
-        var hdrNode = xmlDoc.getElementsByTagName('Hdr')[0];
+        var prc = session.request.headers['P-Rc'];
+        if (prc && prc.length) {
+            var rawInviteMsg = prc[0].raw;
+            var parser = new DOMParser();
+            var xmlDoc = parser.parseFromString(rawInviteMsg, 'text/xml');
+            var hdrNode = xmlDoc.getElementsByTagName('Hdr')[0];
 
-        if (hdrNode) {
-          session.rcHeaders = {
-            sid: hdrNode.getAttribute('SID'),
-            request: hdrNode.getAttribute('Req'),
-            from: hdrNode.getAttribute('From'),
-            to: hdrNode.getAttribute('To'),
-          };
+            if (hdrNode) {
+                session.rcHeaders = {
+                    sid: hdrNode.getAttribute('SID'),
+                    request: hdrNode.getAttribute('Req'),
+                    from: hdrNode.getAttribute('From'),
+                    to: hdrNode.getAttribute('To'),
+                };
+            }
         }
-      }
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
@@ -519,7 +573,6 @@
      * @return {Promise}
      */
     function sendReceive(session, command, options) {
-
         options = options || {};
 
         extend(command, options);
@@ -642,7 +695,7 @@
      * @param {boolean} flag
      * @return {Promise}
      */
-    function setHold(session, flag) {
+    function setLocalHold(session, flag) {
         return new Promise(function(resolve, reject) {
 
             var options = {
@@ -653,9 +706,9 @@
             };
 
             if (flag) {
-                session.__hold(options);
+                resolve(session.__hold(options));
             } else {
-                session.__unhold(options);
+                resolve(session.__unhold(options));
             }
 
         });
@@ -682,12 +735,11 @@
         if (options.homeCountryId) { options.extraHeaders.push('P-rc-country-id: ' + options.homeCountryId); }
 
         options.media = options.media || {};
-        options.media.constraints = options.media.constraints || {audio: true, video: false};
+        options.media.constraints = options.media.constraints || defaultMediaConstraints;
 
         options.RTCConstraints = options.RTCConstraints || {optional: [{DtlsSrtpKeyAgreement: 'true'}]};
 
         ua.audioHelper.playOutgoing(true);
-
         return patchSession(ua.__invite(number, options));
 
     }
@@ -713,27 +765,6 @@
                     }
                 }
                 break;
-            //Refresh invite should not be rejected with 488
-            case SIP.C.INVITE:
-                if (session.status === SIP.Session.C.STATUS_CONFIRMED) {
-                    if (request.call_id && session.dialog && session.dialog.id && request.call_id == session.dialog.id.call_id) {
-                        //TODO: check that SDP did not change
-                        session.logger.log('re-INVITE received');
-                        var localSDP = session.mediaHandler.peerConnection.localDescription.sdp;
-                        request.reply(200, null, ['Contact: ' + session.contact], localSDP, function() {
-                            session.status = SIP.Session.C.STATUS_WAITING_FOR_ACK;
-                            session.setInvite2xxTimer(request, localSDP);
-                            session.setACKTimer();
-                        });
-                        return session;
-                    }
-                    //else will be rejected with 488 by SIP.js
-                }
-                break;
-            //We need to analize NOTIFY messages sometimes, so we fire an event
-            case SIP.C.NOTIFY:
-                session.emit('RC_SIP_NOTIFY', request);
-                break;
         }
         return session.__receiveRequest.apply(session, arguments);
     }
@@ -752,7 +783,7 @@
         options = options || {};
         options.extraHeaders = (options.extraHeaders || []).concat(session.ua.defaultHeaders);
         options.media = options.media || {};
-        options.media.constraints = options.media.constraints || {audio: true, video: false};
+        options.media.constraints = options.media.constraints || defaultMediaConstraints;
 
         options.RTCConstraints = options.RTCConstraints || {optional: [{DtlsSrtpKeyAgreement: 'true'}]};
 
@@ -771,10 +802,9 @@
             //TODO More events?
             session.once('accepted', onAnswered);
             session.once('failed', onFail);
-
             session.__accept(options);
-
         });
+
 
     }
 
@@ -789,10 +819,13 @@
     function dtmf(dtmf, duration) {
         var session = this;
         duration = parseInt(duration) || 1000;
-        var peer = session.mediaHandler.peerConnection;
-        var stream = session.getLocalStreams()[0];
-        var dtmfSender = peer.createDTMFSender(stream.getAudioTracks()[0]);
-        if (dtmfSender !== undefined && dtmfSender.canInsertDTMF) {
+        var pc = session.sessionDescriptionHandler.peerConnection;
+        var senders = pc.getSenders();
+        var audioSender = senders.find(function(sender) {
+            return sender.track && sender.track.kind === 'audio';
+        });
+        var dtmfSender = audioSender.dtmf;
+        if (dtmfSender !== undefined && dtmfSender) {
             return dtmfSender.insertDTMF(dtmf, duration);
         }
         throw new Error('Send DTMF failed: ' + (!dtmfSender ? 'no sender' : (!dtmfSender.canInsertDTMF ? 'can\'t insert DTMF' : 'Unknown')));
@@ -805,7 +838,7 @@
      * @return {Promise}
      */
     function hold() {
-        return setHold(this, true);
+        return setLocalHold(this, true);
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
@@ -815,7 +848,7 @@
      * @return {Promise}
      */
     function unhold() {
-        return setHold(this, false);
+        return setLocalHold(this, false);
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
@@ -836,74 +869,7 @@
 
         return new Promise(function(resolve, reject) {
             //Blind Transfer is taken from SIP.js source
-
-            // Check Session Status
-            if (session.status !== SIP.Session.C.STATUS_CONFIRMED) {
-                throw new SIP.Exceptions.InvalidStateError(session.status);
-            }
-
-            // normalizeTarget allows instances of SIP.URI to pass through unaltered,
-            // so try to make one ahead of time
-            try {
-                target = SIP.Grammar.parse(target, 'Refer_To').uri || target;
-            } catch (e) {
-                session.logger.debug(".refer() cannot parse Refer_To from", target);
-                session.logger.debug("...falling through to normalizeTarget()");
-            }
-
-            // Check target validity
-            target = session.ua.normalizeTarget(target);
-            if (!target) {
-                throw new TypeError('Invalid target: ' + originalTarget);
-            }
-
-            extraHeaders = extraHeaders.concat(session.ua.defaultHeaders).concat([
-                'Contact: ' + session.contact,
-                'Allow: ' + SIP.UA.C.ALLOWED_METHODS.toString(),
-                'Refer-To: ' + target
-            ]);
-
-            // Send the request
-            session.sendRequest(SIP.C.REFER, {
-                extraHeaders: extraHeaders,
-                body: options.body,
-                receiveResponse: function(response) {
-                    var timeout = null;
-                    if (response.status_code === 202) {
-                        var callId = response.call_id;
-
-                        var onNotify = function(request) {
-                            if (request.call_id === callId) {
-                                var body = request && request.body || '';
-                                switch (true) {
-                                    case /1[0-9]{2}/.test(body):
-                                        request.reply(200);
-                                        break;
-                                    case /2[0-9]{2}/.test(body):
-                                        session.terminate();
-                                        clearTimeout(timeout);
-                                        session.removeListener('RC_SIP_NOTIFY', onNotify);
-                                        resolve();
-                                        break;
-                                    default:
-                                        reject(body);
-                                        break;
-                                }
-                            }
-                        };
-
-                        timeout = setTimeout(function() {
-                            reject(new Error('Timeout: no reply'));
-                            session.removeListener('RC_SIP_NOTIFY', onNotify);
-                        }, responseTimeout);
-                        session.on('RC_SIP_NOTIFY', onNotify);
-                    }
-                    else {
-                        reject(new Error('The response status code is: ' + response.status_code + ' (waiting for 202)'));
-                    }
-                }
-            });
-
+            return session.refer(target, options);
         });
     }
 
@@ -919,14 +885,14 @@
 
         var session = this;
 
-        return (session.isOnHold() ? Promise.resolve(null) : session.hold())
+        return (session.local_hold ? Promise.resolve(null) : session.hold())
             .then(function() { return delay(300); })
             .then(function() {
 
                 var referTo = '<' + target.dialog.remote_target.toString() +
-                              '?Replaces=' + target.dialog.id.call_id +
-                              '%3Bto-tag%3D' + target.dialog.id.remote_tag +
-                              '%3Bfrom-tag%3D' + target.dialog.id.local_tag + '>';
+                    '?Replaces=' + target.dialog.id.call_id +
+                    '%3Bto-tag%3D' + target.dialog.id.remote_tag +
+                    '%3Bfrom-tag%3D' + target.dialog.id.local_tag + '>';
 
                 transferOptions = transferOptions || {};
                 transferOptions.extraHeaders = (transferOptions.extraHeaders || [])
@@ -952,7 +918,7 @@
 
         var session = this;
 
-        return (session.isOnHold() ? Promise.resolve(null) : session.hold())
+        return (session.local_hold ? Promise.resolve(null) : session.hold())
             .then(function() { return delay(300); })
             .then(function() {
                 return session.blindTransfer(target, options);
@@ -1035,6 +1001,120 @@
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
+    /**
+     * @this {SIP.Session}
+     * @return {Promise}
+     */
+
+    function reinvite (options, modifier){
+        var session = this;
+        options = options || {}
+        options.sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions || {};
+        options.sessionDescriptionHandlerOptions.constraints = options.sessionDescriptionHandlerOptions.constraints || defaultMediaConstraints;
+        return session.__reinvite(options, modifier);
+    }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+
+    function toggleMute (session , mute) {
+        var pc = session.sessionDescriptionHandler.peerConnection;
+        if (pc.getSenders) {
+            pc.getSenders().forEach(function(sender) {
+                if (sender.track) {
+                    sender.track.enabled = !mute;
+                }
+            });
+        }
+    };
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+    function mute (silent){
+        if (this.state !== this.STATUS_CONNECTED) {
+            this.logger.warn('An acitve call is required to mute audio');
+            return;
+        }
+        this.logger.log('Muting Audio');
+        if (!silent) {
+            this.emit('muted',this.session);
+        }
+        return toggleMute(this, true);
+    };
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    function unmute(silent) {
+        if (this.state !== this.STATUS_CONNECTED) {
+            this.logger.warn('An active call is required to unmute audio');
+            return;
+        }
+        this.logger.log('Unmuting Audio');
+        if (!silent) {
+            this.emit('unmuted',this.session);
+        }
+        return toggleMute(this,false);
+    };
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * @this {SIP.Session}
+     * @return boolean
+     */
+
+    function onLocalHold (){
+        var session = this;
+        return session.local_hold;
+    };
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+
+    function addTrack(){
+
+        var session = this;
+        var pc = session.sessionDescriptionHandler.peerConnection;
+
+        // Gets remote tracks
+        var remoteAudio = session.media.remote;
+        var remoteStream = new MediaStream();
+
+        if(pc.getReceivers){
+            pc.getReceivers().forEach(function(receiver) {
+                var rtrack = receiver.track;
+                if(rtrack){
+                    remoteStream.addTrack(rtrack);
+                }});
+        }
+        else{
+            remoteStream = pc.getRemoteStreams()[0];
+        }
+        remoteAudio.srcObject = remoteStream;
+        remoteAudio.play().catch(function() {
+            session.logger.log('local play was rejected');
+        });
+
+        // Gets local tracks
+        var localAudio = session.media.local;
+        var localStream = new MediaStream();
+
+        if(pc.getSenders){
+            pc.getSenders().forEach(function(sender) {
+                var strack = sender.track;
+                if (strack && strack.kind === 'audio') {
+                    localStream.addTrack(strack);
+                }
+            });
+        }
+        else{
+            localStream = pc.getLocalStreams()[0];
+        }
+        localAudio.srcObject = localStream;
+        localAudio.play().catch(function() {
+            session.logger.log('local play was rejected');
+        });
+
+    }
 
     return WebPhone;
 
