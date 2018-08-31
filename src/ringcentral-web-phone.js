@@ -167,7 +167,7 @@
 
 
 
-        var sessionDescriptionHandlerFactoryOptions = options.sessionDescriptionHandlerFactory || {
+        var sessionDescriptionHandlerFactoryOptions = options.sessionDescriptionHandlerFactoryOptions || {
             peerConnectionOptions: {
                 iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 500,
                     rtcConfiguration: {
