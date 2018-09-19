@@ -53,7 +53,7 @@ bower install ringcentral-web-phone
 
 ### If you are not using Bower or NPM:
 
-1. Download SIP.JS: [http://sipjs.com/download/sip-10.0.js](http://sipjs.com/download/sip-0.10.0.js)
+1. Download SIP.JS: [https://sipjs.com/download/sip-0.11.3.js](https://sipjs.com/download/sip-0.11.3.js)
 2. Download WebPhone SDK: [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/src/ringcentral-web-phone.js](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/src/ringcentral-web-phone.js)
 3. Download audio files:
     1. [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/incoming.ogg](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/incoming.ogg)
@@ -189,7 +189,7 @@ Online demo is hosted at [https://ringcentral-web-phone.herokuapp.com/demo](http
 
 ## API
 
-Except for some RingCentral-specific features the API is 100% the same as SIP.JS: http://sipjs.com/api/0.7.0: most of the time you will be working with RC-flavored [UserAgent](http://sipjs.com/api/0.7.0/ua) and [Session](http://sipjs.com/api/0.7.0/session) objects of SIP.JS.
+Except for some RingCentral-specific features the API is 100% the same as SIP.JS: http://sipjs.com/api/0.11.0: most of the time you will be working with RC-flavored [UserAgent](http://sipjs.com/api/0.11.0/ua) and [Session](http://sipjs.com/api/0.11.0/session) objects of SIP.JS.
 
 We encourage you to take a look at [Guides](http://sipjs.com/guides) section, especially
 [Make A Call](http://sipjs.com/guides/make-call) and [Receive A Call](http://sipjs.com/guides/receive-call/) articles.
@@ -330,11 +330,13 @@ session.stopRecord().then(...);
 
 Not yet implemented. Could be done by dialing \*83. The account should be enabled for barge/whisper access through system admin.
 
-### Upgrade Procedure from v0.4.X to 0.5.0
+### Upgrade Procedure from v0.4.X to 0.6.0
 
-- SDK constructor now allows to add custom UA Configuration parameters like `sessionDescriptionHandlerFactory` , `sessionDescriptionHandlerFactoryOptions` ,  `wsServerReconnectionTimeout` ,  `wsServerMaxReconnection`, `connectionRecoveryMaxInterval` and `connectionRecoveryMinInterval`
+- SDK constructor now allows to add custom UA Configuration parameters like `sessionDescriptionHandlerFactory` , `sessionDescriptionHandlerFactoryOptions` ,  `maxReconnectionAttempts` ,  `reconnectionTimeout`, `connectionTimeout`
 
 - SDK now handles rendering HTML Media Elements. Pass remoteVideo and localVideo elements via SDK constructor
+
+- SDK also offers to addTrack() to handle remoteVideo and localVideo elements outside the constructor too
 
 #### Initialization
 
