@@ -156,10 +156,14 @@
         this.appKey = options.appKey;
         this.appName = options.appName;
         this.appVersion = options.appVersion;
+        
+        var ua_match = navigator.userAgent.match(/\((.*?)\)/);
+		var app_client_os = (ua_match && ua_match.length && ua_match[1]) || '';
 
         var userAgentString = (
             (options.appName ? (options.appName + (options.appVersion ? '/' + options.appVersion : '')) + ' ' : '') +
-            'RCWEBPHONE/' + WebPhone.version
+            (app_client_os ? '(' + app_client_os + ')' : '') + 
+            ' RCWEBPHONE/' + WebPhone.version
         );
 
         var modifiers = options.modifiers || [];
