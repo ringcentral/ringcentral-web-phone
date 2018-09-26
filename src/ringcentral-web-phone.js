@@ -156,16 +156,19 @@
         this.appKey = options.appKey;
         this.appName = options.appName;
         this.appVersion = options.appVersion;
+        
+        var ua_match = navigator.userAgent.match(/\((.*?)\)/);
+		var app_client_os = (ua_match && ua_match.length && ua_match[1]).replace(/[^a-zA-Z0-9.:_]+/g,"-") || '';
 
         var userAgentString = (
             (options.appName ? (options.appName + (options.appVersion ? '/' + options.appVersion : '')) + ' ' : '') +
-            'RCWEBPHONE/' + WebPhone.version
+            (app_client_os ? app_client_os  : '') +
+            ' RCWEBPHONE/' + WebPhone.version
         );
 
         var modifiers = options.modifiers || [];
-        modifiers.push(SIP.WebRTC.Modifiers.stripTcpCandidates);
-
-
+        modifiers.push(SIP.Web.Modifiers.stripG722);
+        modifiers.push(SIP.Web.Modifiers.stripTcpCandidates);
 
         var sessionDescriptionHandlerFactoryOptions = options.sessionDescriptionHandlerFactoryOptions || {
             peerConnectionOptions: {
@@ -174,7 +177,7 @@
                     rtcpMuxPolicy: 'negotiate'
                 }
             },
-            constraints: defaultMediaConstraints,
+            constraints: options.mediaConstraints||defaultMediaConstraints,
             modifiers: modifiers
         };
 
@@ -197,25 +200,29 @@
 
         var configuration = {
             uri: 'sip:' + this.sipInfo.username + '@' + this.sipInfo.domain,
-            wsServers: this.sipInfo.outboundProxy && this.sipInfo.transport
-                ? this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxy
-                : this.sipInfo.wsServers,
+
+            transportOptions: {
+                wsServers: this.sipInfo.outboundProxy && this.sipInfo.transport
+                    ? this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxy
+                    : this.sipInfo.wsServers,
+                traceSip: true,
+                maxReconnectionAttempts: options.maxReconnectionAttempts || 3,
+                reconnectionTimeout: options.reconnectionTimeout || 5,
+                connectionTimeout: options.connectionTimeout || 5
+            },
             authorizationUser: this.sipInfo.authorizationId,
             password: this.sipInfo.password,
-            traceSip: true,
             stunServers: this.sipInfo.stunServers || ['stun:74.125.194.127:19302'], //FIXME Hardcoded?
             turnServers: [],
             log: {
-                level: options.logLevel || 1 //FIXME LOG LEVEL 3
+                level: options.logLevel || 1 ,//FIXME LOG LEVEL 3
+                builtinEnabled : options.builtinEnabled || true,
+                connector  : options.connector|| null
             },
             domain: this.sipInfo.domain,
-            autostart: true,
+            autostart: false,
             register: true,
             userAgentString: userAgentString,
-
-            wsServerMaxReconnection: options.wsServerMaxReconnection || 3,
-            connectionRecoveryMaxInterval: options.connectionRecoveryMaxInterval || 60,
-            connectionRecoveryMinInterval: options.connectionRecoveryMinInterval || 2,
             sessionDescriptionHandlerFactoryOptions: sessionDescriptionHandlerFactoryOptions,
             sessionDescriptionHandlerFactory : sessionDescriptionHandlerFactory
         };
@@ -228,12 +235,12 @@
 
         this.userAgent.media = {};
 
-        if (options.media !== undefined && options.media.remote && options.media.local) {
+        if (options.media && (options.media.remote && options.media.local)){
             this.userAgent.media.remote = options.media.remote ;
             this.userAgent.media.local = options.media.local;
         }
         else
-            throw new Error('HTML Media Element not Defined');
+            this.userAgent.media = null;
 
         this.userAgent.sipInfo = this.sipInfo;
 
@@ -263,15 +270,14 @@
         this.userAgent.onSession = options.onSession || null;
         this.userAgent.createRcMessage = createRcMessage;
         this.userAgent.sendMessage = sendMessage;
-        this.userAgent.transport._onMessage = this.userAgent.transport.onMessage;
-        this.userAgent.transport.onMessage = onMessage;
-        this.userAgent.register();
-
+        this.userAgent._onMessage = this.userAgent.onTransportReceiveMsg;
+        this.userAgent.onTransportReceiveMsg = onMessage.bind(this.userAgent);
+        this.userAgent.start();
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-    WebPhone.version = '0.5.0';
+    WebPhone.version = '0.6.0';
     WebPhone.uuid = uuid;
     WebPhone.delay = delay;
     WebPhone.extend = extend;
@@ -404,7 +410,8 @@
             }
         });
 
-        session.on('trackAdded',addTrack);
+        if(session.media)
+            session.on('trackAdded',addTrack);
 
         session.on('accepted', stopPlaying);
         session.on('rejected', stopPlaying);
@@ -734,9 +741,6 @@
         //FIXME Backend should know it already
         if (options.homeCountryId) { options.extraHeaders.push('P-rc-country-id: ' + options.homeCountryId); }
 
-        options.media = options.media || {};
-        options.media.constraints = options.media.constraints || defaultMediaConstraints;
-
         options.RTCConstraints = options.RTCConstraints || {optional: [{DtlsSrtpKeyAgreement: 'true'}]};
 
         ua.audioHelper.playOutgoing(true);
@@ -782,9 +786,6 @@
 
         options = options || {};
         options.extraHeaders = (options.extraHeaders || []).concat(session.ua.defaultHeaders);
-        options.media = options.media || {};
-        options.media.constraints = options.media.constraints || defaultMediaConstraints;
-
         options.RTCConstraints = options.RTCConstraints || {optional: [{DtlsSrtpKeyAgreement: 'true'}]};
 
         return new Promise(function(resolve, reject) {
@@ -1010,7 +1011,6 @@
         var session = this;
         options = options || {}
         options.sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions || {};
-        options.sessionDescriptionHandlerOptions.constraints = options.sessionDescriptionHandlerOptions.constraints || defaultMediaConstraints;
         return session.__reinvite(options, modifier);
     }
 
@@ -1070,15 +1070,28 @@
     /*--------------------------------------------------------------------------------------------------------------------*/
 
 
-    function addTrack(){
+
+    function addTrack(remoteAudioEle, localAudioEle){
 
         var session = this;
         var pc = session.sessionDescriptionHandler.peerConnection;
 
-        // Gets remote tracks
-        var remoteAudio = session.media.remote;
-        var remoteStream = new MediaStream();
+        var remoteAudio;
+        var localAudio;
 
+        if(remoteAudioEle&&localAudioEle){
+            remoteAudio = remoteAudioEle;
+            localAudio = localAudioEle;
+        }
+        else if(session.media){
+            remoteAudio = session.media.remote;
+            localAudio = session.media.local;
+        }
+        else
+            throw new Error('HTML Media Element not Defined');
+
+
+        var remoteStream = new MediaStream();
         if(pc.getReceivers){
             pc.getReceivers().forEach(function(receiver) {
                 var rtrack = receiver.track;
@@ -1094,10 +1107,7 @@
             session.logger.log('local play was rejected');
         });
 
-        // Gets local tracks
-        var localAudio = session.media.local;
         var localStream = new MediaStream();
-
         if(pc.getSenders){
             pc.getSenders().forEach(function(sender) {
                 var strack = sender.track;
