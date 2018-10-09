@@ -22,6 +22,7 @@
         whisper: {reqid: 6, command: 'whisper'},
         takeover: {reqid: 7, command: 'takeover'},
         toVoicemail: {reqid: 11, command: 'toVoicemail'},
+        ignore: {reqid: 12, command: 'ignore'},
         receiveConfirm: {reqid: 17, command: 'receiveConfirm'},
         replyWithMessage: {reqid: 14, command: 'replyWithMessage'},
     };
@@ -156,7 +157,7 @@
         this.appKey = options.appKey;
         this.appName = options.appName;
         this.appVersion = options.appVersion;
-        
+
         var ua_match = navigator.userAgent.match(/\((.*?)\)/);
 		var app_client_os = (ua_match && ua_match.length && ua_match[1]).replace(/[^a-zA-Z0-9.:_]+/g,"-") || '';
 
@@ -450,6 +451,7 @@
         }
         session.canUseRCMCallControl = canUseRCMCallControl;
         session.createSessionMessage = createSessionMessage;
+        session.ignore = ignore;
         session.sendSessionMessage = sendSessionMessage;
         session.sendReceiveConfirm = sendReceiveConfirm;
         session.toVoicemail = toVoicemail;
@@ -465,6 +467,7 @@
             var parser = new DOMParser();
             var xmlDoc = parser.parseFromString(rawInviteMsg, 'text/xml');
             var hdrNode = xmlDoc.getElementsByTagName('Hdr')[0];
+            var BdyNode = xmlDoc.getElementsByTagName('Bdy')[0];
 
             if (hdrNode) {
                 session.rcHeaders = {
@@ -473,6 +476,13 @@
                     from: hdrNode.getAttribute('From'),
                     to: hdrNode.getAttribute('To'),
                 };
+                if (BdyNode) {
+                    extend(session.rcHeaders, {
+                        srvLvl: BdyNode.getAttribute('SrvLvl'),
+                        srvLvlExt: BdyNode.getAttribute('SrvLvlExt'),
+                        toNm: BdyNode.getAttribute('ToNm'),
+                    });
+                }
             }
         }
     }
@@ -505,6 +515,19 @@
             to: this.rcHeaders.from,
         });
         return this.ua.createRcMessage(options);
+    }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * @this {SIP.Session}
+     * @return {Promise}
+     */
+    function ignore() {
+        var session = this;
+        return session._sendReceiveConfirmPromise.then(function () {
+            return session.sendSessionMessage(messages.ignore);
+        });
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
