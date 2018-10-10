@@ -467,7 +467,7 @@
             var parser = new DOMParser();
             var xmlDoc = parser.parseFromString(rawInviteMsg, 'text/xml');
             var hdrNode = xmlDoc.getElementsByTagName('Hdr')[0];
-            var BdyNode = xmlDoc.getElementsByTagName('Bdy')[0];
+            var bdyNode = xmlDoc.getElementsByTagName('Bdy')[0];
 
             if (hdrNode) {
                 session.rcHeaders = {
@@ -476,11 +476,11 @@
                     from: hdrNode.getAttribute('From'),
                     to: hdrNode.getAttribute('To'),
                 };
-                if (BdyNode) {
+                if (bdyNode) {
                     extend(session.rcHeaders, {
-                        srvLvl: BdyNode.getAttribute('SrvLvl'),
-                        srvLvlExt: BdyNode.getAttribute('SrvLvlExt'),
-                        toNm: BdyNode.getAttribute('ToNm'),
+                        srvLvl: bdyNode.getAttribute('SrvLvl'),
+                        srvLvlExt: bdyNode.getAttribute('SrvLvlExt'),
+                        toNm: bdyNode.getAttribute('ToNm'),
                     });
                 }
             }
