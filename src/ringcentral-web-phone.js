@@ -221,7 +221,7 @@
             },
             domain: this.sipInfo.domain,
             autostart: false,
-            register: true,
+            register: false,
             userAgentString: userAgentString,
             sessionDescriptionHandlerFactoryOptions: sessionDescriptionHandlerFactoryOptions,
             sessionDescriptionHandlerFactory : sessionDescriptionHandlerFactory
@@ -273,6 +273,7 @@
         this.userAgent._onMessage = this.userAgent.onTransportReceiveMsg;
         this.userAgent.onTransportReceiveMsg = onMessage.bind(this.userAgent);
         this.userAgent.start();
+	this.userAgent.register();
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
