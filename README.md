@@ -53,7 +53,7 @@ bower install ringcentral-web-phone
 
 ### If you are not using Bower or NPM:
 
-1. Download SIP.JS: [https://sipjs.com/download/sip-0.11.3.js](https://sipjs.com/download/sip-0.11.3.js)
+1. Download SIP.JS: [https://sipjs.com/download/sip-0.11.6.js](https://sipjs.com/download/sip-0.11.6.js)
 2. Download WebPhone SDK: [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/src/ringcentral-web-phone.js](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/src/ringcentral-web-phone.js)
 3. Download audio files:
     1. [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/incoming.ogg](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/incoming.ogg)
@@ -330,7 +330,7 @@ session.stopRecord().then(...);
 
 Not yet implemented. Could be done by dialing \*83. The account should be enabled for barge/whisper access through system admin.
 
-### Upgrade Procedure from v0.4.X to 0.6.0
+### Upgrade Procedure from v0.4.X to 0.6.1
 
 - SDK constructor now allows to add custom UA Configuration parameters like `sessionDescriptionHandlerFactory` , `sessionDescriptionHandlerFactoryOptions` ,  `maxReconnectionAttempts` ,  `reconnectionTimeout`, `connectionTimeout`
 
