@@ -7,7 +7,7 @@
     "start": "./node_modules/.bin/http-server"
   },
   "dependencies": {
-    "sip.js": "^0.11.3"
+    "sip.js": "^0.11.6"
   },
   "devDependencies": {
     "chai": "3.5.0",
@@ -51,5 +51,5 @@
     "node": ">=0.10.36"
   },
   "license": "MIT",
-  "version": "0.6.0"
+  "version": "0.6.1"
 }

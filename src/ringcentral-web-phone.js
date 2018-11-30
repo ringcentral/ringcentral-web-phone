@@ -22,6 +22,7 @@
         whisper: {reqid: 6, command: 'whisper'},
         takeover: {reqid: 7, command: 'takeover'},
         toVoicemail: {reqid: 11, command: 'toVoicemail'},
+        ignore: {reqid: 12, command: 'ignore'},
         receiveConfirm: {reqid: 17, command: 'receiveConfirm'},
         replyWithMessage: {reqid: 14, command: 'replyWithMessage'},
     };
@@ -156,9 +157,9 @@
         this.appKey = options.appKey;
         this.appName = options.appName;
         this.appVersion = options.appVersion;
-        
+
         var ua_match = navigator.userAgent.match(/\((.*?)\)/);
-		var app_client_os = (ua_match && ua_match.length && ua_match[1]).replace(/[^a-zA-Z0-9.:_]+/g,"-") || '';
+        var app_client_os = (ua_match && ua_match.length && ua_match[1]).replace(/[^a-zA-Z0-9.:_]+/g,"-") || '';
 
         var userAgentString = (
             (options.appName ? (options.appName + (options.appVersion ? '/' + options.appVersion : '')) + ' ' : '') +
@@ -173,8 +174,9 @@
         var sessionDescriptionHandlerFactoryOptions = options.sessionDescriptionHandlerFactoryOptions || {
             peerConnectionOptions: {
                 iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 500,
-                    rtcConfiguration: {
-                    rtcpMuxPolicy: 'negotiate'
+                rtcConfiguration: {
+                    rtcpMuxPolicy: 'negotiate',
+                    sdpSemantics:'plan-b'
                 }
             },
             constraints: options.mediaConstraints||defaultMediaConstraints,
@@ -273,12 +275,12 @@
         this.userAgent._onMessage = this.userAgent.onTransportReceiveMsg;
         this.userAgent.onTransportReceiveMsg = onMessage.bind(this.userAgent);
         this.userAgent.start();
-	this.userAgent.register();
+        this.userAgent.register();
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-    WebPhone.version = '0.6.0';
+    WebPhone.version = '0.6.1';
     WebPhone.uuid = uuid;
     WebPhone.delay = delay;
     WebPhone.extend = extend;
@@ -453,6 +455,7 @@
         session.createSessionMessage = createSessionMessage;
         session.sendSessionMessage = sendSessionMessage;
         session.sendReceiveConfirm = sendReceiveConfirm;
+        session.ignore = ignore;
         session.toVoicemail = toVoicemail;
         session.replyWithMessage = replyWithMessage;
     }
@@ -466,6 +469,7 @@
             var parser = new DOMParser();
             var xmlDoc = parser.parseFromString(rawInviteMsg, 'text/xml');
             var hdrNode = xmlDoc.getElementsByTagName('Hdr')[0];
+            var bdyNode = xmlDoc.getElementsByTagName('Bdy')[0];
 
             if (hdrNode) {
                 session.rcHeaders = {
@@ -474,6 +478,13 @@
                     from: hdrNode.getAttribute('From'),
                     to: hdrNode.getAttribute('To'),
                 };
+            }
+            if (bdyNode) {
+                extend(session.rcHeaders, {
+                    srvLvl: bdyNode.getAttribute('SrvLvl'),
+                    srvLvlExt: bdyNode.getAttribute('SrvLvlExt'),
+                    toNm: bdyNode.getAttribute('ToNm'),
+                });
             }
         }
     }
@@ -508,6 +519,19 @@
         return this.ua.createRcMessage(options);
     }
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * @this {SIP.Session}
+     * @return {Promise}
+     */
+    function ignore() {
+        var session = this;
+        console.error("IGNORE KICKED");
+        return session._sendReceiveConfirmPromise.then(function () {
+            return session.sendSessionMessage(messages.ignore);
+        });
+    }
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     /**
