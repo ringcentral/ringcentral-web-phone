@@ -280,7 +280,7 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-    WebPhone.version = '0.6.1';
+    WebPhone.version = '0.6.2';
     WebPhone.uuid = uuid;
     WebPhone.delay = delay;
     WebPhone.extend = extend;
@@ -404,14 +404,18 @@
         // Audio
         session.on('progress', function(incomingResponse) {
             stopPlaying();
-            if (incomingResponse.status_code === 183 && incomingResponse.body) {
+            if (incomingResponse.status_code === 183) {
                 session.createDialog(incomingResponse, 'UAC');
-                session.sessionDescriptionHandler.setDescription(incomingResponse.body).then(function() {
-                    session.status = 11; //C.STATUS_EARLY_MEDIA;
-                    session.hasAnswer = true;
-                });
-            }
-        });
+                session.hasAnswer = true;
+                session.status = 11;
+                session.sessionDescriptionHandler.setDescription(incomingResponse.body)
+                    .catch(function (exception) {
+                        session.logger.warn(exception);
+                        session.failed(response, C.causes.BAD_MEDIA_DESCRIPTION);
+                        session.acceptAndTerminate({status_code: 488, reason_phrase: 'Bad Media Description'})
+                    });
+
+            }});
 
         if(session.media)
             session.on('trackAdded',addTrack);
