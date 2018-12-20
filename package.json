@@ -13,7 +13,9 @@
     "chai": "3.5.0",
     "dotenv": "4.0.0",
     "es6-promise": "4.1.0",
-    "http-server": "0.9.0",
+    "http-server": "^0.11.1",
+    "jest": "^23.6.0",
+    "jest-html-reporter": "^2.4.2",
     "jquery": "3.1.1",
     "karma": "1.5.0",
     "karma-chai-plugins": "0.8.0",
@@ -34,9 +36,13 @@
     "name": "RingCentral, Inc.",
     "email": "devsupport@ringcentral.com"
   },
+  "jest": {
+    "testEnvironment": "node",
+    "testResultsProcessor": "./node_modules/jest-html-reporter"
+  },
   "contributors": [
     {
-      "name": "Kirill Konshin"
+      "name": "Kirill Konshin, Elias Sun"
     }
   ],
   "repository": {
