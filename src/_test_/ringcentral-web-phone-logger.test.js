@@ -20,7 +20,7 @@ test('rcWPLoge without label: General logger: Error Logger', () => {
     prefix.push(label);
   }
   var content = 'rcLoge test';
-  content = ' ' + label + ' ' + content;
+  content = `${label} ${content}`;
   content = prefix.concat(content).join(' | ');
 
   expect(global.console.log).toHaveBeenCalledWith(content);
@@ -41,7 +41,7 @@ test('rcWPLoge with label. Error Logger', () => {
   }
 
   var content = 'rcLoge test';
-  content = ' ' + 'logeLabel' + ' ' + content;
+  content = `logeLabel ${content}`;
   content = prefix.concat(content).join(' | ');
   expect(global.console.log).toHaveBeenCalledWith(content);
 });
@@ -66,7 +66,7 @@ test('rcWPLoge with 300 characters. Error Logger', () => {
   }
 
   var content = longStr;
-  content = ' ' + 'logeLabel' + ' ' + content;
+  content = `logeLabel ${content}`;
   content = prefix.concat(content).join(' | ');
   expect(global.console.log).toHaveBeenCalledWith(content);
 });
@@ -86,7 +86,7 @@ test('rcWPLogw with label. Warning Logger.', () => {
   }
 
   var content = 'rcLogw test';
-  content = ' ' + 'logwLabel' + ' ' + content;
+  content = `logwLabel ${content}`;
   content = prefix.concat(content).join(' | ');
   expect(global.console.log).toHaveBeenCalledWith(content);
 });
@@ -106,7 +106,7 @@ test('rcWPLogi with label. Info Logger.', () => {
   }
 
   var content = 'rcLogi test';
-  content = ' ' + 'logiLabel' + ' ' + content;
+  content = `logiLabel ${content}`;
   content = prefix.concat(content).join(' | ');
   expect(global.console.log).toHaveBeenCalledWith(content);
 });
@@ -125,7 +125,7 @@ test('rcWPLogd with label. Debug Logger.', () => {
     prefix.push(label);
   }
   var content = 'rcLogd test';
-  content = ' ' + 'label' + ' ' + content;
+  content = `label ${content}`;
   content = prefix.concat(content).join(' | ');
 
   expect(global.console.log).toHaveBeenCalledWith(content);
@@ -347,7 +347,6 @@ test('setRCWPLoggerLevel: level = "error" ', () => {
     warn: jest.fn(),
     log: jest.fn()
   }
-  
   setRCWPLoggerCallBack(null);
   var enabled = true;
   setRCWPLoggerEnabled(enabled);

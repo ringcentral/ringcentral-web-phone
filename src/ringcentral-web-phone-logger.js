@@ -21,19 +21,19 @@
 
   //general logger
   root.rcWPLoge = function (label, content) {
-    root.rcWPLogger.error(' ' + label + ' ' + content);
+    root.rcWPLogger.error(`${label} ${content}`);
   } 
 
   root.rcWPLogw = function (label, content) {
-    root.rcWPLogger.warn(' ' + label + ' ' + content);
+    root.rcWPLogger.warn(`${label} ${content}`);
   } 
   
   root.rcWPLogi = function (label, content) {
-    root.rcWPLogger.info(' ' + label + ' ' + content);
+    root.rcWPLogger.info(`${label} ${content}`);
   } 
 
   root.rcWPLogd = function (label, content) {
-    root.rcWPLogger.debug(' ' + label + ' ' + content);
+    root.rcWPLogger.debug(`${label} ${content}`);
   } 
 
   //MediaEngine Media Logger
@@ -97,7 +97,7 @@
       if (typeof value === 'boolean') {
         this.enabled = value;
       } else {
-        rcLogger.error('invalid "enabled" parameter value: ' + JSON.stringify(value));
+        this.print('error', 'webphone', 'logger', 'invalid "enabled" parameter value: ' + JSON.stringify(value));
       }
     }
 
@@ -109,17 +109,17 @@
       } else if (levels.hasOwnProperty(value)) {
         this.level = levels[value];
       } else {
-        rcLogger.error('invalid "level" parameter value: ' + JSON.stringify(value));
+        this.print('error', 'webphone', 'logger', 'invalid "level" parameter value: ' + JSON.stringify(value));
       }
     }
     
     RCLoggerFactory.prototype.setConnector = function(value) {
-      if (value === null || value === "" || value === undefined) {
+      if (!value || value === "" || value === undefined) {
         this.connector = null;
       } else if (typeof value === 'function') {
         this.connector = value;
       } else {
-        rcLogger.error('invalid "connector" parameter value: ' + JSON.stringify(value));
+        this.print('error', 'webphone', 'logger', 'invalid "connector" parameter value: ' + JSON.stringify(value));
       }
     }
 
