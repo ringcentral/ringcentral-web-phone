@@ -1150,7 +1150,9 @@
         });
 
         if (session.mediaStreams === undefined && !session.mediaStreams) {
-          session.mediaStreams = new MediaStreams(session, localAudio, remoteAudio);
+          if (typeof MediaStreams !== 'undefined') {
+            session.mediaStreams = new MediaStreams(session, localAudio, remoteAudio);
+          }    
           //to-do:
           //session.onMediaConnectionStateChange = function(session, eventState) or
           //session.mediaStreams.onMediaConnectionStateChange = function(session, eventState) or
