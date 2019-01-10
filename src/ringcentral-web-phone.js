@@ -1149,6 +1149,14 @@
             session.logger.log('local play was rejected');
         });
 
+        if (session.mediaStreams === undefined && !session.mediaStreams) {
+          session.mediaStreams = new MediaStreams(session, localAudio, remoteAudio);
+          //to-do:
+          //session.onMediaConnectionStateChange = function(session, eventState) or
+          //session.mediaStreams.onMediaConnectionStateChange = function(session, eventState) or
+          //session listen on the eventState to process the media connection change
+        }
+
     }
 
     return WebPhone;
