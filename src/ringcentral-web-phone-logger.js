@@ -19,6 +19,32 @@
     root.rcWPLoggerFactory.setLevel(level);
   }
 
+  root.configRCWPLogger = function(config) {
+    if (typeof config !== 'undefined' && config.hasOwnProperty('connector')) {
+      root.setRCWPLoggerCallBack(config['connector']);
+    }
+    if (typeof config !== 'undefined' && config.hasOwnProperty('enabled')) {
+      root.setRCWPLoggerEnabled(config['enabled']);
+    }
+    if (typeof config !== 'undefined' && config.hasOwnProperty('level')) {
+      root.setRCWPLoggerLevel(config['level']);
+    }
+    return config;
+  } 
+
+  root.rcWPLoggerConfig = function() {
+    var config = {'connector': root.rcWPLoggerFactory.connector,
+                  'enabled': root.rcWPLoggerFactory.enabled,
+                  'level': root.rcWPLoggerFactory.level};
+    return config;
+  }
+
+  root.rcWPSIPConnector = function (targetName, category, label, content) {
+    if (typeof root.rcWPLoggerFactory.connector !== 'undefined' && root.rcWPLoggerFactory.connector) {
+      root.rcWPLoggerFactory.connector(new Date(), targetName, category, label, content);
+    }
+  }
+
   //general logger
   root.rcWPLoge = function (label, content) {
     root.rcWPLogger.error(`${label} ${content}`);

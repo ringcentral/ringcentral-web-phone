@@ -4,7 +4,7 @@ global.scriptOwner = 'Jest Unit Test';
 const {setRCWPLoggerCallBack, setRCWPLoggerEnabled, setRCWPLoggerLevel,
        rcWPLoge, rcWPLogw, rcWPLogi, rcWPLogd, 
        rcWPLogemd, rcWPLogwmd, rcWPLogimd, rcWPLogdmd, 
-       rcWPLogeme, rcWPLogwme, rcWPLogime, rcWPLogdme} = require("../ringcentral-web-phone-logger");
+       rcWPLogeme, rcWPLogwme, rcWPLogime, rcWPLogdme, configRCWPLogger, rcWPLoggerConfig} = require("../ringcentral-web-phone-logger");
 
 test('rcWPLoge without label: General logger: Error Logger', () => {
   global.console = {
@@ -452,4 +452,41 @@ test('setRCWPLoggerLevel: level = "debug" ', () => {
   
     expect(global.console.log).toHaveBeenCalledWith(content);
   })();
+});
+
+test('configRCWPLogger rcWPLoggerConfig', () => {
+  global.console = {
+    warn: jest.fn(),
+    log: jest.fn()
+  }
+
+
+  var loggerConfig = {};
+  if (typeof configRCWPLogger !== 'undefined') {
+      configRCWPLogger({'connector': null,//where to receive the log, e.g. the application. format: function(date, targetName, category, label, content)
+      'enabled': true, 
+      'level': 3
+      });
+  }
+
+  loggerConfig = rcWPLoggerConfig();
+
+  expect(loggerConfig['level']).toEqual(3);
+  expect(loggerConfig['enabled']).toEqual(true);
+  expect(loggerConfig['connector']).toEqual(null);
+
+  if (typeof configRCWPLogger !== 'undefined') {
+    configRCWPLogger({'connector': null,//where to receive the log, e.g. the application. format: function(date, targetName, category, label, content)
+    'enabled': false, 
+    'level': 1
+    });
+  }
+
+  loggerConfig = rcWPLoggerConfig();
+
+
+  expect(loggerConfig['level']).toEqual(1);
+  expect(loggerConfig['enabled']).toEqual(false);
+  expect(loggerConfig['connector']).toEqual(null);
+
 });
