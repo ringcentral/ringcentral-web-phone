@@ -33,10 +33,9 @@
   } 
 
   root.rcWPLoggerConfig = function() {
-    var config = {'connector': root.rcWPLoggerFactory.connector,
+    return {'connector': root.rcWPLoggerFactory.connector,
                   'enabled': root.rcWPLoggerFactory.enabled,
                   'level': root.rcWPLoggerFactory.level};
-    return config;
   }
 
   root.rcWPSIPConnector = function (targetName, category, label, content) {
