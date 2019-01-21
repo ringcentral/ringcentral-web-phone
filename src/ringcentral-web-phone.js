@@ -10,6 +10,7 @@
         root.RingCentral = root.RingCentral || {};
         root.RingCentral.WebPhone = factory(root.SIP);
     }
+
 }(this, function(SIP) {
 
     var messages = {
@@ -30,6 +31,12 @@
     var uuidKey = 'rc-webPhone-uuid';
 
     var responseTimeout = 60000;
+
+    //------------------QOS---------------------------------//
+
+    var peer =  null;
+    var qResult = {};
+    var qosStatsObj=  null;
 
     var defaultMediaConstraints   =  {
         audio: true,
@@ -398,6 +405,15 @@
 
         session.media = session.ua.media;
         session.addTrack = addTrack;
+
+
+        //------------------QOS---------------------------------//
+
+        session.publish = publish;
+        session.qosStatsObject = qosStatsObject;
+        session.getQOSStats = getQOSStats;
+
+        //------------------QOS---------------------------------//
 
         session.on('replaced', patchSession);
 
@@ -1153,6 +1169,168 @@
         });
 
     }
+
+    //------------------QOS---------------------------------//
+
+
+    function publish(options){
+
+        var session = this;
+        var body = createPublishBody();
+
+
+        options = options||{};
+        var targetUrl = options.targetUrl || 'rtcpxr@rtcpxr.ringcentral.com:5060';
+        var event = options.event || 'vq-rtcpxr';
+        options.expires= 60;
+        options.contentType = "application/vq-rtcpxr";
+
+        var pub =  session.ua.publish(targetUrl,event,body, options);
+        console.error("QOS ENDED");
+        pub.close();
+        resetStats();
+    }
+
+    function qosStatsObject() {
+        return {
+            localAddr: '',
+            remoteAddr: '',
+            callID: '',
+            localID: '',
+            remoteID: '',
+            origID: '',
+            fromTag:'',
+            toTag:'',
+            timestamp: {
+                start: '',
+                stop: ''
+            },
+
+            packetLost :0,
+            packetsReceived: 0,
+            jitterBufferNominal: 0,
+            jitterBufferMax: 0,
+            networkPacketLossRate: 0,
+            jitterBufferDiscardRate: 0,
+            // jitterArr: [],
+            totalSumJitter:0,
+            totalJitterValCount:0,
+
+            NLR : 0,
+            JBM : 0 ,
+
+            JBN :  0,
+            JDR : 0,
+            MOSLQ: 0
+        }
+    }
+
+    function getQOSStats(options){
+        var session =  this;
+        peer =  session.sessionDescriptionHandler.peerConnection;
+
+        console.error("QOS STARTED");
+
+        qosStatsObj= qosStatsObject();
+        qosStatsObj.callID = session.request.call_id||'';
+        qosStatsObj.fromTag  = session.from_tag || '';
+        qosStatsObj.toTag  = session.to_tag || '';
+        qosStatsObj.localID = session.request.headers.From[0].raw||session.request.headers.From[0];
+        qosStatsObj.remoteID = session.request.headers.To[0].raw||session.request.headers.To[0];
+        qosStatsObj.origID = session.request.headers.From[0].raw||session.request.headers.From[0];
+
+        this.options = options || {};
+        getStat(peer);
+    }
+
+
+    function average(array) {
+        const sum = array.reduce((a, b) => a + b, 0);
+        var avg = (sum / array.length);
+        return avg;
+    }
+
+
+    function getStat(peer){
+        var repeatInterval = 3000;
+        getStats(peer, function (getStatsResult){
+            qResult = getStatsResult;
+            qosStatsObj.localAddr = qResult.connectionType.local.ipAddress[0];
+            qosStatsObj.remoteAddr = qResult.connectionType.remote.ipAddress[0];
+            qResult.results.forEach(function (item) {
+                if (item.type === 'ssrc' && item.transportId === 'Channel-audio-1' && item.id.includes('recv')) {
+                    console.error(item);
+                    qosStatsObj.jitterBufferDiscardRate = item.googSecondaryDiscardedRate||0;
+                    qosStatsObj.packetLost = item.packetsLost;
+                    qosStatsObj.packetsReceived = item.packetsReceived;
+                    // qosStatsObj.jitterArr.push(parseFloat(item.googJitterBufferMs));
+                    qosStatsObj.totalSumJitter += parseFloat(item.googJitterBufferMs);
+                    qosStatsObj.totalJitterValCount += 1;
+                    qosStatsObj.JBM = qosStatsObj.JBM > parseFloat(item.googJitterBufferMs) ? qosStatsObj.JBM : parseFloat(item.googJitterBufferMs);
+                }
+            });
+
+        }, repeatInterval);
+    }
+
+
+    function calculateStats(){
+        //NLR
+        qosStatsObj.NLR =  (qosStatsObj.packetLost* 100 / (qosStatsObj.packetsReceived+qosStatsObj.packetLost)).toFixed(2)||0;
+        //JitterBufferNominal
+        qosStatsObj.JBN = (qosStatsObj.totalSumJitter / qosStatsObj.totalJitterValCount)
+        //JitterBufferDiscardRate
+        qosStatsObj.JDR =  qosStatsObj.jitterBufferDiscardRate;
+        //MOS Score
+        qosStatsObj.MOSLQ = 0;
+    }
+
+
+    function resetStats(){
+        qResult.nomore();
+        qosStatsObj = qosStatsObject();
+    }
+
+    function createPublishBody(){
+
+        qResult.nomore();
+        calculateStats();
+        console.error('QOS STAT OBJ : ', qosStatsObj);
+
+        var NLR =  qosStatsObj.NLR;
+        var JBM = qosStatsObj.JBM;
+        var JBN =  qosStatsObj.JBN;
+        var JDR = qosStatsObj.JDR;
+        var MOSLQ = qosStatsObj.MOSLQ;
+
+        var callID = qosStatsObj.callID;
+        var fromTag  = qosStatsObj.fromTag;
+        var toTag  = qosStatsObj.toTag;;
+        var localId = qosStatsObj.localID;
+        var remoteId = qosStatsObj.remoteID;
+
+
+        var xrBody = 'VQSessionReport: CallTerm\r\n' +
+            'CallID: ' + callID + '\r\n' +
+            'LocalID: ' + localId + '\r\n' +
+            'RemoteID: ' + remoteId + '\r\n' +
+            'OrigID: ' + localId + '\r\n' +
+            'LocalAddr: IP='+qosStatsObj.localAddr+' SSRC=0x00000000\r\n' +
+            'RemoteAddr: IP='+qosStatsObj.remoteAddr+' SSRC=0x00000000\r\n' +
+            'LocalMetrics:\r\n' +
+            'Timestamps: START=0 STOP=0\r\n' +
+            'SessionDesc: PT=0 PD=opus SR=0 FD=0 FPP=0 PPS=0 PLC=0 SSUP=on\r\n' +
+            'JitterBuffer: JBA=0 JBR=0 JBN='+JBN+' JBM='+JBM+' JBX=0\r\n' +
+            'PacketLoss: NLR='+NLR+' JDR='+JDR+'\r\n' +
+            'BurstGapLoss: BLD=0 BD=0 GLD=0 GD=0 GMIN=0\r\n' +
+            'Delay: RTD=0 ESD=0 SOWD=0 IAJ=0\r\n' +
+            'QualityEst: MOSLQ='+MOSLQ+' MOSCQ=0.0\r\n' +
+            'DialogID: ' + callID + ';to-tag=' + (toTag || '') + ';from-tag=' + (fromTag || '');
+
+        return xrBody;
+    }
+
+    //------------------QOS---------------------------------//
 
     return WebPhone;
 

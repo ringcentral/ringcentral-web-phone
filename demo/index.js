@@ -1,5 +1,7 @@
 $(function() {
 
+
+
     /** @type {RingCentral.SDK} */
     var sdk = null;
     /** @type {Platform} */
@@ -176,6 +178,7 @@ $(function() {
             session.accept()
                 .then(function() {
                     $modal.modal('hide');
+                    session.getQOSStats({});
                     onAccepted(session);
                 })
                 .catch(function(e) { console.error('Accept failed', e.stack || e); });
@@ -326,7 +329,11 @@ $(function() {
             session.terminate();
         });
 
-        session.on('accepted', function() { console.log('Event: Accepted'); });
+        session.on('accepted', function() {
+            session.getQOSStats({});
+
+            console.log('Event: Accepted');
+        });
         session.on('progress', function() { console.log('Event: Progress'); });
         session.on('rejected', function() {
             console.log('Event: Rejected');
@@ -337,6 +344,7 @@ $(function() {
             close();
         });
         session.on('terminated', function() {
+            session.publish();
             console.log('Event: Terminated');
             close();
         });
