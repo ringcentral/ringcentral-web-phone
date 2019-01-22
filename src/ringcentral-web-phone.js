@@ -1245,7 +1245,7 @@
 
 
     function average(array) {
-        const sum = array.reduce((a, b) => a + b, 0);
+        var sum = array.reduce((a, b) => a + b, 0);
         var avg = (sum / array.length);
         return avg;
     }
