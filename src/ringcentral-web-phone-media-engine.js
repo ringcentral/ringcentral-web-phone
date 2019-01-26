@@ -4,6 +4,10 @@ class MediaStreams {
 
   constructor(session, localStream, remoteStream) {
     this.ktag = 'MediaStreams';
+    if (!session) {
+      rcWPLoge(this.ktag, 'The session cannot be null!');
+      return;
+    }
     this.session = session;
     this.lStream = localStream;
     this.rStream = remoteStream;
@@ -63,6 +67,78 @@ class MediaStreams {
       rcWPLoge(this.tag,`Unknown peerConnection state: ${peerConnection.iceConnectionState}`);
     }
     rcWPLogd(this.tag, `peerConnection State: ${eventState}`);
+  }
+
+  reconnectMedia(options) {
+    var self = this;
+    return new Promise(function(resolve, reject) {
+      if (self.session) {
+        const RTCOptions = {
+          offerToReceiveAudio: 1,
+          offerToReceiveVideo: 0,
+          iceRestart: true
+        };
+        var offerOptions = (options && options.RTCOptions) || RTCOptions;
+        if (!options) {
+          options = {};
+        }
+        if (!options.extraHeaders) {
+          options.extraHeaders = self.session.ua.defaultHeaders;
+        }
+        options.eventHandlers = {
+          succeeded: resolve,
+          failed: reject
+        };
+        var pc = self.session.sessionDescriptionHandler.peerConnection;
+        pc.createOffer(offerOptions).then (offer => {
+          rcWPLogd(self.tag, offer);
+          pc.setLocalDescription(offer).then (() => {
+            if (self.validateSDP(pc.localDescription.sdp)) {
+              rcWPLogd(self.tag, 'reconnecting media');
+              resolve('reconnecting media');
+            } else {
+              rcWPLoge(self.tag, 'fail to reconnect media');
+              reject(new Error('fail to reconnect media'));
+            }
+          }, error => {
+            rcWPLoge(self.tag, error);
+            reject(error);
+          });
+        }, error => {
+          rcWPLoge(self.tag, error);
+          reject(error);
+        });
+        self.session.reinvite(options);
+      } else {
+        rcWPLoge(self.tag, 'The session cannot be empty');
+      }
+    });
+  }
+  
+  validateSDP(sdp) {
+    if (!sdp) {
+      rcWPLoge(this.tag, 'The sdp cannot be null!');
+      return false;
+    }
+    var cIP = this.getIPInSDP(sdp, 'c=');
+    var aRtcpIP = this.getIPInSDP(sdp, 'a=rtcp:');
+    return cIP && aRtcpIP && cIP !== '0.0.0.0' && aRtcpIP !== '0.0.0.0';
+  }
+
+  getIPInSDP(sdp, token) {
+    if (sdp) {
+        var ips = sdp.split('\r\n').filter(function(line){
+            return line.indexOf(token) === 0;
+        }).map(function(ip){
+            return ip.match(/[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/)[0];
+        });
+        if (typeof ips[0] !== 'undefined') {
+          return ips[0];
+        } else {
+          return null;
+        }
+    }
+    return null; // no connected peers
   }
 
   removeListeners() {
