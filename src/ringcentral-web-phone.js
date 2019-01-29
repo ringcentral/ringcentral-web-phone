@@ -1175,6 +1175,8 @@
 
     function publish(options){
 
+        qResult.nomore();
+
         var session = this;
         var body = createPublishBody();
 
@@ -1185,11 +1187,16 @@
         options.expires= 60;
         options.contentType = "application/vq-rtcpxr";
 
+        options.extraHeaders = [];
+        var networkType = qosStatsObj.netType || '';
+        options.extraHeaders.push('p-rc-client-info:' + 'cpuRC= ;cpuOS= ;netType='+ networkType + ';ram=' );
         var pub =  session.ua.publish(targetUrl,event,body, options);
         console.error("QOS ENDED");
         pub.close();
         resetStats();
     }
+
+    var netType = {};
 
     function qosStatsObject() {
         return {
@@ -1205,7 +1212,7 @@
                 start: '',
                 stop: ''
             },
-
+            netType: '',
             packetLost :0,
             packetsReceived: 0,
             jitterBufferNominal: 0,
@@ -1214,7 +1221,9 @@
             jitterBufferDiscardRate: 0,
             // jitterArr: [],
             totalSumJitter:0,
-            totalJitterValCount:0,
+            totalIntervalCount:-1,
+
+
 
             NLR : 0,
             JBM : 0 ,
@@ -1251,10 +1260,26 @@
     }
 
 
+    function addToMap(map, key, value) {
+        if (key in map) {
+            console.error('true');
+            map[key] =  parseInt(map[key],10) + 1;
+        } else {
+            console.error('false');
+            map[key] = parseInt(value, 10);
+        }
+    }
+
+
     function getStat(peer){
+        netType = {};
         var repeatInterval = 3000;
         getStats(peer, function (getStatsResult){
             qResult = getStatsResult;
+
+            var network = qResult.connectionType.systemNetworkType;
+
+            qosStatsObj.netType = addToMap(netType,network, 0);
             qosStatsObj.localAddr = qResult.connectionType.local.ipAddress[0];
             qosStatsObj.remoteAddr = qResult.connectionType.remote.ipAddress[0];
             qResult.results.forEach(function (item) {
@@ -1265,7 +1290,7 @@
                     qosStatsObj.packetsReceived = item.packetsReceived;
                     // qosStatsObj.jitterArr.push(parseFloat(item.googJitterBufferMs));
                     qosStatsObj.totalSumJitter += parseFloat(item.googJitterBufferMs);
-                    qosStatsObj.totalJitterValCount += 1;
+                    qosStatsObj.totalIntervalCount += 1;
                     qosStatsObj.JBM = qosStatsObj.JBM > parseFloat(item.googJitterBufferMs) ? qosStatsObj.JBM : parseFloat(item.googJitterBufferMs);
                 }
             });
@@ -1274,20 +1299,35 @@
     }
 
 
+    function calculateNetworkUsage() {
+            var networkType = '';
+            for (const [key, value] of Object.entries(netType)) {
+                networkType+=  key + ':' + ( value *100 / qosStatsObj.totalIntervalCount) +',';
+            }
+            console.warn("networkType" + networkType);
+            return networkType;
+    }
+
+
     function calculateStats(){
         //NLR
         qosStatsObj.NLR =  (qosStatsObj.packetLost* 100 / (qosStatsObj.packetsReceived+qosStatsObj.packetLost)).toFixed(2)||0;
         //JitterBufferNominal
-        qosStatsObj.JBN = (qosStatsObj.totalSumJitter / qosStatsObj.totalJitterValCount)
+        qosStatsObj.JBN = (qosStatsObj.totalSumJitter / qosStatsObj.totalIntervalCount);
         //JitterBufferDiscardRate
         qosStatsObj.JDR =  qosStatsObj.jitterBufferDiscardRate;
         //MOS Score
         qosStatsObj.MOSLQ = 0;
+
+        // qosStatsObj.netType = netType;
+        // console.error("qosStatsObj.netType" + calculateNetworkUsage());
+        qosStatsObj.netType = calculateNetworkUsage();
     }
 
 
     function resetStats(){
         qResult.nomore();
+        netType = {};
         qosStatsObj = qosStatsObject();
     }
 
@@ -1296,6 +1336,8 @@
         qResult.nomore();
         calculateStats();
         console.error('QOS STAT OBJ : ', qosStatsObj);
+        console.error('NetType : ' + qosStatsObj.netType);
+        console.error('NetType json' + JSON.stringify(netType));
 
         var NLR =  qosStatsObj.NLR;
         var JBM = qosStatsObj.JBM;
