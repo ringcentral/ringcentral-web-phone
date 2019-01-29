@@ -1191,12 +1191,12 @@
         var networkType = qosStatsObj.netType || '';
         options.extraHeaders.push('p-rc-client-info:' + 'cpuRC= ;cpuOS= ;netType='+ networkType + ';ram=' );
         var pub =  session.ua.publish(targetUrl,event,body, options);
-        console.error("QOS ENDED");
         pub.close();
         resetStats();
+        console.error("QOS ENDED");
     }
 
-    var netType = {};
+    var netTypeObj = {};
 
     function qosStatsObject() {
         return {
@@ -1262,24 +1262,25 @@
 
     function addToMap(map, key, value) {
         if (key in map) {
-            console.error('true');
             map[key] =  parseInt(map[key],10) + 1;
         } else {
-            console.error('false');
-            map[key] = parseInt(value, 10);
+            map[key] = parseInt(1);
         }
+        return map;
     }
 
 
     function getStat(peer){
-        netType = {};
+        netTypeObj = {};
         var repeatInterval = 3000;
         getStats(peer, function (getStatsResult){
             qResult = getStatsResult;
 
             var network = qResult.connectionType.systemNetworkType;
 
-            qosStatsObj.netType = addToMap(netType,network, 0);
+            if(qosStatsObj.totalIntervalCount>=0){
+                qosStatsObj.netType = addToMap(netTypeObj,network, 0);
+            }
             qosStatsObj.localAddr = qResult.connectionType.local.ipAddress[0];
             qosStatsObj.remoteAddr = qResult.connectionType.remote.ipAddress[0];
             qResult.results.forEach(function (item) {
@@ -1301,33 +1302,30 @@
 
     function calculateNetworkUsage() {
             var networkType = '';
-            for (const [key, value] of Object.entries(netType)) {
+            for (var [key, value] of Object.entries(netTypeObj)) {
                 networkType+=  key + ':' + ( value *100 / qosStatsObj.totalIntervalCount) +',';
             }
-            console.warn("networkType" + networkType);
             return networkType;
     }
 
 
     function calculateStats(){
         //NLR
-        qosStatsObj.NLR =  (qosStatsObj.packetLost* 100 / (qosStatsObj.packetsReceived+qosStatsObj.packetLost)).toFixed(2)||0;
+        qosStatsObj.NLR =  parseFloat(qosStatsObj.packetLost* 100 / (qosStatsObj.packetsReceived+qosStatsObj.packetLost))||0;
         //JitterBufferNominal
-        qosStatsObj.JBN = (qosStatsObj.totalSumJitter / qosStatsObj.totalIntervalCount);
+        qosStatsObj.JBN = parseFloat(qosStatsObj.totalSumJitter / qosStatsObj.totalIntervalCount).toFixed(2);
         //JitterBufferDiscardRate
-        qosStatsObj.JDR =  qosStatsObj.jitterBufferDiscardRate;
+        qosStatsObj.JDR =  parseFloat(qosStatsObj.jitterBufferDiscardRate).toFixed(2);
         //MOS Score
         qosStatsObj.MOSLQ = 0;
-
-        // qosStatsObj.netType = netType;
-        // console.error("qosStatsObj.netType" + calculateNetworkUsage());
+        //network type
         qosStatsObj.netType = calculateNetworkUsage();
     }
 
 
     function resetStats(){
         qResult.nomore();
-        netType = {};
+        netTypeObj = {};
         qosStatsObj = qosStatsObject();
     }
 
@@ -1337,7 +1335,7 @@
         calculateStats();
         console.error('QOS STAT OBJ : ', qosStatsObj);
         console.error('NetType : ' + qosStatsObj.netType);
-        console.error('NetType json' + JSON.stringify(netType));
+        console.error('NetType json' + JSON.stringify(netTypeObj));
 
         var NLR =  qosStatsObj.NLR;
         var JBM = qosStatsObj.JBM;
@@ -1363,7 +1361,7 @@
             'Timestamps: START=0 STOP=0\r\n' +
             'SessionDesc: PT=0 PD=opus SR=0 FD=0 FPP=0 PPS=0 PLC=0 SSUP=on\r\n' +
             'JitterBuffer: JBA=0 JBR=0 JBN='+JBN+' JBM='+JBM+' JBX=0\r\n' +
-            'PacketLoss: NLR='+NLR+' JDR='+JDR+'\r\n' +
+            'PacketLoss: NLR='+NLR +' JDR='+JDR+'\r\n' +
             'BurstGapLoss: BLD=0 BD=0 GLD=0 GD=0 GMIN=0\r\n' +
             'Delay: RTD=0 ESD=0 SOWD=0 IAJ=0\r\n' +
             'QualityEst: MOSLQ='+MOSLQ+' MOSCQ=0.0\r\n' +
