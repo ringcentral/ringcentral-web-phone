@@ -1315,8 +1315,9 @@
 
     function calculateStats(session){
         var qosStatsObj = session.qosStatsObj;
+         var rawNLR = qosStatsObj.packetLost* 100 / (qosStatsObj.packetsReceived+qosStatsObj.packetLost);
         //NLR
-        qosStatsObj.NLR =  parseFloat(qosStatsObj.packetLost* 100 / (qosStatsObj.packetsReceived+qosStatsObj.packetLost)).toFixed(2)||0;
+        qosStatsObj.NLR =  parseFloat(rawNLR || 0).toFixed(2);
         //JitterBufferNominal
         qosStatsObj.JBN = parseFloat(qosStatsObj.totalSumJitter / qosStatsObj.totalIntervalCount).toFixed(2);
         //JitterBufferDiscardRate
