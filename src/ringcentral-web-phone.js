@@ -540,8 +540,7 @@
      * @return {Promise}
      */
     function ignore() {
-        var session = this;
-        console.error("IGNORE KICKED");
+        var session = this;        
         return session._sendReceiveConfirmPromise.then(function () {
             return session.sendSessionMessage(messages.ignore);
         });
@@ -1186,8 +1185,7 @@
         var networkType = session.qosStatsObj.netType || '';
         options.extraHeaders.push('p-rc-client-info:' + 'cpuRC= ;cpuOS= ;netType='+ networkType + ';ram=' );
         var pub =  session.ua.publish(targetUrl,event,body, options);
-        pub.close();        
-        console.error("QOS ENDED");
+        pub.close();
     }
 
     function getQoSStatsTemplate() {
@@ -1229,9 +1227,7 @@
     function getQOSStats(options){
         var session =  this;
         var peer =  session.sessionDescriptionHandler.peerConnection;
-
-        console.error("QOS STARTED");
-       
+        
         session.qosStatsObj.callID = session.request.call_id||'';
         session.qosStatsObj.fromTag  = session.from_tag || '';
         session.qosStatsObj.toTag  = session.to_tag || '';
@@ -1289,7 +1285,6 @@
             qosStatsObj.remoteAddr = session.qResult.connectionType.remote.ipAddress[0];
             session.qResult.results.forEach(function (item) {
                 if (item.type === 'ssrc' && item.transportId === 'Channel-audio-1' && item.id.includes('recv')) {
-                    console.error(item);
                     qosStatsObj.jitterBufferDiscardRate = item.googSecondaryDiscardedRate||0;
                     qosStatsObj.packetLost = item.packetsLost;
                     qosStatsObj.packetsReceived = item.packetsReceived;
@@ -1332,10 +1327,7 @@
         var qosStatsObj = session.qosStatsObj;
        
         calculateStats(session);
-        console.error('QOS STAT OBJ : ', qosStatsObj);
-        console.error('NetType : ' + qosStatsObj.netType);
-        console.error('NetType json' + JSON.stringify(session.netTypeObj));
-
+        
         var NLR =  qosStatsObj.NLR;
         var JBM = qosStatsObj.JBM;
         var JBN =  qosStatsObj.JBN;
