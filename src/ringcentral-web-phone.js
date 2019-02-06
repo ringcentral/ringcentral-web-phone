@@ -142,6 +142,8 @@
      * @param {string} [options.onSession] fired each time UserAgent starts working with session
      * @constructor
      */
+
+    //TODO: include 'WebPhone' for all apps other than Chrome and Glip
     function WebPhone(regData, options) {
 
         regData = regData || {};
@@ -237,6 +239,8 @@
         ];
 
         this.userAgent.media = {};
+
+        this.userAgent.qosCollectInterval = options.qosCollectInterval || 5000;
 
         if (options.media && (options.media.remote && options.media.local)){
             this.userAgent.media.remote = options.media.remote ;
@@ -1108,7 +1112,6 @@
     /*--------------------------------------------------------------------------------------------------------------------*/
 
 
-
     function addTrack(remoteAudioEle, localAudioEle){
 
         var session = this;
@@ -1164,30 +1167,38 @@
 
     }
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
     //------------------QOS---------------------------------//
 
 
+    /**
+     * @this {SIP.Session}
+     */
     function publish(options){
 
         var session = this;
-
         session.qResult && session.qResult.nomore();
-        var body = createPublishBody(session);
 
-
+        var networkType = calculateNetworkUsage(session) || '';
         options = options||{};
         var targetUrl = options.targetUrl || 'rtcpxr@rtcpxr.ringcentral.com:5060';
         var event = options.event || 'vq-rtcpxr';
         options.expires= 60;
         options.contentType = "application/vq-rtcpxr";
-
         options.extraHeaders = [];
-        var networkType = session.qosStatsObj.netType || '';
-        options.extraHeaders.push('p-rc-client-info:' + 'cpuRC= ;cpuOS= ;netType='+ networkType + ';ram=' );
+        options.extraHeaders.push('p-rc-client-info:' + 'cpuRC=0:0;cpuOS=0:0;netType='+ networkType + ';ram=0:0' );
+
+        var body = createPublishBody(session);
+
         var pub =  session.ua.publish(targetUrl,event,body, options);
         pub.close();
     }
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * @this {SIP.Session}
+     */
     function getQoSStatsTemplate() {
         return {
             localAddr: '',
@@ -1202,28 +1213,34 @@
                 start: '',
                 stop: ''
             },
+
             netType: '',
+
+            jitterArr:[],
+
             packetLost :0,
             packetsReceived: 0,
             jitterBufferNominal: 0,
             jitterBufferMax: 0,
             networkPacketLossRate: 0,
             jitterBufferDiscardRate: 0,
-            // jitterArr: [],
             totalSumJitter:0,
             totalIntervalCount:-1,
 
-
-
             NLR : 0,
             JBM : 0 ,
-
             JBN :  0,
             JDR : 0,
             MOSLQ: 0
         }
     }
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    /**
+     * @this {SIP.Session}
+     */
+    //TODO: Remove options
     function getQOSStats(options){
         var session =  this;
         var peer =  session.sessionDescriptionHandler.peerConnection;
@@ -1239,6 +1256,8 @@
         getStat(peer, session);
     }
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
 
     function average(array) {
         var sum = array.reduce((a, b) => a + b, 0);
@@ -1246,6 +1265,7 @@
         return avg;
     }
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     function addToMap(map, key, value) {
         if (key in map) {
@@ -1256,6 +1276,8 @@
         return map;
     }
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
     function getNetworkType(connectionType){
         var sysNetwork = connectionType.systemNetworkType || 'unknown';
         var localNetwork = connectionType.local.networkType || ['unknown'];
@@ -1263,17 +1285,21 @@
         if (!sysNetwork || sysNetwork === 'unknown') {
             return localNetwork[0];
         }
-
         return sysNetwork;
     }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
+
+    //TODO: Check/test networktype values
 
 
     function getStat(peer, session){
        
-        var repeatInterval = 3000;
+        var repeatInterval = session.ua.qosCollectInterval;
         var qosStatsObj = session.qosStatsObj;
 
         getStats(peer, function (getStatsResult){
+
             session.qResult = getStatsResult;
 
             var network = getNetworkType(session.qResult.connectionType);
@@ -1281,6 +1307,7 @@
             if(qosStatsObj.totalIntervalCount>=0){
                 qosStatsObj.netType = addToMap(session.netTypeObj,network, 0);
             }
+
             qosStatsObj.localAddr = session.qResult.connectionType.local.ipAddress[0];
             qosStatsObj.remoteAddr = session.qResult.connectionType.remote.ipAddress[0];
             session.qResult.results.forEach(function (item) {
@@ -1294,23 +1321,27 @@
                     qosStatsObj.JBM = Math.max(qosStatsObj.JBM, parseFloat(item.googJitterBufferMs));
                 }
             });
+            // qosStatsObj.totalIntervalCount += 1;
 
         }, repeatInterval);
     }
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     function calculateNetworkUsage(session) {
-            var networkType = '';
+            var networkType = [];
             for (var [key, value] of Object.entries(session.netTypeObj)) {
-                networkType+=  key + ':' + ( value *100 / session.qosStatsObj.totalIntervalCount) +',';
+                networkType.push(key + ':' + ( value *100 / session.qosStatsObj.totalIntervalCount));
             }
-            return networkType;
+            return networkType.join();
     }
 
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     function calculateStats(session){
         var qosStatsObj = session.qosStatsObj;
-         var rawNLR = qosStatsObj.packetLost* 100 / (qosStatsObj.packetsReceived+qosStatsObj.packetLost);
+
+        var rawNLR = qosStatsObj.packetLost* 100 / (qosStatsObj.packetsReceived+qosStatsObj.packetLost);
         //NLR
         qosStatsObj.NLR =  parseFloat(rawNLR || 0).toFixed(2);
         //JitterBufferNominal
@@ -1319,35 +1350,44 @@
         qosStatsObj.JDR =  parseFloat(qosStatsObj.jitterBufferDiscardRate).toFixed(2);
         //MOS Score
         qosStatsObj.MOSLQ = 0;
-        //network type
-        qosStatsObj.netType = calculateNetworkUsage(session);
+
     }
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     function createPublishBody(session){
         var qosStatsObj = session.qosStatsObj;
        
         calculateStats(session);
-        
-        var NLR =  qosStatsObj.NLR;
-        var JBM = qosStatsObj.JBM;
-        var JBN =  qosStatsObj.JBN;
-        var JDR = qosStatsObj.JDR;
-        var MOSLQ = qosStatsObj.MOSLQ;
 
-        var callID = qosStatsObj.callID;
-        var fromTag  = qosStatsObj.fromTag;
-        var toTag  = qosStatsObj.toTag;;
-        var localId = qosStatsObj.localID;
-        var remoteId = qosStatsObj.remoteID;
 
+        console.error(JSON.stringify(qosStatsObj));
+
+
+
+
+        var NLR =  qosStatsObj.NLR||0;
+        var JBM = qosStatsObj.JBM||0;
+        var JBN =  qosStatsObj.JBN||0;
+        var JDR = qosStatsObj.JDR||0;
+        var MOSLQ = qosStatsObj.MOSLQ||0;
+
+        var callID = qosStatsObj.callID||'';
+        var fromTag  = qosStatsObj.fromTag||'';
+        var toTag  = qosStatsObj.toTag||'';
+        var localId = qosStatsObj.localID||'';
+        var remoteId = qosStatsObj.remoteID||'';
+
+        var localAddr= qosStatsObj.localAddr||'';
+        var remoteAddr = qosStatsObj.remoteAddr||'';
 
         var xrBody = 'VQSessionReport: CallTerm\r\n' +
             'CallID: ' + callID + '\r\n' +
             'LocalID: ' + localId + '\r\n' +
             'RemoteID: ' + remoteId + '\r\n' +
             'OrigID: ' + localId + '\r\n' +
-            'LocalAddr: IP='+qosStatsObj.localAddr+' SSRC=0x00000000\r\n' +
-            'RemoteAddr: IP='+qosStatsObj.remoteAddr+' SSRC=0x00000000\r\n' +
+            'LocalAddr: IP='+localAddr+' SSRC=0x00000000\r\n' +
+            'RemoteAddr: IP='+remoteAddr+' SSRC=0x00000000\r\n' +
             'LocalMetrics:\r\n' +
             'Timestamps: START=0 STOP=0\r\n' +
             'SessionDesc: PT=0 PD=opus SR=0 FD=0 FPP=0 PPS=0 PLC=0 SSUP=on\r\n' +
@@ -1356,7 +1396,7 @@
             'BurstGapLoss: BLD=0 BD=0 GLD=0 GD=0 GMIN=0\r\n' +
             'Delay: RTD=0 ESD=0 SOWD=0 IAJ=0\r\n' +
             'QualityEst: MOSLQ='+MOSLQ+' MOSCQ=0.0\r\n' +
-            'DialogID: ' + callID + ';to-tag=' + (toTag || '') + ';from-tag=' + (fromTag || '');
+            'DialogID: ' + callID + ';to-tag=' + toTag  + ';from-tag=' + fromTag ;
 
         return xrBody;
     }
