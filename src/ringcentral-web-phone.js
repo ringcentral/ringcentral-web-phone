@@ -172,12 +172,15 @@
         var modifiers = options.modifiers || [];
         modifiers.push(SIP.Web.Modifiers.stripG722);
         modifiers.push(SIP.Web.Modifiers.stripTcpCandidates);
+        //enable for unified sdp
+        // modifiers.push(SIP.Web.Modifiers.addMidLines);
 
         var sessionDescriptionHandlerFactoryOptions = options.sessionDescriptionHandlerFactoryOptions || {
             peerConnectionOptions: {
                 iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 500,
                 rtcConfiguration: {
                     rtcpMuxPolicy: 'negotiate',
+                    //disable for unified sdp
                     sdpSemantics:'plan-b'
                 }
             },
@@ -1193,7 +1196,7 @@
             var pub = session.ua.publish(targetUrl, event, body, options);
             session.qosStatsObj.status = false;
             pub.close();
-            session.emit('qos-published');
+            session.emit('qos-published',body);
         }
         else{
             session.logger.error('QOS collection not started');
@@ -1298,12 +1301,13 @@
     function getStat(session){
        
         var repeatInterval = session.ua.qosCollectInterval;
-        var qosStatsObj = Object.assign({}, session.qosStatsObj);
-
         var peer =  session.sessionDescriptionHandler.peerConnection;
 
         session.qosState = true;
         getStats(peer, function (getStatsResult){
+
+            var qosStatsObj = Object.assign({}, session.qosStatsObj);
+
             session.getStatsResult = getStatsResult;
             qosStatsObj.status =  true;
             var network = getNetworkType(session.getStatsResult.connectionType);
