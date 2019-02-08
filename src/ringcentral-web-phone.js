@@ -1,17 +1,16 @@
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['sip.js'], function(SIP) {
-            return factory(SIP);
+        define(['sip.js', 'getstats'], function(SIP, getStats) {
+            return factory(SIP, getStats || root.getStats);
         });
     } else if (typeof module === 'object') {
-        module.exports = factory(require('sip.js'));
+        module.exports = factory(require('sip.js'), require('getstats') || root.getStats);
         module.exports.default = module.exports; //ES6
     } else {
-        root.RingCentral = root.RingCentral || {};
-        root.RingCentral.WebPhone = factory(root.SIP);
+        root.RingCentral = root.RingCentral ||  {};
+        root.RingCentral.WebPhone = factory(root.SIP, root.getStats);
     }
-
-}(this, function(SIP) {
+}(this, function(SIP, getStats) {
 
     var messages = {
         park: {reqid: 1, command: 'callpark'},
@@ -407,9 +406,9 @@
 
         //------------------QOS---------------------------------//
 
-        session.publish = publish;
+        session.publishQosStats = publishQosStats;
         session.qosStatsObj = getQoSStatsTemplate();
-        session.getQOSStats = getQOSStats;
+        session.startQosStatsCollection = startQosStatsCollection;
         session.netTypeObj = {};
 
         //------------------QOS---------------------------------//
@@ -423,6 +422,7 @@
                 session.createDialog(incomingResponse, 'UAC');
                 session.hasAnswer = true;
                 session.status = 11;
+                session.emit('active-call');
                 session.sessionDescriptionHandler.setDescription(incomingResponse.body)
                     .catch(function (exception) {
                         session.logger.warn(exception);
@@ -833,6 +833,7 @@
         return new Promise(function(resolve, reject) {
 
             function onAnswered() {
+                session.emit('active-call');
                 resolve(session);
                 session.removeListener('failed', onFail);
             }
@@ -1174,24 +1175,30 @@
     /**
      * @this {SIP.Session}
      */
-    function publish(options){
-
+    function publishQosStats(options){
         var session = this;
-        session.qResult && session.qResult.nomore();
 
-        var networkType = calculateNetworkUsage(session) || '';
-        options = options||{};
-        var targetUrl = options.targetUrl || 'rtcpxr@rtcpxr.ringcentral.com:5060';
-        var event = options.event || 'vq-rtcpxr';
-        options.expires= 60;
-        options.contentType = "application/vq-rtcpxr";
-        options.extraHeaders = [];
-        options.extraHeaders.push('p-rc-client-info:' + 'cpuRC=0:0;cpuOS=0:0;netType='+ networkType + ';ram=0:0' );
+        if(session.qosStatsObj.status) {
+            session.getStatsResult && session.getStatsResult.nomore();
+            var networkType = calculateNetworkUsage(session) || '';
+            options = options || {};
+            var targetUrl = options.targetUrl || 'rtcpxr@rtcpxr.ringcentral.com:5060';
+            var event = options.event || 'vq-rtcpxr';
+            options.expires = 60;
+            options.contentType = "application/vq-rtcpxr";
+            options.extraHeaders = [];
+            options.extraHeaders.push('p-rc-client-info:' + 'cpuRC=0:0;cpuOS=0:0;netType=' + networkType + ';ram=0:0');
 
-        var body = createPublishBody(session);
+            var body = createPublishBody(session);
+            var pub = session.ua.publish(targetUrl, event, body, options);
+            session.qosStatsObj.status = false;
+            pub.close();
+            session.emit('qos-published');
+        }
+        else{
+            session.logger.error('QOS collection not started');
+        }
 
-        var pub =  session.ua.publish(targetUrl,event,body, options);
-        pub.close();
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
@@ -1216,22 +1223,24 @@
 
             netType: '',
 
-            jitterArr:[],
-
-            packetLost :0,
+            packetLost : 0,
             packetsReceived: 0,
+
             jitterBufferNominal: 0,
             jitterBufferMax: 0,
-            networkPacketLossRate: 0,
+
             jitterBufferDiscardRate: 0,
+
             totalSumJitter:0,
-            totalIntervalCount:-1,
+            totalIntervalCount:0,
 
             NLR : 0,
             JBM : 0 ,
             JBN :  0,
             JDR : 0,
-            MOSLQ: 0
+            MOSLQ: 0,
+
+            status : false
         }
     }
 
@@ -1240,20 +1249,15 @@
     /**
      * @this {SIP.Session}
      */
-    //TODO: Remove options
-    function getQOSStats(options){
+    function startQosStatsCollection(){
         var session =  this;
-        var peer =  session.sessionDescriptionHandler.peerConnection;
-        
         session.qosStatsObj.callID = session.request.call_id||'';
         session.qosStatsObj.fromTag  = session.from_tag || '';
         session.qosStatsObj.toTag  = session.to_tag || '';
         session.qosStatsObj.localID = session.request.headers.From[0].raw||session.request.headers.From[0];
         session.qosStatsObj.remoteID = session.request.headers.To[0].raw||session.request.headers.To[0];
         session.qosStatsObj.origID = session.request.headers.From[0].raw||session.request.headers.From[0];
-
-        this.options = options || {};
-        getStat(peer, session);
+        getStat(session);
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
@@ -1278,6 +1282,7 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
+    //TODO: find relaible way to find network type , use navigator.connection.type?
     function getNetworkType(connectionType){
         var sysNetwork = connectionType.systemNetworkType || 'unknown';
         var localNetwork = connectionType.local.networkType || ['unknown'];
@@ -1290,38 +1295,33 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-    //TODO: Check/test networktype values
-
-
-    function getStat(peer, session){
+    function getStat(session){
        
         var repeatInterval = session.ua.qosCollectInterval;
-        var qosStatsObj = session.qosStatsObj;
+        var qosStatsObj = Object.assign({}, session.qosStatsObj);
 
+        var peer =  session.sessionDescriptionHandler.peerConnection;
+
+        session.qosState = true;
         getStats(peer, function (getStatsResult){
-
-            session.qResult = getStatsResult;
-
-            var network = getNetworkType(session.qResult.connectionType);
-
-            if(qosStatsObj.totalIntervalCount>=0){
-                qosStatsObj.netType = addToMap(session.netTypeObj,network, 0);
-            }
-
-            qosStatsObj.localAddr = session.qResult.connectionType.local.ipAddress[0];
-            qosStatsObj.remoteAddr = session.qResult.connectionType.remote.ipAddress[0];
-            session.qResult.results.forEach(function (item) {
+            session.getStatsResult = getStatsResult;
+            qosStatsObj.status =  true;
+            var network = getNetworkType(session.getStatsResult.connectionType);
+            qosStatsObj.localAddr = session.getStatsResult.connectionType.local.ipAddress[0];
+            qosStatsObj.remoteAddr = session.getStatsResult.connectionType.remote.ipAddress[0];
+            session.getStatsResult.results.forEach(function (item) {
                 if (item.type === 'ssrc' && item.transportId === 'Channel-audio-1' && item.id.includes('recv')) {
                     qosStatsObj.jitterBufferDiscardRate = item.googSecondaryDiscardedRate||0;
-                    qosStatsObj.packetLost = item.packetsLost;
-                    qosStatsObj.packetsReceived = item.packetsReceived;
-                    // qosStatsObj.jitterArr.push(parseFloat(item.googJitterBufferMs));
+                    qosStatsObj.packetLost= item.packetsLost;
+                    qosStatsObj.packetsReceived= item.packetsReceived;
                     qosStatsObj.totalSumJitter += parseFloat(item.googJitterBufferMs);
                     qosStatsObj.totalIntervalCount += 1;
                     qosStatsObj.JBM = Math.max(qosStatsObj.JBM, parseFloat(item.googJitterBufferMs));
+                    qosStatsObj.netType = addToMap(session.netTypeObj,network, 0);
                 }
             });
-            // qosStatsObj.totalIntervalCount += 1;
+            session.qosStatsObj = qosStatsObj;
+            console.error(session.qosStatsObj);
 
         }, repeatInterval);
     }
@@ -1338,48 +1338,43 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-    function calculateStats(session){
-        var qosStatsObj = session.qosStatsObj;
+    function calculateStats(qosStatsObj){
 
         var rawNLR = qosStatsObj.packetLost* 100 / (qosStatsObj.packetsReceived+qosStatsObj.packetLost);
-        //NLR
-        qosStatsObj.NLR =  parseFloat(rawNLR || 0).toFixed(2);
-        //JitterBufferNominal
-        qosStatsObj.JBN = parseFloat(qosStatsObj.totalSumJitter / qosStatsObj.totalIntervalCount).toFixed(2);
-        //JitterBufferDiscardRate
-        qosStatsObj.JDR =  parseFloat(qosStatsObj.jitterBufferDiscardRate).toFixed(2);
-        //MOS Score
-        qosStatsObj.MOSLQ = 0;
+
+        return Object.assign({}, qosStatsObj, {
+            NLR:  parseFloat(rawNLR || 0).toFixed(2),
+            //JitterBufferNominal
+            JBN: (parseFloat(qosStatsObj.totalSumJitter)/ qosStatsObj.totalIntervalCount).toFixed(2),
+            //JitterBufferDiscardRate
+            JDR:  parseFloat(qosStatsObj.jitterBufferDiscardRate).toFixed(2),
+            //MOS Score
+            MOSLQ: 0
+        });
 
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     function createPublishBody(session){
-        var qosStatsObj = session.qosStatsObj;
-       
-        calculateStats(session);
 
+        var calculatedStats =  calculateStats(session.qosStatsObj);
+        console.error(JSON.stringify(calculatedStats));
 
-        console.error(JSON.stringify(qosStatsObj));
+        var NLR =  calculatedStats.NLR||0;
+        var JBM = calculatedStats.JBM||0;
+        var JBN =  calculatedStats.JBN||0;
+        var JDR = calculatedStats.JDR||0;
+        var MOSLQ = calculatedStats.MOSLQ||0;
 
+        var callID = calculatedStats.callID||'';
+        var fromTag  = calculatedStats.fromTag||'';
+        var toTag  = calculatedStats.toTag||'';
+        var localId = calculatedStats.localID||'';
+        var remoteId = calculatedStats.remoteID||'';
 
-
-
-        var NLR =  qosStatsObj.NLR||0;
-        var JBM = qosStatsObj.JBM||0;
-        var JBN =  qosStatsObj.JBN||0;
-        var JDR = qosStatsObj.JDR||0;
-        var MOSLQ = qosStatsObj.MOSLQ||0;
-
-        var callID = qosStatsObj.callID||'';
-        var fromTag  = qosStatsObj.fromTag||'';
-        var toTag  = qosStatsObj.toTag||'';
-        var localId = qosStatsObj.localID||'';
-        var remoteId = qosStatsObj.remoteID||'';
-
-        var localAddr= qosStatsObj.localAddr||'';
-        var remoteAddr = qosStatsObj.remoteAddr||'';
+        var localAddr= calculatedStats.localAddr||'';
+        var remoteAddr = calculatedStats.remoteAddr||'';
 
         var xrBody = 'VQSessionReport: CallTerm\r\n' +
             'CallID: ' + callID + '\r\n' +

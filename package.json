@@ -25,7 +25,8 @@
     "ringcentral": "3.1.1",
     "sinon": "1.17.7",
     "sinon-chai": "2.8.0",
-    "whatwg-fetch": "2.0.3"
+    "whatwg-fetch": "2.0.3",
+    "getstats": "^1.0.9"
   },
   "preferGlobal": false,
   "private": false,
