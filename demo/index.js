@@ -346,7 +346,7 @@ $(function() {
             close();
         });
         session.on('terminated', function() {
-            session.publishQosStats();
+            // session.publishQosStats();
             console.log('Event: Terminated');
             close();
         });
