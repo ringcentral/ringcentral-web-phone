@@ -143,7 +143,7 @@ $(function() {
                 remote: remoteVideoElement,
                 local: localVideoElement
             },
-            enableQosFeature:true
+            enableQos:true
         });
 
         webPhone.userAgent.audioHelper.loadAudio({

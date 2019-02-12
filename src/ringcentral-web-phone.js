@@ -251,7 +251,7 @@
 
         this.userAgent.media = {};
 
-        this.userAgent.enableQosFeature = options.enableQosFeature || false;
+        this.userAgent.enableQos = options.enableQos || false;
 
         this.userAgent.qosCollectInterval = options.qosCollectInterval || 5000;
 
@@ -450,7 +450,7 @@
 
         session.on('SessionDescriptionHandler-created',function () {
             session.logger.log("SessionDescriptionHandler Created");
-            if(session.ua.enableQosFeature)
+            if(session.ua.enableQos)
                 session.startQosStatsCollection();
         });
 
