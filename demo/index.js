@@ -142,7 +142,8 @@ $(function() {
             media: {
                 remote: remoteVideoElement,
                 local: localVideoElement
-            }
+            },
+            enableQosFeature:true
         });
 
         webPhone.userAgent.audioHelper.loadAudio({
@@ -328,10 +329,6 @@ $(function() {
             session.terminate();
         });
 
-        session.on('active-call', function () {
-            session.startQosStatsCollection();
-            console.log('Event: Active Call');
-        })
 
         session.on('accepted', function() {
             console.log('Event: Accepted');

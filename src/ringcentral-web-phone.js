@@ -251,6 +251,8 @@
 
         this.userAgent.media = {};
 
+        this.userAgent.enableQosFeature = options.enableQosFeature || false;
+
         this.userAgent.qosCollectInterval = options.qosCollectInterval || 5000;
 
         if (options.media && (options.media.remote && options.media.local)){
@@ -426,7 +428,6 @@
                 session.createDialog(incomingResponse, 'UAC');
                 session.hasAnswer = true;
                 session.status = 11;
-                session.emit('active-call');
                 session.sessionDescriptionHandler.setDescription(incomingResponse.body)
                     .catch(function (exception) {
                         session.logger.warn(exception);
@@ -446,6 +447,12 @@
         session.on('failed', stopPlaying);
         session.on('replaced', stopPlaying);
 
+
+        session.on('SessionDescriptionHandler-created',function () {
+            session.logger.log("SessionDescriptionHandler Created");
+            if(session.ua.enableQosFeature)
+                session.startQosStatsCollection();
+        });
 
         function stopPlaying() {
             session.ua.audioHelper.playOutgoing(false);
@@ -835,7 +842,6 @@
         options.RTCConstraints = options.RTCConstraints || {optional: [{DtlsSrtpKeyAgreement: 'true'}]};
 
         return new Promise(function(resolve, reject) {
-
             function onAnswered() {
                 resolve(session);
                 session.removeListener('failed', onFail);
