@@ -437,8 +437,7 @@
             }
         });
 
-        if (session.media)
-            session.on('trackAdded', addTrack);
+        if (session.media) session.on('trackAdded', addTrack);
 
         session.on('accepted', stopPlaying);
         session.on('rejected', stopPlaying);
@@ -448,14 +447,12 @@
         session.on('failed', stopPlaying);
         session.on('replaced', stopPlaying);
 
-
         if (session.ua.enableQos) {
             session.on('SessionDescriptionHandler-created', function () {
                 session.logger.log("SessionDescriptionHandler Created");
                 session.startQosStatsCollection();
             });
         }
-
 
         function stopPlaying() {
             session.ua.audioHelper.playOutgoing(false);

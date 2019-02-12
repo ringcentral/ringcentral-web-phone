@@ -330,7 +330,7 @@ session.stopRecord().then(...);
 
 Not yet implemented. Could be done by dialing \*83. The account should be enabled for barge/whisper access through system admin.
 
-### Upgrade Procedure from v0.4.X to 0.6.2
+## Upgrade Procedure from v0.4.X to 0.6.2
 
 - SDK constructor now allows to add custom UA Configuration parameters like `sessionDescriptionHandlerFactory` , `sessionDescriptionHandlerFactoryOptions` ,  `maxReconnectionAttempts` ,  `reconnectionTimeout`, `connectionTimeout`
 
@@ -338,7 +338,7 @@ Not yet implemented. Could be done by dialing \*83. The account should be enable
 
 - SDK also offers to addTrack() to handle remoteVideo and localVideo elements outside the constructor too
 
-#### Initialization
+### Initialization
 
 Before: 
 ```javascript
@@ -360,21 +360,21 @@ After:
 var remoteVideoElement =  document.getElementById('remoteVideo');
 var localVideoElement  = document.getElementById('localVideo');
 webPhone = new RingCentral.WebPhone(data, {
-            appKey: localStorage.getItem('webPhoneAppKey'),
-            audioHelper: {
-                enabled: true
-            },
-            logLevel: parseInt(logLevel, 10),
-            appName: 'WebPhoneDemo',
-            appVersion: '1.0.0',
-            media: {
-                remote: remoteVideoElement,
-                local: localVideoElement
-            }
-        });
+    appKey: localStorage.getItem('webPhoneAppKey'),
+    audioHelper: {
+        enabled: true
+    },
+    logLevel: parseInt(logLevel, 10),
+    appName: 'WebPhoneDemo',
+    appVersion: '1.0.0',
+    media: {
+        remote: remoteVideoElement,
+        local: localVideoElement
+    }
+});
 ```
 
-#### Accept Invites:
+### Accept Invites:
  
 Before:
 ```javascript
@@ -400,29 +400,47 @@ session.accept().then(function() {
 })
 ```
 
-#### Send Invite:
+### Send Invite:
 
 Before:
 ```javascript
 var session = webPhone.userAgent.invite(number, {
-            media: {
-                render: {
-                    remote: document.getElementById('remoteVideo'),
-                    local: document.getElementById('localVideo')
-                }
-            },
-            fromNumber: username,
-            homeCountryId: homeCountryId
-        });
+    media: {
+        render: {
+            remote: document.getElementById('remoteVideo'),
+            local: document.getElementById('localVideo')
+        }
+    },
+    fromNumber: username,
+    homeCountryId: homeCountryId
+});
 ```
 
 After:
 ```javascript
 var session = webPhone.userAgent.invite(number, {
-            fromNumber: username,
-            homeCountryId: homeCountryId
-        });
+    fromNumber: username,
+    homeCountryId: homeCountryId
+});
 ```
- 
-          
-                                                                                                                                                                            
+
+## Compatibility Matrix
+
+| Date | SDK | SIPJS | Chrome | Firefox |
+|---|---|---|---|---|
+| Feb 2016 | 0.2.0 | 0.6.4 | not known may be v50-70 | :warning: NA |
+| Apr 2016 | 0.3.0 | 0.7.3 | not known may be v50-70 | :warning: NA |
+| Jun 2016 | 0.3.1 | 0.7.4 | not known may be v50-70 | :warning: NA |
+| Aug 2016 | 0.3.2 | 0.7.5 | 54 to 56 | :warning: NA |
+| Sep 2016 | 0.4.0-RC1 | 0.7.5 | 54 to 56 | :warning: NA |
+| Jan 2017 | 0.4.0 | 0.7.5 | 54 to 56 | :warning: NA |
+| Mar 2017 | **0.4.1** | 0.7.7 | 54 to 70, rtcp mux support, media API changes | :warning: Issues with Audio, SBC |
+| Aug 2017 | 0.4.2 | 0.7.7 | 61 to 70 | :warning: Issues with Audio, SBC |
+| Aug 2017 | 0.4.3 | 0.7.8 | 61 to 70 | :warning: Not Tested |
+| Sep 2017 | 0.4.4 | 0.7.8 | 62 to 70 | :warning: Issues with DTMF |
+| Nov 2017 | 0.4.5 | 0.7.8 | 64 to 70 | :warning: Issues with DTMF |
+| Jul 2018 | 0.5.0 | 0.10.0 | 68 to 70 | :warning: Issues with DTMF |
+| Nov 2018 | 0.6.0 | 0.11.3 | 68 to 70 | Regression tested for 62, 63 supported with custom modifiers |
+| Nov 2018 | **0.6.1** | 0.11.6 | 71+, explicit `plan b` SDP support | 62 to 64 |
+| Dec 2018 | 0.6.2 | 0.11.6 | 71+ | 62 to 65 |
+| Feb 2019 | 0.7.0 (TBD) | 0.11.6 | 71+ | :warning: Not Tested |
