@@ -26,7 +26,7 @@
     "sinon": "1.17.7",
     "sinon-chai": "2.8.0",
     "whatwg-fetch": "2.0.3",
-    "getstats": "^1.0.9"
+    "getstats": "^1.0.8"
   },
   "preferGlobal": false,
   "private": false,
