@@ -251,7 +251,7 @@
 
         this.userAgent.media = {};
 
-        this.userAgent.enableQos = options.enableQos || false;
+        this.userAgent.enableQos = options.enableQos;
 
         this.userAgent.qosCollectInterval = options.qosCollectInterval || 5000;
 
@@ -391,7 +391,7 @@
         session.__hold = session.hold;
         session.__unhold = session.unhold;
         session.__dtmf = session.dtmf;
-        session.__reinvite=session.reinvite;
+        session.__reinvite = session.reinvite;
 
         session.sendRequest = sendRequest;
         session.receiveRequest = receiveRequest;
@@ -399,7 +399,7 @@
         session.hold = hold;
         session.unhold = unhold;
         session.dtmf = dtmf;
-        session.reinvite=reinvite;
+        session.reinvite = reinvite;
 
         session.warmTransfer = warmTransfer;
         session.blindTransfer = blindTransfer;
@@ -422,7 +422,7 @@
         session.on('replaced', patchSession);
 
         // Audio
-        session.on('progress', function(incomingResponse) {
+        session.on('progress', function (incomingResponse) {
             stopPlaying();
             if (incomingResponse.status_code === 183) {
                 session.createDialog(incomingResponse, 'UAC');
@@ -434,10 +434,11 @@
                         session.failed(incomingResponse, C.causes.BAD_MEDIA_DESCRIPTION);
                         session.terminate({status_code: 488, reason_phrase: 'Bad Media Description'})
                     });
-            }});
+            }
+        });
 
-        if(session.media)
-            session.on('trackAdded',addTrack);
+        if (session.media)
+            session.on('trackAdded', addTrack);
 
         session.on('accepted', stopPlaying);
         session.on('rejected', stopPlaying);
@@ -448,11 +449,13 @@
         session.on('replaced', stopPlaying);
 
 
-        session.on('SessionDescriptionHandler-created',function () {
-            session.logger.log("SessionDescriptionHandler Created");
-            if(session.ua.enableQos)
+        if (session.ua.enableQos) {
+            session.on('SessionDescriptionHandler-created', function () {
+                session.logger.log("SessionDescriptionHandler Created");
                 session.startQosStatsCollection();
-        });
+            });
+        }
+
 
         function stopPlaying() {
             session.ua.audioHelper.playOutgoing(false);
@@ -1294,13 +1297,9 @@
         qosStatsObj.localID = session.request.headers.From[0].raw||session.request.headers.From[0];
         qosStatsObj.remoteID = session.request.headers.To[0].raw||session.request.headers.To[0];
         qosStatsObj.origID = session.request.headers.From[0].raw||session.request.headers.From[0];
-
-
-        var repeatInterval = session.ua.qosCollectInterval;
-        var peer =  session.sessionDescriptionHandler.peerConnection;
         var previousGetStatsResult;
 
-        getStats(peer, function (getStatsResult){
+        getStats(session.sessionDescriptionHandler.peerConnection, function (getStatsResult){
             previousGetStatsResult = getStatsResult;
             qosStatsObj.status =  true;
             var network = getNetworkType(previousGetStatsResult.connectionType);
@@ -1317,7 +1316,7 @@
                     qosStatsObj.netType = addToMap(qosStatsObj.netType, network);
                 }
             });
-        }, repeatInterval);
+        }, session.ua.qosCollectInterval);
 
 
         session.on('terminated',function (){

@@ -343,7 +343,6 @@ $(function() {
             close();
         });
         session.on('terminated', function() {
-            // session.publishQosStats();
             console.log('Event: Terminated');
             close();
         });
