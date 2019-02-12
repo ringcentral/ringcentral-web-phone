@@ -1,5 +1,7 @@
 $(function() {
 
+
+
     /** @type {RingCentral.SDK} */
     var sdk = null;
     /** @type {Platform} */
@@ -140,7 +142,8 @@ $(function() {
             media: {
                 remote: remoteVideoElement,
                 local: localVideoElement
-            }
+            },
+            enableQos:true
         });
 
         webPhone.userAgent.audioHelper.loadAudio({
@@ -326,7 +329,10 @@ $(function() {
             session.terminate();
         });
 
-        session.on('accepted', function() { console.log('Event: Accepted'); });
+
+        session.on('accepted', function() {
+            console.log('Event: Accepted');
+        });
         session.on('progress', function() { console.log('Event: Progress'); });
         session.on('rejected', function() {
             console.log('Event: Rejected');
