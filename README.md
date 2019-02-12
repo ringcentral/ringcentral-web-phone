@@ -330,7 +330,7 @@ session.stopRecord().then(...);
 
 Not yet implemented. Could be done by dialing \*83. The account should be enabled for barge/whisper access through system admin.
 
-### Upgrade Procedure from v0.4.X to 0.6.2
+## Upgrade Procedure from v0.4.X to 0.6.2
 
 - SDK constructor now allows to add custom UA Configuration parameters like `sessionDescriptionHandlerFactory` , `sessionDescriptionHandlerFactoryOptions` ,  `maxReconnectionAttempts` ,  `reconnectionTimeout`, `connectionTimeout`
 
@@ -338,7 +338,7 @@ Not yet implemented. Could be done by dialing \*83. The account should be enable
 
 - SDK also offers to addTrack() to handle remoteVideo and localVideo elements outside the constructor too
 
-#### Initialization
+### Initialization
 
 Before: 
 ```javascript
@@ -360,21 +360,21 @@ After:
 var remoteVideoElement =  document.getElementById('remoteVideo');
 var localVideoElement  = document.getElementById('localVideo');
 webPhone = new RingCentral.WebPhone(data, {
-            appKey: localStorage.getItem('webPhoneAppKey'),
-            audioHelper: {
-                enabled: true
-            },
-            logLevel: parseInt(logLevel, 10),
-            appName: 'WebPhoneDemo',
-            appVersion: '1.0.0',
-            media: {
-                remote: remoteVideoElement,
-                local: localVideoElement
-            }
-        });
+    appKey: localStorage.getItem('webPhoneAppKey'),
+    audioHelper: {
+        enabled: true
+    },
+    logLevel: parseInt(logLevel, 10),
+    appName: 'WebPhoneDemo',
+    appVersion: '1.0.0',
+    media: {
+        remote: remoteVideoElement,
+        local: localVideoElement
+    }
+});
 ```
 
-#### Accept Invites:
+### Accept Invites:
  
 Before:
 ```javascript
@@ -400,29 +400,47 @@ session.accept().then(function() {
 })
 ```
 
-#### Send Invite:
+### Send Invite:
 
 Before:
 ```javascript
 var session = webPhone.userAgent.invite(number, {
-            media: {
-                render: {
-                    remote: document.getElementById('remoteVideo'),
-                    local: document.getElementById('localVideo')
-                }
-            },
-            fromNumber: username,
-            homeCountryId: homeCountryId
-        });
+    media: {
+        render: {
+            remote: document.getElementById('remoteVideo'),
+            local: document.getElementById('localVideo')
+        }
+    },
+    fromNumber: username,
+    homeCountryId: homeCountryId
+});
 ```
 
 After:
 ```javascript
 var session = webPhone.userAgent.invite(number, {
-            fromNumber: username,
-            homeCountryId: homeCountryId
-        });
+    fromNumber: username,
+    homeCountryId: homeCountryId
+});
 ```
- 
-          
-                                                                                                                                                                            
+
+## Compatibility Matrix
+
+| Date | SDK | SIPJS | Chrome | Firefox |
+|---|---|---|---|---|
+| Feb 2016 | 0.2.0 Beta | 0.6.4 | not known may be v50 + | :warning: NA |
+| Apr 2016 | 0.3.0 Beta | 0.7.3 | not known may be v50 + | :warning: NA |
+| Jun 2016 | 0.3.1 Maintenance release | 0.7.4 | not known may be v50 + | :warning: NA |
+| Aug 2016 | 0.3.2 | 0.7.5 | 54+ | :warning: NA |
+| Sept 2016 | 0.4.0-rc1 | 0.7.5 | 56+ | :warning: NA |
+| Jan 2017 | 0.4.0 | 0.7.5 | 56+ | :warning: NA |
+| Mar 2017 | 0.4.1 | 0.7.7 | v57 , rtcp mux support, support  < 56 and  57, 58 , 59 , 60 | :warning: Issues with Audio, SBC |
+| Aug 2017 | 0.4.2 | 0.7.7 | 61+ | :warning: Issues with Audio , SBC |
+| Aug 2017 | 0.4.3 | 0.7.8 | 61+ | :warning: Not Tested |
+| Sept 2017 | 0.4.4 | 0.7.8 | 62+ | :warning: Issues with DTMF |
+| Nov 2017 | 0.4.5 | 0.7.8 | v64+ | :warning: Issues with DTMF |
+| Jul 2018 | 0.5.0 | 0.10.0 | v68+ | :warning: Issues with DTMF |
+| Nov 2018 | 0.6.0 | 0.11.3 | v70 + | Reg Tested for FF62. FF 63 supported with custom modifiers |
+| Nov 2018 | 0.6.1 | 0.11.6 | v71+ , explicit plan b support, | FF62 to FF 64 |
+| Dec 2018 | 0.6.2 | 0.11.6 | v71+ | FF62 to FF 65 |
+| Feb 2018 | 0.7.0 (exp ) | 0.11.6 | v71+ | :warning: Not Tested |
