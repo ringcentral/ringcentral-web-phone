@@ -3,8 +3,9 @@
   "scripts": {
     "test": "npm run test:watch -- --single-run",
     "test:watch": "karma start",
+    "test:coverage": "cat .coverage/chrome/lcov.info | coveralls",
     "build": "node version.js",
-    "start": "serve -l 8080",
+    "start": "serve -l ${PORT:-8080}",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
@@ -15,12 +16,13 @@
     "@types/jasmine": "3.3.8",
     "@types/karma": "3.0.1",
     "bootstrap": "3.4.0",
+    "coveralls": "3.0.2",
     "dotenv": "4.0.0",
-    "http-server": "0.11.1",
     "jasmine-core": "3.3.0",
     "jquery": "3.3.1",
     "karma": "1.7.1",
     "karma-chrome-launcher": "2.2.0",
+    "karma-coverage": "1.1.2",
     "karma-env": "0.1.0",
     "karma-jasmine": "2.0.1",
     "ringcentral": "3.2.1",

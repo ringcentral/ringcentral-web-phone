@@ -1,4 +1,5 @@
 (function(root, factory) {
+    /* istanbul ignore next */
     if (typeof define === 'function' && define.amd) {
         define(['sip.js', 'getstats'], function(SIP, getStats) {
             return factory(SIP, getStats || root.getStats);
@@ -1098,6 +1099,8 @@
         qosStatsObj.remoteID = session.request.headers.To[0].raw || session.request.headers.To[0];
         qosStatsObj.origID = session.request.headers.From[0].raw || session.request.headers.From[0];
         var previousGetStatsResult;
+
+        if (!getStats) throw new Error('getStats module was not provided!');
 
         getStats(session.sessionDescriptionHandler.peerConnection, function(getStatsResult) {
             previousGetStatsResult = getStatsResult;

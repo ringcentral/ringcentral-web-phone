@@ -6,19 +6,24 @@ module.exports = config => {
 
     config.set({
 
-        plugins: [
-            'karma-chrome-launcher',
-            'karma-jasmine'
-        ],
+        frameworks: ['jasmine'],
 
-        frameworks: [
-            'jasmine'
-        ],
+        reporters: ['progress', 'coverage'],
+
+        preprocessors: {
+            'src/**/!(*.spec).js': ['coverage']
+        },
+
+        coverageReporter: {
+            type: 'lcov',
+            dir: '.coverage',
+            subdir: browser => browser.toLowerCase().split(/[ /-]/)[0]
+        },
 
         files: [
             require.resolve('sip.js/dist/sip'),
-            require.resolve('pubnub/dist/web/pubnub'),
             require.resolve('getstats/getStats'),
+            require.resolve('pubnub/dist/web/pubnub'),
             require.resolve('ringcentral/build/ringcentral'),
             {pattern: './audio/**/*.ogg', included: false},
             './src/ringcentral-web-phone.js',

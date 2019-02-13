@@ -67,6 +67,11 @@ describe('RingCentral.WebPhone', () => {
         checkSessionStatus(session) && session.bye();
     });
 
+    afterAll(async () => {
+        await callerPhone.userAgent.unregister();
+        await receiverPhone.userAgent.unregister();
+    })
+
 });
 
 const getAcceptOptions = (fromNumber, homeCountryId) => ({
@@ -133,6 +138,7 @@ const createWebPhone = async (sdk, credentials, id) => {
             remote: remote,
             local: local
         },
+        enableQos: true,
         onSession: session => {
 
             const sessionId = 'Session [' + id + '] event:';
@@ -169,7 +175,7 @@ const createWebPhone = async (sdk, credentials, id) => {
         webPhone.userAgent.on('connected', () => console.log(uaId, 'Connected'));
         webPhone.userAgent.on('disconnected', () => console.log(uaId, 'Disconnected'));
         webPhone.userAgent.on('unregistered', () => console.log(uaId, 'Unregistered'));
-        webPhone.userAgent.on('message', () => console.log(uaId, 'Message', arguments));
+        webPhone.userAgent.on('message', (...args) => console.log(uaId, 'Message', args));
         webPhone.userAgent.on('invite', () => console.log(uaId, 'Invite'));
 
         webPhone.userAgent.once('registered', () => {
@@ -180,11 +186,11 @@ const createWebPhone = async (sdk, credentials, id) => {
             }, DB_DELAY);
         });
 
-        webPhone.userAgent.once('registrationFailed', e => {
-            console.error(uaId, 'UA RegistrationFailed', arguments, e);
+        webPhone.userAgent.once('registrationFailed', (e, ...args) => {
+            console.error(uaId, 'UA RegistrationFailed', e, args);
             //FIXME For some reason test fail with network error first time, ignoring once
-            webPhone.userAgent.once('registrationFailed', e => {
-                console.error(uaId, 'UA RegistrationFailed', arguments, e);
+            webPhone.userAgent.once('registrationFailed', (e, ...args) => {
+                console.error(uaId, 'UA RegistrationFailed', e, args);
                 reject(new Error('UA RegistrationFailed'));
             });
         });
