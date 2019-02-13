@@ -1,5 +1,4 @@
 $(function() {
-
     /** @type {RingCentral.SDK} */
     var sdk = null;
     /** @type {Platform} */
@@ -31,7 +30,6 @@ $(function() {
     }
 
     function login(server, appKey, appSecret, login, ext, password, ll) {
-
         sdk = new RingCentral.SDK({
             appKey: appKey,
             appSecret: appSecret,
@@ -42,8 +40,8 @@ $(function() {
 
         // TODO: Improve later to support international phone number country codes better
         if (login) {
-            login = (login.match(/^[\+1]/)) ? login : '1' + login;
-            login = login.replace(/\W/g, '')
+            login = login.match(/^[+1]/) ? login : '1' + login;
+            login = login.replace(/\W/g, '');
         }
 
         platform
@@ -54,14 +52,14 @@ $(function() {
             })
             .then(function() {
                 return postLogin(server, appKey, appSecret, login, ext, password, ll);
-            }).catch(function(e) {
-            console.error(e.stack || e);
-        });
+            })
+            .catch(function(e) {
+                console.error(e.stack || e);
+            });
     }
 
     // Redirect function
     function show3LeggedLogin(server, appKey, appSecret, ll) {
-
         var $redirectUri = decodeURIComponent(window.location.href.split('login', 1) + 'callback.html');
 
         console.log('The redirect uri value :', $redirectUri);
@@ -78,7 +76,7 @@ $(function() {
         var loginUrl = platform.loginUrl();
 
         platform
-            .loginWindow({url: loginUrl})                       // this method also allows to supply more options to control window position
+            .loginWindow({url: loginUrl}) // this method also allows to supply more options to control window position
             .then(platform.login.bind(platform))
             .then(function() {
                 return postLogin(server, appKey, appSecret, '', '', '', ll);
@@ -86,11 +84,9 @@ $(function() {
             .catch(function(e) {
                 console.error(e.stack || e);
             });
-
     }
 
     function postLogin(server, appKey, appSecret, login, ext, password, ll) {
-
         logLevel = ll;
         username = login;
 
@@ -102,21 +98,24 @@ $(function() {
         localStorage.setItem('webPhonePassword', password || '');
         localStorage.setItem('webPhoneLogLevel', logLevel || 0);
 
-        return platform.get('/restapi/v1.0/account/~/extension/~')
+        return platform
+            .get('/restapi/v1.0/account/~/extension/~')
             .then(function(res) {
-
                 extension = res.json();
 
                 console.log('Extension info', extension);
 
                 return platform.post('/client-info/sip-provision', {
-                    sipInfo: [{
-                        transport: 'WSS'
-                    }]
+                    sipInfo: [
+                        {
+                            transport: 'WSS'
+                        }
+                    ]
                 });
-
             })
-            .then(function(res) { return res.json(); })
+            .then(function(res) {
+                return res.json();
+            })
             .then(register)
             .then(makeCallForm)
             .catch(function(e) {
@@ -126,7 +125,6 @@ $(function() {
     }
 
     function register(data) {
-
         sipInfo = data.sipInfo[0] || data.sipInfo;
 
         webPhone = new RingCentral.WebPhone(data, {
@@ -149,37 +147,54 @@ $(function() {
             outgoing: '../audio/outgoing.ogg'
         });
 
-        webPhone.userAgent.audioHelper.setVolume(.3);
+        webPhone.userAgent.audioHelper.setVolume(0.3);
         webPhone.userAgent.on('invite', onInvite);
-        webPhone.userAgent.on('connecting', function() { console.log('UA connecting'); });
-        webPhone.userAgent.on('connected', function() { console.log('UA Connected'); });
-        webPhone.userAgent.on('disconnected', function() { console.log('UA Disconnected'); });
-        webPhone.userAgent.on('registered', function() { console.log('UA Registered'); });
-        webPhone.userAgent.on('unregistered', function() { console.log('UA Unregistered'); });
-        webPhone.userAgent.on('registrationFailed', function() { console.log('UA RegistrationFailed', arguments); });
-        webPhone.userAgent.on('message', function() { console.log('UA Message', arguments); });
+        webPhone.userAgent.on('connecting', function() {
+            console.log('UA connecting');
+        });
+        webPhone.userAgent.on('connected', function() {
+            console.log('UA Connected');
+        });
+        webPhone.userAgent.on('disconnected', function() {
+            console.log('UA Disconnected');
+        });
+        webPhone.userAgent.on('registered', function() {
+            console.log('UA Registered');
+        });
+        webPhone.userAgent.on('unregistered', function() {
+            console.log('UA Unregistered');
+        });
+        webPhone.userAgent.on('registrationFailed', function() {
+            console.log('UA RegistrationFailed', arguments);
+        });
+        webPhone.userAgent.on('message', function() {
+            console.log('UA Message', arguments);
+        });
 
         return webPhone;
-
     }
 
     function onInvite(session) {
-
         console.log('EVENT: Invite', session.request);
         console.log('To', session.request.to.displayName, session.request.to.friendlyName);
         console.log('From', session.request.from.displayName, session.request.from.friendlyName);
 
-        var $modal = cloneTemplate($incomingTemplate).modal({backdrop: 'static'});
+        var $modal = cloneTemplate($incomingTemplate).modal({
+            backdrop: 'static'
+        });
 
         $modal.find('.answer').on('click', function() {
             $modal.find('.before-answer').css('display', 'none');
             $modal.find('.answered').css('display', '');
-            session.accept()
+            session
+                .accept()
                 .then(function() {
                     $modal.modal('hide');
                     onAccepted(session);
                 })
-                .catch(function(e) { console.error('Accept failed', e.stack || e); });
+                .catch(function(e) {
+                    console.error('Accept failed', e.stack || e);
+                });
         });
 
         $modal.find('.decline').on('click', function() {
@@ -193,33 +208,45 @@ $(function() {
         $modal.find('.forward-form').on('submit', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            session.forward($modal.find('input[name=forward]').val().trim())
+            session
+                .forward(
+                    $modal
+                        .find('input[name=forward]')
+                        .val()
+                        .trim()
+                )
                 .then(function() {
                     console.log('Forwarded');
                     $modal.modal('hide');
                 })
-                .catch(function(e) { console.error('Forward failed', e.stack || e); });
+                .catch(function(e) {
+                    console.error('Forward failed', e.stack || e);
+                });
         });
 
         $modal.find('.reply-form').on('submit', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            session.replyWithMessage({replyType: 0, replyText: $modal.find('input[name=reply]').val()})
+            session
+                .replyWithMessage({
+                    replyType: 0,
+                    replyText: $modal.find('input[name=reply]').val()
+                })
                 .then(function() {
                     console.log('Replied');
                     $modal.modal('hide');
                 })
-                .catch(function(e) { console.error('Reply failed', e.stack || e); });
+                .catch(function(e) {
+                    console.error('Reply failed', e.stack || e);
+                });
         });
 
         session.on('rejected', function() {
             $modal.modal('hide');
         });
-
     }
 
     function onAccepted(session) {
-
         console.log('EVENT: Accepted', session.request);
         console.log('To', session.request.to.displayName, session.request.to.friendlyName);
         console.log('From', session.request.from.displayName, session.request.from.friendlyName);
@@ -232,14 +259,9 @@ $(function() {
         var $flip = $modal.find('input[name=flip]').eq(0);
 
         var interval = setInterval(function() {
+            var time = session.startTime ? Math.round((Date.now() - session.startTime) / 1000) + 's' : 'Ringing';
 
-            var time = session.startTime ? (Math.round((Date.now() - session.startTime) / 1000) + 's') : 'Ringing';
-
-            $info.text(
-                'time: ' + time + '\n' +
-                'startTime: ' + JSON.stringify(session.startTime, null, 2) + '\n'
-            );
-
+            $info.text('time: ' + time + '\n' + 'startTime: ' + JSON.stringify(session.startTime, null, 2) + '\n');
         }, 1000);
 
         function close() {
@@ -249,13 +271,13 @@ $(function() {
 
         $modal.find('.increase-volume').on('click', function() {
             session.ua.audioHelper.setVolume(
-                (session.ua.audioHelper.volume != null ? session.ua.audioHelper.volume : .5) + .1
+                (session.ua.audioHelper.volume !== null ? session.ua.audioHelper.volume : 0.5) + 0.1
             );
         });
 
         $modal.find('.decrease-volume').on('click', function() {
             session.ua.audioHelper.setVolume(
-                (session.ua.audioHelper.volume != null ? session.ua.audioHelper.volume : .5) - .1
+                (session.ua.audioHelper.volume !== null ? session.ua.audioHelper.volume : 0.5) - 0.1
             );
         });
 
@@ -268,51 +290,102 @@ $(function() {
         });
 
         $modal.find('.hold').on('click', function() {
-            session.hold().then(function() { console.log('Holding'); }).catch(function(e) { console.error('Holding failed', e.stack || e); });
+            session
+                .hold()
+                .then(function() {
+                    console.log('Holding');
+                })
+                .catch(function(e) {
+                    console.error('Holding failed', e.stack || e);
+                });
         });
 
         $modal.find('.unhold').on('click', function() {
-            session.unhold().then(function() { console.log('UnHolding'); }).catch(function(e) { console.error('UnHolding failed', e.stack || e); });
+            session
+                .unhold()
+                .then(function() {
+                    console.log('UnHolding');
+                })
+                .catch(function(e) {
+                    console.error('UnHolding failed', e.stack || e);
+                });
         });
         $modal.find('.startRecord').on('click', function() {
-            session.startRecord().then(function() { console.log('Recording Started'); }).catch(function(e) { console.error('Recording Start failed', e.stack || e); });
+            session
+                .startRecord()
+                .then(function() {
+                    console.log('Recording Started');
+                })
+                .catch(function(e) {
+                    console.error('Recording Start failed', e.stack || e);
+                });
         });
 
         $modal.find('.stopRecord').on('click', function() {
-            session.stopRecord().then(function() { console.log('Recording Stopped'); }).catch(function(e) { console.error('Recording Stop failed', e.stack || e); });
+            session
+                .stopRecord()
+                .then(function() {
+                    console.log('Recording Stopped');
+                })
+                .catch(function(e) {
+                    console.error('Recording Stop failed', e.stack || e);
+                });
         });
 
         $modal.find('.park').on('click', function() {
-            session.park().then(function() { console.log('Parked'); }).catch(function(e) { console.error('Park failed', e.stack || e); });
+            session
+                .park()
+                .then(function() {
+                    console.log('Parked');
+                })
+                .catch(function(e) {
+                    console.error('Park failed', e.stack || e);
+                });
         });
 
         $modal.find('.transfer-form').on('submit', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            session.transfer($transfer.val().trim()).then(function() { console.log('Transferred'); }).catch(function(e) { console.error('Transfer failed', e.stack || e); });
+            session
+                .transfer($transfer.val().trim())
+                .then(function() {
+                    console.log('Transferred');
+                })
+                .catch(function(e) {
+                    console.error('Transfer failed', e.stack || e);
+                });
         });
 
         $modal.find('.transfer-form button.warm').on('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             session.hold().then(function() {
-
                 var newSession = session.ua.invite($transfer.val().trim());
 
                 newSession.once('accepted', function() {
-                    session.warmTransfer(newSession)
-                        .then(function() { console.log('Transferred'); })
-                        .catch(function(e) { console.error('Transfer failed', e.stack || e); });
+                    session
+                        .warmTransfer(newSession)
+                        .then(function() {
+                            console.log('Transferred');
+                        })
+                        .catch(function(e) {
+                            console.error('Transfer failed', e.stack || e);
+                        });
                 });
-
             });
-
         });
 
         $modal.find('.flip-form').on('submit', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            session.flip($flip.val().trim()).then(function() { console.log('Flipped'); }).catch(function(e) { console.error('Flip failed', e.stack || e); });
+            session
+                .flip($flip.val().trim())
+                .then(function() {
+                    console.log('Flipped');
+                })
+                .catch(function(e) {
+                    console.error('Flip failed', e.stack || e);
+                });
             $flip.val('');
         });
 
@@ -327,11 +400,12 @@ $(function() {
             session.terminate();
         });
 
-
         session.on('accepted', function() {
             console.log('Event: Accepted');
         });
-        session.on('progress', function() { console.log('Event: Progress'); });
+        session.on('progress', function() {
+            console.log('Event: Progress');
+        });
         session.on('rejected', function() {
             console.log('Event: Rejected');
             close();
@@ -357,10 +431,18 @@ $(function() {
             close();
             onAccepted(newSession);
         });
-        session.on('dtmf', function() { console.log('Event: DTMF'); });
-        session.on('muted', function() { console.log('Event: Muted'); });
-        session.on('unmuted', function() { console.log('Event: Unmuted'); });
-        session.on('connecting', function() { console.log('Event: Connecting'); });
+        session.on('dtmf', function() {
+            console.log('Event: DTMF');
+        });
+        session.on('muted', function() {
+            console.log('Event: Muted');
+        });
+        session.on('unmuted', function() {
+            console.log('Event: Unmuted');
+        });
+        session.on('connecting', function() {
+            console.log('Event: Connecting');
+        });
         session.on('bye', function() {
             console.log('Event: Bye');
             close();
@@ -368,13 +450,13 @@ $(function() {
     }
 
     function makeCall(number, homeCountryId) {
-
-        homeCountryId = homeCountryId || (
-            extension &&
-            extension.regionalSettings &&
-            extension.regionalSettings.homeCountry &&
-            extension.regionalSettings.homeCountry.id
-        ) || null;
+        homeCountryId =
+            homeCountryId ||
+            (extension &&
+                extension.regionalSettings &&
+                extension.regionalSettings.homeCountry &&
+                extension.regionalSettings.homeCountry.id) ||
+            null;
 
         var session = webPhone.userAgent.invite(number, {
             fromNumber: username,
@@ -382,11 +464,9 @@ $(function() {
         });
 
         onAccepted(session);
-
     }
 
     function makeCallForm() {
-
         var $form = cloneTemplate($callTemplate);
 
         var $number = $form.find('input[name=number]').eq(0);
@@ -396,10 +476,18 @@ $(function() {
 
         $username.html(
             '<dl>' +
-            '<dt>Contact</dt><dd>' + extension.contact.firstName + ' ' + extension.contact.lastName + '</dd>' +
-            '<dt>Company</dt><dd>' + (extension.contact.company || '?') + '</dd>' +
-            '<dt>Phone Number</dt><dd>' + username + '</dd>' +
-            '</dl>'
+                '<dt>Contact</dt><dd>' +
+                extension.contact.firstName +
+                ' ' +
+                extension.contact.lastName +
+                '</dd>' +
+                '<dt>Company</dt><dd>' +
+                (extension.contact.company || '?') +
+                '</dd>' +
+                '<dt>Phone Number</dt><dd>' +
+                username +
+                '</dd>' +
+                '</dl>'
         );
 
         $logout.on('click', function(e) {
@@ -410,22 +498,18 @@ $(function() {
         $number.val(localStorage.getItem('webPhoneLastNumber') || '');
 
         $form.on('submit', function(e) {
-
             e.preventDefault();
             e.stopPropagation();
 
             localStorage.setItem('webPhoneLastNumber', $number.val() || '');
 
             makeCall($number.val(), $homeCountry.val());
-
         });
 
         $app.empty().append($form);
-
     }
 
     function makeLoginForm() {
-
         var $form = cloneTemplate($loginTemplate);
         var $authForm = cloneTemplate($authFlowTemplate);
 
@@ -437,7 +521,6 @@ $(function() {
         var $password = $form.find('input[name=password]').eq(0);
         var $logLevel = $authForm.find('select[name=logLevel]').eq(0);
 
-
         $server.val(localStorage.getItem('webPhoneServer') || RingCentral.SDK.server.sandbox);
         $appKey.val(localStorage.getItem('webPhoneAppKey') || '');
         $appSecret.val(localStorage.getItem('webPhoneAppSecret') || '');
@@ -446,33 +529,36 @@ $(function() {
         $password.val(localStorage.getItem('webPhonePassword') || '');
         $logLevel.val(localStorage.getItem('webPhoneLogLevel') || logLevel);
 
-
         $form.on('submit', function(e) {
-
-            console.log("Normal Flow");
+            console.log('Normal Flow');
 
             e.preventDefault();
             e.stopPropagation();
 
-            login($server.val(), $appKey.val(), $appSecret.val(), $login.val(), $ext.val(), $password.val(), $logLevel.val());
-
+            login(
+                $server.val(),
+                $appKey.val(),
+                $appSecret.val(),
+                $login.val(),
+                $ext.val(),
+                $password.val(),
+                $logLevel.val()
+            );
         });
         //
         $authForm.on('submit', function(e) {
-
-            console.log("Authorized Flow");
+            console.log('Authorized Flow');
 
             e.preventDefault();
             e.stopPropagation();
 
             show3LeggedLogin($server.val(), $appKey.val(), $appSecret.val(), $logLevel.val());
-
         });
 
-        $app.empty().append($authForm).append($form);
-
+        $app.empty()
+            .append($authForm)
+            .append($form);
     }
 
     makeLoginForm();
-
 });
