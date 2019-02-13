@@ -1,15 +1,18 @@
-module.exports = function(config) {
+module.exports = config => {
 
     require('dotenv').config({silent: true});
 
-    var path = require('path');
+    const path = require('path');
 
     config.set({
 
+        plugins: [
+            'karma-chrome-launcher',
+            'karma-jasmine'
+        ],
+
         frameworks: [
-            'mocha',
-            'chai',
-            'sinon-chai'
+            'jasmine'
         ],
 
         files: [
@@ -21,8 +24,6 @@ module.exports = function(config) {
             './src/ringcentral-web-phone.js',
             './src/**/*.spec.js'
         ],
-
-        reporters: ['mocha'],
 
         logLevel: config.LOG_INFO,
 
@@ -44,24 +45,9 @@ module.exports = function(config) {
             }
         },
 
-        plugins: [
-            'karma-chrome-launcher',
-            'karma-mocha',
-            'karma-mocha-reporter',
-            'karma-chai-plugins'
-        ],
-
         client: {
             captureConsole: true,
             showDebugMessages: true,
-            mocha: {
-                // bail: true,
-                ui: 'bdd',
-                timeout: 5000
-            },
-            // config: {
-            //     browserConsoleLogOptions: true
-            // },
             env: process.env
         }
 

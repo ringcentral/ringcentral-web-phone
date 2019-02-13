@@ -1281,12 +1281,7 @@
     }
 
     function extend(dst, src) {
-        src = src || {};
-        dst = dst || {};
-        Object.keys(src).forEach(function(k) {
-            dst[k] = src[k];
-        });
-        return dst;
+        return Object.assign(dst || {}, src || {});
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/

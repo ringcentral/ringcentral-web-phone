@@ -1,6 +1,12 @@
-describe('RingCentral.WebPhone', function() {
+const TEST_TIMEOUT = 60000;
+const DB_DELAY = 5000; // 5 sec delay to allow records to propagate in DB so that phone will be able to be called
+const REGISTRATION_TIMEOUT = 15000;
 
-    const env = __karma__.config.env;
+describe('RingCentral.WebPhone', () => {
+
+    const env = __karma__.config.env; //TODO Autocomplete
+
+    jasmine.DEFAULT_TIMEOUT_INTERVAL = TEST_TIMEOUT;
 
     const receiver = {
         username: env.RC_WP_RECEIVER_USERNAME,
@@ -18,41 +24,47 @@ describe('RingCentral.WebPhone', function() {
         server: env.RC_WP_CALLER_SERVER
     };
 
-    it('initiates and receives a call', async function() {
+    let session; // each test should use this for storing session object for proper cleanup
+    let callerSdk;
+    let callerExtension;
+    let callerPhone;
+    let receiverSdk;
+    let receiverExtension;
+    let receiverPhone;
 
-        const timeout = 60000;
+    beforeAll(async () => {
+        callerSdk = await createSdk(caller);
+        callerExtension = await getExtension(callerSdk);
+        callerPhone = await createWebPhone(callerSdk, caller, 'caller');
+        receiverSdk = await createSdk(receiver);
+        receiverExtension = await getExtension(receiverSdk);
+        receiverPhone = await createWebPhone(receiverSdk, receiver, 'receiver');
+    });
 
-        this.timeout(timeout);
+    beforeEach(() => {
+        session = null;
+    });
 
-        const callerPhone = await createWebPhone(caller, 'caller');
-        const receiverPhone = await createWebPhone(receiver, 'receiver');
+    it('initiates and receives a call', async () => {
 
-        return new Promise(function(resolve, reject) {
+        const callerPhone = await createWebPhone(callerSdk, caller, 'caller');
+        const receiverPhone = await createWebPhone(receiverSdk, receiver, 'receiver');
 
+        // Call first phone
+        session = callerPhone.userAgent.invite(
+            receiver.username,
+            getAcceptOptions(caller.username, callerExtension.regionalSettings.homeCountry.id)
+        );
+
+        return new Promise(resolve => {
             // Second phone should just accept the call
-            receiverPhone.webPhone.userAgent.on('invite', function(session) {
-                resolve(session.accept().then(function() {
-                    setTimeout(function() {
-                        session.bye();
-                    }, 1000);
-                }));
-            });
-
-            console.log(receiver.username);
-
-            // Call first phone
-            var session = callerPhone.webPhone.userAgent.invite(
-                receiver.username,
-                getAcceptOptions(caller.username, callerPhone.extension.regionalSettings.homeCountry.id)
-            );
-
-            setTimeout(function() {
-                session.bye();
-            }, timeout);
-
+            receiverPhone.userAgent.once('invite', session => resolve(session.accept()));
         });
 
+    });
 
+    afterEach(() => {
+        checkSessionStatus(session) && session.bye();
     });
 
 });
@@ -62,11 +74,37 @@ const getAcceptOptions = (fromNumber, homeCountryId) => ({
     homeCountryId: homeCountryId
 });
 
-async function createWebPhone(credentials, id) {
+const checkSessionStatus = session => (
+    session &&
+    session.status !== SIP.Session.C.STATUS_NULL &&
+    session.status !== SIP.Session.C.STATUS_TERMINATED &&
+    session.status !== SIP.Session.C.STATUS_CANCELED
+);
+
+const createSdk = async credentials => {
+
+    const sdk = new RingCentral.SDK({
+        appKey: credentials.appKey,
+        appSecret: credentials.appSecret,
+        server: credentials.server,
+        cachePrefix: credentials.username
+    });
+
+    await sdk.platform().login({
+        username: credentials.username,
+        extension: credentials.extension || null,
+        password: credentials.password
+    });
+
+    return sdk;
+
+};
+
+const getExtension = async sdk => (await sdk.platform().get('/restapi/v1.0/account/~/extension/~')).json();
+
+const createWebPhone = async (sdk, credentials, id) => {
 
     const uaId = 'UserAgent [' + id + '] event:';
-
-    // console.log(uaId, 'Creating', credentials.username); //TODO Remove some digits for privacy in logs
 
     const remote = document.createElement('video');
     remote.hidden = true;
@@ -78,24 +116,7 @@ async function createWebPhone(credentials, id) {
     document.body.appendChild(remote);
     document.body.appendChild(local);
 
-    const sdk = new RingCentral.SDK({
-        appKey: credentials.appKey,
-        appSecret: credentials.appSecret,
-        server: credentials.server,
-        cachePrefix: credentials.username
-    });
-
-    const platform = sdk.platform();
-
-    await platform.login({
-        username: credentials.username,
-        extension: credentials.extension || null,
-        password: credentials.password
-    });
-
-    const extension = await (await platform.get('/restapi/v1.0/account/~/extension/~')).json();
-
-    const data = await (await platform.post('/client-info/sip-provision', {
+    const data = await (await sdk.platform().post('/client-info/sip-provision', {
         sipInfo: [{
             transport: 'WSS'
         }]
@@ -112,27 +133,25 @@ async function createWebPhone(credentials, id) {
             remote: remote,
             local: local
         },
-        onSession: function(session) {
+        onSession: session => {
 
             const sessionId = 'Session [' + id + '] event:';
 
             console.log('Binding to session', id);
 
-            session.on('accepted', function() { console.log(sessionId, 'Accepted'); });
-            session.on('progress', function() { console.log(sessionId, 'Progress'); });
-            session.on('rejected', function() { console.log(sessionId, 'Rejected'); });
-            session.on('failed', function() { console.log(sessionId, 'Failed'); });
-            session.on('terminated', function() { console.log(sessionId, 'Terminated');});
-            session.on('cancel', function() {console.log(sessionId, 'Cancel');});
-            session.on('refer', function() { console.log(sessionId, 'Refer');});
-            session.on('replaced', function(newSession) {
-                console.log(sessionId, 'Replaced', 'old session', session, 'has been replaced with', newSession);
-            });
-            session.on('dtmf', function() { console.log(sessionId, 'DTMF'); });
-            session.on('muted', function() { console.log(sessionId, 'Muted'); });
-            session.on('unmuted', function() { console.log(sessionId, 'Unmuted'); });
-            session.on('connecting', function() { console.log(sessionId, 'Connecting'); });
-            session.on('bye', function() { console.log(sessionId, 'Bye'); });
+            session.on('accepted', () => console.log(sessionId, 'Accepted'));
+            session.on('progress', () => console.log(sessionId, 'Progress'));
+            session.on('rejected', () => console.log(sessionId, 'Rejected'));
+            session.on('failed', () => console.log(sessionId, 'Failed'));
+            session.on('terminated', () => console.log(sessionId, 'Terminated'));
+            session.on('cancel', () => console.log(sessionId, 'Cancel'));
+            session.on('refer', () => console.log(sessionId, 'Refer'));
+            session.on('replaced', newSession => console.log(sessionId, 'Replaced', 'old session', session, 'has been replaced with', newSession));
+            session.on('dtmf', () => console.log(sessionId, 'DTMF'));
+            session.on('muted', () => console.log(sessionId, 'Muted'));
+            session.on('unmuted', () => console.log(sessionId, 'Unmuted'));
+            session.on('connecting', () => console.log(sessionId, 'Connecting'));
+            session.on('bye', () => console.log(sessionId, 'Bye'));
 
         }
     });
@@ -142,38 +161,36 @@ async function createWebPhone(credentials, id) {
         outgoing: '/base/audio/outgoing.ogg'
     });
 
-    return new Promise(function(resolve, reject) {
+    return new Promise((resolve, reject) => {
 
-        console.log(uaId, 'Registering', webPhone.endpointHeader);
+        console.log(uaId, 'Registering', webPhone.userAgent.defaultHeaders[0]);
 
-        webPhone.userAgent.on('connecting', function() { console.log(uaId, 'Connecting'); });
-        webPhone.userAgent.on('connected', function() { console.log(uaId, 'Connected'); });
-        webPhone.userAgent.on('disconnected', function() { console.log(uaId, 'Disconnected'); });
-        webPhone.userAgent.on('unregistered', function() { console.log(uaId, 'Unregistered'); });
-        webPhone.userAgent.on('message', function() { console.log(uaId, 'Message', arguments); });
-        webPhone.userAgent.on('invite', function() { console.log(uaId, 'Invite'); });
+        webPhone.userAgent.on('connecting', () => console.log(uaId, 'Connecting'));
+        webPhone.userAgent.on('connected', () => console.log(uaId, 'Connected'));
+        webPhone.userAgent.on('disconnected', () => console.log(uaId, 'Disconnected'));
+        webPhone.userAgent.on('unregistered', () => console.log(uaId, 'Unregistered'));
+        webPhone.userAgent.on('message', () => console.log(uaId, 'Message', arguments));
+        webPhone.userAgent.on('invite', () => console.log(uaId, 'Invite'));
 
-        webPhone.userAgent.once('registered', function() {
+        webPhone.userAgent.once('registered', () => {
             console.log(uaId, 'Registered event delayed');
-            setTimeout(function() {
+            setTimeout(() => {
                 console.log(uaId, 'Registered');
-                resolve({
-                    sdk: sdk,
-                    extension: extension,
-                    webPhone: webPhone
-                });
-            }, 5000); // 5 sec delay to allow records to propagate in DB
+                resolve(webPhone);
+            }, DB_DELAY);
         });
 
-        webPhone.userAgent.once('registrationFailed', function(e) {
+        webPhone.userAgent.once('registrationFailed', e => {
             console.error(uaId, 'UA RegistrationFailed', arguments, e);
-            // reject(new Error('UA RegistrationFailed')); //FIXME For some reason test fail with network error first time, ignoring for now
+            //FIXME For some reason test fail with network error first time, ignoring once
+            webPhone.userAgent.once('registrationFailed', e => {
+                console.error(uaId, 'UA RegistrationFailed', arguments, e);
+                reject(new Error('UA RegistrationFailed'));
+            });
         });
 
-        setTimeout(function() {
-            reject(new Error('Registration timeout'));
-        }, 10000);
+        setTimeout(() => reject(new Error('Registration timeout')), REGISTRATION_TIMEOUT);
 
     });
 
-}
+};

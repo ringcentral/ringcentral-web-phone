@@ -1,11 +1,11 @@
-# Tests
-
-## Installation
+# Installation
 
 ```sh
 $ git clone https://github.com/ringcentral/ringcentral-web-phone.git
 $ npm install
 ```
+
+# Tests
 
 ## Prerequisites
 
@@ -39,5 +39,9 @@ $ npm test
 Keep the browser open to manually refresh tests when needed (useful for debug):
 
 ```sh
-$ npm run test-watch
+$ npm run test:watch
 ```
+
+# Releasing
+
+Make sure version in `src/ringcentral-web-phone.js` is bumped.

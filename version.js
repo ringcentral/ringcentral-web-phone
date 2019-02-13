@@ -1,5 +1,7 @@
 (function() {
 
+    global.window = {}; //FIXME Crappy getstats is using window...
+
     var fs = require('fs');
     var pkg = require('./package.json');
     var version = require('./src/ringcentral-web-phone').version;
