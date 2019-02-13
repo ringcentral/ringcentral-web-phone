@@ -11,8 +11,7 @@
         root.RingCentral = root.RingCentral || {};
         root.RingCentral.WebPhone = factory(root.SIP, root.getStats);
     }
-}(this, function(SIP, getStats) {
-
+})(this, function(SIP, getStats) {
     var messages = {
         park: {reqid: 1, command: 'callpark'},
         startRecord: {reqid: 2, command: 'startcallrecord'},
@@ -25,7 +24,7 @@
         toVoicemail: {reqid: 11, command: 'toVoicemail'},
         ignore: {reqid: 12, command: 'ignore'},
         receiveConfirm: {reqid: 17, command: 'receiveConfirm'},
-        replyWithMessage: {reqid: 14, command: 'replyWithMessage'},
+        replyWithMessage: {reqid: 14, command: 'replyWithMessage'}
     };
 
     var uuidKey = 'rc-webPhone-uuid';
@@ -62,7 +61,6 @@
      * @constructor
      */
     function WebPhone(regData, options) {
-
         regData = regData || {};
         options = options || {};
 
@@ -79,13 +77,13 @@
         this.appVersion = options.appVersion;
 
         var ua_match = navigator.userAgent.match(/\((.*?)\)/);
-        var app_client_os = (ua_match && ua_match.length && ua_match[1]).replace(/[^a-zA-Z0-9.:_]+/g, "-") || '';
+        var app_client_os = (ua_match && ua_match.length && ua_match[1]).replace(/[^a-zA-Z0-9.:_]+/g, '-') || '';
 
-        var userAgentString = (
-            (options.appName ? (options.appName + (options.appVersion ? '/' + options.appVersion : '')) + ' ' : '') +
+        var userAgentString =
+            (options.appName ? options.appName + (options.appVersion ? '/' + options.appVersion : '') + ' ' : '') +
             (app_client_os ? app_client_os : '') +
-            ' RCWEBPHONE/' + WebPhone.version
-        );
+            ' RCWEBPHONE/' +
+            WebPhone.version;
 
         var modifiers = options.modifiers || [];
         modifiers.push(SIP.Web.Modifiers.stripG722);
@@ -133,9 +131,10 @@
             uri: 'sip:' + this.sipInfo.username + '@' + this.sipInfo.domain,
 
             transportOptions: {
-                wsServers: this.sipInfo.outboundProxy && this.sipInfo.transport
-                           ? this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxy
-                           : this.sipInfo.wsServers,
+                wsServers:
+                    this.sipInfo.outboundProxy && this.sipInfo.transport
+                        ? this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxy
+                        : this.sipInfo.wsServers,
                 traceSip: true,
                 maxReconnectionAttempts: options.maxReconnectionAttempts || 3,
                 reconnectionTimeout: options.reconnectionTimeout || 5,
@@ -146,7 +145,7 @@
             stunServers: this.sipInfo.stunServers || ['stun:74.125.194.127:19302'], //FIXME Hardcoded?
             turnServers: [],
             log: {
-                level: options.logLevel || 1,//FIXME LOG LEVEL 3
+                level: options.logLevel || 1, //FIXME LOG LEVEL 3
                 builtinEnabled: options.builtinEnabled || true,
                 connector: options.connector || null
             },
@@ -159,10 +158,7 @@
         };
         this.userAgent = new SIP.UA(configuration);
 
-        this.userAgent.defaultHeaders = [
-            'P-rc-endpoint-id: ' + id,
-            'Client-id:' + options.appKey
-        ];
+        this.userAgent.defaultHeaders = ['P-rc-endpoint-id: ' + id, 'Client-id:' + options.appKey];
 
         this.userAgent.media = {};
 
@@ -173,8 +169,7 @@
         if (options.media && (options.media.remote && options.media.local)) {
             this.userAgent.media.remote = options.media.remote;
             this.userAgent.media.local = options.media.local;
-        } else
-            this.userAgent.media = null;
+        } else this.userAgent.media = null;
 
         this.userAgent.sipInfo = this.sipInfo;
 
@@ -187,17 +182,23 @@
         this.userAgent.__unregister = this.userAgent.unregister;
         this.userAgent.unregister = unregister;
 
-        this.userAgent.on('invite', function(session) {
-            this.userAgent.audioHelper.playIncoming(true);
-            patchSession(session);
-            patchIncomingSession(session);
-            session._sendReceiveConfirmPromise = session.sendReceiveConfirm().then(function() {
-                session.logger.log('sendReceiveConfirm success');
-            }).catch(function(error) {
-                session.logger.error('failed to send receive confirmation via SIP MESSAGE due to ' + error);
-                throw error;
-            });
-        }.bind(this));
+        this.userAgent.on(
+            'invite',
+            function(session) {
+                this.userAgent.audioHelper.playIncoming(true);
+                patchSession(session);
+                patchIncomingSession(session);
+                session._sendReceiveConfirmPromise = session
+                    .sendReceiveConfirm()
+                    .then(function() {
+                        session.logger.log('sendReceiveConfirm success');
+                    })
+                    .catch(function(error) {
+                        session.logger.error('failed to send receive confirmation via SIP MESSAGE due to ' + error);
+                        throw error;
+                    });
+            }.bind(this)
+        );
 
         this.userAgent.audioHelper = new AudioHelper(options.audioHelper);
 
@@ -225,10 +226,26 @@
      */
     function createRcMessage(options) {
         options.body = options.body || '';
-        return '<Msg>' +
-               '<Hdr SID="' + options.sid + '" Req="' + options.request + '" From="' + options.from + '" To="' + options.to + '" Cmd="' + options.reqid + '"/> ' +
-               '<Bdy Cln="' + this.sipInfo.authorizationId + '" ' + options.body + '/>' +
-               '</Msg>';
+        return (
+            '<Msg>' +
+            '<Hdr SID="' +
+            options.sid +
+            '" Req="' +
+            options.request +
+            '" From="' +
+            options.from +
+            '" To="' +
+            options.to +
+            '" Cmd="' +
+            options.reqid +
+            '"/> ' +
+            '<Bdy Cln="' +
+            this.sipInfo.authorizationId +
+            '" ' +
+            options.body +
+            '/>' +
+            '</Msg>'
+        );
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
@@ -279,9 +296,9 @@
         }
 
         if (data.match(/CSeq:\s*\d+\s+MESSAGE/i)) {
-            var re = new RegExp(this.ua.configuration.viaHost + ':\\d+', "g");
+            var re = new RegExp(this.ua.configuration.viaHost + ':\\d+', 'g');
             var newData = e.data.replace(re, this.ua.configuration.viaHost);
-            Object.defineProperty(e, "data", {
+            Object.defineProperty(e, 'data', {
                 value: newData,
                 writable: false
             });
@@ -292,9 +309,7 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-
     function patchSession(session) {
-
         if (session.__patched) return session;
 
         session.__patched = true;
@@ -340,12 +355,14 @@
                 session.createDialog(incomingResponse, 'UAC');
                 session.hasAnswer = true;
                 session.status = 11;
-                session.sessionDescriptionHandler.setDescription(incomingResponse.body)
-                    .catch(function(exception) {
-                        session.logger.warn(exception);
-                        session.failed(incomingResponse, C.causes.BAD_MEDIA_DESCRIPTION);
-                        session.terminate({status_code: 488, reason_phrase: 'Bad Media Description'})
+                session.sessionDescriptionHandler.setDescription(incomingResponse.body).catch(function(exception) {
+                    session.logger.warn(exception);
+                    session.failed(incomingResponse, C.causes.BAD_MEDIA_DESCRIPTION);
+                    session.terminate({
+                        status_code: 488,
+                        reason_phrase: 'Bad Media Description'
                     });
+                });
             }
         });
 
@@ -361,7 +378,7 @@
 
         if (session.ua.enableQos) {
             session.on('SessionDescriptionHandler-created', function() {
-                session.logger.log("SessionDescriptionHandler Created");
+                session.logger.log('SessionDescriptionHandler Created');
                 startQosStatsCollection(session);
             });
         }
@@ -381,7 +398,6 @@
         if (session.ua.onSession) session.ua.onSession(session);
 
         return session;
-
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
@@ -390,7 +406,7 @@
         try {
             parseRcHeader(session);
         } catch (e) {
-            session.logger.error('Can\'t parse RC headers from invite request due to ' + e);
+            session.logger.error("Can't parse RC headers from invite request due to " + e);
         }
         session.canUseRCMCallControl = canUseRCMCallControl;
         session.createSessionMessage = createSessionMessage;
@@ -417,14 +433,14 @@
                     sid: hdrNode.getAttribute('SID'),
                     request: hdrNode.getAttribute('Req'),
                     from: hdrNode.getAttribute('From'),
-                    to: hdrNode.getAttribute('To'),
+                    to: hdrNode.getAttribute('To')
                 };
             }
             if (bdyNode) {
                 extend(session.rcHeaders, {
                     srvLvl: bdyNode.getAttribute('SrvLvl'),
                     srvLvlExt: bdyNode.getAttribute('SrvLvlExt'),
-                    toNm: bdyNode.getAttribute('ToNm'),
+                    toNm: bdyNode.getAttribute('ToNm')
                 });
             }
         }
@@ -455,7 +471,7 @@
             sid: this.rcHeaders.sid,
             request: this.rcHeaders.request,
             from: this.rcHeaders.to,
-            to: this.rcHeaders.from,
+            to: this.rcHeaders.from
         });
         return this.ua.createRcMessage(options);
     }
@@ -482,7 +498,7 @@
      */
     function sendSessionMessage(options) {
         if (!this.rcHeaders) {
-            return Promise.reject(new Error('Can\'t send SIP MESSAGE related to session: no RC headers available'));
+            return Promise.reject(new Error("Can't send SIP MESSAGE related to session: no RC headers available"));
         }
 
         var to = this.rcHeaders.from;
@@ -532,7 +548,10 @@
         }
         var session = this;
         return session._sendReceiveConfirmPromise.then(function() {
-            return session.sendSessionMessage({reqid: messages.replyWithMessage.reqid, body: body});
+            return session.sendSessionMessage({
+                reqid: messages.replyWithMessage.reqid,
+                body: body
+            });
         });
     }
 
@@ -553,10 +572,9 @@
         var cseq = null;
 
         return new Promise(function(resolve, reject) {
-
-            var extraHeaders = (options.extraHeaders || []).concat(session.ua.defaultHeaders).concat([
-                'Content-Type: application/json;charset=utf-8'
-            ]);
+            var extraHeaders = (options.extraHeaders || [])
+                .concat(session.ua.defaultHeaders)
+                .concat(['Content-Type: application/json;charset=utf-8']);
 
             session.sendRequest(SIP.C.INFO, {
                 body: JSON.stringify({
@@ -567,10 +585,9 @@
                     var timeout = null;
                     if (response.status_code === 200) {
                         cseq = response.cseq;
-                        var onInfo = function(request) {
+                        function onInfo(request) {
                             if (response.cseq === cseq) {
-
-                                var body = request && request.body || '{}';
+                                var body = (request && request.body) || '{}';
                                 var obj;
 
                                 try {
@@ -592,21 +609,22 @@
                                 session.removeListener('RC_SIP_INFO', onInfo);
                                 resolve(null); //FIXME What to resolve
                             }
-                        };
-
+                        }
                         timeout = setTimeout(function() {
                             reject(new Error('Timeout: no reply'));
                             session.removeListener('RC_SIP_INFO', onInfo);
                         }, responseTimeout);
                         session.on('RC_SIP_INFO', onInfo);
                     } else {
-                        reject(new Error('The INFO response status code is: ' + response.status_code + ' (waiting for 200)'));
+                        reject(
+                            new Error(
+                                'The INFO response status code is: ' + response.status_code + ' (waiting for 200)'
+                            )
+                        );
                     }
                 }
             });
-
         });
-
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
@@ -644,19 +662,14 @@
      * @return {Promise}
      */
     function setRecord(session, flag) {
-
-        var message = !!flag
-                      ? messages.startRecord
-                      : messages.stopRecord;
+        var message = !!flag ? messages.startRecord : messages.stopRecord;
 
         if ((session.__onRecord && !flag) || (!session.__onRecord && flag)) {
-            return sendReceive(session, message)
-                .then(function(data) {
-                    session.__onRecord = !!flag;
-                    return data;
-                });
+            return sendReceive(session, message).then(function(data) {
+                session.__onRecord = !!flag;
+                return data;
+            });
         }
-
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
@@ -669,7 +682,6 @@
      */
     function setLocalHold(session, flag) {
         return new Promise(function(resolve, reject) {
-
             var options = {
                 eventHandlers: {
                     succeeded: resolve,
@@ -682,7 +694,6 @@
             } else {
                 resolve(session.__unhold(options));
             }
-
         });
     }
 
@@ -695,22 +706,26 @@
      * @return {SIP.Session}
      */
     function invite(number, options) {
-
         var ua = this;
 
         options = options || {};
         options.extraHeaders = (options.extraHeaders || []).concat(ua.defaultHeaders);
 
-        options.extraHeaders.push('P-Asserted-Identity: sip:' + (options.fromNumber || ua.sipInfo.username) + '@' + ua.sipInfo.domain); //FIXME Phone Number
+        options.extraHeaders.push(
+            'P-Asserted-Identity: sip:' + (options.fromNumber || ua.sipInfo.username) + '@' + ua.sipInfo.domain
+        ); //FIXME Phone Number
 
         //FIXME Backend should know it already
-        if (options.homeCountryId) { options.extraHeaders.push('P-rc-country-id: ' + options.homeCountryId); }
+        if (options.homeCountryId) {
+            options.extraHeaders.push('P-rc-country-id: ' + options.homeCountryId);
+        }
 
-        options.RTCConstraints = options.RTCConstraints || {optional: [{DtlsSrtpKeyAgreement: 'true'}]};
+        options.RTCConstraints = options.RTCConstraints || {
+            optional: [{DtlsSrtpKeyAgreement: 'true'}]
+        };
 
         ua.audioHelper.playOutgoing(true);
         return patchSession(ua.__invite(number, options));
-
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
@@ -726,7 +741,10 @@
             case SIP.C.INFO:
                 session.emit('RC_SIP_INFO', request);
                 //SIP.js does not support application/json content type, so we monkey override its behaviour in this case
-                if (session.status === SIP.Session.C.STATUS_CONFIRMED || session.status === SIP.Session.C.STATUS_WAITING_FOR_ACK) {
+                if (
+                    session.status === SIP.Session.C.STATUS_CONFIRMED ||
+                    session.status === SIP.Session.C.STATUS_WAITING_FOR_ACK
+                ) {
                     var contentType = request.getHeader('content-type');
                     if (contentType.match(/^application\/json/i)) {
                         request.reply(200);
@@ -746,12 +764,13 @@
      * @return {Promise}
      */
     function accept(options) {
-
         var session = this;
 
         options = options || {};
         options.extraHeaders = (options.extraHeaders || []).concat(session.ua.defaultHeaders);
-        options.RTCConstraints = options.RTCConstraints || {optional: [{DtlsSrtpKeyAgreement: 'true'}]};
+        options.RTCConstraints = options.RTCConstraints || {
+            optional: [{DtlsSrtpKeyAgreement: 'true'}]
+        };
 
         return new Promise(function(resolve, reject) {
             function onAnswered() {
@@ -769,8 +788,6 @@
             session.once('failed', onFail);
             session.__accept(options);
         });
-
-
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
@@ -793,7 +810,8 @@
         if (dtmfSender !== undefined && dtmfSender) {
             return dtmfSender.insertDTMF(dtmf, duration);
         }
-        throw new Error('Send DTMF failed: ' + (!dtmfSender ? 'no sender' : (!dtmfSender.canInsertDTMF ? 'can\'t insert DTMF' : 'Unknown')));
+        var sender = dtmfSender && !dtmfSender.canInsertDTMF ? "can't insert DTMF" : 'Unknown';
+        throw new Error('Send DTMF failed: ' + (!dtmfSender ? 'no sender' : sender));
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
@@ -825,7 +843,6 @@
      * @return {Promise}
      */
     function blindTransfer(target, options) {
-
         options = options || {};
 
         var session = this;
@@ -847,17 +864,23 @@
      * @return {Promise}
      */
     function warmTransfer(target, transferOptions) {
-
         var session = this;
 
         return (session.local_hold ? Promise.resolve(null) : session.hold())
-            .then(function() { return delay(300); })
             .then(function() {
-
-                var referTo = '<' + target.dialog.remote_target.toString() +
-                              '?Replaces=' + target.dialog.id.call_id +
-                              '%3Bto-tag%3D' + target.dialog.id.remote_tag +
-                              '%3Bfrom-tag%3D' + target.dialog.id.local_tag + '>';
+                return delay(300);
+            })
+            .then(function() {
+                var referTo =
+                    '<' +
+                    target.dialog.remote_target.toString() +
+                    '?Replaces=' +
+                    target.dialog.id.call_id +
+                    '%3Bto-tag%3D' +
+                    target.dialog.id.remote_tag +
+                    '%3Bfrom-tag%3D' +
+                    target.dialog.id.local_tag +
+                    '>';
 
                 transferOptions = transferOptions || {};
                 transferOptions.extraHeaders = (transferOptions.extraHeaders || [])
@@ -866,9 +889,7 @@
 
                 //TODO return session.refer(newSession);
                 return session.blindTransfer(referTo, transferOptions);
-
             });
-
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
@@ -880,15 +901,15 @@
      * @return {Promise}
      */
     function transfer(target, options) {
-
         var session = this;
 
         return (session.local_hold ? Promise.resolve(null) : session.hold())
-            .then(function() { return delay(300); })
+            .then(function() {
+                return delay(300);
+            })
             .then(function() {
                 return session.blindTransfer(target, options);
             });
-
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
@@ -901,27 +922,23 @@
      * @return {Promise}
      */
     function forward(target, acceptOptions, transferOptions) {
+        var interval = null;
 
-        var interval = null,
-            session = this;
+        var session = this;
 
-        return session.accept(acceptOptions)
-            .then(function() {
-
-                return new Promise(function(resolve, reject) {
-                    interval = setInterval(function() {
-                        if (session.status === 12) {
-                            clearInterval(interval);
-                            session.mute();
-                            setTimeout(function() {
-                                resolve(session.transfer(target, transferOptions));
-                            }, 700);
-                        }
-                    }, 50);
-                });
-
+        return session.accept(acceptOptions).then(function() {
+            return new Promise(function(resolve, reject) {
+                interval = setInterval(function() {
+                    if (session.status === 12) {
+                        clearInterval(interval);
+                        session.mute();
+                        setTimeout(function() {
+                            resolve(session.transfer(target, transferOptions));
+                        }, 700);
+                    }
+                }, 50);
             });
-
+        });
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
@@ -980,7 +997,6 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-
     function toggleMute(session, mute) {
         var pc = session.sessionDescriptionHandler.peerConnection;
         if (pc.getSenders) {
@@ -1033,7 +1049,6 @@
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     function addTrack(remoteAudioEle, localAudioEle) {
-
         var session = this;
         var pc = session.sessionDescriptionHandler.peerConnection;
 
@@ -1081,7 +1096,6 @@
         localAudio.play().catch(function() {
             session.logger.log('local play was rejected');
         });
-
     }
 
     /*----------------------------------------------------------------QOS-------------------------------------------------*/
@@ -1102,24 +1116,28 @@
 
         if (!getStats) throw new Error('getStats module was not provided!');
 
-        getStats(session.sessionDescriptionHandler.peerConnection, function(getStatsResult) {
-            previousGetStatsResult = getStatsResult;
-            qosStatsObj.status = true;
-            var network = getNetworkType(previousGetStatsResult.connectionType);
-            qosStatsObj.localAddr = previousGetStatsResult.connectionType.local.ipAddress[0];
-            qosStatsObj.remoteAddr = previousGetStatsResult.connectionType.remote.ipAddress[0];
-            previousGetStatsResult.results.forEach(function(item) {
-                if (item.type === 'ssrc' && item.transportId === 'Channel-audio-1' && item.id.includes('recv')) {
-                    qosStatsObj.jitterBufferDiscardRate = item.googSecondaryDiscardedRate || 0;
-                    qosStatsObj.packetLost = item.packetsLost;
-                    qosStatsObj.packetsReceived = item.packetsReceived;
-                    qosStatsObj.totalSumJitter += parseFloat(item.googJitterBufferMs);
-                    qosStatsObj.totalIntervalCount += 1;
-                    qosStatsObj.JBM = Math.max(qosStatsObj.JBM, parseFloat(item.googJitterBufferMs));
-                    qosStatsObj.netType = addToMap(qosStatsObj.netType, network);
-                }
-            });
-        }, session.ua.qosCollectInterval);
+        getStats(
+            session.sessionDescriptionHandler.peerConnection,
+            function(getStatsResult) {
+                previousGetStatsResult = getStatsResult;
+                qosStatsObj.status = true;
+                var network = getNetworkType(previousGetStatsResult.connectionType);
+                qosStatsObj.localAddr = previousGetStatsResult.connectionType.local.ipAddress[0];
+                qosStatsObj.remoteAddr = previousGetStatsResult.connectionType.remote.ipAddress[0];
+                previousGetStatsResult.results.forEach(function(item) {
+                    if (item.type === 'ssrc' && item.transportId === 'Channel-audio-1' && item.id.includes('recv')) {
+                        qosStatsObj.jitterBufferDiscardRate = item.googSecondaryDiscardedRate || 0;
+                        qosStatsObj.packetLost = item.packetsLost;
+                        qosStatsObj.packetsReceived = item.packetsReceived;
+                        qosStatsObj.totalSumJitter += parseFloat(item.googJitterBufferMs);
+                        qosStatsObj.totalIntervalCount += 1;
+                        qosStatsObj.JBM = Math.max(qosStatsObj.JBM, parseFloat(item.googJitterBufferMs));
+                        qosStatsObj.netType = addToMap(qosStatsObj.netType, network);
+                    }
+                });
+            },
+            session.ua.qosCollectInterval
+        );
 
         session.on('terminated', function() {
             previousGetStatsResult && previousGetStatsResult.nomore();
@@ -1139,7 +1157,7 @@
         var targetUrl = options.targetUrl || 'rtcpxr@rtcpxr.ringcentral.com:5060';
         var event = options.event || 'vq-rtcpxr';
         options.expires = 60;
-        options.contentType = "application/vq-rtcpxr";
+        options.contentType = 'application/vq-rtcpxr';
         options.extraHeaders = options.extraHeaders || [];
         options.extraHeaders.push('p-rc-client-info:' + 'cpuRC=0:0;cpuOS=0:0;netType=' + networkType + ';ram=0:0');
 
@@ -1154,14 +1172,15 @@
     function calculateNetworkUsage(qosStatsObj) {
         var networkType = [];
         for (var [key, value] of Object.entries(qosStatsObj.netType)) {
-            networkType.push(key + ':' + parseFloat(value * 100 / qosStatsObj.totalIntervalCount).toFixed(2));
+            networkType.push(key + ':' + parseFloat((value * 100) / qosStatsObj.totalIntervalCount).toFixed(2));
         }
         return networkType.join();
     }
 
     function calculateStats(qosStatsObj) {
-        var rawNLR = qosStatsObj.packetLost * 100 / (qosStatsObj.packetsReceived + qosStatsObj.packetLost);
-        var rawJBN = qosStatsObj.totalIntervalCount > 0 ? (qosStatsObj.totalSumJitter / qosStatsObj.totalIntervalCount) : 0;
+        var rawNLR = (qosStatsObj.packetLost * 100) / (qosStatsObj.packetsReceived + qosStatsObj.packetLost);
+        var rawJBN =
+            qosStatsObj.totalIntervalCount > 0 ? qosStatsObj.totalSumJitter / qosStatsObj.totalIntervalCount : 0;
 
         return Object.assign({}, qosStatsObj, {
             NLR: parseFloat(rawNLR || 0).toFixed(2),
@@ -1190,22 +1209,51 @@
         var localAddr = calculatedStatsObj.localAddr || '';
         var remoteAddr = calculatedStatsObj.remoteAddr || '';
 
-        return 'VQSessionReport: CallTerm\r\n' +
-               'CallID: ' + callID + '\r\n' +
-               'LocalID: ' + localId + '\r\n' +
-               'RemoteID: ' + remoteId + '\r\n' +
-               'OrigID: ' + localId + '\r\n' +
-               'LocalAddr: IP=' + localAddr + ' SSRC=0x00000000\r\n' +
-               'RemoteAddr: IP=' + remoteAddr + ' SSRC=0x00000000\r\n' +
-               'LocalMetrics:\r\n' +
-               'Timestamps: START=0 STOP=0\r\n' +
-               'SessionDesc: PT=0 PD=opus SR=0 FD=0 FPP=0 PPS=0 PLC=0 SSUP=on\r\n' +
-               'JitterBuffer: JBA=0 JBR=0 JBN=' + JBN + ' JBM=' + JBM + ' JBX=0\r\n' +
-               'PacketLoss: NLR=' + NLR + ' JDR=' + JDR + '\r\n' +
-               'BurstGapLoss: BLD=0 BD=0 GLD=0 GD=0 GMIN=0\r\n' +
-               'Delay: RTD=0 ESD=0 SOWD=0 IAJ=0\r\n' +
-               'QualityEst: MOSLQ=' + MOSLQ + ' MOSCQ=0.0\r\n' +
-               'DialogID: ' + callID + ';to-tag=' + toTag + ';from-tag=' + fromTag;
+        return (
+            'VQSessionReport: CallTerm\r\n' +
+            'CallID: ' +
+            callID +
+            '\r\n' +
+            'LocalID: ' +
+            localId +
+            '\r\n' +
+            'RemoteID: ' +
+            remoteId +
+            '\r\n' +
+            'OrigID: ' +
+            localId +
+            '\r\n' +
+            'LocalAddr: IP=' +
+            localAddr +
+            ' SSRC=0x00000000\r\n' +
+            'RemoteAddr: IP=' +
+            remoteAddr +
+            ' SSRC=0x00000000\r\n' +
+            'LocalMetrics:\r\n' +
+            'Timestamps: START=0 STOP=0\r\n' +
+            'SessionDesc: PT=0 PD=opus SR=0 FD=0 FPP=0 PPS=0 PLC=0 SSUP=on\r\n' +
+            'JitterBuffer: JBA=0 JBR=0 JBN=' +
+            JBN +
+            ' JBM=' +
+            JBM +
+            ' JBX=0\r\n' +
+            'PacketLoss: NLR=' +
+            NLR +
+            ' JDR=' +
+            JDR +
+            '\r\n' +
+            'BurstGapLoss: BLD=0 BD=0 GLD=0 GD=0 GMIN=0\r\n' +
+            'Delay: RTD=0 ESD=0 SOWD=0 IAJ=0\r\n' +
+            'QualityEst: MOSLQ=' +
+            MOSLQ +
+            ' MOSCQ=0.0\r\n' +
+            'DialogID: ' +
+            callID +
+            ';to-tag=' +
+            toTag +
+            ';from-tag=' +
+            fromTag
+        );
     }
 
     /**
@@ -1246,7 +1294,7 @@
             MOSLQ: 0,
 
             status: false
-        }
+        };
     }
 
     function addToMap(map, key) {
@@ -1259,20 +1307,29 @@
         return Object.assign({}, map);
     }
 
+    var networkTypeMap = {
+        bluetooth: 'Bluetooth',
+        cellular: 'Cellulars',
+        ethernet: 'Ethernet',
+        wifi: 'WiFi',
+        wimax: 'WiMax',
+        '2g': '2G',
+        '3g': '3G',
+        '4g': '4G'
+    };
+
     //TODO: find relaible way to find network type , use navigator.connection.type?
     function getNetworkType(connectionType) {
         var sysNetwork = connectionType.systemNetworkType || 'unknown';
         var localNetwork = connectionType.local.networkType || ['unknown'];
-
-        if (!sysNetwork || sysNetwork === 'unknown') {
-            return localNetwork[0];
-        }
-        return sysNetwork;
+        var networkType = !sysNetwork || sysNetwork === 'unknown' ? localNetwork[0] : sysNetwork;
+        return networkType in networkTypeMap ? networkTypeMap[networkType] : networkType;
     }
 
     function uuid() {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            var r = (Math.random() * 16) | 0;
+            var v = c === 'x' ? r : (r & 0x3) | 0x8;
             return v.toString(16);
         });
     }
@@ -1294,7 +1351,6 @@
      * @constructor
      */
     function AudioHelper(options) {
-
         options = options || {};
 
         this._enabled = !!options.enabled;
@@ -1302,7 +1358,6 @@
     }
 
     AudioHelper.prototype._playSound = function(url, val, volume) {
-
         if (!this._enabled || !url) return this;
 
         if (!this._audio[url]) {
@@ -1328,7 +1383,6 @@
         }
 
         return this;
-
     };
 
     AudioHelper.prototype.loadAudio = function(options) {
@@ -1338,8 +1392,12 @@
     };
 
     AudioHelper.prototype.setVolume = function(volume) {
-        if (volume < 0) { volume = 0; }
-        if (volume > 1) { volume = 1; }
+        if (volume < 0) {
+            volume = 0;
+        }
+        if (volume > 1) {
+            volume = 1;
+        }
         this.volume = volume;
         for (var url in this._audio) {
             if (this._audio.hasOwnProperty(url)) {
@@ -1349,15 +1407,14 @@
     };
 
     AudioHelper.prototype.playIncoming = function(val) {
-        return this._playSound(this._incoming, val, (this.volume || 0.5));
+        return this._playSound(this._incoming, val, this.volume || 0.5);
     };
 
     AudioHelper.prototype.playOutgoing = function(val) {
-        return this._playSound(this._outgoing, val, (this.volume || 1));
+        return this._playSound(this._outgoing, val, this.volume || 1);
     };
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     return WebPhone;
-
-}));
+});

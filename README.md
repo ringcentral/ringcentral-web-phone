@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/ringcentral/ringcentral-web-phone.svg?branch=master)](https://travis-ci.org/ringcentral/ringcentral-web-phone)
+[![Coverage Status](https://coveralls.io/repos/github/ringcentral/ringcentral-web-phone/badge.svg?branch=master)](https://coveralls.io/github/ringcentral/ringcentral-web-phone?branch=master)
+
 # RingCentral WebPhone Library
 
 The RingCentral WebPhone Library includes a JavaScript WebRTC library and a WebRTC phone demo app.

@@ -1,0 +1,17 @@
+root = true
+
+[*]
+indent_style = space
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = false
+
+[*.{js,jsx,ts,tsx}]
+indent_size = 4
+
+[*.{css,sass,scss,yml,json}]
+indent_size = 2
+
+[Makefile]
+indent_style = tab
