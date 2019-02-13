@@ -1,16 +1,17 @@
 {
   "name": "ringcentral-web-phone",
   "scripts": {
-    "test": "karma start",
-    "test-watch": "npm run test -- --no-single-run",
+    "test": "npm run test:watch -- --single-run",
+    "test:watch": "karma start",
     "build": "node version.js",
-    "start": "http-server"
+    "start": "serve -l 8080"
   },
   "dependencies": {
     "getstats": "^1.0.8",
     "sip.js": "^0.11.6"
   },
   "devDependencies": {
+    "bootstrap": "3.4.0",
     "chai": "3.5.0",
     "dotenv": "4.0.0",
     "http-server": "0.11.1",
@@ -23,6 +24,7 @@
     "karma-mocha-reporter": "2.2.5",
     "mocha": "3.5.3",
     "ringcentral": "3.2.1",
+    "serve": "10.1.2",
     "sinon": "1.17.7",
     "sinon-chai": "2.14.0"
   },

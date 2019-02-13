@@ -15,6 +15,7 @@ module.exports = function(config) {
         files: [
             require.resolve('sip.js/dist/sip'),
             require.resolve('pubnub/dist/web/pubnub'),
+            require.resolve('getstats/getStats'),
             require.resolve('ringcentral/build/ringcentral'),
             {pattern: './audio/**/*.ogg', included: false},
             './src/ringcentral-web-phone.js',
@@ -49,8 +50,6 @@ module.exports = function(config) {
             'karma-mocha-reporter',
             'karma-chai-plugins'
         ],
-
-        singleRun: true,
 
         client: {
             captureConsole: true,
