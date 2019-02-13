@@ -1,10 +1,21 @@
 language: node_js
+
 node_js:
-- 6
+- latest
+
+addons:
+  apt:
+    packages:
+    - gcc
+    - g++
+    - libstdc++6
+    - pulseaudio
+
 cache:
   directories:
   - $HOME/.npm
   - node_modules
+
 deploy:
 - provider: npm
   email: kirill.konshin@gmail.com
@@ -23,7 +34,13 @@ deploy:
     node: 6
     tags: true
     repo: ringcentral/ringcentral-web-phone
+
 before_install:
 - export CHROME_BIN=chromium-browser
 - export DISPLAY=:99.0
 - sh -e /etc/init.d/xvfb start
+- pulseaudio --start
+
+env:
+  global:
+  - DISPLAY=:99.0
