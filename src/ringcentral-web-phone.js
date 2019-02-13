@@ -7,7 +7,7 @@
         module.exports = factory(require('sip.js'), require('getstats') || root.getStats);
         module.exports.default = module.exports; //ES6
     } else {
-        root.RingCentral = root.RingCentral ||  {};
+        root.RingCentral = root.RingCentral || {};
         root.RingCentral.WebPhone = factory(root.SIP, root.getStats);
     }
 }(this, function(SIP, getStats) {
@@ -31,106 +31,16 @@
 
     var responseTimeout = 60000;
 
-    var defaultMediaConstraints   =  {
+    var defaultMediaConstraints = {
         audio: true,
         video: false
     };
 
-
-    function uuid() {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-    }
-
-    function delay(ms) {
-        return new Promise(function(resolve, reject) {
-            setTimeout(resolve, ms);
-        });
-    }
-
-    function extend(dst, src) {
-        src = src || {};
-        dst = dst || {};
-        Object.keys(src).forEach(function(k) {
-            dst[k] = src[k];
-        });
-        return dst;
-    }
-
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * @param options
-     * @constructor
-     */
-    function AudioHelper(options) {
-
-        options = options || {};
-
-        this._enabled = !!options.enabled;
-        this.loadAudio(options);
-    }
-
-    AudioHelper.prototype._playSound = function(url, val, volume) {
-
-        if (!this._enabled || !url) return this;
-
-        if (!this._audio[url]) {
-            if (val) {
-                this._audio[url] = new Audio();
-                this._audio[url].src = url;
-                this._audio[url].loop = true;
-                this._audio[url].volume = volume;
-                this._audio[url].playPromise = this._audio[url].play();
-            }
-        } else {
-            if (val) {
-                this._audio[url].currentTime = 0;
-                this._audio[url].playPromise = this._audio[url].play();
-            } else {
-                var audio = this._audio[url];
-                if (audio.playPromise !== undefined) {
-                    audio.playPromise.then(function() {
-                        audio.pause();
-                    });
-                }
-            }
-        }
-
-        return this;
-
-    };
-
-    AudioHelper.prototype.loadAudio = function(options) {
-        this._incoming = options.incoming;
-        this._outgoing = options.outgoing;
-        this._audio = {};
-    };
-
-    AudioHelper.prototype.setVolume = function(volume) {
-        if (volume < 0) { volume = 0; }
-        if (volume > 1) { volume = 1; }
-        this.volume = volume;
-        for (var url in this._audio) {
-            if (this._audio.hasOwnProperty(url)) {
-                this._audio[url].volume = volume;
-            }
-        }
-    };
-
-    AudioHelper.prototype.playIncoming = function(val) {
-        return this._playSound(this._incoming, val, (this.volume || 0.5));
-    };
-
-    AudioHelper.prototype.playOutgoing = function(val) {
-        return this._playSound(this._outgoing, val, (this.volume || 1));
-    };
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-    /**
+     * TODO: include 'WebPhone' for all apps other than Chrome and Glip
+     * TODO: parse wsservers from new api spec
      * @param {object} regData
      * @param {object} [options]
      * @param {string} [options.uuid]
@@ -139,11 +49,17 @@
      * @param {string} [options.appVersion]
      * @param {string} [options.audioHelper]
      * @param {string} [options.onSession] fired each time UserAgent starts working with session
+     * @param {boolean} [options.enableMidLinesInSDP]
+     * @param {array} [options.modifiers]
+     * @param {boolean} [options.enableUnifiedSDP]
+     * @param {object} [options.mediaConstraints]
+     * @param {boolean} [options.enableQos]
+     * @param {string} [options.uuidKey]
+     * @param {object} [options.sessionDescriptionHandlerFactoryOptions]
+     * @param {function} [options.sessionDescriptionHandlerFactory]
+     * @property {SIP.UA} userAgent
      * @constructor
      */
-
-    //TODO: include 'WebPhone' for all apps other than Chrome and Glip
-    //TODO: parse wsservers from new api spec
     function WebPhone(regData, options) {
 
         regData = regData || {};
@@ -162,11 +78,11 @@
         this.appVersion = options.appVersion;
 
         var ua_match = navigator.userAgent.match(/\((.*?)\)/);
-        var app_client_os = (ua_match && ua_match.length && ua_match[1]).replace(/[^a-zA-Z0-9.:_]+/g,"-") || '';
+        var app_client_os = (ua_match && ua_match.length && ua_match[1]).replace(/[^a-zA-Z0-9.:_]+/g, "-") || '';
 
         var userAgentString = (
             (options.appName ? (options.appName + (options.appVersion ? '/' + options.appVersion : '')) + ' ' : '') +
-            (app_client_os ? app_client_os  : '') +
+            (app_client_os ? app_client_os : '') +
             ' RCWEBPHONE/' + WebPhone.version
         );
 
@@ -174,16 +90,15 @@
         modifiers.push(SIP.Web.Modifiers.stripG722);
         modifiers.push(SIP.Web.Modifiers.stripTcpCandidates);
 
-        var sdpSemantics = 'plan-b' ;
+        var sdpSemantics = 'plan-b';
 
-        if(options.enableUnifiedSDP){
+        if (options.enableUnifiedSDP) {
             sdpSemantics = 'unified-plan';
         }
 
-        if(options.enableMidLinesInSDP){
+        if (options.enableMidLinesInSDP) {
             modifiers.push(SIP.Web.Modifiers.addMidLines);
         }
-
 
         var sessionDescriptionHandlerFactoryOptions = options.sessionDescriptionHandlerFactoryOptions || {
             peerConnectionOptions: {
@@ -193,10 +108,9 @@
                     sdpSemantics: sdpSemantics
                 }
             },
-            constraints: options.mediaConstraints||defaultMediaConstraints,
+            constraints: options.mediaConstraints || defaultMediaConstraints,
             modifiers: modifiers
         };
-
 
         var browserUa = navigator.userAgent.toLowerCase();
         var isSafari = false;
@@ -212,15 +126,15 @@
             sessionDescriptionHandlerFactoryOptions.alwaysAcquireMediaFirst = true;
         }
 
-        var sessionDescriptionHandlerFactory =  options.sessionDescriptionHandlerFactory || [];
+        var sessionDescriptionHandlerFactory = options.sessionDescriptionHandlerFactory || [];
 
         var configuration = {
             uri: 'sip:' + this.sipInfo.username + '@' + this.sipInfo.domain,
 
             transportOptions: {
                 wsServers: this.sipInfo.outboundProxy && this.sipInfo.transport
-                    ? this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxy
-                    : this.sipInfo.wsServers,
+                           ? this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxy
+                           : this.sipInfo.wsServers,
                 traceSip: true,
                 maxReconnectionAttempts: options.maxReconnectionAttempts || 3,
                 reconnectionTimeout: options.reconnectionTimeout || 5,
@@ -231,16 +145,16 @@
             stunServers: this.sipInfo.stunServers || ['stun:74.125.194.127:19302'], //FIXME Hardcoded?
             turnServers: [],
             log: {
-                level: options.logLevel || 1 ,//FIXME LOG LEVEL 3
-                builtinEnabled : options.builtinEnabled || true,
-                connector  : options.connector|| null
+                level: options.logLevel || 1,//FIXME LOG LEVEL 3
+                builtinEnabled: options.builtinEnabled || true,
+                connector: options.connector || null
             },
             domain: this.sipInfo.domain,
             autostart: false,
             register: false,
             userAgentString: userAgentString,
             sessionDescriptionHandlerFactoryOptions: sessionDescriptionHandlerFactoryOptions,
-            sessionDescriptionHandlerFactory : sessionDescriptionHandlerFactory
+            sessionDescriptionHandlerFactory: sessionDescriptionHandlerFactory
         };
         this.userAgent = new SIP.UA(configuration);
 
@@ -255,11 +169,10 @@
 
         this.userAgent.qosCollectInterval = options.qosCollectInterval || 5000;
 
-        if (options.media && (options.media.remote && options.media.local)){
-            this.userAgent.media.remote = options.media.remote ;
+        if (options.media && (options.media.remote && options.media.local)) {
+            this.userAgent.media.remote = options.media.remote;
             this.userAgent.media.local = options.media.local;
-        }
-        else
+        } else
             this.userAgent.media = null;
 
         this.userAgent.sipInfo = this.sipInfo;
@@ -279,7 +192,7 @@
             patchIncomingSession(session);
             session._sendReceiveConfirmPromise = session.sendReceiveConfirm().then(function() {
                 session.logger.log('sendReceiveConfirm success');
-            }).catch(function(error){
+            }).catch(function(error) {
                 session.logger.error('failed to send receive confirmation via SIP MESSAGE due to ' + error);
                 throw error;
             });
@@ -311,15 +224,18 @@
      */
     function createRcMessage(options) {
         options.body = options.body || '';
-        var msgBody = '<Msg><Hdr SID="' + options.sid + '" Req="' + options.request + '" From="' + options.from + '" To="' + options.to +'" Cmd="' + options.reqid + '"/> <Bdy Cln="' + this.sipInfo.authorizationId + '" ' + options.body + '/></Msg>';
-        return msgBody;
+        return '<Msg>' +
+               '<Hdr SID="' + options.sid + '" Req="' + options.request + '" From="' + options.from + '" To="' + options.to + '" Cmd="' + options.reqid + '"/> ' +
+               '<Bdy Cln="' + this.sipInfo.authorizationId + '" ' + options.body + '/>' +
+               '</Msg>';
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     /**
-     * @this {SIP.UserAgent}
-     * @param {object} options
+     * @this {SIP.UA}
+     * @param {object} to
+     * @param {object} messageData
      * @return {Promise}
      */
     function sendMessage(to, messageData) {
@@ -356,14 +272,13 @@
         if (typeof data !== 'string') {
             try {
                 data = String.fromCharCode.apply(null, new Uint8Array(data));
-            }
-            catch(error) {
+            } catch (error) {
                 return this._onMessage.apply(this, [e]);
             }
         }
 
         if (data.match(/CSeq:\s*\d+\s+MESSAGE/i)) {
-            var re = new RegExp(this.ua.configuration.viaHost + ':\\d+',"g");
+            var re = new RegExp(this.ua.configuration.viaHost + ':\\d+', "g");
             var newData = e.data.replace(re, this.ua.configuration.viaHost);
             Object.defineProperty(e, "data", {
                 value: newData,
@@ -375,8 +290,6 @@
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
-
-
 
 
     function patchSession(session) {
@@ -417,19 +330,17 @@
         session.media = session.ua.media;
         session.addTrack = addTrack;
 
-        session.startQosStatsCollection = startQosStatsCollection;
-
         session.on('replaced', patchSession);
 
         // Audio
-        session.on('progress', function (incomingResponse) {
+        session.on('progress', function(incomingResponse) {
             stopPlaying();
             if (incomingResponse.status_code === 183) {
                 session.createDialog(incomingResponse, 'UAC');
                 session.hasAnswer = true;
                 session.status = 11;
                 session.sessionDescriptionHandler.setDescription(incomingResponse.body)
-                    .catch(function (exception) {
+                    .catch(function(exception) {
                         session.logger.warn(exception);
                         session.failed(incomingResponse, C.causes.BAD_MEDIA_DESCRIPTION);
                         session.terminate({status_code: 488, reason_phrase: 'Bad Media Description'})
@@ -448,9 +359,9 @@
         session.on('replaced', stopPlaying);
 
         if (session.ua.enableQos) {
-            session.on('SessionDescriptionHandler-created', function () {
+            session.on('SessionDescriptionHandler-created', function() {
                 session.logger.log("SessionDescriptionHandler Created");
-                session.startQosStatsCollection();
+                startQosStatsCollection(session);
             });
         }
 
@@ -522,7 +433,7 @@
 
     /**
      * @this {SIP.Session}
-     * @return {Bool}
+     * @return {boolean}
      */
     function canUseRCMCallControl() {
         return !!this.rcHeaders;
@@ -556,10 +467,11 @@
      */
     function ignore() {
         var session = this;
-        return session._sendReceiveConfirmPromise.then(function () {
+        return session._sendReceiveConfirmPromise.then(function() {
             return session.sendSessionMessage(messages.ignore);
         });
     }
+
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     /**
@@ -595,7 +507,7 @@
      */
     function toVoicemail() {
         var session = this;
-        return session._sendReceiveConfirmPromise.then(function () {
+        return session._sendReceiveConfirmPromise.then(function() {
             return session.sendSessionMessage(messages.toVoicemail);
         });
     }
@@ -608,18 +520,18 @@
      * @return {Promise}
      */
     function replyWithMessage(replyOptions) {
-        var body = 'RepTp="'+ replyOptions.replyType +'"';
+        var body = 'RepTp="' + replyOptions.replyType + '"';
 
         if (replyOptions.replyType === 0) {
-            body += ' Bdy="'+ replyOptions.replyText +'"';
-        } else if (replyOptions.replyType === 1){
-            body += ' Vl="'+ replyOptions.timeValue +'"';
-            body += ' Units="'+ replyOptions.timeUnits +'"';
-            body += ' Dir="'+ replyOptions.callbackDirection +'"';
+            body += ' Bdy="' + replyOptions.replyText + '"';
+        } else if (replyOptions.replyType === 1) {
+            body += ' Vl="' + replyOptions.timeValue + '"';
+            body += ' Units="' + replyOptions.timeUnits + '"';
+            body += ' Dir="' + replyOptions.callbackDirection + '"';
         }
         var session = this;
-        return session._sendReceiveConfirmPromise.then(function () {
-            return session.sendSessionMessage({ reqid: messages.replyWithMessage.reqid, body: body });
+        return session._sendReceiveConfirmPromise.then(function() {
+            return session.sendSessionMessage({reqid: messages.replyWithMessage.reqid, body: body});
         });
     }
 
@@ -668,7 +580,7 @@
 
                                 if (obj.response && obj.response.command === command.command) {
                                     if (obj.response.result) {
-                                        if (obj.response.result.code == 0) {
+                                        if (obj.response.result.code.toString() === '0') {
                                             return resolve(obj.response.result);
                                         } else {
                                             return reject(obj.response.result);
@@ -686,8 +598,7 @@
                             session.removeListener('RC_SIP_INFO', onInfo);
                         }, responseTimeout);
                         session.on('RC_SIP_INFO', onInfo);
-                    }
-                    else {
+                    } else {
                         reject(new Error('The INFO response status code is: ' + response.status_code + ' (waiting for 200)'));
                     }
                 }
@@ -716,7 +627,7 @@
     /*--------------------------------------------------------------------------------------------------------------------*/
 
     function sendRequest(type, config) {
-        if (type == SIP.C.PRACK) {
+        if (type === SIP.C.PRACK) {
             // type = SIP.C.ACK;
             return this;
         }
@@ -734,8 +645,8 @@
     function setRecord(session, flag) {
 
         var message = !!flag
-            ? messages.startRecord
-            : messages.stopRecord;
+                      ? messages.startRecord
+                      : messages.stopRecord;
 
         if ((session.__onRecord && !flag) || (!session.__onRecord && flag)) {
             return sendReceive(session, message)
@@ -943,9 +854,9 @@
             .then(function() {
 
                 var referTo = '<' + target.dialog.remote_target.toString() +
-                    '?Replaces=' + target.dialog.id.call_id +
-                    '%3Bto-tag%3D' + target.dialog.id.remote_tag +
-                    '%3Bfrom-tag%3D' + target.dialog.id.local_tag + '>';
+                              '?Replaces=' + target.dialog.id.call_id +
+                              '%3Bto-tag%3D' + target.dialog.id.remote_tag +
+                              '%3Bfrom-tag%3D' + target.dialog.id.local_tag + '>';
 
                 transferOptions = transferOptions || {};
                 transferOptions.extraHeaders = (transferOptions.extraHeaders || [])
@@ -1059,9 +970,9 @@
      * @return {Promise}
      */
 
-    function reinvite (options, modifier){
+    function reinvite(options, modifier) {
         var session = this;
-        options = options || {}
+        options = options || {};
         options.sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions || {};
         return session.__reinvite(options, modifier);
     }
@@ -1069,7 +980,7 @@
     /*--------------------------------------------------------------------------------------------------------------------*/
 
 
-    function toggleMute (session , mute) {
+    function toggleMute(session, mute) {
         var pc = session.sessionDescriptionHandler.peerConnection;
         if (pc.getSenders) {
             pc.getSenders().forEach(function(sender) {
@@ -1078,20 +989,20 @@
                 }
             });
         }
-    };
+    }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
-    function mute (silent){
+    function mute(silent) {
         if (this.state !== this.STATUS_CONNECTED) {
             this.logger.warn('An acitve call is required to mute audio');
             return;
         }
         this.logger.log('Muting Audio');
         if (!silent) {
-            this.emit('muted',this.session);
+            this.emit('muted', this.session);
         }
         return toggleMute(this, true);
-    };
+    }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
@@ -1102,10 +1013,10 @@
         }
         this.logger.log('Unmuting Audio');
         if (!silent) {
-            this.emit('unmuted',this.session);
+            this.emit('unmuted', this.session);
         }
-        return toggleMute(this,false);
-    };
+        return toggleMute(this, false);
+    }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
@@ -1113,16 +1024,14 @@
      * @this {SIP.Session}
      * @return boolean
      */
-
-    function onLocalHold (){
+    function onLocalHold() {
         var session = this;
         return session.local_hold;
-    };
+    }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-
-    function addTrack(remoteAudioEle, localAudioEle){
+    function addTrack(remoteAudioEle, localAudioEle) {
 
         var session = this;
         var pc = session.sessionDescriptionHandler.peerConnection;
@@ -1130,27 +1039,25 @@
         var remoteAudio;
         var localAudio;
 
-        if(remoteAudioEle&&localAudioEle){
+        if (remoteAudioEle && localAudioEle) {
             remoteAudio = remoteAudioEle;
             localAudio = localAudioEle;
-        }
-        else if(session.media){
+        } else if (session.media) {
             remoteAudio = session.media.remote;
             localAudio = session.media.local;
-        }
-        else
+        } else {
             throw new Error('HTML Media Element not Defined');
-
+        }
 
         var remoteStream = new MediaStream();
-        if(pc.getReceivers){
+        if (pc.getReceivers) {
             pc.getReceivers().forEach(function(receiver) {
                 var rtrack = receiver.track;
-                if(rtrack){
+                if (rtrack) {
                     remoteStream.addTrack(rtrack);
-                }});
-        }
-        else{
+                }
+            });
+        } else {
             remoteStream = pc.getRemoteStreams()[0];
         }
         remoteAudio.srcObject = remoteStream;
@@ -1159,15 +1066,14 @@
         });
 
         var localStream = new MediaStream();
-        if(pc.getSenders){
+        if (pc.getSenders) {
             pc.getSenders().forEach(function(sender) {
                 var strack = sender.track;
                 if (strack && strack.kind === 'audio') {
                     localStream.addTrack(strack);
                 }
             });
-        }
-        else{
+        } else {
             localStream = pc.getLocalStreams()[0];
         }
         localAudio.srcObject = localStream;
@@ -1180,129 +1086,26 @@
     /*----------------------------------------------------------------QOS-------------------------------------------------*/
 
     /**
-     * @this {SIP.Session}
+     * @param {SIP.Session} session
      */
-    function getQoSStatsTemplate() {
-        return {
-            localAddr: '',
-            remoteAddr: '',
-            callID: '',
-            localID: '',
-            remoteID: '',
-            origID: '',
-            fromTag:'',
-            toTag:'',
-            timestamp: {
-                start: '',
-                stop: ''
-            },
-
-            netType: {},
-
-            packetLost : 0,
-            packetsReceived: 0,
-
-            jitterBufferNominal: 0,
-            jitterBufferMax: 0,
-
-            jitterBufferDiscardRate: 0,
-
-            totalSumJitter:0,
-            totalIntervalCount:0,
-
-            NLR : 0,
-            JBM : 0 ,
-            JBN :  0,
-            JDR : 0,
-            MOSLQ: 0,
-
-            status : false
-        }
-    }
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-
-    function average(array) {
-        var sum = array.reduce((a, b) => a + b, 0);
-        var avg = (sum / array.length);
-        return avg;
-    }
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-    function addToMap(map, key) {
-        map = map || {};
-        if (key in map) {
-            map[key] =  parseInt(map[key]) + 1;
-        } else {
-            map[key] = parseInt(1);
-        }
-        return Object.assign({},map);
-    }
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-
-    //TODO: find relaible way to find network type , use navigator.connection.type?
-    function getNetworkType(connectionType){
-        var sysNetwork = connectionType.systemNetworkType || 'unknown';
-        var localNetwork = connectionType.local.networkType || ['unknown'];
-
-        if (!sysNetwork || sysNetwork === 'unknown') {
-            return localNetwork[0];
-        }
-        return sysNetwork;
-    }
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-    /**
-     * @this {SIP.Session}
-     */
-    function publishQosStats(session, qosStatsObj, options){
-        options = options || {};
-
-        var networkType = calculateNetworkUsage(qosStatsObj) || '';
-        var targetUrl = options.targetUrl || 'rtcpxr@rtcpxr.ringcentral.com:5060';
-        var event = options.event || 'vq-rtcpxr';
-        options.expires = 60;
-        options.contentType = "application/vq-rtcpxr";
-        options.extraHeaders = options.extraHeaders || [];
-        options.extraHeaders.push('p-rc-client-info:' + 'cpuRC=0:0;cpuOS=0:0;netType=' + networkType + ';ram=0:0');
-
-        var calculatedStatsObj =  calculateStats(qosStatsObj);
-        var body = createPublishBody(calculatedStatsObj);
-        var pub = session.ua.publish(targetUrl, event, body, options);
-        qosStatsObj.status = false;
-        pub.close();
-        session.emit('qos-published',body);
-    }
-
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-    /**
-     * @this {SIP.Session}
-     */
-    function startQosStatsCollection(){
-
-        var session =  this;
+    function startQosStatsCollection(session) {
         var qosStatsObj = getQoSStatsTemplate();
 
-        qosStatsObj.callID = session.request.call_id||'';
-        qosStatsObj.fromTag  = session.from_tag || '';
-        qosStatsObj.toTag  = session.to_tag || '';
-        qosStatsObj.localID = session.request.headers.From[0].raw||session.request.headers.From[0];
-        qosStatsObj.remoteID = session.request.headers.To[0].raw||session.request.headers.To[0];
-        qosStatsObj.origID = session.request.headers.From[0].raw||session.request.headers.From[0];
+        qosStatsObj.callID = session.request.call_id || '';
+        qosStatsObj.fromTag = session.from_tag || '';
+        qosStatsObj.toTag = session.to_tag || '';
+        qosStatsObj.localID = session.request.headers.From[0].raw || session.request.headers.From[0];
+        qosStatsObj.remoteID = session.request.headers.To[0].raw || session.request.headers.To[0];
+        qosStatsObj.origID = session.request.headers.From[0].raw || session.request.headers.From[0];
         var previousGetStatsResult;
 
-        getStats(session.sessionDescriptionHandler.peerConnection, function (getStatsResult){
+        getStats(session.sessionDescriptionHandler.peerConnection, function(getStatsResult) {
             previousGetStatsResult = getStatsResult;
-            qosStatsObj.status =  true;
+            qosStatsObj.status = true;
             var network = getNetworkType(previousGetStatsResult.connectionType);
             qosStatsObj.localAddr = previousGetStatsResult.connectionType.local.ipAddress[0];
             qosStatsObj.remoteAddr = previousGetStatsResult.connectionType.remote.ipAddress[0];
-            previousGetStatsResult.results.forEach(function (item) {
+            previousGetStatsResult.results.forEach(function(item) {
                 if (item.type === 'ssrc' && item.transportId === 'Channel-audio-1' && item.id.includes('recv')) {
                     qosStatsObj.jitterBufferDiscardRate = item.googSecondaryDiscardedRate || 0;
                     qosStatsObj.packetLost = item.packetsLost;
@@ -1315,83 +1118,242 @@
             });
         }, session.ua.qosCollectInterval);
 
-
-        session.on('terminated',function (){
+        session.on('terminated', function() {
             previousGetStatsResult && previousGetStatsResult.nomore();
-            publishQosStats(session,qosStatsObj);
+            publishQosStats(session, qosStatsObj);
         });
-
     }
 
-    /*--------------------------------------------------------------------------------------------------------------------*/
+    /**
+     * @param {SIP.Session} session
+     * @param {Object} qosStatsObj
+     * @param {Object} options
+     */
+    function publishQosStats(session, qosStatsObj, options) {
+        options = options || {};
+
+        var networkType = calculateNetworkUsage(qosStatsObj) || '';
+        var targetUrl = options.targetUrl || 'rtcpxr@rtcpxr.ringcentral.com:5060';
+        var event = options.event || 'vq-rtcpxr';
+        options.expires = 60;
+        options.contentType = "application/vq-rtcpxr";
+        options.extraHeaders = options.extraHeaders || [];
+        options.extraHeaders.push('p-rc-client-info:' + 'cpuRC=0:0;cpuOS=0:0;netType=' + networkType + ';ram=0:0');
+
+        var calculatedStatsObj = calculateStats(qosStatsObj);
+        var body = createPublishBody(calculatedStatsObj);
+        var pub = session.ua.publish(targetUrl, event, body, options);
+        qosStatsObj.status = false;
+        pub.close();
+        session.emit('qos-published', body);
+    }
 
     function calculateNetworkUsage(qosStatsObj) {
         var networkType = [];
         for (var [key, value] of Object.entries(qosStatsObj.netType)) {
-            networkType.push(key + ':' + parseFloat( value *100 / qosStatsObj.totalIntervalCount).toFixed(2));
+            networkType.push(key + ':' + parseFloat(value * 100 / qosStatsObj.totalIntervalCount).toFixed(2));
         }
         return networkType.join();
     }
 
-    /*--------------------------------------------------------------------------------------------------------------------*/
-
-    function calculateStats(qosStatsObj){
-
-        var rawNLR = qosStatsObj.packetLost* 100 / (qosStatsObj.packetsReceived+qosStatsObj.packetLost);
+    function calculateStats(qosStatsObj) {
+        var rawNLR = qosStatsObj.packetLost * 100 / (qosStatsObj.packetsReceived + qosStatsObj.packetLost);
         var rawJBN = qosStatsObj.totalIntervalCount > 0 ? (qosStatsObj.totalSumJitter / qosStatsObj.totalIntervalCount) : 0;
 
         return Object.assign({}, qosStatsObj, {
-            NLR:  parseFloat(rawNLR || 0).toFixed(2),
+            NLR: parseFloat(rawNLR || 0).toFixed(2),
             //JitterBufferNominal
             JBN: parseFloat(rawJBN).toFixed(2),
             //JitterBufferDiscardRate
-            JDR:  parseFloat(qosStatsObj.jitterBufferDiscardRate).toFixed(2),
+            JDR: parseFloat(qosStatsObj.jitterBufferDiscardRate).toFixed(2),
             //MOS Score
             MOSLQ: 0
         });
+    }
 
+    function createPublishBody(calculatedStatsObj) {
+        var NLR = calculatedStatsObj.NLR || 0;
+        var JBM = calculatedStatsObj.JBM || 0;
+        var JBN = calculatedStatsObj.JBN || 0;
+        var JDR = calculatedStatsObj.JDR || 0;
+        var MOSLQ = calculatedStatsObj.MOSLQ || 0;
+
+        var callID = calculatedStatsObj.callID || '';
+        var fromTag = calculatedStatsObj.fromTag || '';
+        var toTag = calculatedStatsObj.toTag || '';
+        var localId = calculatedStatsObj.localID || '';
+        var remoteId = calculatedStatsObj.remoteID || '';
+
+        var localAddr = calculatedStatsObj.localAddr || '';
+        var remoteAddr = calculatedStatsObj.remoteAddr || '';
+
+        return 'VQSessionReport: CallTerm\r\n' +
+               'CallID: ' + callID + '\r\n' +
+               'LocalID: ' + localId + '\r\n' +
+               'RemoteID: ' + remoteId + '\r\n' +
+               'OrigID: ' + localId + '\r\n' +
+               'LocalAddr: IP=' + localAddr + ' SSRC=0x00000000\r\n' +
+               'RemoteAddr: IP=' + remoteAddr + ' SSRC=0x00000000\r\n' +
+               'LocalMetrics:\r\n' +
+               'Timestamps: START=0 STOP=0\r\n' +
+               'SessionDesc: PT=0 PD=opus SR=0 FD=0 FPP=0 PPS=0 PLC=0 SSUP=on\r\n' +
+               'JitterBuffer: JBA=0 JBR=0 JBN=' + JBN + ' JBM=' + JBM + ' JBX=0\r\n' +
+               'PacketLoss: NLR=' + NLR + ' JDR=' + JDR + '\r\n' +
+               'BurstGapLoss: BLD=0 BD=0 GLD=0 GD=0 GMIN=0\r\n' +
+               'Delay: RTD=0 ESD=0 SOWD=0 IAJ=0\r\n' +
+               'QualityEst: MOSLQ=' + MOSLQ + ' MOSCQ=0.0\r\n' +
+               'DialogID: ' + callID + ';to-tag=' + toTag + ';from-tag=' + fromTag;
+    }
+
+    /**
+     * @this {SIP.Session}
+     */
+    function getQoSStatsTemplate() {
+        return {
+            localAddr: '',
+            remoteAddr: '',
+            callID: '',
+            localID: '',
+            remoteID: '',
+            origID: '',
+            fromTag: '',
+            toTag: '',
+            timestamp: {
+                start: '',
+                stop: ''
+            },
+
+            netType: {},
+
+            packetLost: 0,
+            packetsReceived: 0,
+
+            jitterBufferNominal: 0,
+            jitterBufferMax: 0,
+
+            jitterBufferDiscardRate: 0,
+
+            totalSumJitter: 0,
+            totalIntervalCount: 0,
+
+            NLR: 0,
+            JBM: 0,
+            JBN: 0,
+            JDR: 0,
+            MOSLQ: 0,
+
+            status: false
+        }
+    }
+
+    function addToMap(map, key) {
+        map = map || {};
+        if (key in map) {
+            map[key] = parseInt(map[key]) + 1;
+        } else {
+            map[key] = parseInt(1);
+        }
+        return Object.assign({}, map);
+    }
+
+    //TODO: find relaible way to find network type , use navigator.connection.type?
+    function getNetworkType(connectionType) {
+        var sysNetwork = connectionType.systemNetworkType || 'unknown';
+        var localNetwork = connectionType.local.networkType || ['unknown'];
+
+        if (!sysNetwork || sysNetwork === 'unknown') {
+            return localNetwork[0];
+        }
+        return sysNetwork;
+    }
+
+    function uuid() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+    function delay(ms) {
+        return new Promise(function(resolve, reject) {
+            setTimeout(resolve, ms);
+        });
+    }
+
+    function extend(dst, src) {
+        return Object.assign(dst || {}, src || {});
     }
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-    function createPublishBody(calculatedStatsObj){
+    /**
+     * @param options
+     * @constructor
+     */
+    function AudioHelper(options) {
 
-        var NLR =  calculatedStatsObj.NLR||0;
-        var JBM = calculatedStatsObj.JBM||0;
-        var JBN =  calculatedStatsObj.JBN||0;
-        var JDR = calculatedStatsObj.JDR||0;
-        var MOSLQ = calculatedStatsObj.MOSLQ||0;
+        options = options || {};
 
-        var callID = calculatedStatsObj.callID||'';
-        var fromTag  = calculatedStatsObj.fromTag||'';
-        var toTag  = calculatedStatsObj.toTag||'';
-        var localId = calculatedStatsObj.localID||'';
-        var remoteId = calculatedStatsObj.remoteID||'';
-
-        var localAddr= calculatedStatsObj.localAddr||'';
-        var remoteAddr = calculatedStatsObj.remoteAddr||'';
-
-        var xrBody = 'VQSessionReport: CallTerm\r\n' +
-            'CallID: ' + callID + '\r\n' +
-            'LocalID: ' + localId + '\r\n' +
-            'RemoteID: ' + remoteId + '\r\n' +
-            'OrigID: ' + localId + '\r\n' +
-            'LocalAddr: IP='+localAddr+' SSRC=0x00000000\r\n' +
-            'RemoteAddr: IP='+remoteAddr+' SSRC=0x00000000\r\n' +
-            'LocalMetrics:\r\n' +
-            'Timestamps: START=0 STOP=0\r\n' +
-            'SessionDesc: PT=0 PD=opus SR=0 FD=0 FPP=0 PPS=0 PLC=0 SSUP=on\r\n' +
-            'JitterBuffer: JBA=0 JBR=0 JBN='+JBN+' JBM='+JBM+' JBX=0\r\n' +
-            'PacketLoss: NLR='+NLR +' JDR='+JDR+'\r\n' +
-            'BurstGapLoss: BLD=0 BD=0 GLD=0 GD=0 GMIN=0\r\n' +
-            'Delay: RTD=0 ESD=0 SOWD=0 IAJ=0\r\n' +
-            'QualityEst: MOSLQ='+MOSLQ+' MOSCQ=0.0\r\n' +
-            'DialogID: ' + callID + ';to-tag=' + toTag  + ';from-tag=' + fromTag ;
-
-        return xrBody;
+        this._enabled = !!options.enabled;
+        this.loadAudio(options);
     }
 
-    //------------------QOS---------------------------------//
+    AudioHelper.prototype._playSound = function(url, val, volume) {
+
+        if (!this._enabled || !url) return this;
+
+        if (!this._audio[url]) {
+            if (val) {
+                this._audio[url] = new Audio();
+                this._audio[url].src = url;
+                this._audio[url].loop = true;
+                this._audio[url].volume = volume;
+                this._audio[url].playPromise = this._audio[url].play();
+            }
+        } else {
+            if (val) {
+                this._audio[url].currentTime = 0;
+                this._audio[url].playPromise = this._audio[url].play();
+            } else {
+                var audio = this._audio[url];
+                if (audio.playPromise !== undefined) {
+                    audio.playPromise.then(function() {
+                        audio.pause();
+                    });
+                }
+            }
+        }
+
+        return this;
+
+    };
+
+    AudioHelper.prototype.loadAudio = function(options) {
+        this._incoming = options.incoming;
+        this._outgoing = options.outgoing;
+        this._audio = {};
+    };
+
+    AudioHelper.prototype.setVolume = function(volume) {
+        if (volume < 0) { volume = 0; }
+        if (volume > 1) { volume = 1; }
+        this.volume = volume;
+        for (var url in this._audio) {
+            if (this._audio.hasOwnProperty(url)) {
+                this._audio[url].volume = volume;
+            }
+        }
+    };
+
+    AudioHelper.prototype.playIncoming = function(val) {
+        return this._playSound(this._incoming, val, (this.volume || 0.5));
+    };
+
+    AudioHelper.prototype.playOutgoing = function(val) {
+        return this._playSound(this._outgoing, val, (this.volume || 1));
+    };
+
+    /*--------------------------------------------------------------------------------------------------------------------*/
 
     return WebPhone;
 

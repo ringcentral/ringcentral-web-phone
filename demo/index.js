@@ -1,7 +1,5 @@
 $(function() {
 
-
-
     /** @type {RingCentral.SDK} */
     var sdk = null;
     /** @type {Platform} */
@@ -21,8 +19,8 @@ $(function() {
     var $incomingTemplate = $('#template-incoming');
     var $acceptedTemplate = $('#template-accepted');
 
-    var remoteVideoElement =  document.getElementById('remoteVideo');
-    var localVideoElement  = document.getElementById('localVideo');
+    var remoteVideoElement = document.getElementById('remoteVideo');
+    var localVideoElement = document.getElementById('localVideo');
 
     /**
      * @param {jQuery|HTMLElement} $tpl
@@ -54,9 +52,9 @@ $(function() {
                 extension: ext || null,
                 password: password
             })
-            .then(function () {
+            .then(function() {
                 return postLogin(server, appKey, appSecret, login, ext, password, ll);
-            }).catch(function (e) {
+            }).catch(function(e) {
             console.error(e.stack || e);
         });
     }
@@ -82,10 +80,10 @@ $(function() {
         platform
             .loginWindow({url: loginUrl})                       // this method also allows to supply more options to control window position
             .then(platform.login.bind(platform))
-            .then(function () {
-                return postLogin(server, appKey, appSecret, '','','',ll);
+            .then(function() {
+                return postLogin(server, appKey, appSecret, '', '', '', ll);
             })
-            .catch(function (e) {
+            .catch(function(e) {
                 console.error(e.stack || e);
             });
 
@@ -143,7 +141,7 @@ $(function() {
                 remote: remoteVideoElement,
                 local: localVideoElement
             },
-            enableQos:true
+            enableQos: true
         });
 
         webPhone.userAgent.audioHelper.loadAudio({
@@ -206,7 +204,7 @@ $(function() {
         $modal.find('.reply-form').on('submit', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            session.replyWithMessage({ replyType: 0, replyText: $modal.find('input[name=reply]').val() })
+            session.replyWithMessage({replyType: 0, replyText: $modal.find('input[name=reply]').val()})
                 .then(function() {
                     console.log('Replied');
                     $modal.modal('hide');
@@ -371,9 +369,12 @@ $(function() {
 
     function makeCall(number, homeCountryId) {
 
-        homeCountryId = homeCountryId
-                      || (extension && extension.regionalSettings && extension.regionalSettings.homeCountry && extension.regionalSettings.homeCountry.id)
-                      || null;
+        homeCountryId = homeCountryId || (
+            extension &&
+            extension.regionalSettings &&
+            extension.regionalSettings.homeCountry &&
+            extension.regionalSettings.homeCountry.id
+        ) || null;
 
         var session = webPhone.userAgent.invite(number, {
             fromNumber: username,
@@ -390,6 +391,21 @@ $(function() {
 
         var $number = $form.find('input[name=number]').eq(0);
         var $homeCountry = $form.find('input[name=homeCountry]').eq(0);
+        var $username = $form.find('.username').eq(0);
+        var $logout = $form.find('.logout').eq(0);
+
+        $username.html(
+            '<dl>' +
+            '<dt>Contact</dt><dd>' + extension.contact.firstName + ' ' + extension.contact.lastName + '</dd>' +
+            '<dt>Company</dt><dd>' + (extension.contact.company || '?') + '</dd>' +
+            '<dt>Phone Number</dt><dd>' + username + '</dd>' +
+            '</dl>'
+        );
+
+        $logout.on('click', function(e) {
+            e.preventDefault();
+            location.reload();
+        });
 
         $number.val(localStorage.getItem('webPhoneLastNumber') || '');
 
