@@ -78,7 +78,7 @@ class MediaStreamsImpl {
     this.ktag = 'MediaStreams';
     if (!session) {
       rcWPLoge(this.ktag, 'The session cannot be null!');
-      return;
+      throw new Error('Fail to create the media session. session is null or undefined!');
     }
     this.session = session;
     this.onMediaConnectionStateChange = null;
@@ -109,7 +109,7 @@ class MediaStreamsImpl {
     this.preRTT = {'currentRoundTripTime' : 0};
 
     if (!this.isChrome && !this.isFirefox && !this.isSafari) {
-      rcWPLoge(`The web browser ${this.browser()} is not in the recommended list [Chrome, Safari, Firefox] !`);
+      rcWPLoge(this.ktag, `The web browser ${this.browser()} is not in the recommended list [Chrome, Safari, Firefox] !`);
     }
 
     this.RTPReports = class {

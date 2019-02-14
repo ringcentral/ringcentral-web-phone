@@ -42,6 +42,14 @@ class Navigator {
     this.userAgent = name;
   }
 
+  set opera(name) {
+    his.userAgent = name;
+  }
+
+  get opera() {
+    return 'Opera';
+  }
+
 }
 
 global.navigator = new Navigator();
@@ -230,9 +238,14 @@ class FadePeerConnection {
 
 }
 
-test('input wrong parameters in mediastream constructor', () => {
-  var mediaStreams = new MediaStreamsImpl(null, null, null);
-  expect(mediaStreams).not.toBe(null);
+test('input wrong parameters in MediaStreamsImpl constructor', () => {
+  let  mediaStreams = null;
+  try {
+    mediaStreams = new MediaStreamsImpl(null);
+  } catch(e) {
+    expect(e.message).toBe('Fail to create the media session. session is null or undefined!');
+    expect(mediaStreams).toBe(null);
+  }
 
 });
 
@@ -259,7 +272,7 @@ test('test media connection - event received in session', async () => {
     mediaStreams.release();
 });
 
-test('test media connection - callback in MediaStreams class', async () => {
+test('test media connection - callback in MediaStreamsImpl class', async () => {
     let fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
 
@@ -496,8 +509,9 @@ test('test media reconnect with invalid parameters', async () => {
       warn: jest.fn(),
       log: jest.fn()
     }
-    var mediaStreams = new MediaStreamsImpl(null);
-  
+    let fadeSession = new FadeSession();
+    var mediaStreams = new MediaStreamsImpl(fadeSession);
+    mediaStreams.fadeSession = null;
     (function(){
       mediaStreams.reconnectMedia(null, null);
   
@@ -590,7 +604,7 @@ test('test media reconnect with invalid parameters', async () => {
     mediaStreams.release();
   });
 
-  test('test media reconnect - check getIPInSDP', () => {
+  test('test media reconnect in MediaStreamsImpl- check getIPInSDP', () => {
     let fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
     var case1 = mediaStreams.getIPInSDP('c=IN IP4 50.237.72.154\r\na=rtcp:61349 IN IP4 50.237.72.154\r\n', 'c=IN');
@@ -610,7 +624,7 @@ test('test media reconnect with invalid parameters', async () => {
     mediaStreams.release();
   });
 
-  test('test getMediaStats - getMediaStats(func, interval)', async () => {
+  test('test getMediaStats in MediaStreamsImpl- getMediaStats(func, interval)', async () => {
     let fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);  
     let pc = fadeSession.sessionDescriptionHandler.peerConnection;
@@ -623,7 +637,7 @@ test('test media reconnect with invalid parameters', async () => {
     mediaStreams.release();
   });
 
-  test('test getMediaStats - getMediaStats(func)', async () => {
+  test('test getMediaStats in MediaStreamsImpl - getMediaStats(func)', async () => {
     let fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);  
     let pc = fadeSession.sessionDescriptionHandler.peerConnection;
@@ -636,7 +650,7 @@ test('test media reconnect with invalid parameters', async () => {
     mediaStreams.release();
   });
 
-  test('test getMediaStats - getMediaStats()', async () => {
+  test('test getMediaStats in MediaStreamsImpl - getMediaStats()', async () => {
     let fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);  
     let pc = fadeSession.sessionDescriptionHandler.peerConnection;
@@ -647,7 +661,7 @@ test('test media reconnect with invalid parameters', async () => {
     mediaStreams.release();
   });
 
-  test('test getMediaStats - mediaStatsTimerCallback - no callback', async () => {
+  test('test getMediaStats in MediaStreamsImpl- mediaStatsTimerCallback - no callback', async () => {
     global.console = {
       warn: jest.fn(),
       log: jest.fn()
@@ -673,7 +687,7 @@ test('test media reconnect with invalid parameters', async () => {
    mediaStreams.release();
   });
 
-  test('test getMediaStats - mediaStatsTimerCallback - listen on the event', () => {
+  test('test getMediaStats in MediaStreamsImpl - mediaStatsTimerCallback - listen on the event', () => {
     let fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);  
     let pc = fadeSession.sessionDescriptionHandler.peerConnection;
@@ -690,7 +704,7 @@ test('test media reconnect with invalid parameters', async () => {
     mediaStreams.release();
   });
 
-  test('test getMediaStats - mediaStatsTimerCallback - session.onRTPStat ', () => {
+  test('test getMediaStats in MediaStreamsImpl - mediaStatsTimerCallback - session.onRTPStat ', () => {
     let fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);  
     let pc = fadeSession.sessionDescriptionHandler.peerConnection;
@@ -707,7 +721,7 @@ test('test media reconnect with invalid parameters', async () => {
   });
 
 
-  test('test getMediaStats - mediaStatsTimerCallback - session.mediaStreams.onRTPStat ', () => {
+  test('test getMediaStats in MediaStreamsImpl - mediaStatsTimerCallback - session.mediaStreams.onRTPStat ', () => {
     global.console = {
       warn: jest.fn(),
       log: jest.fn()
@@ -728,7 +742,7 @@ test('test media reconnect with invalid parameters', async () => {
   });
 
 
-  test('test getMediaStats - mediaStatsTimerCallback -  if (connectionState !== "connected" && connectionState !== "completed") ', () => {
+  test('test getMediaStats  in MediaStreamsImpl- mediaStatsTimerCallback -  if (connectionState !== "connected" && connectionState !== "completed") ', () => {
     let fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);  
     let pc = fadeSession.sessionDescriptionHandler.peerConnection;
@@ -745,7 +759,7 @@ test('test media reconnect with invalid parameters', async () => {
   });
 
 
-  test('test getMediaStats - mediaStatsTimerCallback -  if (!pc)) ', () => {
+  test('test getMediaStats in MediaStreamsImpl - mediaStatsTimerCallback -  if (!pc)) ', () => {
     let fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);  
     let pc = fadeSession.sessionDescriptionHandler.peerConnection;
@@ -762,7 +776,7 @@ test('test media reconnect with invalid parameters', async () => {
     mediaStreams.release();
   });
 
-  test('test getRTPReport -- session.mediaStreams.onRTPStat', async () => {
+  test('test getRTPReport in MediaStreamsImpl -- session.mediaStreams.onRTPStat', async () => {
     global.navigator.userAgent = global.navigator.chrome;
     let fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);  
@@ -775,7 +789,7 @@ test('test media reconnect with invalid parameters', async () => {
     mediaStreams.release();
   });
 
-  test('test getRTPReport -- session.onRTPStat', async () => {
+  test('test getRTPReport in MediaStreamsImpl-- session.onRTPStat', async () => {
     global.navigator.userAgent = global.navigator.chrome;
     let fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);  
@@ -788,7 +802,7 @@ test('test media reconnect with invalid parameters', async () => {
     mediaStreams.release();
   });
 
-  test('test getRTPReport -- session.on("rtpStat")', async() => {
+  test('test getRTPReport  in MediaStreamsImpl-- session.on("rtpStat")', async() => {
     global.navigator.userAgent = global.navigator.chrome;
     let fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);  
@@ -804,7 +818,7 @@ test('test media reconnect with invalid parameters', async () => {
     mediaStreams.release();
   });
 
-  test('test getRTPReport -- verify chrome and safari', async () => {
+  test('test getRTPReport in MediaStreamsImpl -- verify chrome and safari', async () => {
     global.navigator.userAgent = global.navigator.chrome;
     let fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);  
@@ -830,7 +844,7 @@ test('test media reconnect with invalid parameters', async () => {
 
   });
 
-  test('test getRTPReport -- verify firefox', async () => {
+  test('test getRTPReport in MediaStreamsImpl -- verify firefox', async () => {
     global.navigator.userAgent = global.navigator.firefox;
     let fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);  
@@ -856,7 +870,7 @@ test('test media reconnect with invalid parameters', async () => {
   });
 
 
-  test('test getRTPReport -- unknow browser and fail to get the statistics', async () => {
+  test('test getRTPReport in MediaStreamsImpl -- unknow browser and fail to get the statistics', async () => {
     global.navigator.userAgent = 'unknow';
     let fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);  
@@ -871,7 +885,7 @@ test('test media reconnect with invalid parameters', async () => {
     mediaStreams.release();
   });
 
-  test('test getRTPReport -- test web browser() type', async () => {
+  test('test getRTPReport in MediaStreamsImpl -- test web browser() type', async () => {
     let fadeSession = new FadeSession();
     let mediaStreams = new MediaStreamsImpl(fadeSession);  
     for (let i in  mediaStreams.browsers) {
@@ -881,7 +895,7 @@ test('test media reconnect with invalid parameters', async () => {
     mediaStreams.release();
   });
 
-  test('test mediaStream and getMediaStats -- release without timer', async () => {
+  test('test MediaStreamsImpl and getMediaStats -- release without timer', async () => {
     let fadeSession = new FadeSession();
     let mediaStreams = new MediaStreamsImpl(fadeSession);  
     let rtpStatInSession = fadeSession.sessionDescriptionHandler.listeners('iceConnection');
@@ -891,7 +905,7 @@ test('test media reconnect with invalid parameters', async () => {
     expect(rtpStatInSession.length-rtpStatInSession2.length).toEqual(1);
   });
 
-  test('test mediaStream and getMediaStats -- release with stopMediaStat', async () => {
+  test('test MediaStreamsImpl and getMediaStats -- release with stopMediaStat', async () => {
     let fadeSession = new FadeSession();
     let mediaStreams = new MediaStreamsImpl(fadeSession);  
     let rtpStatInSession = fadeSession.sessionDescriptionHandler.listeners('iceConnection');
@@ -906,4 +920,47 @@ test('test media reconnect with invalid parameters', async () => {
     let rtpStatInSession2 = fadeSession.sessionDescriptionHandler.listeners('iceConnection');
     expect(rtpStatInSession.length-rtpStatInSession2.length).toEqual(1);
     expect(fadeSession.onRTPStat.mock.calls.length).toBe(0);
+  });
+
+  test('test MediaStreamsImpl and getMediaStats -- opera', async () => {
+    global.navigator.userAgent = global.navigator.opera;
+    let fadeSession = new FadeSession();
+    let mediaStreams = new MediaStreamsImpl(fadeSession);  
+    expect(mediaStreams.RTPReports).not.toBeNull();   
+  });
+
+  test('test property onRTPStat in MediaStreams', async () => {
+    let fadeSession = new FadeSession();
+    var mediaStreams = new MediaStreams(fadeSession);
+  
+    var options = {};
+    options.RTCOptions = {
+      audio: 10,
+      video: 100,
+      restart: 15,
+      ok: true
+    };
+    let onRTPStat = jest.fn((report, session) => {
+    });
+    mediaStreams.onRTPStat = onRTPStat;
+    expect(onRTPStat).toEqual(mediaStreams.mediaStreamsImpl.onRTPStat);
+    mediaStreams.release();
+  });
+
+  test('test property onMediaConnectionStateChange in MediaStreams', async () => {
+    let fadeSession = new FadeSession();
+    var mediaStreams = new MediaStreams(fadeSession);
+  
+    var options = {};
+    options.RTCOptions = {
+      audio: 10,
+      video: 100,
+      restart: 15,
+      ok: true
+    };
+    let onMediaConnectionStateChange = jest.fn((state, session) => {
+    });
+    mediaStreams.onMediaConnectionStateChange = onMediaConnectionStateChange;
+    expect(onMediaConnectionStateChange).toEqual(mediaStreams.mediaStreamsImpl.onMediaConnectionStateChange);
+    mediaStreams.release();
   });
