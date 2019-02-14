@@ -136,9 +136,10 @@
                         ? this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxy
                         : this.sipInfo.wsServers,
                 traceSip: true,
-                maxReconnectionAttempts: options.maxReconnectionAttempts || 3,
-                reconnectionTimeout: options.reconnectionTimeout || 5,
-                connectionTimeout: options.connectionTimeout || 5
+                maxReconnectionAttempts: options.maxReconnectionAttempts || 10,
+                reconnectionTimeout: options.reconnectionTimeout || 15,
+                connectionTimeout: options.connectionTimeout || 10,
+                keepAliveDebounce: options.keepAliveDebounce || 10
             },
             authorizationUser: this.sipInfo.authorizationId,
             password: this.sipInfo.password,
@@ -213,7 +214,7 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-    WebPhone.version = '0.6.2';
+    WebPhone.version = '0.6.3';
     WebPhone.uuid = uuid;
     WebPhone.delay = delay;
     WebPhone.extend = extend;
@@ -1156,10 +1157,17 @@
         var networkType = calculateNetworkUsage(qosStatsObj) || '';
         var targetUrl = options.targetUrl || 'rtcpxr@rtcpxr.ringcentral.com:5060';
         var event = options.event || 'vq-rtcpxr';
+        var effectiveType = navigator.connection.effectiveType || '';
         options.expires = 60;
         options.contentType = 'application/vq-rtcpxr';
         options.extraHeaders = options.extraHeaders || [];
-        options.extraHeaders.push('p-rc-client-info:' + 'cpuRC=0:0;cpuOS=0:0;netType=' + networkType + ';ram=0:0');
+        options.extraHeaders.push(
+            'p-rc-client-info:' +
+                'cpuRC=0:0;cpuOS=0:0;netType=' +
+                networkType +
+                ';ram=0:0;effectiveType=' +
+                effectiveType
+        );
 
         var calculatedStatsObj = calculateStats(qosStatsObj);
         var body = createPublishBody(calculatedStatsObj);
@@ -1183,7 +1191,7 @@
             qosStatsObj.totalIntervalCount > 0 ? qosStatsObj.totalSumJitter / qosStatsObj.totalIntervalCount : 0;
 
         return Object.assign({}, qosStatsObj, {
-            NLR: parseFloat(rawNLR || 0).toFixed(2),
+            NLR: parseFloat(rawNLR).toFixed(2) || 0,
             //JitterBufferNominal
             JBN: parseFloat(rawJBN).toFixed(2),
             //JitterBufferDiscardRate

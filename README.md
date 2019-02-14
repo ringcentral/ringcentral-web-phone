@@ -145,7 +145,9 @@ platform
                     media:{
                         remote: remoteVideoElement,
                         local: localVideoElement
-                    }
+                    },
+                     //to enable QoS Analytics Feature  
+                     enableQos:true
                 });
                 
             });
@@ -333,7 +335,7 @@ session.stopRecord().then(...);
 
 Not yet implemented. Could be done by dialing \*83. The account should be enabled for barge/whisper access through system admin.
 
-## Upgrade Procedure from v0.4.X to 0.6.2
+## Upgrade Procedure from v0.4.X to 0.6.3
 
 - SDK constructor now allows to add custom UA Configuration parameters like `sessionDescriptionHandlerFactory` , `sessionDescriptionHandlerFactoryOptions` ,  `maxReconnectionAttempts` ,  `reconnectionTimeout`, `connectionTimeout`
 
@@ -373,7 +375,9 @@ webPhone = new RingCentral.WebPhone(data, {
     media: {
         remote: remoteVideoElement,
         local: localVideoElement
-    }
+    },
+     //to enable QoS Analytics Feature  
+     enableQos:true
 });
 ```
 
@@ -446,4 +450,4 @@ var session = webPhone.userAgent.invite(number, {
 | Nov 2018 | 0.6.0 | 0.11.3 | 68 to 70 | Regression tested for 62, 63 supported with custom modifiers |
 | Nov 2018 | **0.6.1** | 0.11.6 | 71+, explicit `plan b` SDP support | 62 to 64 |
 | Dec 2018 | 0.6.2 | 0.11.6 | 71+ | 62 to 65 |
-| Feb 2019 | 0.7.0 (TBD) | 0.11.6 | 71+ | :warning: Not Tested |
+| Feb 2019 | 0.6.3 (TBD) | 0.11.6 | 71+ | :warning: Not Tested |
