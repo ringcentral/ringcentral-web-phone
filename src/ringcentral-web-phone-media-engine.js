@@ -1,25 +1,96 @@
+/*
+ * @Author: Elias Sun(elias.sun@ringcentral.com)
+ * @Date: Dec. 15, 2018
+ * Copyright © RingCentral. All rights reserved.
+ */
+
 'use strict';
 
+/**
+ * @Supported browsers: @Chrome  @Firefox @Safari
+ * 
+ * @Section1 @type MediaStreams public interfaces
+ * 
+ * @release : release the resource after the call is ended.
+ * @param : none
+ * 
+ * @reconnectMedia : reconnect media streams in a call at any time. 
+ * @param : none
+ * 
+ * @getMediaStats : get the media RTP statistics
+ * @param1 onMediaStat : @optional  @callback function to receive the RTP statistics report.
+ *   Ways to receive media report:
+ *   @way1 onMediaStat = function(report) {...}
+ *   @way2 session.on("rtpStat") to listen on the event
+ *   @way3 session.onRTPStat = function(report) 
+ *   @way4 session.mediaStreams.onRTPStat = function(report) 
+ * @param2 interval : @optional  the interval in seconds to fetch a media statistics report. 1 second by default.
+ * @return: @inboundRTPReport : bytesReceived, jitter, packetsLost, packetsReceived, mediaType, fractionLostIn
+ *          @outboundRtpReport : bytesSent, packetsSent, mediaType
+ *          @rttMS : currentRoundTripTime
+ * 
+ * @stopMediaStats :stop the media statistics
+ * @param : none
+ * 
+ * @Section2 @type MediaStreams public properties
+ * 
+ * @property onRTPStat : @optional @callback function to receive the RTP statistics report.
+ * @property onMediaConnectionStateChange : @optional @callback function to receive media connectionState 
+ *   Ways to receive the media connection state
+ *   @way1 session.onMediaConnectionStateChange = function(event, session) {...}
+ *   @way2 session.mediaStreams.onMediaConnectionStateChange = function(event, session) {...}
+ *   @way3 session.on(event)  event = element in connectionState
+ * 
+ * @Section3 @type MediaStreams public events
+ * @connectionState : media connection state. @emit :
+ *   @state1 'mediaConnectionStateNew' : A new RTCPeerConnection is created.
+ *   @state2 'mediaConnectionStateChecking' : A new RTCPeerConnection is created.
+ *   @state3 'mediaConnectionStateConnected' : RTCPeerConnection media connection is connected.
+ *   @state4 'mediaConnectionStateCompleted' : RTCPeerConnection media connection is ready.
+ *   @state5 'mediaConnectionStateFailed' : RTCPeerConnection media connection is failed.
+ *   @state6 'mediaConnectionStateDisconnected': RTCPeerConnection media connection is disconnected.
+ *   @state7 'mediaConnectionStateClosed' : RTCPeerConnection media connection is closed.
+ */
 class MediaStreams {
+  constructor(session) {
+    this.mediaStreamsImpl = new MediaStreamsImpl(session);
+    this.release = this.mediaStreamsImpl.release.bind(this.mediaStreamsImpl);
+    this.reconnectMedia = this.mediaStreamsImpl.reconnectMedia.bind(this.mediaStreamsImpl);
+    this.getMediaStats = this.mediaStreamsImpl.getMediaStats.bind(this.mediaStreamsImpl);
+    this.stopMediaStats = this.mediaStreamsImpl.stopMediaStats.bind(this.mediaStreamsImpl);
+  }
 
-  constructor(session, localStream, remoteStream) {
+  set onRTPStat(statsCallback) {
+    this.mediaStreamsImpl.onRTPStat = statsCallback;
+  }
+
+  set onMediaConnectionStateChange(stateChangeCallBack) {
+    this.mediaStreamsImpl.onMediaConnectionStateChange = stateChangeCallBack;
+  }
+}
+
+/**
+ * MediaStreams Implementation
+ */
+class MediaStreamsImpl {
+
+  constructor(session) {
     this.ktag = 'MediaStreams';
     if (!session) {
       rcWPLoge(this.ktag, 'The session cannot be null!');
-      return;
+      throw new Error('Fail to create the media session. session is null or undefined!');
     }
     this.session = session;
-    this.lStream = localStream;
-    this.rStream = remoteStream;
     this.onMediaConnectionStateChange = null;
+    this.onStateChange = this.onPeerConnectionStateChange.bind(this);
     if (this.session && this.session.sessionDescriptionHandler) {
-      this.session.sessionDescriptionHandler.on('iceConnection', this.onPeerConnectionStateChange.bind(this));
-      this.session.sessionDescriptionHandler.on('iceConnectionChecking', this.onPeerConnectionStateChange.bind(this));
-      this.session.sessionDescriptionHandler.on('iceConnectionConnected', this.onPeerConnectionStateChange.bind(this));
-      this.session.sessionDescriptionHandler.on('iceConnectionCompleted', this.onPeerConnectionStateChange.bind(this));
-      this.session.sessionDescriptionHandler.on('iceConnectionFailed', this.onPeerConnectionStateChange.bind(this));
-      this.session.sessionDescriptionHandler.on('iceConnectionDisconnected', this.onPeerConnectionStateChange.bind(this));
-      this.session.sessionDescriptionHandler.on('iceConnectionClosed', this.onPeerConnectionStateChange.bind(this));
+      this.session.sessionDescriptionHandler.on('iceConnection', this.onStateChange);
+      this.session.sessionDescriptionHandler.on('iceConnectionChecking', this.onStateChange);
+      this.session.sessionDescriptionHandler.on('iceConnectionConnected', this.onStateChange);
+      this.session.sessionDescriptionHandler.on('iceConnectionCompleted', this.onStateChange);
+      this.session.sessionDescriptionHandler.on('iceConnectionFailed', this.onStateChange);
+      this.session.sessionDescriptionHandler.on('iceConnectionDisconnected', this.onStateChange);
+      this.session.sessionDescriptionHandler.on('iceConnectionClosed', this.onStateChange);
     }
     this.connectionState = {
       'new': 'mediaConnectionStateNew',
@@ -30,26 +101,70 @@ class MediaStreams {
       'disconnected': 'mediaConnectionStateDisconnected',
       'closed': 'mediaConnectionStateClosed'
     }
+    this.browsers = {'MSIE':'IE', 'Chrome' : 'Chrome', 'Firefox':'Firefox', 'Safari':'Safari', 'Opera':'Opera'};
+    this.isChrome = this.browser() == this.browsers['Chrome'];
+    this.isFirefox = this.browser() == this.browsers['Firefox'];
+    this.isSafari = this.browser() == this.browsers['Safari'];
+
+    this.preRTT = {'currentRoundTripTime' : 0};
+
+    if (!this.isChrome && !this.isFirefox && !this.isSafari) {
+      rcWPLoge(this.ktag, `The web browser ${this.browser()} is not in the recommended list [Chrome, Safari, Firefox] !`);
+    }
+
+    this.RTPReports = class {
+      constructor() {
+        this.outboundRtpReport = {};
+        this.inboundRTPReport = {};
+        this.rttMS = {};
+      };
+    };
+  }
+
+  getMediaStats(onMediaStat, interval) {
+    if (!interval) {
+      interval = 1000;
+    }
+    if (onMediaStat) {
+      this.onRTPStat = onMediaStat;
+    }
+    if (this.mediaStatsTimer) {
+      clearTimeout(this.mediaStatsTimer);
+      this.mediaStatsTimer = null;
+    }
+    this.mediaStatsTimer = setInterval(() => {
+      this.mediaStatsTimerCallback();
+    }, interval);
+  }
+
+  mediaStatsTimerCallback() {
+    let pc = this.session.sessionDescriptionHandler.peerConnection;
+    if (!pc) {
+      rcWPLoge(this.ktag, 'the peer connection cannot be null');
+      return;
+    }
+    let connectionState = pc.iceConnectionState;
+    if (connectionState !== 'connected' && connectionState !== 'completed') {
+      this.preRTT['currentRoundTripTime'] = 0;
+      return;
+    }
+    let rtpStatInSession = this.session.listeners('rtpStat');
+    if (!(this.session.onRTPStat) && !(this.onRTPStat) && !(rtpStatInSession.length > 0)) {
+      rcWPLoge(this.ktag, 'No callback to accept receive media report. usage: session.on("rtpStat") = function(report) or session.onRTPStat = function(report) or set a mediaCallback as a paramter');
+      return;
+    }
+    this.getRTPReport(new this.RTPReports());   
+  }
+
+  stopMediaStats() {
+    if (this.mediaStatsTimer) {
+      clearTimeout(this.mediaStatsTimer);
+      this.onRTPStat = null;
+    }   
   }
 
   get tag() {
     return this.ktag;
-  }
-
-  set localStream(stream) {
-    this.lStream = stream;
-  }
-
-  get localStream() {
-    return this.lStream;
-  }
-
-  set remoteStream(stream) {
-    this.rStream = stream;
-  }
-
-  get remoteStream() {
-    return this.rStream;
   }
 
   onPeerConnectionStateChange(peerConnection) {
@@ -70,7 +185,7 @@ class MediaStreams {
   }
 
   reconnectMedia(options) {
-    var self = this;
+    let self = this;
     return new Promise(function(resolve, reject) {
       if (self.session) {
         const RTCOptions = {
@@ -78,7 +193,7 @@ class MediaStreams {
           offerToReceiveVideo: 0,
           iceRestart: true
         };
-        var offerOptions = (options && options.RTCOptions) || RTCOptions;
+        let offerOptions = (options && options.RTCOptions) || RTCOptions;
         if (!options) {
           options = {};
         }
@@ -89,7 +204,7 @@ class MediaStreams {
           succeeded: resolve,
           failed: reject
         };
-        var pc = self.session.sessionDescriptionHandler.peerConnection;
+        let pc = self.session.sessionDescriptionHandler.peerConnection;
         pc.createOffer(offerOptions).then (offer => {
           rcWPLogd(self.tag, offer);
           pc.setLocalDescription(offer).then (() => {
@@ -120,14 +235,14 @@ class MediaStreams {
       rcWPLoge(this.tag, 'The sdp cannot be null!');
       return false;
     }
-    var cIP = this.getIPInSDP(sdp, 'c=');
-    var aRtcpIP = this.getIPInSDP(sdp, 'a=rtcp:');
+    let cIP = this.getIPInSDP(sdp, 'c=');
+    let aRtcpIP = this.getIPInSDP(sdp, 'a=rtcp:');
     return cIP && aRtcpIP && cIP !== '0.0.0.0' && aRtcpIP !== '0.0.0.0';
   }
 
   getIPInSDP(sdp, token) {
     if (sdp) {
-        var ips = sdp.split('\r\n').filter(function(line){
+        let ips = sdp.split('\r\n').filter(function(line){
             return line.indexOf(token) === 0;
         }).map(function(ip){
             return ip.match(/[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/)[0];
@@ -141,40 +256,116 @@ class MediaStreams {
     return null; // no connected peers
   }
 
-  removeListeners() {
+  getRTPReport(reports) {
+    let self = this;
+    let pc = self.session.sessionDescriptionHandler.peerConnection;
+    pc.getStats().then(stats => {
+      stats.forEach(report => {
+        switch (report.type) {
+          case 'inbound-rtp':
+            Object.keys(report).forEach(statName => {
+              switch(statName) {
+                case 'bytesReceived':
+                case 'packetsReceived':
+                case 'jitter':
+                case 'packetsLost':
+                case 'fractionLost':
+                case 'mediaType':
+                reports.inboundRTPReport[statName] = report[statName];
+                break;
+                case 'roundTripTime':
+                reports.rttMS[statName] = report[statName];
+                break;
+              }
+            });
+          break;
+          case 'outbound-rtp':
+            Object.keys(report).forEach(statName => {
+              switch(statName) {
+                case 'bytesSent':
+                case 'packetsSent':
+                case 'mediaType':
+                reports.outboundRtpReport[statName] = report[statName];
+                break;
+              }
+            });
+          break;
+          case 'candidate-pair':
+            Object.keys(report).forEach(statName => {
+              switch(statName) {
+                case 'currentRoundTripTime':
+                reports.rttMS[statName] = report[statName];
+                break;
+              }
+            });
+          break;
+          default:
+          break;
+        }
+      });
 
-    this.session.sessionDescriptionHandler.removeListener('iceConnection', () => {
-      rcWPLogd(this.tag, 'removed  event iceConnection');
-    });
+      if (!reports.rttMS.hasOwnProperty('currentRoundTripTime')) {
+        if (!reports.rttMS.hasOwnProperty('roundTripTime')) {
+          reports.rttMS['currentRoundTripTime'] = self.preRTT['currentRoundTripTime'];
+        } else {
+          reports.rttMS['currentRoundTripTime'] = reports.rttMS['roundTripTime']; // for Firefox
+          delete reports.rttMS['roundTripTime'];
+        }
+      } else {
+        reports.rttMS['currentRoundTripTime'] = Math.round(reports.rttMS['currentRoundTripTime'] * 1000);
+      }
+      
+      if (reports.rttMS.hasOwnProperty('currentRoundTripTime')) {
+        self.preRTT['currentRoundTripTime'] = reports.rttMS['currentRoundTripTime'];
+      }
+      
+      if (self.session) {
+        if (self.session.onRTPStat) {
+          self.session.onRTPStat(reports, self.session);
+        } else if (self.onRTPStat) {
+          self.onRTPStat(reports, self.session);
+        } else {
+          self.session.emit('rtpStat', reports, self.session);
+        }
+      }
 
-    this.session.sessionDescriptionHandler.removeListener('iceConnectionChecking', () => {
-      rcWPLogd(this.tag, 'removed  event iceConnectionChecking');
-    });
-
-    this.session.sessionDescriptionHandler.removeListener('iceConnectionConnected', () => {
-      rcWPLogd(this.tag, 'removed  event iceConnectionConnected');
-    });
-
-
-    this.session.sessionDescriptionHandler.removeListener('iceConnectionCompleted', () => {
-      rcWPLogd(this.tag, 'removed  event iceConnectionCompleted');
-    });
-
-    this.session.sessionDescriptionHandler.removeListener('iceConnectionFailed', () => {
-      rcWPLogd(this.tag, 'removed  event iceConnectionFailed');
-    });
-
-    this.session.sessionDescriptionHandler.removeListener('iceConnectionDisconnected', () => {
-      rcWPLogd(this.tag, 'removed  event iceConnectionDisconnected');
-    });
-
-    this.session.sessionDescriptionHandler.removeListener('iceConnectionClosed', () => {
-      rcWPLogd(this.tag, 'removed  event iceConnectionClosed');
+    }).catch(error => {
+      rcWPLoge(self.ktag, JSON.stringify(error));
     });
   }
 
+  browser() {
+    if (navigator.userAgent.search('MSIE') >= 0) {
+      return  this.browsers['MSIE'];
+    } else if (navigator.userAgent.search("Chrome") >= 0) {
+      return this.browsers['Chrome'];
+    } else if (navigator.userAgent.search("Firefox") >= 0) {
+      return this.browsers['Firefox'];
+    } else if (navigator.userAgent.search("Safari") >= 0 && navigator.userAgent.search("Chrome") < 0) {
+      return this.browsers['Safari'];
+    } else if (navigator.userAgent.search("Opera") >= 0) {
+      return this.browsers['Opera'];
+    }
+    return 'unknown';
+  }
+
+  release() {
+    if (this.mediaStatsTimer) {
+      clearTimeout(this.mediaStatsTimer);
+      this.mediaStatsTimer = null;
+    }
+    if (this.session) {
+      this.session.sessionDescriptionHandler.removeListener('iceConnection', this.onStateChange);
+      this.session.sessionDescriptionHandler.removeListener('iceConnectionChecking', this.onStateChange);
+      this.session.sessionDescriptionHandler.removeListener('iceConnectionConnected', this.onStateChange);
+      this.session.sessionDescriptionHandler.removeListener('iceConnectionCompleted', this.onStateChange);
+      this.session.sessionDescriptionHandler.removeListener('iceConnectionFailed', this.onStateChange);
+      this.session.sessionDescriptionHandler.removeListener('iceConnectionDisconnected', this.onStateChange);
+      this.session.sessionDescriptionHandler.removeListener('iceConnectionClosed', this.onStateChange);
+    }
+  }
 }
 
 if (typeof process !== 'undefined'  && typeof process.env !== 'undefined' && typeof process.env.JEST_WORKER_ID !== 'undefined') {
-  module.exports = MediaStreams;
+  module.exports = {MediaStreams,  MediaStreamsImpl};
 }
