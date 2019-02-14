@@ -2,8 +2,6 @@ const TEST_TIMEOUT = 60000;
 const DB_DELAY = 5000; // 5 sec delay to allow records to propagate in DB so that phone will be able to be called
 const REGISTRATION_TIMEOUT = 15000;
 
-console.log(RingCentral);
-
 describe('RingCentral.WebPhone', () => {
     const env = __karma__.config.env; //TODO Autocomplete
 
@@ -47,9 +45,6 @@ describe('RingCentral.WebPhone', () => {
     });
 
     it('initiates and receives a call', async () => {
-        const callerPhone = await createWebPhone(callerSdk, caller, 'caller');
-        const receiverPhone = await createWebPhone(receiverSdk, receiver, 'receiver');
-
         // Call first phone
         session = callerPhone.userAgent.invite(
             receiver.username,
