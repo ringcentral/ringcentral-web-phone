@@ -1,11 +1,9 @@
-module.exports = config => {
+const path = require('path');
 
+module.exports = config => {
     require('dotenv').config({silent: true});
 
-    const path = require('path');
-
     config.set({
-
         frameworks: ['jasmine'],
 
         reporters: ['progress', 'coverage'],
@@ -37,6 +35,8 @@ module.exports = config => {
             'ChromeNoSecurity'
         ],
 
+        browserNoActivityTimeout: 60000,
+
         customLaunchers: {
             ChromeNoSecurity: {
                 flags: [
@@ -55,7 +55,5 @@ module.exports = config => {
             showDebugMessages: true,
             env: process.env
         }
-
     });
-
 };

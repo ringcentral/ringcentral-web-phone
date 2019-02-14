@@ -5,6 +5,21 @@ const REGISTRATION_TIMEOUT = 15000;
 describe('RingCentral.WebPhone', () => {
     const env = __karma__.config.env; //TODO Autocomplete
 
+    [
+        'RC_WP_RECEIVER_USERNAME',
+        'RC_WP_RECEIVER_PASSWORD',
+        'RC_WP_RECEIVER_APPKEY',
+        'RC_WP_RECEIVER_APPSECRET',
+        'RC_WP_RECEIVER_SERVER',
+        'RC_WP_CALLER_USERNAME',
+        'RC_WP_CALLER_PASSWORD',
+        'RC_WP_CALLER_APPKEY',
+        'RC_WP_CALLER_APPSECRET',
+        'RC_WP_CALLER_SERVER'
+    ].forEach(key => {
+        if (!env[key]) throw new Error('Environment variable ' + key + 'was not set');
+    });
+
     jasmine.DEFAULT_TIMEOUT_INTERVAL = TEST_TIMEOUT;
 
     const receiver = {
@@ -30,31 +45,31 @@ describe('RingCentral.WebPhone', () => {
     let receiverSdk;
     let receiverExtension;
     let receiverPhone;
+    let acceptOptions;
 
     beforeAll(async () => {
-        callerSdk = await createSdk(caller);
-        callerExtension = await getExtension(callerSdk);
-        callerPhone = await createWebPhone(callerSdk, caller, 'caller');
-        receiverSdk = await createSdk(receiver);
-        receiverExtension = await getExtension(receiverSdk);
-        receiverPhone = await createWebPhone(receiverSdk, receiver, 'receiver');
+        [callerSdk, receiverSdk] = await Promise.all([createSdk(caller), createSdk(receiver)]);
+        [callerExtension, receiverExtension] = await Promise.all([getExtension(callerSdk), getExtension(receiverSdk)]);
+        [callerPhone, receiverPhone] = await Promise.all([
+            createWebPhone(callerSdk, caller, 'caller'),
+            createWebPhone(receiverSdk, receiver, 'receiver')
+        ]);
+        acceptOptions = getAcceptOptions(caller.username, callerExtension.regionalSettings.homeCountry.id);
     });
 
     beforeEach(() => {
         session = null;
     });
 
-    it('initiates and receives a call', async () => {
-        // Call first phone
-        session = callerPhone.userAgent.invite(
-            receiver.username,
-            getAcceptOptions(caller.username, callerExtension.regionalSettings.homeCountry.id)
-        );
-
-        return new Promise(resolve => {
-            // Second phone should just accept the call
-            receiverPhone.userAgent.once('invite', session => resolve(session.accept()));
-        });
+    it('starts and stops recording', async () => {
+        session = callerPhone.userAgent.invite(receiver.username, acceptOptions);
+        const receoverSession = await onInvite(receiverPhone);
+        await receoverSession.accept();
+        await session.mute();
+        await receoverSession.mute();
+        await RingCentral.WebPhone.delay(1000); //FIXME No idea why we can't record the call right away
+        await session.startRecord();
+        await session.stopRecord();
     });
 
     afterEach(() => {
@@ -67,6 +82,11 @@ describe('RingCentral.WebPhone', () => {
     });
 });
 
+const onInvite = receverPhone =>
+    new Promise((resolve, reject) => {
+        receverPhone.userAgent.once('invite', async receoverSession => resolve(receoverSession));
+    });
+
 const getAcceptOptions = (fromNumber, homeCountryId) => ({
     fromNumber: fromNumber,
     homeCountryId: homeCountryId
@@ -78,6 +98,10 @@ const checkSessionStatus = session =>
     session.status !== SIP.Session.C.STATUS_TERMINATED &&
     session.status !== SIP.Session.C.STATUS_CANCELED;
 
+/**
+ * @param credentials
+ * @return {Promise<RingCentral.SDK>}
+ */
 const createSdk = async credentials => {
     const sdk = new RingCentral.SDK({
         appKey: credentials.appKey,
@@ -95,8 +119,18 @@ const createSdk = async credentials => {
     return sdk;
 };
 
+/**
+ * @param {RingCentral.SDK} sdk
+ * @return {Promise<*>}
+ */
 const getExtension = async sdk => (await sdk.platform().get('/restapi/v1.0/account/~/extension/~')).json();
 
+/**
+ * @param {RingCentral.SDK} sdk
+ * @param {*} credentials
+ * @param {string} id
+ * @return {Promise<RingCentral.WebPhone>}
+ */
 const createWebPhone = async (sdk, credentials, id) => {
     const uaId = 'UserAgent [' + id + '] event:';
 
@@ -158,15 +192,15 @@ const createWebPhone = async (sdk, credentials, id) => {
         outgoing: '/base/audio/outgoing.ogg'
     });
 
+    webPhone.userAgent.on('connecting', () => console.log(uaId, 'Connecting'));
+    webPhone.userAgent.on('connected', () => console.log(uaId, 'Connected'));
+    webPhone.userAgent.on('disconnected', () => console.log(uaId, 'Disconnected'));
+    webPhone.userAgent.on('unregistered', () => console.log(uaId, 'Unregistered'));
+    webPhone.userAgent.on('message', (...args) => console.log(uaId, 'Message', args));
+    webPhone.userAgent.on('invite', () => console.log(uaId, 'Invite'));
+
     return new Promise((resolve, reject) => {
         console.log(uaId, 'Registering', webPhone.userAgent.defaultHeaders[0]);
-
-        webPhone.userAgent.on('connecting', () => console.log(uaId, 'Connecting'));
-        webPhone.userAgent.on('connected', () => console.log(uaId, 'Connected'));
-        webPhone.userAgent.on('disconnected', () => console.log(uaId, 'Disconnected'));
-        webPhone.userAgent.on('unregistered', () => console.log(uaId, 'Unregistered'));
-        webPhone.userAgent.on('message', (...args) => console.log(uaId, 'Message', args));
-        webPhone.userAgent.on('invite', () => console.log(uaId, 'Invite'));
 
         webPhone.userAgent.once('registered', () => {
             console.log(uaId, 'Registered event delayed');
