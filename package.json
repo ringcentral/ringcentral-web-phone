@@ -60,5 +60,5 @@
     "node": ">=0.10.36"
   },
   "license": "MIT",
-  "version": "0.6.2"
+  "version": "0.6.3"
 }
