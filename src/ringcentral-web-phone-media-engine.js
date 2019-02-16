@@ -51,6 +51,8 @@
  *   @state6 'mediaConnectionStateDisconnected': RTCPeerConnection media connection is disconnected.
  *   @state7 'mediaConnectionStateClosed' : RTCPeerConnection media connection is closed.
  */
+
+
 class MediaStreams {
   constructor(session) {
     this.mediaStreamsImpl = new MediaStreamsImpl(session);
@@ -77,7 +79,7 @@ class MediaStreamsImpl {
   constructor(session) {
     this.ktag = 'MediaStreams';
     if (!session) {
-      rcWPLoge(this.ktag, 'The session cannot be null!');
+      this.rcWPLoge(this.ktag, 'The session cannot be null!');
       throw new Error('Fail to create the media session. session is null or undefined!');
     }
     this.session = session;
@@ -109,7 +111,7 @@ class MediaStreamsImpl {
     this.preRTT = {'currentRoundTripTime' : 0};
 
     if (!this.isChrome && !this.isFirefox && !this.isSafari) {
-      rcWPLoge(this.ktag, `The web browser ${this.browser()} is not in the recommended list [Chrome, Safari, Firefox] !`);
+      this.rcWPLoge(this.ktag, `The web browser ${this.browser()} is not in the recommended list [Chrome, Safari, Firefox] !`);
     }
 
     this.RTPReports = class {
@@ -140,7 +142,7 @@ class MediaStreamsImpl {
   mediaStatsTimerCallback() {
     let pc = this.session.sessionDescriptionHandler.peerConnection;
     if (!pc) {
-      rcWPLoge(this.ktag, 'the peer connection cannot be null');
+      this.rcWPLoge(this.ktag, 'the peer connection cannot be null');
       return;
     }
     let connectionState = pc.iceConnectionState;
@@ -150,7 +152,7 @@ class MediaStreamsImpl {
     }
     let rtpStatInSession = this.session.listeners('rtpStat');
     if (!(this.session.onRTPStat) && !(this.onRTPStat) && !(rtpStatInSession.length > 0)) {
-      rcWPLoge(this.ktag, 'No callback to accept receive media report. usage: session.on("rtpStat") = function(report) or session.onRTPStat = function(report) or set a mediaCallback as a paramter');
+      this.rcWPLoge(this.ktag, 'No callback to accept receive media report. usage: session.on("rtpStat") = function(report) or session.onRTPStat = function(report) or set a mediaCallback as a paramter');
       return;
     }
     this.getRTPReport(new this.RTPReports());   
@@ -179,9 +181,9 @@ class MediaStreamsImpl {
         this.session.emit(eventState, this.session);
       }
     } else {
-      rcWPLoge(this.tag,`Unknown peerConnection state: ${peerConnection.iceConnectionState}`);
+      this.rcWPLoge(this.tag,`Unknown peerConnection state: ${peerConnection.iceConnectionState}`);
     }
-    rcWPLogd(this.tag, `peerConnection State: ${eventState}`);
+    this.rcWPLogd(this.tag, `peerConnection State: ${eventState}`);
   }
 
   reconnectMedia(options) {
@@ -206,33 +208,33 @@ class MediaStreamsImpl {
         };
         let pc = self.session.sessionDescriptionHandler.peerConnection;
         pc.createOffer(offerOptions).then (offer => {
-          rcWPLogd(self.tag, offer);
+          self.rcWPLogd(self.tag, offer);
           pc.setLocalDescription(offer).then (() => {
             if (self.validateSDP(pc.localDescription.sdp)) {
-              rcWPLogd(self.tag, 'reconnecting media');
+              self.rcWPLogd(self.tag, 'reconnecting media');
               resolve('reconnecting media');
             } else {
-              rcWPLoge(self.tag, 'fail to reconnect media');
+              self.rcWPLoge(self.tag, 'fail to reconnect media');
               reject(new Error('fail to reconnect media'));
             }
           }, error => {
-            rcWPLoge(self.tag, error);
+            self.rcWPLoge(self.tag, error);
             reject(error);
           });
         }, error => {
-          rcWPLoge(self.tag, error);
+          self.rcWPLoge(self.tag, error);
           reject(error);
         });
         self.session.reinvite(options);
       } else {
-        rcWPLoge(self.tag, 'The session cannot be empty');
+        self.rcWPLoge(self.tag, 'The session cannot be empty');
       }
     });
   }
   
   validateSDP(sdp) {
     if (!sdp) {
-      rcWPLoge(this.tag, 'The sdp cannot be null!');
+      this.rcWPLoge(this.tag, 'The sdp cannot be null!');
       return false;
     }
     let cIP = this.getIPInSDP(sdp, 'c=');
@@ -330,7 +332,7 @@ class MediaStreamsImpl {
       }
 
     }).catch(error => {
-      rcWPLoge(self.ktag, JSON.stringify(error));
+      this.rcWPLoge(self.ktag, JSON.stringify(error));
     });
   }
 
@@ -364,8 +366,26 @@ class MediaStreamsImpl {
       this.session.sessionDescriptionHandler.removeListener('iceConnectionClosed', this.onStateChange);
     }
   }
+
+  rcWPLoge(label, msg) {
+    if (this.session) {
+      this.session.logger.log(label + " " + msg);
+    } else {
+      console.error(label, msg);
+    }
+  }
+
+  rcWPLogd(label, msg) {
+    if (this.session) {
+      this.session.logger.log(label + " " + msg);
+    } else {
+      console.log(label, msg);
+    }   
+  }
+
 }
 
-if (typeof process !== 'undefined'  && typeof process.env !== 'undefined' && typeof process.env.JEST_WORKER_ID !== 'undefined') {
+if (typeof module === 'object') {
   module.exports = {MediaStreams,  MediaStreamsImpl};
-}
+  module.exports.default = module.exports; 
+} 

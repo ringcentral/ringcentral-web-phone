@@ -27,7 +27,10 @@
     "ringcentral": "3.1.1",
     "sinon": "1.17.7",
     "sinon-chai": "2.8.0",
-    "whatwg-fetch": "2.0.3"
+    "whatwg-fetch": "2.0.3",
+    "react": "16.8.2",
+    "react-dom": "16.8.2",
+    "react-hot-loader": "4.5.3"
   },
   "preferGlobal": false,
   "private": false,

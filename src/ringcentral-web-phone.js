@@ -143,32 +143,8 @@
      */
     function WebPhone(regData, options) {
 
-        var loggerConfig = {};
-        if (typeof configRCWPLogger !== 'undefined') {
-            configRCWPLogger({'connector': null,//where to receive the log, e.g. the application. format: function(date, targetName, category, label, content)
-            'enabled': true, 
-            'level': 3
-            });
-        }
-
-        if (typeof rcWPLoggerConfig !== 'undefined') {
-            loggerConfig = rcWPLoggerConfig();
-        }
-
         regData = regData || {};
         options = options || {};
-
-        if (typeof rcWPSIPConnector !== 'undefined') {
-          options.connector = rcWPSIPConnector;
-        }
-
-        if (loggerConfig.hasOwnProperty('level')) {
-            options.logLevel = loggerConfig['level'];
-        }
-
-        if (loggerConfig.hasOwnProperty('enabled')) {
-            options.builtinEnabled = loggerConfig['enabled'];
-        }
 
         this.sipInfo = regData.sipInfo[0] || regData.sipInfo;
         this.sipFlags = regData.sipFlags;
@@ -1172,16 +1148,6 @@
         localAudio.play().catch(function() {
             session.logger.log('local play was rejected');
         });
-
-        if (session.mediaStreams === undefined && !session.mediaStreams) {
-          if (typeof MediaStreams !== 'undefined') {
-            session.mediaStreams = new MediaStreams(session, localAudio, remoteAudio);
-          }    
-          //to-do:
-          //session.onMediaConnectionStateChange = function(session, eventState) or
-          //session.mediaStreams.onMediaConnectionStateChange = function(session, eventState) or
-          //session listen on the eventState to process the media connection change
-        }
 
     }
 
