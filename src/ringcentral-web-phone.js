@@ -1186,12 +1186,12 @@
     }
 
     function calculateStats(qosStatsObj) {
-        var rawNLR = (qosStatsObj.packetLost * 100) / (qosStatsObj.packetsReceived + qosStatsObj.packetLost);
+        var rawNLR = (qosStatsObj.packetLost * 100) / (qosStatsObj.packetsReceived + qosStatsObj.packetLost) || 0;
         var rawJBN =
             qosStatsObj.totalIntervalCount > 0 ? qosStatsObj.totalSumJitter / qosStatsObj.totalIntervalCount : 0;
 
         return Object.assign({}, qosStatsObj, {
-            NLR: parseFloat(rawNLR).toFixed(2) || 0,
+            NLR: parseFloat(rawNLR).toFixed(2),
             //JitterBufferNominal
             JBN: parseFloat(rawJBN).toFixed(2),
             //JitterBufferDiscardRate
