@@ -7,16 +7,9 @@
 'use strict';
 const $ = require('jquery');
 global.scriptOwner = 'Jest Unit Test';
-const {setRCWPLoggerCallBack, setRCWPLoggerEnabled, setRCWPLoggerLevel,
-    rcWPLoge, rcWPLogw, rcWPLogi, rcWPLogd, 
-    rcWPLogemd, rcWPLogwmd, rcWPLogimd, rcWPLogdmd, 
-    rcWPLogeme, rcWPLogwme, rcWPLogime, rcWPLogdme} = require("../ringcentral-web-phone-logger");
-
-global.rcWPLogd = rcWPLogd;
-global.rcWPLoge = rcWPLoge;
 
 const {MediaStreams, MediaStreamsImpl} = require('../ringcentral-web-phone-media-engine');
-const {SIP, EventEmitter} = require('../sip-0.11.6');
+const {EventEmitter} = require('../sip-0.11.6');
 
 let globalEmitter = new EventEmitter();
 
@@ -87,6 +80,17 @@ class FadeSession {
         this.sessionDescriptionHandler = new FadeSessionDescriptionHandler('sdp1');
         this.ua = {};
         this.ua.defaultHeaders = {};
+        this.logger = new class Logger {
+          constructor() {
+          }
+          log(msg) {
+            console.log(msg);
+          }
+      
+          error(msg) {
+            console.error(msg);
+          }
+        };
     }
 
     set sessionOptions(options) {
@@ -681,7 +685,7 @@ test('test media reconnect with invalid parameters', async () => {
       prefix.push(label);
     }
     var content = 'MediaStreams No callback to accept receive media report. usage: session.on("rtpStat") = function(report) or session.onRTPStat = function(report) or set a mediaCallback as a paramter';
-    content = prefix.concat(content).join(' | ');
+    //content = prefix.concat(content).join(' | ');
     expect(global.console.log).toHaveBeenCalledWith(content);
    })();
    mediaStreams.release();
