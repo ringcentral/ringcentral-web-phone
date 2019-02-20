@@ -2,10 +2,10 @@
     /* istanbul ignore next */
     if (typeof define === 'function' && define.amd) {
         define(['sip.js', 'getstats'], function(SIP, getStats) {
-            return factory(SIP, getStats || root.getStats);
+            return factory(SIP, getStats);
         });
     } else if (typeof module === 'object') {
-        module.exports = factory(require('sip.js'), require('getstats') || root.getStats);
+        module.exports = factory(require('sip.js'), require('getstats'));
         module.exports.default = module.exports; //ES6
     } else {
         root.RingCentral = root.RingCentral || {};
