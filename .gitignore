@@ -2,6 +2,7 @@
 .coverage
 .idea
 .env
+dist
 *npm-debug*
 node_modules
 bower_components

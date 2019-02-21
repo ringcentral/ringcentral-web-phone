@@ -1,10 +1,13 @@
 {
   "name": "ringcentral-web-phone",
+  "version": "0.6.3",
   "scripts": {
     "test": "npm run test:watch -- --single-run",
     "test:watch": "karma start",
     "test:coverage": "cat .coverage/*/lcov.info | coveralls -v",
-    "build": "node version.js",
+    "build": "npm run webpack",
+    "watch": "npm run webpack -- --watch",
+    "webpack": "webpack --config webpack.config.js --progress",
     "start": "http-server --port ${PORT:-8080}",
     "prepublishOnly": "npm run build",
     "lint": "eslint --cache --cache-location node_modules/.cache/eslint --fix ",
@@ -13,7 +16,7 @@
   },
   "dependencies": {
     "getstats": "^1.2.0",
-    "sip.js": "^0.11.6"
+    "sip.js": "0.13.5"
   },
   "devDependencies": {
     "@types/jasmine": "3.3.9",
@@ -32,9 +35,15 @@
     "karma-coverage": "1.1.2",
     "karma-env": "0.1.0",
     "karma-jasmine": "2.0.1",
+    "karma-typescript": "4.0.0",
+    "karma-typescript-es6-transform": "4.0.0",
     "lint-staged": "8.1.4",
     "ringcentral": "3.2.1",
-    "typescript": "3.3.3"
+    "ts-loader": "5.3.3",
+    "typescript": "3.3.3",
+    "unminified-webpack-plugin": "2.0.0",
+    "webpack": "4.29.5",
+    "webpack-cli": "3.2.3"
   },
   "preferGlobal": false,
   "private": false,
@@ -59,6 +68,5 @@
   "engines": {
     "node": ">=0.10.36"
   },
-  "license": "MIT",
-  "version": "0.6.3"
+  "license": "MIT"
 }

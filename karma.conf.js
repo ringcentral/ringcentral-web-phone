@@ -4,12 +4,18 @@ module.exports = config => {
     require('dotenv').config({silent: true});
 
     config.set({
-        frameworks: ['jasmine'],
+        frameworks: ['jasmine', 'karma-typescript'],
 
-        reporters: ['progress', 'coverage'],
+        reporters: ['progress', 'karma-typescript'],
 
         preprocessors: {
-            'src/**/!(*.spec).js': ['coverage']
+            'src/**/*.ts': ['karma-typescript']
+        },
+
+        karmaTypescriptConfig: {
+            bundlerOptions: {
+                transforms: [require('karma-typescript-es6-transform')()]
+            }
         },
 
         coverageReporter: {
@@ -24,8 +30,7 @@ module.exports = config => {
             require.resolve('pubnub/dist/web/pubnub'),
             require.resolve('ringcentral/build/ringcentral'),
             {pattern: './audio/**/*.ogg', included: false},
-            './src/ringcentral-web-phone.js',
-            './src/**/*.spec.js'
+            './src/**.ts'
         ],
 
         logLevel: config.LOG_INFO,

@@ -1,6 +1,6 @@
 const fs = require('fs');
 const pkg = require('./package.json');
-const version = require('./src/ringcentral-web-phone').version;
+const version = require('./dist/index').version;
 
 pkg.version = version;
 
