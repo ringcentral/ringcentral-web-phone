@@ -1,10 +1,20 @@
 const path = require('path');
-const UnminifiedWebpackPlugin = require('unminified-webpack-plugin');
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 module.exports = {
     mode: 'production',
-    // devtool: 'source-map', // #
-    entry: './src/index.ts',
+    devtool: 'source-map',
+    entry: {
+        'ringcentral-web-phone': './src/index.ts',
+        'ringcentral-web-phone.min': './src/index.ts'
+    },
+    output: {
+        path: path.resolve(__dirname, 'dist'),
+        filename: '[name].js',
+        library: ['RingCentral', 'WebPhone'],
+        libraryTarget: 'umd',
+        libraryExport: 'default'
+    },
     module: {
         rules: [
             {
@@ -20,12 +30,6 @@ module.exports = {
     resolve: {
         extensions: ['.tsx', '.ts', '.js']
     },
-    output: {
-        path: path.resolve(__dirname, 'dist'),
-        filename: 'ringcentral-web-phone.min.js',
-        library: ['RingCentral', 'WebPhone'],
-        libraryTarget: 'umd'
-    },
     externals: {
         getstats: {
             commonjs: 'getstats',
@@ -40,5 +44,12 @@ module.exports = {
             root: 'SIP'
         }
     },
-    plugins: [new UnminifiedWebpackPlugin()]
+    optimization: {
+        minimize: true,
+        minimizer: [
+            new UglifyJsPlugin({
+                include: /\.min\.js$/
+            })
+        ]
+    }
 };

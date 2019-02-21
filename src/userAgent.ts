@@ -71,8 +71,6 @@ export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, i
     userAgent.start();
     userAgent.register();
 
-    console.log('done');
-
     return userAgent;
 };
 

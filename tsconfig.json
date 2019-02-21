@@ -2,6 +2,7 @@
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "declaration": true,
+    "declarationDir": "lib",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "jsx": "react",
@@ -11,10 +12,9 @@
     ],
     "moduleResolution": "node",
     "noImplicitAny": false,
-    "outDir": "dist",
+    "outDir": "lib",
     "preserveConstEnums": true,
     "pretty": true,
-    "resolveJsonModule": true,
     "sourceMap": true,
     "target": "es5"
   },

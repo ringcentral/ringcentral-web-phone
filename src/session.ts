@@ -1,4 +1,5 @@
-import SIP, {
+import {
+    C,
     ClientContext,
     IncomingResponse,
     InviteClientContext,
@@ -127,7 +128,7 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
             session.status = Session.C.STATUS_EARLY_MEDIA;
             session.sessionDescriptionHandler.setDescription(incomingResponse.body).catch(exception => {
                 session.logger.warn(exception);
-                session.failed(incomingResponse, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+                session.failed(incomingResponse, C.causes.BAD_MEDIA_DESCRIPTION);
                 session.terminate({
                     status_code: 488,
                     reason_phrase: 'Bad Media Description'
@@ -310,7 +311,7 @@ async function sendReceive(session: WebPhoneSession, command: any, options?: any
             .concat(session.ua.defaultHeaders)
             .concat(['Content-Type: application/json;charset=utf-8']);
 
-        session.sendRequest(SIP.C.INFO, {
+        session.sendRequest(C.INFO, {
             body: JSON.stringify({
                 request: command
             }),
@@ -361,8 +362,8 @@ async function sendReceive(session: WebPhoneSession, command: any, options?: any
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 function sendRequest(this: WebPhoneSession, type, config): InviteServerContext {
-    if (type === SIP.C.PRACK) {
-        // type = SIP.C.ACK;
+    if (type === C.PRACK) {
+        // type = C.ACK;
         return this;
     }
     return this.__sendRequest(type, config);
@@ -394,13 +395,10 @@ async function setLocalHold(session: WebPhoneSession, flag: boolean): Promise<an
 
 function receiveRequest(this: WebPhoneSession, request): any {
     switch (request.method) {
-        case SIP.C.INFO:
+        case C.INFO:
             this.emit('RC_SIP_INFO', request);
             //SIP.js does not support application/json content type, so we monkey override its behaviour in this case
-            if (
-                this.status === SIP.Session.C.STATUS_CONFIRMED ||
-                this.status === SIP.Session.C.STATUS_WAITING_FOR_ACK
-            ) {
+            if (this.status === Session.C.STATUS_CONFIRMED || this.status === Session.C.STATUS_WAITING_FOR_ACK) {
                 const contentType = request.getHeader('content-type');
                 if (contentType.match(/^application\/json/i)) {
                     request.reply(200);
@@ -506,12 +504,6 @@ async function warmTransfer(
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-/**
- * @this {SIP.Session}
- * @param {string} target
- * @param {object} options
- * @return {Promise}
- */
 async function transfer(this: WebPhoneSession, target: WebPhoneSession, options): Promise<ReferClientContext> {
     await (this.local_hold ? Promise.resolve(null) : this.hold());
     await delay(300);
@@ -561,10 +553,6 @@ async function flip(this: WebPhoneSession, target): Promise<any> {
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-/**
- * @this {SIP.Session}
- * @return {Promise}
- */
 function park(this: WebPhoneSession): Promise<any> {
     return sendReceive(this, messages.park);
 }

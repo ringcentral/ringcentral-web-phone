@@ -3,6 +3,7 @@
 .idea
 .env
 dist
+lib
 *npm-debug*
 node_modules
 bower_components

@@ -1,39 +1,67 @@
 const path = require('path');
+const webpackConfig = require('./webpack.config');
+
+delete webpackConfig.entry;
+delete webpackConfig.output;
+delete webpackConfig.optimization;
+delete webpackConfig.externals;
 
 module.exports = config => {
     require('dotenv').config({silent: true});
 
     config.set({
-        frameworks: ['jasmine', 'karma-typescript'],
+        frameworks: ['jasmine'],
 
-        reporters: ['progress', 'karma-typescript'],
+        reporters: ['coverage-istanbul', 'mocha'],
 
         preprocessors: {
-            'src/**/*.ts': ['karma-typescript']
+            'src/**/*.ts': ['webpack']
         },
 
-        karmaTypescriptConfig: {
-            bundlerOptions: {
-                transforms: [require('karma-typescript-es6-transform')()]
-            }
+        webpack: {
+            ...webpackConfig,
+            module: {
+                ...webpackConfig.module,
+                rules: [
+                    ...webpackConfig.module.rules,
+                    {
+                        test: /\.tsx?$/,
+                        exclude: [/spec/],
+                        enforce: 'post',
+                        use: {
+                            loader: 'istanbul-instrumenter-loader',
+                            options: {esModules: true}
+                        }
+                    }
+                ]
+            },
+            mode: 'development',
+            devtool: 'inline-source-map'
         },
 
-        coverageReporter: {
-            type: 'lcov',
-            dir: '.coverage',
-            subdir: browser => browser.toLowerCase().split(/[ /-]/)[0]
+        webpackMiddleware: {
+            stats: 'errors-only'
+        },
+
+        coverageIstanbulReporter: {
+            reports: ['lcov', 'text-summary'],
+            dir: path.join(__dirname, '.coverage'),
+            fixWebpackSourcePaths: true
+            // 'report-config': {
+            //     html: {outdir: 'html'}
+            // }
+        },
+
+        mime: {
+            'text/x-typescript': ['ts', 'tsx']
         },
 
         files: [
-            require.resolve('sip.js/dist/sip'),
-            require.resolve('getstats/getStats'),
-            require.resolve('pubnub/dist/web/pubnub'),
-            require.resolve('ringcentral/build/ringcentral'),
             {pattern: './audio/**/*.ogg', included: false},
-            './src/**.ts'
+            './src/*.spec.ts' //TODO Consider using https://github.com/webpack-contrib/karma-webpack#alternative-usage
         ],
 
-        logLevel: config.LOG_INFO,
+        // logLevel: config.LOG_INFO,
 
         browsers: [
             //TODO Firefox
@@ -56,8 +84,8 @@ module.exports = config => {
         },
 
         client: {
-            captureConsole: true,
-            showDebugMessages: true,
+            // captureConsole: true,
+            // showDebugMessages: true,
             env: process.env
         }
     });

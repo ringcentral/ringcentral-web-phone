@@ -1,6 +1,6 @@
 import WebPhone from './index';
 import SDK from 'ringcentral';
-import SIP from 'sip.js';
+import {Session} from 'sip.js';
 import {WebPhoneSession} from './session';
 
 const TEST_TIMEOUT = 60000;
@@ -97,9 +97,9 @@ const getAcceptOptions = (fromNumber: string, homeCountryId: string): any => ({
 
 const checkSessionStatus = (session: WebPhoneSession): boolean =>
     session &&
-    session.status !== SIP.Session.C.STATUS_NULL &&
-    session.status !== SIP.Session.C.STATUS_TERMINATED &&
-    session.status !== SIP.Session.C.STATUS_CANCELED;
+    session.status !== Session.C.STATUS_NULL &&
+    session.status !== Session.C.STATUS_TERMINATED &&
+    session.status !== Session.C.STATUS_CANCELED;
 
 const createSdk = async (credentials: any): Promise<SDK> => {
     const sdk = new SDK({

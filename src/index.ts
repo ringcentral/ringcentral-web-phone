@@ -7,12 +7,12 @@ import {AudioHelperOptions} from './audioHelper';
 
 const {version} = require('../package.json');
 
-interface WebPhoneRegData {
+export interface WebPhoneRegData {
     sipInfo?: any;
     sipFlags?: any;
 }
 
-interface WebPhoneOptions {
+export interface WebPhoneOptions {
     uuid?: string;
     uuidKey?: string;
     appKey?: string;
@@ -37,8 +37,8 @@ interface WebPhoneOptions {
     connector?: any;
 }
 
-class WebPhone {
-    public static version = version;
+export default class WebPhone {
+    public static version = '0.7.0';
     public static uuid = uuid;
     public static delay = delay;
     public static extend = extend;
@@ -143,7 +143,7 @@ class WebPhone {
             },
             domain: this.sipInfo.domain,
             autostart: false,
-            register: false,
+            register: true,
             userAgentString: userAgentString,
             sessionDescriptionHandlerFactoryOptions: sessionDescriptionHandlerFactoryOptions,
             sessionDescriptionHandlerFactory: sessionDescriptionHandlerFactory
@@ -152,5 +152,3 @@ class WebPhone {
         this.userAgent = patchUserAgent(new UA(configuration) as WebPhoneUserAgent, this.sipInfo, options, id);
     }
 }
-
-export = WebPhone;
