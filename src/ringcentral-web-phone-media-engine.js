@@ -37,8 +37,8 @@
  * @property onRTPStat : @optional @callback function to receive the RTP statistics report.
  * @property onMediaConnectionStateChange : @optional @callback function to receive media connectionState 
  *   Ways to receive the media connection state
- *   @way1 session.onMediaConnectionStateChange = function(event, session) {...}
- *   @way2 session.mediaStreams.onMediaConnectionStateChange = function(event, session) {...}
+ *   @way1 session.onMediaConnectionStateChange = function(session, event) {...}
+ *   @way2 session.mediaStreams.onMediaConnectionStateChange = function(session, event) {...}
  *   @way3 session.on(event)  event = element in connectionState
  * 
  * @Section3 @type MediaStreams public events
@@ -369,15 +369,15 @@ class MediaStreamsImpl {
 
   rcWPLoge(label, msg) {
     if (this.session) {
-      this.session.logger.log(label + " " + msg);
+      this.session.logger.error(`${label} ${msg}`);
     } else {
-      console.error(label, msg);
+      console.log(label, msg);
     }
   }
 
   rcWPLogd(label, msg) {
     if (this.session) {
-      this.session.logger.log(label + " " + msg);
+      this.session.logger.log(`${label} ${msg}`);
     } else {
       console.log(label, msg);
     }   

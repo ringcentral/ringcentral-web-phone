@@ -88,7 +88,7 @@ class FadeSession {
           }
       
           error(msg) {
-            console.error(msg);
+            console.log(msg);
           }
         };
     }
