@@ -25,7 +25,7 @@
  *   @way3 session.onRTPStat = function(report) 
  *   @way4 session.mediaStreams.onRTPStat = function(report) 
  * @param2 interval : @optional  the interval in seconds to fetch a media statistics report. 1 second by default.
- * @return: @inboundRTPReport : bytesReceived, jitter, packetsLost, packetsReceived, mediaType, fractionLostIn
+ * @return: @inboundRtpReport : bytesReceived, jitter, packetsLost, packetsReceived, mediaType, fractionLostIn
  *          @outboundRtpReport : bytesSent, packetsSent, mediaType
  *          @rttMS : currentRoundTripTime
  * 
@@ -117,7 +117,7 @@ class MediaStreamsImpl {
     this.RTPReports = class {
       constructor() {
         this.outboundRtpReport = {};
-        this.inboundRTPReport = {};
+        this.inboundRtpReport = {};
         this.rttMS = {};
       };
     };
@@ -273,7 +273,7 @@ class MediaStreamsImpl {
                 case 'packetsLost':
                 case 'fractionLost':
                 case 'mediaType':
-                reports.inboundRTPReport[statName] = report[statName];
+                reports.inboundRtpReport[statName] = report[statName];
                 break;
                 case 'roundTripTime':
                 reports.rttMS[statName] = report[statName];
