@@ -11,8 +11,8 @@
     "build:tsc": "tsc",
     "start": "http-server --port ${PORT:-8080}",
     "prepublishOnly": "npm run build",
-    "lint": "eslint --cache --cache-location node_modules/.cache/eslint --fix ",
-    "lint:all": "npm run lint 'src/**/*.js' 'demo/**/*.js'",
+    "lint": "eslint --cache --cache-location node_modules/.cache/eslint --fix",
+    "lint:all": "npm run lint 'src/**/*.ts' 'demo/**/*.js'",
     "lint:staged": "lint-staged"
   },
   "dependencies": {
