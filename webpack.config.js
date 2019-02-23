@@ -1,13 +1,13 @@
 const path = require('path');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
+const isProduction = process.env.NODE_ENV === 'production';
+const isKarma = !isProduction && process.env.NODE_ENV === 'karma';
+
 module.exports = {
-    mode: 'production',
-    devtool: 'source-map',
-    entry: {
-        'ringcentral-web-phone': './src/index.ts',
-        'ringcentral-web-phone.min': './src/index.ts'
-    },
+    mode: 'development',
+    devtool: 'inline-source-map',
+    entry: {'ringcentral-web-phone': './src/index.ts'},
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: '[name].js',
@@ -19,11 +19,16 @@ module.exports = {
         rules: [
             {
                 test: /\.tsx?$/,
-                loader: 'ts-loader',
-                exclude: /node_modules/,
-                options: {
-                    onlyCompileBundledFiles: true
-                }
+                use: [
+                    'cache-loader',
+                    {
+                        loader: 'ts-loader',
+                        options: {
+                            onlyCompileBundledFiles: true
+                        }
+                    }
+                ],
+                include: path.resolve('src')
             }
         ]
     },
@@ -44,12 +49,45 @@ module.exports = {
             root: 'SIP'
         }
     },
-    optimization: {
+    devServer: {
+        contentBase: __dirname,
+        port: 8080,
+        overlay: true,
+        publicPath: '/dist/'
+    }
+};
+
+if (isProduction) {
+    const [key, src] = Object.entries(module.exports.entry);
+    module.exports.mode = 'production';
+    module.exports.devtool = 'source-map';
+    module.exports.entry = {
+        ...module.exports.entry,
+        [`${key}.min`]: src
+    };
+    module.exports.optimization = {
         minimize: true,
         minimizer: [
             new UglifyJsPlugin({
                 include: /\.min\.js$/
             })
         ]
-    }
-};
+    };
+}
+
+if (isKarma) {
+    delete module.exports.entry;
+    delete module.exports.output;
+    delete module.exports.externals;
+    module.exports.module.rules.push({
+        test: /\.tsx?$/,
+        exclude: [/spec/],
+        enforce: 'post',
+        use: {
+            loader: 'istanbul-instrumenter-loader',
+            options: {esModules: true}
+        }
+    });
+    // console.log(module.exports.module.rules[0].use);
+    // process.exit();
+}

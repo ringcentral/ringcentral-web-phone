@@ -1,10 +1,7 @@
+process.env.NODE_ENV = 'karma';
+
 const path = require('path');
 const webpackConfig = require('./webpack.config');
-
-delete webpackConfig.entry;
-delete webpackConfig.output;
-delete webpackConfig.optimization;
-delete webpackConfig.externals;
 
 module.exports = config => {
     require('dotenv').config({silent: true});
@@ -18,26 +15,7 @@ module.exports = config => {
             'src/**/*.ts': ['webpack']
         },
 
-        webpack: {
-            ...webpackConfig,
-            module: {
-                ...webpackConfig.module,
-                rules: [
-                    ...webpackConfig.module.rules,
-                    {
-                        test: /\.tsx?$/,
-                        exclude: [/spec/],
-                        enforce: 'post',
-                        use: {
-                            loader: 'istanbul-instrumenter-loader',
-                            options: {esModules: true}
-                        }
-                    }
-                ]
-            },
-            mode: 'development',
-            devtool: 'inline-source-map'
-        },
+        webpack: webpackConfig,
 
         webpackMiddleware: {
             stats: 'errors-only'
