@@ -26,7 +26,16 @@ before_install:
 before_script:
 - DEBUG=eslint:cli-engine npm run lint:all
 
+before_deploy:
+- npm run build
+
 deploy:
+- provider: pages
+  skip-cleanup: true
+  github-token: $GITHUB_TOKEN
+  local-dir: dist
+  on:
+    branch: typescript
 - provider: npm
   email: kirill.konshin@gmail.com
   api_key: $NPM_TOKEN

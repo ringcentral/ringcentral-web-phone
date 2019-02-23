@@ -26,6 +26,7 @@ describe('Basic integration', () => {
     });
 
     it('shows the page', async () => {
+        await screenshot(receiverPage, 'init');
         await expect(receiverPage).toMatch('WebPhone Receiver');
         await screenshot(receiverPage, 'after login receiver');
         await expect(callerPage).toMatch('WebPhone Caller');
@@ -33,12 +34,15 @@ describe('Basic integration', () => {
     });
 
     it('makes the call', async () => {
+        await screenshot(receiverPage, 'init');
+
         // call
         await expect(callerPage).toFillForm('form[name="call"]', {
             number: process.env.RC_WP_RECEIVER_USERNAME
         });
         await expect(callerPage).toClick('button', {text: 'Call'});
         await screenshot(callerPage, 'calling');
+        await screenshot(receiverPage, 'waiting');
 
         // answer
         await expect(receiverPage).toClick('button', {text: 'Answer', timeout: 30000});

@@ -16,11 +16,14 @@ export const type = async (page: Page, selector, text): Promise<void> => {
 let screenshotSequence = 0;
 
 const addZero = (n: number): string => (n < 10 ? `0${n}` : n.toString());
-const makeScreenshotFilename = (str: string): string => str.toLowerCase().replace(/^[0-9a-z]/gi, '-');
+const makeScreenshotFilename = (str: string): string => str.toLowerCase().replace(/[^0-9a-z-._]/gi, '-');
 
 export const screenshot = async (page: Page, name: string, options: ScreenshotOptions = {}): Promise<void> => {
     await page.screenshot({
-        path: path.join(screenshotPath, `${addZero(++screenshotSequence)}-${makeScreenshotFilename(name)}.png`),
+        path: path.join(
+            screenshotPath,
+            makeScreenshotFilename(`${addZero(++screenshotSequence)}-${await page.title()}-${name}.png`)
+        ),
         type: 'png',
         fullPage: true,
         ...options
@@ -32,7 +35,7 @@ export const waitForText = async (page: Page, text: string): Promise<void> => {
 };
 
 export const login = async (page: Page, name, credentials: any): Promise<void> => {
-    await openPage(page, '/demo');
+    await openPage(page, '/');
     await page.evaluate(`document.title = '${name}'`);
     await page.waitForSelector('a.accordion-toggle');
     await page.click('a.accordion-toggle'); //FIXME TS does not recognize toClick
