@@ -405,11 +405,11 @@
         session.on('progress', function(incomingResponse) {
             stopPlaying();
             if (incomingResponse.status_code === 183 && incomingResponse.body) {
+                this.logger.log('Receiving 183 In Progress from server');
                 session.createDialog(incomingResponse, 'UAC');
-                session.sessionDescriptionHandler.setDescription(incomingResponse.body).then(function() {
-                    session.status = 11; //C.STATUS_EARLY_MEDIA;
-                    session.hasAnswer = true;
-                });
+                session.status = 11; //C.STATUS_EARLY_MEDIA;
+                session.hasAnswer = true;
+                session.sessionDescriptionHandler.setDescription(incomingResponse.body);
             }
         });
 
