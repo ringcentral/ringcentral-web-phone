@@ -338,11 +338,21 @@ Not yet implemented. Could be done by dialing \*83. The account should be enable
 
 ## Upgrade Procedure from v0.4.X to 0.6.3
 
-- SDK constructor now allows to add custom UA Configuration parameters like `sessionDescriptionHandlerFactory` , `sessionDescriptionHandlerFactoryOptions` ,  `maxReconnectionAttempts` ,  `reconnectionTimeout`, `connectionTimeout`
+- SDK constructor now allows to add custom UA Configuration parameters like `sessionDescriptionHandlerFactory` , `sessionDescriptionHandlerFactoryOptions` ,  `maxReconnectionAttempts` ,  `reconnectionTimeout`, `connectionTimeout` , `keepAliveDebounce`
+
+- Default values for now set are `maxReconnectionAttempts` = 10 ,  `reconnectionTimeout` = 15 , `connectionTimeout` = 10 and `keepAliveDebounce` = 10
 
 - SDK now handles rendering HTML Media Elements. Pass remoteVideo and localVideo elements via SDK constructor
 
 - SDK also offers to addTrack() to handle remoteVideo and localVideo elements outside the constructor too
+
+- SDK sets `sdpSemantics` value  to `plan-b`. You can now enable unifiedSDP plan by setting the custom UA configuration option `options.enableUnifiedSDP` to `true`
+
+-  For FireFox browser support 
+    - Client application needs to detect if the browser is firefox. 
+    - Client application needs to set custom UA configuration option 'options.enableMidLinesInSDP' to `true` for browser >= FF v63 for hold functionality to work 
+    - QoS feature is not supported on FireFox due to browser related bugs. Please set the custom UA configuration option `options.enableQos` to `false`
+
 
 ### Initialization
 
@@ -451,4 +461,4 @@ var session = webPhone.userAgent.invite(number, {
 | Nov 2018 | 0.6.0 | 0.11.3 | 68 to 70 | Regression tested for 62, 63 supported with custom modifiers |
 | Nov 2018 | **0.6.1** | 0.11.6 | 71+, explicit `plan b` SDP support | 62 to 64 |
 | Dec 2018 | 0.6.2 | 0.11.6 | 71+ | 62 to 65 |
-| Feb 2019 | 0.6.3 | 0.11.6 | 71+ | :warning: Not Tested |
+| Feb 2019 | 0.6.3 | 0.11.6 | 71+ | 62 to 65 , :warning: QoS feature not supported |
