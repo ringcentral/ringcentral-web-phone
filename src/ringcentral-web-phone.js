@@ -126,20 +126,34 @@
         }
 
         var sessionDescriptionHandlerFactory = options.sessionDescriptionHandlerFactory || [];
+        var outboundProxy;
+        var outboundProxyBackup;
+        var sipErrorCodes = regData.sipErrorCodes && regData.sipErrorCodes.length ? regData.sipErrorCodes : ['408', '502', '503'];
+        var switchBackInterval = this.sipInfo.switchBackInterval;
+
+        if (this.sipInfo.outboundProxy && this.sipInfo.transport) {
+            outboundProxy = {
+                ws_uri: this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxy,
+                weight: 10
+            }
+        };
+
+        if (this.sipInfo.outboundProxyBackup && this.sipInfo.transport) {
+            outboundProxyBackup = {
+                ws_uri: this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxyBackup,
+                weight: 0
+            }
+        }
 
         var configuration = {
             uri: 'sip:' + this.sipInfo.username + '@' + this.sipInfo.domain,
 
             transportOptions: {
-                wsServers:
-                    this.sipInfo.outboundProxy && this.sipInfo.transport
-                        ? this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxy
-                        : this.sipInfo.wsServers,
+                wsServers: [outboundProxy, outboundProxyBackup],
                 traceSip: true,
-                maxReconnectionAttempts: options.maxReconnectionAttempts || 10,
-                reconnectionTimeout: options.reconnectionTimeout || 15,
-                connectionTimeout: options.connectionTimeout || 10,
-                keepAliveDebounce: options.keepAliveDebounce || 10
+                maxReconnectionAttempts: 3,
+                reconnectionTimeout: 3,
+                connectionTimeout: 5
             },
             authorizationUser: this.sipInfo.authorizationId,
             password: this.sipInfo.password,
@@ -200,6 +214,120 @@
                     });
             }.bind(this)
         );
+        
+        var transportConstructor = this.userAgent.configuration.transportConstructor;
+        this.userAgent.configuration.transportConstructor = function(logger, options){
+             var C = {
+                // Transport status codes
+                STATUS_CONNECTING: 0,
+                STATUS_OPEN: 1,
+                STATUS_CLOSING: 2,
+                STATUS_CLOSED: 3
+              };
+
+            var transport = new transportConstructor(logger, options);
+
+            transport.nextReconnectInterval = 0;
+            transport.sipErrorCodes = sipErrorCodes;
+            transport.switchBackInterval = switchBackInterval;
+
+            transport.computeRandomTimeout = function(reconnectionAttempts, randomMinInterval, randomMaxInterval){
+                randomMinInterval = randomMinInterval < 0 ? 0 : randomMinInterval;
+                randomMaxInterval = randomMaxInterval <= 0 ? 7000 : randomMaxInterval;
+                reconnectionAttempts = reconnectionAttempts || 1;
+                               
+                var randomInterval = Math.floor(Math.random() * (randomMaxInterval - randomMinInterval)) + randomMinInterval;
+                var retryOffset = (reconnectionAttempts - 1) * (randomMinInterval + randomMaxInterval) / 2;
+                                
+                return randomInterval + retryOffset;               
+                
+            };
+            transport.reconnect = function reconnect(forceReconnectToMain) {
+                if (this.reconnectionAttempts > 0) {
+                    this.logger.log('Reconnection attempt ' + this.reconnectionAttempts + ' failed');
+                }
+
+                if (forceReconnectToMain) {
+                    this.logger.warn('forcing connect to main WS server');
+                    this.server = this.configuration.wsServers[0];
+                    this.reconnectionAttempts = 0;
+                    SIP.Timers.clearTimeout(this.server.checkOnlineTimeout);
+                    this.server.checkOnlineTimeout = null;
+                    this.disconnect({ force: true })
+                        .then(this.connect.bind(this));
+
+                    return;
+                }
+
+                if (this.noAvailableServers()) {
+                    this.logger.warn('no available ws servers left - going to closed state');
+                    this.status = C.STATUS_CLOSED;
+                    this.resetServerErrorStatus();
+                    return;
+                }
+
+                if (this.isConnected()) {
+                    this.logger.warn('attempted to reconnect while connected - forcing disconnect');
+                    this.disconnect({ force: true })                        
+                    return;
+                }
+
+                var randomMinInterval = (this.configuration.reconnectionTimeout - 2 ) * 1000;
+                var randomMaxInterval = (this.configuration.reconnectionTimeout + 2 ) * 1000;
+
+                this.reconnectionAttempts += 1;
+                this.nextReconnectInterval = this.computeRandomTimeout(this.reconnectionAttempts, randomMinInterval, randomMaxInterval);                
+
+                if (this.reconnectionAttempts > this.configuration.maxReconnectionAttempts) {
+                    this.logger.warn('maximum reconnection attempts for WebSocket ' + this.server.ws_uri);
+                    this.logger.log('transport ' + this.server.ws_uri + ' failed | connection state set to \'error\'');
+                    this.server.isError = true;
+                    this.emit('transportError');
+                    this.server = this.getNextWsServer();
+                    this.reconnectionAttempts = 0;
+
+                    if (this.server !== this.configuration.wsServers[0]){
+                        this.scheduleSwithBackMainProxy();
+                    }
+
+                    this.connect();
+                } else {
+                    this.logger.log('trying to reconnect to WebSocket ' + this.server.ws_uri + ' (reconnection attempt ' + this.reconnectionAttempts + ')');
+                    this.reconnectTimer = SIP.Timers.setTimeout(function () {
+                        this.connect();
+                        this.reconnectTimer = null;
+                    }.bind(this), this.nextReconnectInterval);
+                    this.logger.warn('next reconnection attempt in:' + Math.round(this.nextReconnectInterval / 1000));
+                }                
+            };
+
+            transport.isSipErrorCode = function(message){
+                var statusLine = message.substring(0, message.indexOf('\r\n'));
+                var statusCode = statusLine.split(' ')[1];
+                return statusCode && this.sipErrorCodes && this.sipErrorCodes.length && this.sipErrorCodes.includes(statusCode);
+            };
+
+            transport.scheduleSwithBackMainProxy = function(attempts){
+               
+                var switchBackInterval = parseInt(this.switchBackInterval) ?  parseInt(this.switchBackInterval) * 1000 : null;
+              
+                if (switchBackInterval) {
+                    // Add random time to expand clients connections in time;
+                    switchBackInterval += this.computeRandomTimeout(1, 0, 15*60*1000);
+                    this.logger.warn('Try to switch back to main proxy after ' + Math.round(switchBackInterval/1000/60) + ' min');
+
+                    SIP.Timers.setTimeout(function(){
+                        this.configuration.wsServers[0].isError = false;
+                        //Notify client to trigger switching back to main proxy server;
+                        this.emit('switchBackProxy');
+                    }.bind(this), switchBackInterval);
+                } else {
+                    this.logger.warn('switchBackInterval is not set. Will be switched with next provision update ');
+                }                
+            };
+
+            return transport;
+        };
 
         this.userAgent.audioHelper = new AudioHelper(options.audioHelper);
 
@@ -285,7 +413,17 @@
         // messages with the same host but with port are ignored.
         // This is the exact case for WSX: it send host:port inn via header in MESSAGE responses.
         // To overcome this, we will preprocess MESSAGE messages and remove port from viaHost field.
-        var data = e.data;
+        var data = e.data || e;
+        
+         // Check the status of message is in sipErrorCodes and disconnecting from server if it so; 
+        if (this.transport.isSipErrorCode(e)){
+            this.transport.onSipErrorCode();
+            return;
+        }
+        //If check-sync message arrived, notify client to update provision info;
+        if (data.match(/Event:\s+check-sync/i)){
+            this.transport.emit('provisionUpdate');
+        }
 
         // WebSocket binary message.
         if (typeof data !== 'string') {
