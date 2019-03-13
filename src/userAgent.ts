@@ -1,6 +1,7 @@
-import {ClientContext, UA} from 'sip.js';
+import {ClientContext, UA, Transport} from 'sip.js';
 import {AudioHelper} from './audioHelper';
 import {patchSession, patchIncomingSession, WebPhoneSession} from './session';
+import {TransportConstructorWrapper, WebPhoneSIPTransport} from './sipTransportConstructor';
 
 export interface WebPhoneUserAgent extends UA {
     media: any;
@@ -17,6 +18,10 @@ export interface WebPhoneUserAgent extends UA {
     __unregister: typeof UA.prototype.unregister;
     __onTransportReceiveMsg: any;
     onTransportReceiveMsg: any; //FIXME Untyped
+    __transportConstructor: any;
+    configuration: any;
+    transport: WebPhoneSIPTransport; 
+
 }
 
 export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, id): WebPhoneUserAgent => {
@@ -49,6 +54,9 @@ export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, i
 
     userAgent.audioHelper = new AudioHelper(options.audioHelper);
 
+    userAgent.__transportConstructor = userAgent.configuration.transportConstructor;
+    userAgent.configuration.transportConstructor = TransportConstructorWrapper(userAgent.__transportConstructor, options);
+
     userAgent.onSession = options.onSession || null;
     userAgent.createRcMessage = createRcMessage;
     userAgent.sendMessage = sendMessage;
@@ -66,6 +74,17 @@ export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, i
                 session.logger.error('failed to send receive confirmation via SIP MESSAGE due to ' + error);
                 throw error;
             });
+    });
+
+    userAgent.on('registrationFailed', (e: any)=>{
+
+        // Check the status of message is in sipErrorCodes and disconnecting from server if it so;        
+        if (!e) {return};
+
+        const message =  e.data || e;
+        if (message && typeof message === 'string' && userAgent.transport.isSipErrorCode(message)){
+            userAgent.transport.onSipErrorCode();            
+        }
     });
 
     userAgent.start();
@@ -125,7 +144,12 @@ function onTransportReceiveMsg(this: WebPhoneUserAgent, e: any): any {
     // messages with the same host but with port are ignored.
     // This is the exact case for WSX: it send host:port inn via header in MESSAGE responses.
     // To overcome this, we will preprocess MESSAGE messages and remove port from viaHost field.
-    var data = e.data;
+    var data = e.data || e;
+    
+    //If check-sync message arrived, notify client to update provision info;
+    if (data.match(/Event:\s+check-sync/i)){
+        this.transport.emit('provisionUpdate');
+    }
 
     // WebSocket binary message.
     if (typeof data !== 'string') {

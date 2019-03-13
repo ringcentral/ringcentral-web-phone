@@ -9,7 +9,7 @@
     "test:e2e": "jest --runInBand",
     "build": "npm run build:tsc && npm run build:webpack",
     "build:tsc": "tsc",
-    "build:webpack": "NODE_ENV=production webpack --config webpack.config.js --progress --color",
+    "build:webpack": "cross-env NODE_ENV=production webpack --config webpack.config.js --progress --color",
     "start": "webpack-dev-server --config webpack.config.js --progress --color",
     "server": "http-server --port ${PORT:-8080}",
     "watch": "npm-run-all --print-label --parallel 'build:** -- --watch'",
