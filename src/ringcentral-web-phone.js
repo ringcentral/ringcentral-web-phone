@@ -218,7 +218,6 @@
             turnServers: [],
             log: {
                 level: options.logLevel || 1 ,//FIXME LOG LEVEL 3
-                builtinEnabled : options.builtinEnabled || true,
                 connector  : options.connector|| null
             },
             domain: this.sipInfo.domain,
@@ -228,6 +227,13 @@
             sessionDescriptionHandlerFactoryOptions: sessionDescriptionHandlerFactoryOptions,
             sessionDescriptionHandlerFactory : sessionDescriptionHandlerFactory
         };
+
+        if (options.builtinEnabled === null || options.builtinEnabled === undefined) {
+            configuration.log.builtinEnabled = true;
+        } else {
+            configuration.log.builtinEnabled = options.builtinEnabled;
+        }
+
         this.userAgent = new SIP.UA(configuration);
 
         this.userAgent.defaultHeaders = [
