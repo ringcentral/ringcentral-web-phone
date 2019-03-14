@@ -146,9 +146,8 @@
             stunServers: this.sipInfo.stunServers || ['stun:74.125.194.127:19302'], //FIXME Hardcoded?
             turnServers: [],
             log: {
-                level: options.logLevel || 1, //FIXME LOG LEVEL 3
-                builtinEnabled: options.builtinEnabled || true,
-                connector: options.connector || null
+                level: options.logLevel || 1 ,//FIXME LOG LEVEL 3
+                connector  : options.connector|| null
             },
             domain: this.sipInfo.domain,
             autostart: false,
@@ -157,6 +156,13 @@
             sessionDescriptionHandlerFactoryOptions: sessionDescriptionHandlerFactoryOptions,
             sessionDescriptionHandlerFactory: sessionDescriptionHandlerFactory
         };
+
+        if (options.builtinEnabled === null || options.builtinEnabled === undefined) {
+            configuration.log.builtinEnabled = true;
+        } else {
+            configuration.log.builtinEnabled = options.builtinEnabled;
+        }
+
         this.userAgent = new SIP.UA(configuration);
 
         this.userAgent.defaultHeaders = ['P-rc-endpoint-id: ' + id, 'Client-id:' + options.appKey];
