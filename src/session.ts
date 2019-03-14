@@ -579,7 +579,7 @@ function toggleMute(session: WebPhoneSession, mute: boolean): void {
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 function mute(this: WebPhoneSession, silent?: boolean): void {
-    if (this.status !== Session.C.STATUS_CONNECTED) {
+    if (this.status !== Session.C.STATUS_CONFIRMED) {
         this.logger.warn('An acitve call is required to mute audio');
         return;
     }
@@ -593,7 +593,7 @@ function mute(this: WebPhoneSession, silent?: boolean): void {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 function unmute(this: WebPhoneSession, silent?: boolean): void {
-    if (this.status !== Session.C.STATUS_CONNECTED) {
+    if (this.status !== Session.C.STATUS_CONFIRMED) {
         this.logger.warn('An active call is required to unmute audio');
         return;
     }

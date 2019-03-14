@@ -128,7 +128,7 @@ export default class WebPhone {
 
         if (this.sipInfo.outboundProxy && this.sipInfo.transport) {
             wsServers.push({
-                ws_uri: this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxy,
+                wsUri: this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxy,
                 weight: 10
             });
         };
@@ -136,7 +136,7 @@ export default class WebPhone {
 
         if (this.sipInfo.outboundProxyBackup && this.sipInfo.transport) {
             wsServers.push({
-                ws_uri: this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxyBackup,
+                wsUri: this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxyBackup,
                 weight: 0
             });
         };

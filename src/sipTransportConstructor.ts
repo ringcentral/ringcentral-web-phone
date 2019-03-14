@@ -1,5 +1,5 @@
 import { WebPhoneUserAgent } from './userAgent';
-import { Timers, Transport } from 'sip.js';
+import { Timers, Transport, LoggerFactory } from 'sip.js';
 
 
 export interface WebPhoneSIPTransport extends Transport {    
@@ -8,12 +8,27 @@ export interface WebPhoneSIPTransport extends Transport {
     isSipErrorCode: typeof isSipErrorCode;
     scheduleSwithBackMainProxy: typeof scheduleSwithBackMainProxy;
     onSipErrorCode: typeof onSipErrorCode;
+    reconnectionAttempts?: number;
+    logger: any;
+    switchBackInterval?: number;
+    getNextWsServer: any;
+    noAvailableServers: any;
+    status: number;
+    resetServerErrorStatus: any;
+    configuration: any;
+    nextReconnectInterval: number;
+    reconnectTimer?: any;
+    sipErrorCodes?: string[];    
+    __isCurrentMainProxy: typeof __isCurrentMainProxy;
+    __onConnectedToMain: typeof __onConnectedToMain;
+    __onConnectedToBackup: typeof __onConnectedToBackup;
+    __on_check_sync_message: typeof __on_check_sync_message;
 }
 
 
 export const TransportConstructorWrapper = (SipTransport: any, webPhoneOptions:any): any => {
     
-    return function transportConstructor(logger: Function, options:any): WebPhoneSIPTransport {
+    return (logger: Function, options:any): WebPhoneSIPTransport => {
 
         let transport = new SipTransport(logger, options);
 
@@ -30,8 +45,11 @@ export const TransportConstructorWrapper = (SipTransport: any, webPhoneOptions:a
         transport.__afterWSConnected = __afterWSConnected.bind(transport);
         transport.__onConnectedToBackup = __onConnectedToBackup.bind(transport);
         transport.__onConnectedToMain = __onConnectedToMain.bind(transport);
+        transport.__on_message_received = __on_message_received.bind(transport);
+        transport.__on_check_sync_message = __on_check_sync_message.bind(transport);
 
         transport.on('connected', transport.__afterWSConnected);
+        transport.on('message', transport.__on_message_received);
 
         return transport;
     }
@@ -45,18 +63,18 @@ const C = {
                 STATUS_CLOSED: 3
     };
 
-function computeRandomTimeout(reconnectionAttempts: number, randomMinInterval: number, randomMaxInterval: number){
-            randomMinInterval = randomMinInterval < 0 ? 0 : randomMinInterval;
-            randomMaxInterval = randomMaxInterval <= 0 ? 7000 : randomMaxInterval;
-            reconnectionAttempts = reconnectionAttempts || 1;
+function computeRandomTimeout(reconnectionAttempts: number = 1, randomMinInterval: number = 0, randomMaxInterval: number = 0){
+    if (randomMinInterval < 0 || randomMaxInterval < 0 || reconnectionAttempts < 1) {
+        throw new Error ('Arguments must be positive numbers');
+    }
 
-            const randomInterval = Math.floor(Math.random() * (randomMaxInterval - randomMinInterval)) + randomMinInterval;
-            const retryOffset = (reconnectionAttempts - 1) * (randomMinInterval + randomMaxInterval) / 2;
+    const randomInterval = Math.floor(Math.random() * Math.abs(randomMaxInterval - randomMinInterval)) + randomMinInterval;
+    const retryOffset = (reconnectionAttempts - 1) * (randomMinInterval + randomMaxInterval) / 2;
 
-            return randomInterval + retryOffset;
+    return randomInterval + retryOffset;
 };
 
-function reconnect(forceReconnectToMain: boolean) {
+function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: boolean) {
     if (this.reconnectionAttempts > 0) {
         this.logger.log('Reconnection attempt ' + this.reconnectionAttempts + ' failed');
     }
@@ -90,15 +108,15 @@ function reconnect(forceReconnectToMain: boolean) {
     this.nextReconnectInterval = this.computeRandomTimeout(this.reconnectionAttempts, randomMinInterval, randomMaxInterval);                
 
     if (this.reconnectionAttempts > this.configuration.maxReconnectionAttempts) {
-        this.logger.warn('maximum reconnection attempts for WebSocket ' + this.server.ws_uri);
-        this.logger.log('transport ' + this.server.ws_uri + ' failed | connection state set to \'error\'');
+        this.logger.warn('maximum reconnection attempts for WebSocket ' + this.server.wsUri);
+        this.logger.log('transport ' + this.server.wsUri + ' failed | connection state set to \'error\'');
         this.server.isError = true;
         this.emit('transportError');
         this.server = this.getNextWsServer();
         this.reconnectionAttempts = 0;
         this.reconnect();
     } else {
-        this.logger.log('trying to reconnect to WebSocket ' + this.server.ws_uri + ' (reconnection attempt ' + this.reconnectionAttempts + ')');
+        this.logger.log('trying to reconnect to WebSocket ' + this.server.wsUri + ' (reconnection attempt ' + this.reconnectionAttempts + ')');
         this.reconnectTimer = setTimeout(() => {
             this.connect();
             this.reconnectTimer = null;
@@ -107,7 +125,7 @@ function reconnect(forceReconnectToMain: boolean) {
     }
 };
 
-function isSipErrorCode(message: string){    
+function isSipErrorCode(this: WebPhoneSIPTransport, message: string){    
 
     const statusLine = message.substring(0, message.indexOf('\r\n'));
     const statusCode = statusLine.split(' ')[1];
@@ -118,10 +136,10 @@ function isSipErrorCode(message: string){
             this.sipErrorCodes.includes(statusCode);
 };
 
-function scheduleSwithBackMainProxy(){
+function scheduleSwithBackMainProxy(this: WebPhoneSIPTransport){
     const randomInterval = 15 * 60 * 1000; //15 min
    
-    let switchBackInterval = parseInt(this.switchBackInterval) ? parseInt(this.switchBackInterval) * 1000 : null;
+    let switchBackInterval = this.switchBackInterval ? this.switchBackInterval * 1000 : null;
     
     // Add random time to expand clients connections in time;
     if (switchBackInterval) {
@@ -140,21 +158,21 @@ function scheduleSwithBackMainProxy(){
     }
 };
 
-function onSipErrorCode() {
+async function onSipErrorCode(this: WebPhoneSIPTransport) {
     this.logger.warn('Error received from the server. Disconnecting from the proxy');    
     this.server.isError = true;
     this.emit('transportError');
     this.server = this.getNextWsServer();
     this.reconnectionAttempts = 0;
-    this.disconnect({ force: true })
-        .then(this.connect.bind(this));
+    await this.disconnect({ force: true })
+    await this.connect();
 };
 
-function __isCurrentMainProxy() {
+function __isCurrentMainProxy(this: WebPhoneSIPTransport) {
     return this.server === this.configuration.wsServers[0];
 };
 
-function __onConnectedToMain() {
+function __onConnectedToMain(this: WebPhoneSIPTransport) {
     const mainProxy = this.configuration.wsServers[0];
 
     if (mainProxy.switchBackTimer) {
@@ -163,7 +181,7 @@ function __onConnectedToMain() {
     }
 };
 
-function __onConnectedToBackup(){
+function __onConnectedToBackup(this: WebPhoneSIPTransport){
     const mainProxy = this.configuration.wsServers[0];
 
     if (!mainProxy.switchBackTimer) {
@@ -171,6 +189,19 @@ function __onConnectedToBackup(){
     }
 }
 
-function __afterWSConnected() {
+function __afterWSConnected(this: WebPhoneSIPTransport) {
    this.__isCurrentMainProxy() ? this.__onConnectedToMain() : this.__onConnectedToBackup();
+};
+
+function __on_message_received(this: WebPhoneSIPTransport, message: any){
+    if (message.method === 'NOTIFY') {
+        this.__on_check_sync_message(message.data);
+    }
+};
+
+function __on_check_sync_message(this: WebPhoneSIPTransport, data: string){
+    //If check-sync message arrived, notify client to update provision info;
+    if (data.match(/Event:\s+check-sync/i)){
+        this.emit('provisionUpdate');
+    }
 };
