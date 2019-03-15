@@ -1,8 +1,7 @@
-import { WebPhoneUserAgent } from './userAgent';
-import { UA, Transport } from 'sip.js';
+import {UA, Transport} from 'sip.js';
+import {delay} from "./utils";
 
-
-export interface WebPhoneSIPTransport extends Transport {    
+export interface WebPhoneSIPTransport extends Transport {
     computeRandomTimeout: typeof computeRandomTimeout;
     reconnect: typeof reconnect;
     isSipErrorCode: typeof isSipErrorCode;
@@ -17,18 +16,15 @@ export interface WebPhoneSIPTransport extends Transport {
     resetServerErrorStatus: any;
     configuration: typeof UA.prototype.configuration.transportOptions;
     nextReconnectInterval: number;
-    reconnectTimer?: any;
-    sipErrorCodes?: string[];    
+    sipErrorCodes?: string[];
     __isCurrentMainProxy: typeof __isCurrentMainProxy;
     __onConnectedToMain: typeof __onConnectedToMain;
     __onConnectedToBackup: typeof __onConnectedToBackup;
     __on_check_sync_message: typeof __on_check_sync_message;
-};
+}
 
-export const TransportConstructorWrapper = (SipTransportConstructor: any, webPhoneOptions:any): any => {
-    
-    return (logger: typeof UA.prototype.logger, options:any): WebPhoneSIPTransport => {
-
+export const TransportConstructorWrapper = (SipTransportConstructor: any, webPhoneOptions: any): any => {
+    return (logger: typeof UA.prototype.logger, options: any): WebPhoneSIPTransport => {
         let transport = new SipTransportConstructor(logger, options);
 
         transport.nextReconnectInterval = 0;
@@ -51,29 +47,34 @@ export const TransportConstructorWrapper = (SipTransportConstructor: any, webPho
         transport.on('message', transport.__on_message_received);
 
         return transport;
-    }
-}
+    };
+};
 
 const C = {
-                // Transport status codes
-                STATUS_CONNECTING: 0,
-                STATUS_OPEN: 1,
-                STATUS_CLOSING: 2,
-                STATUS_CLOSED: 3
-    };
+    // Transport status codes
+    STATUS_CONNECTING: 0,
+    STATUS_OPEN: 1,
+    STATUS_CLOSING: 2,
+    STATUS_CLOSED: 3
+};
 
-var computeRandomTimeout = (reconnectionAttempts: number = 1, randomMinInterval: number = 0, randomMaxInterval: number = 0) => {
+var computeRandomTimeout = (
+    reconnectionAttempts: number = 1,
+    randomMinInterval: number = 0,
+    randomMaxInterval: number = 0
+): number => {
     if (randomMinInterval < 0 || randomMaxInterval < 0 || reconnectionAttempts < 1) {
-        throw new Error ('Arguments must be positive numbers');
+        throw new Error('Arguments must be positive numbers');
     }
 
-    const randomInterval = Math.floor(Math.random() * Math.abs(randomMaxInterval - randomMinInterval)) + randomMinInterval;
-    const retryOffset = (reconnectionAttempts - 1) * (randomMinInterval + randomMaxInterval) / 2;
+    const randomInterval =
+        Math.floor(Math.random() * Math.abs(randomMaxInterval - randomMinInterval)) + randomMinInterval;
+    const retryOffset = ((reconnectionAttempts - 1) * (randomMinInterval + randomMaxInterval)) / 2;
 
     return randomInterval + retryOffset;
 };
 
-function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: boolean) {
+async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: boolean): Promise<void> {
     if (this.reconnectionAttempts > 0) {
         this.logger.log('Reconnection attempt ' + this.reconnectionAttempts + ' failed');
     }
@@ -82,8 +83,8 @@ function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: boolean) {
         this.logger.log('forcing connect to main WS server');
         this.server = this.getNextWsServer(true);
         this.reconnectionAttempts = 0;
-        this.disconnect({ force: true })
-            .then(this.connect.bind(this));
+        await this.disconnect({force: true});
+        await this.connect();
         return;
     }
 
@@ -96,58 +97,64 @@ function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: boolean) {
 
     if (this.isConnected()) {
         this.logger.warn('attempted to reconnect while connected - forcing disconnect');
-        this.disconnect({ force: true })
+        await this.disconnect({force: true});
         return;
     }
 
-    const randomMinInterval = (this.configuration.reconnectionTimeout - 2 ) * 1000;
-    const randomMaxInterval = (this.configuration.reconnectionTimeout + 2 ) * 1000;
+    const randomMinInterval = (this.configuration.reconnectionTimeout - 2) * 1000;
+    const randomMaxInterval = (this.configuration.reconnectionTimeout + 2) * 1000;
 
     this.reconnectionAttempts += 1;
-    this.nextReconnectInterval = this.computeRandomTimeout(this.reconnectionAttempts, randomMinInterval, randomMaxInterval);                
+    this.nextReconnectInterval = this.computeRandomTimeout(
+        this.reconnectionAttempts,
+        randomMinInterval,
+        randomMaxInterval
+    );
 
     if (this.reconnectionAttempts > this.configuration.maxReconnectionAttempts) {
         this.logger.warn('maximum reconnection attempts for WebSocket ' + this.server.wsUri);
-        this.logger.log('transport ' + this.server.wsUri + ' failed | connection state set to \'error\'');
+        this.logger.log('transport ' + this.server.wsUri + " failed | connection state set to 'error'");
         this.server.isError = true;
         this.emit('transportError');
         this.server = this.getNextWsServer();
         this.reconnectionAttempts = 0;
-        this.reconnect();
+        await this.reconnect();
     } else {
-        this.logger.log('trying to reconnect to WebSocket ' + this.server.wsUri + ' (reconnection attempt ' + this.reconnectionAttempts + ')');
-        this.reconnectTimer = setTimeout(() => {
-            this.connect();
-            this.reconnectTimer = null;
-        }, this.nextReconnectInterval);
+        this.logger.log(
+            'trying to reconnect to WebSocket ' +
+                this.server.wsUri +
+                ' (reconnection attempt ' +
+                this.reconnectionAttempts +
+                ')'
+        );
+        await delay(this.nextReconnectInterval);
+        await this.connect();
         this.logger.warn('next reconnection attempt in:' + Math.round(this.nextReconnectInterval / 1000));
     }
-};
+}
 
-function isSipErrorCode(this: WebPhoneSIPTransport, message: string){    
-
+function isSipErrorCode(this: WebPhoneSIPTransport, message: string): boolean {
     const statusLine = message.substring(0, message.indexOf('\r\n'));
     const statusCode = statusLine.split(' ')[1];
 
-    return statusCode && 
-            this.sipErrorCodes && 
-            this.sipErrorCodes.length && 
-            this.sipErrorCodes.includes(statusCode);
-};
+    return statusCode && this.sipErrorCodes && this.sipErrorCodes.length && this.sipErrorCodes.includes(statusCode);
+}
 
-function scheduleSwithBackMainProxy(this: WebPhoneSIPTransport){
+function scheduleSwithBackMainProxy(this: WebPhoneSIPTransport): void {
     const randomInterval = 15 * 60 * 1000; //15 min
-   
+
     let switchBackInterval = this.switchBackInterval ? this.switchBackInterval * 1000 : null;
-    
+
     // Add random time to expand clients connections in time;
     if (switchBackInterval) {
         switchBackInterval += this.computeRandomTimeout(1, 0, randomInterval);
-        this.logger.warn('Try to switch back to main proxy after ' + Math.round(switchBackInterval/1000/60) + ' min');
+        this.logger.warn(
+            'Try to switch back to main proxy after ' + Math.round(switchBackInterval / 1000 / 60) + ' min'
+        );
 
         const mainProxy = this.configuration.wsServers[0];
 
-        mainProxy.switchBackTimer = setTimeout(() =>  {
+        mainProxy.switchBackTimer = setTimeout(() => {
             mainProxy.isError = false;
             mainProxy.switchBackTimer = null;
             this.emit('switchBackProxy');
@@ -155,52 +162,52 @@ function scheduleSwithBackMainProxy(this: WebPhoneSIPTransport){
     } else {
         this.logger.warn('switchBackInterval is not set. Will be switched with next provision update ');
     }
-};
+}
 
 async function onSipErrorCode(this: WebPhoneSIPTransport): Promise<any> {
-    this.logger.warn('Error received from the server. Disconnecting from the proxy');    
+    this.logger.warn('Error received from the server. Disconnecting from the proxy');
     this.server.isError = true;
     this.emit('transportError');
     this.server = this.getNextWsServer();
     this.reconnectionAttempts = 0;
-    await this.disconnect({ force: true })
-    return await this.connect();
-};
+    await this.disconnect({force: true});
+    return this.connect();
+}
 
-function __isCurrentMainProxy(this: WebPhoneSIPTransport) {
+function __isCurrentMainProxy(this: WebPhoneSIPTransport): boolean {
     return this.server === this.configuration.wsServers[0];
-};
+}
 
-function __onConnectedToMain(this: WebPhoneSIPTransport) {
+function __onConnectedToMain(this: WebPhoneSIPTransport): void {
     const mainProxy = this.configuration.wsServers[0];
 
     if (mainProxy.switchBackTimer) {
         clearTimeout(mainProxy.switchBackTimer);
         mainProxy.switchBackTimer = null;
     }
-};
+}
 
-function __onConnectedToBackup(this: WebPhoneSIPTransport){
+function __onConnectedToBackup(this: WebPhoneSIPTransport): void {
     const mainProxy = this.configuration.wsServers[0];
 
     if (!mainProxy.switchBackTimer) {
-       this.scheduleSwithBackMainProxy();
+        this.scheduleSwithBackMainProxy();
     }
 }
 
-function __afterWSConnected(this: WebPhoneSIPTransport) {
-   this.__isCurrentMainProxy() ? this.__onConnectedToMain() : this.__onConnectedToBackup();
-};
+function __afterWSConnected(this: WebPhoneSIPTransport): void {
+    this.__isCurrentMainProxy() ? this.__onConnectedToMain() : this.__onConnectedToBackup();
+}
 
-function __on_message_received(this: WebPhoneSIPTransport, message: any){
+function __on_message_received(this: WebPhoneSIPTransport, message: any): void {
     if (message.method === 'NOTIFY') {
         this.__on_check_sync_message(message.data);
     }
-};
+}
 
-function __on_check_sync_message(this: WebPhoneSIPTransport, data: string){
+function __on_check_sync_message(this: WebPhoneSIPTransport, data: string): void {
     //If check-sync message arrived, notify client to update provision info;
-    if (data.match(/Event:\s+check-sync/i)){
+    if (data.match(/Event:\s+check-sync/i)) {
         this.emit('provisionUpdate');
     }
-};
+}
