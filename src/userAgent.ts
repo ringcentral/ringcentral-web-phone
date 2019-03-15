@@ -19,7 +19,7 @@ export interface WebPhoneUserAgent extends UA {
     __transportConstructor: any;
     __onTransportConnected: ()=>void; // It is a private method
     onTransportConnected: typeof onTransportConnected;
-    configuration: any;
+    configuration: typeof UA.prototype.configuration;
     transport: WebPhoneSIPTransport; 
 
 }

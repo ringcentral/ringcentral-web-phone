@@ -1,5 +1,5 @@
 import { WebPhoneUserAgent } from './userAgent';
-import { Timers, Transport, LoggerFactory } from 'sip.js';
+import { UA, Transport } from 'sip.js';
 
 
 export interface WebPhoneSIPTransport extends Transport {    
@@ -9,13 +9,13 @@ export interface WebPhoneSIPTransport extends Transport {
     scheduleSwithBackMainProxy: typeof scheduleSwithBackMainProxy;
     onSipErrorCode: typeof onSipErrorCode;
     reconnectionAttempts?: number;
-    logger: any;
+    logger: typeof UA.prototype.logger;
     switchBackInterval?: number;
     getNextWsServer: any;
     noAvailableServers: any;
     status: number;
     resetServerErrorStatus: any;
-    configuration: any;
+    configuration: typeof UA.prototype.configuration.transportOptions;
     nextReconnectInterval: number;
     reconnectTimer?: any;
     sipErrorCodes?: string[];    
@@ -23,20 +23,19 @@ export interface WebPhoneSIPTransport extends Transport {
     __onConnectedToMain: typeof __onConnectedToMain;
     __onConnectedToBackup: typeof __onConnectedToBackup;
     __on_check_sync_message: typeof __on_check_sync_message;
-}
+};
 
-
-export const TransportConstructorWrapper = (SipTransport: any, webPhoneOptions:any): any => {
+export const TransportConstructorWrapper = (SipTransportConstructor: any, webPhoneOptions:any): any => {
     
-    return (logger: Function, options:any): WebPhoneSIPTransport => {
+    return (logger: typeof UA.prototype.logger, options:any): WebPhoneSIPTransport => {
 
-        let transport = new SipTransport(logger, options);
+        let transport = new SipTransportConstructor(logger, options);
 
         transport.nextReconnectInterval = 0;
         transport.sipErrorCodes = webPhoneOptions.sipErrorCodes;
         transport.switchBackInterval = webPhoneOptions.switchBackInterval;
 
-        transport.computeRandomTimeout = computeRandomTimeout.bind(transport);
+        transport.computeRandomTimeout = computeRandomTimeout;
         transport.reconnect = reconnect.bind(transport);
         transport.isSipErrorCode = isSipErrorCode.bind(transport);
         transport.scheduleSwithBackMainProxy = scheduleSwithBackMainProxy.bind(transport);
@@ -63,7 +62,7 @@ const C = {
                 STATUS_CLOSED: 3
     };
 
-function computeRandomTimeout(reconnectionAttempts: number = 1, randomMinInterval: number = 0, randomMaxInterval: number = 0){
+var computeRandomTimeout = (reconnectionAttempts: number = 1, randomMinInterval: number = 0, randomMaxInterval: number = 0) => {
     if (randomMinInterval < 0 || randomMaxInterval < 0 || reconnectionAttempts < 1) {
         throw new Error ('Arguments must be positive numbers');
     }
@@ -158,14 +157,14 @@ function scheduleSwithBackMainProxy(this: WebPhoneSIPTransport){
     }
 };
 
-async function onSipErrorCode(this: WebPhoneSIPTransport) {
+async function onSipErrorCode(this: WebPhoneSIPTransport): Promise<any> {
     this.logger.warn('Error received from the server. Disconnecting from the proxy');    
     this.server.isError = true;
     this.emit('transportError');
     this.server = this.getNextWsServer();
     this.reconnectionAttempts = 0;
     await this.disconnect({ force: true })
-    await this.connect();
+    return await this.connect();
 };
 
 function __isCurrentMainProxy(this: WebPhoneSIPTransport) {

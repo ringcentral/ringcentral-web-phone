@@ -141,14 +141,16 @@ export default class WebPhone {
             });
         };
 
+        wsServers = wsServers.length ? wsServers : this.sipInfo.wsServers;
+
         const configuration = {
             uri: `sip:${this.sipInfo.username}@${this.sipInfo.domain}`,
 
             transportOptions: {
-                wsServers: wsServers.length ? wsServers : this.sipInfo.wsServers,                    
+                wsServers: wsServers,
                 traceSip: true,
-                maxReconnectionAttempts: 3,
-                reconnectionTimeout: 3,
+                maxReconnectionAttempts: wsServers.length === 1 ? 5 : 3, //Fallback parameters if no backup prxy specified
+                reconnectionTimeout: wsServers.length === 1 ? 5 : 3, //Fallback parameters if no backup prxy specified
                 connectionTimeout: 5
             },
             authorizationUser: this.sipInfo.authorizationId,
