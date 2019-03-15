@@ -10,6 +10,7 @@ const {version} = require('../package.json');
 export interface WebPhoneRegData {
     sipInfo?: any;
     sipFlags?: any;
+    sipErrorCodes?: string[];
 }
 
 export interface WebPhoneOptions {
@@ -35,6 +36,9 @@ export interface WebPhoneOptions {
     logLevel?: any; // import {Levels} from "sip.js/types/logger-factory";
     builtinEnabled?: boolean;
     connector?: any;
+    sipErrorCodes?: string[];
+    switchBackInterval?: number;
+
 }
 
 export default class WebPhone {
@@ -118,19 +122,36 @@ export default class WebPhone {
 
         const sessionDescriptionHandlerFactory = options.sessionDescriptionHandlerFactory || [];
 
+        const sipErrorCodes = regData.sipErrorCodes && regData.sipErrorCodes.length ? regData.sipErrorCodes : ['408', '502', '503'];        
+        
+        let wsServers = [];
+
+        if (this.sipInfo.outboundProxy && this.sipInfo.transport) {
+            wsServers.push({
+                wsUri: this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxy,
+                weight: 10
+            });
+        };
+
+
+        if (this.sipInfo.outboundProxyBackup && this.sipInfo.transport) {
+            wsServers.push({
+                wsUri: this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxyBackup,
+                weight: 0
+            });
+        };
+
+        wsServers = wsServers.length ? wsServers : this.sipInfo.wsServers;
+
         const configuration = {
             uri: `sip:${this.sipInfo.username}@${this.sipInfo.domain}`,
 
             transportOptions: {
-                wsServers:
-                    this.sipInfo.outboundProxy && this.sipInfo.transport
-                        ? this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxy
-                        : this.sipInfo.wsServers,
+                wsServers: wsServers,
                 traceSip: true,
-                maxReconnectionAttempts: options.maxReconnectionAttempts || 10,
-                reconnectionTimeout: options.reconnectionTimeout || 15,
-                connectionTimeout: options.connectionTimeout || 10,
-                keepAliveDebounce: options.keepAliveDebounce || 10
+                maxReconnectionAttempts: wsServers.length === 1 ? 5 : 3, //Fallback parameters if no backup prxy specified
+                reconnectionTimeout: wsServers.length === 1 ? 5 : 3, //Fallback parameters if no backup prxy specified
+                connectionTimeout: 5
             },
             authorizationUser: this.sipInfo.authorizationId,
             password: this.sipInfo.password,
@@ -148,6 +169,9 @@ export default class WebPhone {
             sessionDescriptionHandlerFactoryOptions: sessionDescriptionHandlerFactoryOptions,
             sessionDescriptionHandlerFactory: sessionDescriptionHandlerFactory
         };
+
+        options.sipErrorCodes= sipErrorCodes;
+        options.switchBackInterval = this.sipInfo.switchBackInterval;
 
         this.userAgent = patchUserAgent(new UA(configuration) as WebPhoneUserAgent, this.sipInfo, options, id);
     }

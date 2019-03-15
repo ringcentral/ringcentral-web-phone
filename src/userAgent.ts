@@ -1,6 +1,7 @@
-import {ClientContext, UA} from 'sip.js';
+import {ClientContext, UA, Transport} from 'sip.js';
 import {AudioHelper} from './audioHelper';
 import {patchSession, patchIncomingSession, WebPhoneSession} from './session';
+import {TransportConstructorWrapper, WebPhoneSIPTransport} from './sipTransportConstructor';
 
 export interface WebPhoneUserAgent extends UA {
     media: any;
@@ -15,8 +16,12 @@ export interface WebPhoneUserAgent extends UA {
     __invite: typeof UA.prototype.invite;
     __register: typeof UA.prototype.register;
     __unregister: typeof UA.prototype.unregister;
-    __onTransportReceiveMsg: any;
-    onTransportReceiveMsg: any; //FIXME Untyped
+    __transportConstructor: any;
+    __onTransportConnected: ()=>void; // It is a private method
+    onTransportConnected: typeof onTransportConnected;
+    configuration: typeof UA.prototype.configuration;
+    transport: WebPhoneSIPTransport; 
+
 }
 
 export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, id): WebPhoneUserAgent => {
@@ -43,15 +48,18 @@ export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, i
 
     userAgent.__unregister = userAgent.unregister;
     userAgent.unregister = unregister.bind(userAgent);
-
-    userAgent.__onTransportReceiveMsg = userAgent.onTransportReceiveMsg;
-    userAgent.onTransportReceiveMsg = onTransportReceiveMsg.bind(userAgent);
-
+   
     userAgent.audioHelper = new AudioHelper(options.audioHelper);
+
+    userAgent.__transportConstructor = userAgent.configuration.transportConstructor;
+    userAgent.configuration.transportConstructor = TransportConstructorWrapper(userAgent.__transportConstructor, options);
 
     userAgent.onSession = options.onSession || null;
     userAgent.createRcMessage = createRcMessage;
     userAgent.sendMessage = sendMessage;
+
+    userAgent.__onTransportConnected = userAgent.onTransportConnected;
+    userAgent.onTransportConnected = onTransportConnected.bind(userAgent);
 
     userAgent.on('invite', (session: WebPhoneSession) => {
         userAgent.audioHelper.playIncoming(true);
@@ -68,14 +76,31 @@ export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, i
             });
     });
 
+    userAgent.on('registrationFailed', (e: any)=>{
+
+        // Check the status of message is in sipErrorCodes and disconnecting from server if it so;        
+        if (!e) {return};
+
+        const message =  e.data || e;
+        if (message && typeof message === 'string' && userAgent.transport.isSipErrorCode(message)){
+            userAgent.transport.onSipErrorCode();            
+        }
+    });
+
     userAgent.start();
-    userAgent.register();
 
     return userAgent;
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+function onTransportConnected(this: WebPhoneUserAgent) {
+    if (this.configuration.register){
+        return this.register();
+    }
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 function createRcMessage(this: WebPhoneUserAgent, options: any): string {
     options.body = options.body || '';
     return (
@@ -114,38 +139,6 @@ function sendMessage(this: WebPhoneUserAgent, to: string, messageData: string): 
         message.once('accepted', (response, cause) => resolve(response));
         message.once('failed', (response, cause) => reject(new Error(cause)));
     });
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-function onTransportReceiveMsg(this: WebPhoneUserAgent, e: any): any {
-    // This is a temporary solution to avoid timeout errors for MESSAGE responses.
-    // Timeout is caused by port specification in host field within Via header.
-    // sip.js requires received viaHost in a response to be the same as ours via host therefore
-    // messages with the same host but with port are ignored.
-    // This is the exact case for WSX: it send host:port inn via header in MESSAGE responses.
-    // To overcome this, we will preprocess MESSAGE messages and remove port from viaHost field.
-    var data = e.data;
-
-    // WebSocket binary message.
-    if (typeof data !== 'string') {
-        try {
-            data = String.fromCharCode.apply(null, new Uint8Array(data));
-        } catch (error) {
-            return this.__onTransportReceiveMsg.call(this, e);
-        }
-    }
-
-    if (data.match(/CSeq:\s*\d+\s+MESSAGE/i)) {
-        const re = new RegExp(this.configuration.viaHost + ':\\d+', 'g');
-        const newData = e.data.replace(re, this.configuration.viaHost);
-        Object.defineProperty(e, 'data', {
-            value: newData,
-            writable: false
-        });
-    }
-
-    return this.__onTransportReceiveMsg.call(this, e);
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
