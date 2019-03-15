@@ -14,7 +14,7 @@
     "server": "http-server --port ${PORT:-8080}",
     "watch": "npm-run-all --print-label --parallel 'build:** -- --watch'",
     "lint": "eslint --cache --cache-location node_modules/.cache/eslint --fix",
-    "lint:all": "npm run lint 'src/**/*.ts' 'demo/**/*.js'",
+    "lint:all": "npm run lint \"src/**/*.ts\" \"demo/**/*.js\"",
     "lint:staged": "lint-staged"
   },
   "dependencies": {
