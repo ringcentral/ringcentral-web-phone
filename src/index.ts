@@ -38,7 +38,6 @@ export interface WebPhoneOptions {
     connector?: any;
     sipErrorCodes?: string[];
     switchBackInterval?: number;
-
 }
 
 export default class WebPhone {
@@ -122,8 +121,9 @@ export default class WebPhone {
 
         const sessionDescriptionHandlerFactory = options.sessionDescriptionHandlerFactory || [];
 
-        const sipErrorCodes = regData.sipErrorCodes && regData.sipErrorCodes.length ? regData.sipErrorCodes : ['408', '502', '503'];        
-        
+        const sipErrorCodes =
+            regData.sipErrorCodes && regData.sipErrorCodes.length ? regData.sipErrorCodes : ['408', '502', '503'];
+
         let wsServers = [];
 
         if (this.sipInfo.outboundProxy && this.sipInfo.transport) {
@@ -131,15 +131,14 @@ export default class WebPhone {
                 wsUri: this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxy,
                 weight: 10
             });
-        };
-
+        }
 
         if (this.sipInfo.outboundProxyBackup && this.sipInfo.transport) {
             wsServers.push({
                 wsUri: this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxyBackup,
                 weight: 0
             });
-        };
+        }
 
         wsServers = wsServers.length ? wsServers : this.sipInfo.wsServers;
 
@@ -170,7 +169,7 @@ export default class WebPhone {
             sessionDescriptionHandlerFactory: sessionDescriptionHandlerFactory
         };
 
-        options.sipErrorCodes= sipErrorCodes;
+        options.sipErrorCodes = sipErrorCodes;
         options.switchBackInterval = this.sipInfo.switchBackInterval;
 
         this.userAgent = patchUserAgent(new UA(configuration) as WebPhoneUserAgent, this.sipInfo, options, id);

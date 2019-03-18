@@ -17,11 +17,10 @@ export interface WebPhoneUserAgent extends UA {
     __register: typeof UA.prototype.register;
     __unregister: typeof UA.prototype.unregister;
     __transportConstructor: any;
-    __onTransportConnected: ()=>void; // It is a private method
+    __onTransportConnected: () => void; // It is a private method
     onTransportConnected: typeof onTransportConnected;
     configuration: typeof UA.prototype.configuration;
-    transport: WebPhoneSIPTransport; 
-
+    transport: WebPhoneSIPTransport;
 }
 
 export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, id): WebPhoneUserAgent => {
@@ -48,11 +47,14 @@ export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, i
 
     userAgent.__unregister = userAgent.unregister;
     userAgent.unregister = unregister.bind(userAgent);
-   
+
     userAgent.audioHelper = new AudioHelper(options.audioHelper);
 
     userAgent.__transportConstructor = userAgent.configuration.transportConstructor;
-    userAgent.configuration.transportConstructor = TransportConstructorWrapper(userAgent.__transportConstructor, options);
+    userAgent.configuration.transportConstructor = TransportConstructorWrapper(
+        userAgent.__transportConstructor,
+        options
+    );
 
     userAgent.onSession = options.onSession || null;
     userAgent.createRcMessage = createRcMessage;
@@ -76,14 +78,15 @@ export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, i
             });
     });
 
-    userAgent.on('registrationFailed', (e: any)=>{
+    userAgent.on('registrationFailed', (e: any) => {
+        // Check the status of message is in sipErrorCodes and disconnecting from server if it so;
+        if (!e) {
+            return;
+        }
 
-        // Check the status of message is in sipErrorCodes and disconnecting from server if it so;        
-        if (!e) {return};
-
-        const message =  e.data || e;
-        if (message && typeof message === 'string' && userAgent.transport.isSipErrorCode(message)){
-            userAgent.transport.onSipErrorCode();            
+        const message = e.data || e;
+        if (message && typeof message === 'string' && userAgent.transport.isSipErrorCode(message)) {
+            userAgent.transport.onSipErrorCode();
         }
     });
 
@@ -94,8 +97,8 @@ export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, i
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-function onTransportConnected(this: WebPhoneUserAgent) {
-    if (this.configuration.register){
+function onTransportConnected(this: WebPhoneUserAgent): any {
+    if (this.configuration.register) {
         return this.register();
     }
 }
