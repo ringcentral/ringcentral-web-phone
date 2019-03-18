@@ -1,15 +1,9 @@
-(function() {
+const fs = require('fs');
+const pkg = require('./package.json');
+const version = require('./src/ringcentral-web-phone').version;
 
-    global.window = {}; //FIXME Crappy getstats is using window...
+pkg.version = version;
 
-    var fs = require('fs');
-    var pkg = require('./package.json');
-    var version = require('./src/ringcentral-web-phone').version;
+fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
 
-    pkg.version = version;
-
-    fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2));
-
-    console.log('Current version is', version);
-
-})();
+console.log('Current version is', version);

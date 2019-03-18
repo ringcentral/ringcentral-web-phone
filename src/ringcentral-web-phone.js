@@ -2,10 +2,10 @@
     /* istanbul ignore next */
     if (typeof define === 'function' && define.amd) {
         define(['sip.js', 'getstats'], function(SIP, getStats) {
-            return factory(SIP, getStats || root.getStats);
+            return factory(SIP, getStats);
         });
     } else if (typeof module === 'object') {
-        module.exports = factory(require('sip.js'), require('getstats') || root.getStats);
+        module.exports = factory(require('sip.js'), require('getstats'));
         module.exports.default = module.exports; //ES6
     } else {
         root.RingCentral = root.RingCentral || {};
@@ -136,9 +136,10 @@
                         ? this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxy
                         : this.sipInfo.wsServers,
                 traceSip: true,
-                maxReconnectionAttempts: options.maxReconnectionAttempts || 3,
-                reconnectionTimeout: options.reconnectionTimeout || 5,
-                connectionTimeout: options.connectionTimeout || 5
+                maxReconnectionAttempts: options.maxReconnectionAttempts || 10,
+                reconnectionTimeout: options.reconnectionTimeout || 15,
+                connectionTimeout: options.connectionTimeout || 10,
+                keepAliveDebounce: options.keepAliveDebounce || 10
             },
             authorizationUser: this.sipInfo.authorizationId,
             password: this.sipInfo.password,
@@ -213,7 +214,7 @@
 
     /*--------------------------------------------------------------------------------------------------------------------*/
 
-    WebPhone.version = '0.6.2';
+    WebPhone.version = '0.6.3';
     WebPhone.uuid = uuid;
     WebPhone.delay = delay;
     WebPhone.extend = extend;
@@ -1153,13 +1154,20 @@
     function publishQosStats(session, qosStatsObj, options) {
         options = options || {};
 
+        var effectiveType = navigator.connection.effectiveType || '';
         var networkType = calculateNetworkUsage(qosStatsObj) || '';
         var targetUrl = options.targetUrl || 'rtcpxr@rtcpxr.ringcentral.com:5060';
         var event = options.event || 'vq-rtcpxr';
         options.expires = 60;
         options.contentType = 'application/vq-rtcpxr';
         options.extraHeaders = options.extraHeaders || [];
-        options.extraHeaders.push('p-rc-client-info:' + 'cpuRC=0:0;cpuOS=0:0;netType=' + networkType + ';ram=0:0');
+        options.extraHeaders.push(
+            'p-rc-client-info:' +
+                'cpuRC=0:0;cpuOS=0:0;netType=' +
+                networkType +
+                ';ram=0:0;effectiveType=' +
+                effectiveType
+        );
 
         var calculatedStatsObj = calculateStats(qosStatsObj);
         var body = createPublishBody(calculatedStatsObj);
@@ -1178,12 +1186,12 @@
     }
 
     function calculateStats(qosStatsObj) {
-        var rawNLR = (qosStatsObj.packetLost * 100) / (qosStatsObj.packetsReceived + qosStatsObj.packetLost);
+        var rawNLR = (qosStatsObj.packetLost * 100) / (qosStatsObj.packetsReceived + qosStatsObj.packetLost) || 0;
         var rawJBN =
             qosStatsObj.totalIntervalCount > 0 ? qosStatsObj.totalSumJitter / qosStatsObj.totalIntervalCount : 0;
 
         return Object.assign({}, qosStatsObj, {
-            NLR: parseFloat(rawNLR || 0).toFixed(2),
+            NLR: parseFloat(rawNLR).toFixed(2),
             //JitterBufferNominal
             JBN: parseFloat(rawJBN).toFixed(2),
             //JitterBufferDiscardRate

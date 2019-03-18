@@ -491,6 +491,7 @@ $(function() {
         );
 
         $logout.on('click', function(e) {
+            webPhone.userAgent.unregister();
             e.preventDefault();
             location.reload();
         });
