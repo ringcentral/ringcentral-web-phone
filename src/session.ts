@@ -487,19 +487,17 @@ async function warmTransfer(
         '<' +
         target.dialog.remoteTarget.toString() +
         '?Replaces=' +
-        target.dialog.id.call_id +
+        target.dialog.id.callId +
         '%3Bto-tag%3D' +
-        target.dialog.id.remote_tag +
+        target.dialog.id.remoteTag +
         '%3Bfrom-tag%3D' +
-        target.dialog.id.local_tag +
+        target.dialog.id.localTag +
         '>';
 
     transferOptions.extraHeaders = (transferOptions.extraHeaders || [])
-        .concat(this.ua.defaultHeaders)
-        .concat(['Referred-By: ' + this.dialog.remoteTarget.toString()]);
-
-    //TODO return session.refer(newSession);
-    return this.blindTransfer(referTo, transferOptions);
+        .concat(this.ua.defaultHeaders);
+        
+    return this.refer(referTo, transferOptions);
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
