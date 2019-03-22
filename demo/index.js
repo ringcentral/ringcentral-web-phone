@@ -1,7 +1,18 @@
+const SIP = require('sip.js');
+const getStats = require('getstats');
+const $ = require('jquery');
+
+window.jQuery = $;
+window.getStats = getStats;
+window.SIP = SIP;
+
 $(function() {
-    /** @type {RingCentral.SDK} */
+    const bootstrap = require('bootstrap');
+    const SDK = require('ringcentral');
+    const WebPhone = require('ringcentral-web-phone') || window.RingCentral.WebPhone;
+
+    /** @type {SDK} */
     var sdk = null;
-    /** @type {Platform} */
     var platform = null;
     /** @type {WebPhone} */
     var webPhone = null;
@@ -30,7 +41,7 @@ $(function() {
     }
 
     function login(server, appKey, appSecret, login, ext, password, ll) {
-        sdk = new RingCentral.SDK({
+        sdk = new SDK({
             appKey: appKey,
             appSecret: appSecret,
             server: server
@@ -64,7 +75,7 @@ $(function() {
 
         console.log('The redirect uri value :', $redirectUri);
 
-        sdk = new RingCentral.SDK({
+        sdk = new SDK({
             appKey: appKey,
             appSecret: appSecret,
             server: server,
@@ -127,7 +138,7 @@ $(function() {
     function register(data) {
         sipInfo = data.sipInfo[0] || data.sipInfo;
 
-        webPhone = new RingCentral.WebPhone(data, {
+        webPhone = new WebPhone(data, {
             appKey: localStorage.getItem('webPhoneAppKey'),
             audioHelper: {
                 enabled: true
@@ -143,8 +154,8 @@ $(function() {
         });
 
         webPhone.userAgent.audioHelper.loadAudio({
-            incoming: '../audio/incoming.ogg',
-            outgoing: '../audio/outgoing.ogg'
+            incoming: 'audio/incoming.ogg',
+            outgoing: 'audio/outgoing.ogg'
         });
 
         webPhone.userAgent.audioHelper.setVolume(0.3);
@@ -522,7 +533,7 @@ $(function() {
         var $password = $form.find('input[name=password]').eq(0);
         var $logLevel = $authForm.find('select[name=logLevel]').eq(0);
 
-        $server.val(localStorage.getItem('webPhoneServer') || RingCentral.SDK.server.sandbox);
+        $server.val(localStorage.getItem('webPhoneServer') || SDK.server.sandbox);
         $appKey.val(localStorage.getItem('webPhoneAppKey') || '');
         $appSecret.val(localStorage.getItem('webPhoneAppSecret') || '');
         $login.val(localStorage.getItem('webPhoneLogin') || '');

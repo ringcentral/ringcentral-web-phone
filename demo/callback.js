@@ -1,0 +1,1 @@
+require('ringcentral').handleLoginRedirect();

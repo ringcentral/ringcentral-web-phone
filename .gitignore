@@ -1,7 +1,10 @@
+.cache-loader
 .chrome
 .coverage
 .idea
 .env
+.screenshots
+dist
+lib
 *npm-debug*
 node_modules
-bower_components

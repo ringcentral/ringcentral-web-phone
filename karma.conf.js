@@ -1,4 +1,7 @@
+process.env.NODE_ENV = 'karma';
+
 const path = require('path');
+const webpackConfig = require('./webpack.config');
 
 module.exports = config => {
     require('dotenv').config({silent: true});
@@ -6,29 +9,37 @@ module.exports = config => {
     config.set({
         frameworks: ['jasmine'],
 
-        reporters: ['progress', 'coverage'],
+        reporters: ['coverage-istanbul', 'mocha'],
 
         preprocessors: {
-            'src/**/!(*.spec).js': ['coverage']
+            'src/**/*.ts': ['webpack']
         },
 
-        coverageReporter: {
-            type: 'lcov',
-            dir: '.coverage',
-            subdir: browser => browser.toLowerCase().split(/[ /-]/)[0]
+        webpack: webpackConfig,
+
+        webpackMiddleware: {
+            stats: 'errors-only'
+        },
+
+        coverageIstanbulReporter: {
+            reports: ['lcov', 'text-summary'],
+            dir: path.join(__dirname, '.coverage'),
+            fixWebpackSourcePaths: true
+            // 'report-config': {
+            //     html: {outdir: 'html'}
+            // }
+        },
+
+        mime: {
+            'text/x-typescript': ['ts', 'tsx']
         },
 
         files: [
-            require.resolve('sip.js/dist/sip'),
-            require.resolve('getstats/getStats'),
-            require.resolve('pubnub/dist/web/pubnub'),
-            require.resolve('ringcentral/build/ringcentral'),
             {pattern: './audio/**/*.ogg', included: false},
-            './src/ringcentral-web-phone.js',
-            './src/**/*.spec.js'
+            './src/*.spec.ts' //TODO Consider using https://github.com/webpack-contrib/karma-webpack#alternative-usage
         ],
 
-        logLevel: config.LOG_INFO,
+        // logLevel: config.LOG_INFO,
 
         browsers: [
             //TODO Firefox
@@ -51,8 +62,8 @@ module.exports = config => {
         },
 
         client: {
-            captureConsole: true,
-            showDebugMessages: true,
+            // captureConsole: true,
+            // showDebugMessages: true,
             env: process.env
         }
     });

@@ -2,8 +2,8 @@
 <html>
 <head>
     <title>WebPhone</title>
-    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.css" crossorigin="anonymous">
-    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap-theme.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="bootstrap/dist/css/bootstrap.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="bootstrap/dist/css/bootstrap-theme.css" crossorigin="anonymous">
     <link rel="apple-touch-icon" sizes="57x57" href="img/apple-touch-icon-57x57.png">
     <link rel="apple-touch-icon" sizes="60x60" href="img/apple-touch-icon-60x60.png">
     <link rel="apple-touch-icon" sizes="72x72" href="img/apple-touch-icon-72x72.png">
@@ -75,7 +75,7 @@
 
 <script type="text/html" id="template-call">
 
-    <form class="panel panel-default">
+    <form class="panel panel-default" name="call">
         <div class="panel-heading"><h3 class="panel-title">Make A Call</h3></div>
         <div class="panel-body">
             <div class="username"></div>
@@ -236,14 +236,10 @@
 
 </script>
 
-<script type="text/javascript" src="../node_modules/jquery/dist/jquery.js"></script>
-<script type="text/javascript" src="../node_modules/bootstrap/dist/js/bootstrap.js"></script>
-<script type="text/javascript" src="../node_modules/pubnub/dist/web/pubnub.js"></script>
-<script type="text/javascript" src="../node_modules/sip.js/dist/sip.js"></script>
-<script type="text/javascript" src="../node_modules/getstats/getStats.js"></script>
-<script type="text/javascript" src="../node_modules/ringcentral/build/ringcentral.js"></script>
-<script type="text/javascript" src="../src/ringcentral-web-phone.js"></script>
-<script type="text/javascript" src="index.js"></script>
+<% htmlWebpackPlugin.files.js.forEach(function (src) { %>
+<script type="text/javascript" src="<%= src %>"></script>
+<% }) %>
+<script type="text/javascript" src="ringcentral-web-phone.js"></script>
 
 </body>
 </html>
