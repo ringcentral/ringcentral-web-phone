@@ -21,6 +21,7 @@ export interface WebPhoneSIPTransport extends Transport {
     __onConnectedToMain: typeof __onConnectedToMain;
     __onConnectedToBackup: typeof __onConnectedToBackup;
     __on_check_sync_message: typeof __on_check_sync_message;
+    reconnectTimer: any;
 }
 
 export const TransportConstructorWrapper = (SipTransportConstructor: any, webPhoneOptions: any): any => {
@@ -75,6 +76,7 @@ var computeRandomTimeout = (
 };
 
 async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: boolean): Promise<void> {
+    var _this = this;
     if (this.reconnectionAttempts > 0) {
         this.logger.log('Reconnection attempt ' + this.reconnectionAttempts + ' failed');
     }
@@ -91,6 +93,7 @@ async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: bool
     if (this.noAvailableServers()) {
         this.logger.warn('no available ws servers left - going to closed state');
         this.status = C.STATUS_CLOSED;
+        this.emit("closed");
         this.resetServerErrorStatus();
         return;
     }
@@ -127,9 +130,11 @@ async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: bool
                 this.reconnectionAttempts +
                 ')'
         );
-        await delay(this.nextReconnectInterval);
-        await this.connect();
-        this.logger.warn('next reconnection attempt in:' + Math.round(this.nextReconnectInterval / 1000));
+        this.reconnectTimer = setTimeout(function () {
+           _this.connect();
+           _this.reconnectTimer = undefined;
+       }, this.nextReconnectInterval);
+        this.logger.warn('next reconnection attempt in:' + Math.round(this.nextReconnectInterval / 1000) ' seconds.');
     }
 }
 
