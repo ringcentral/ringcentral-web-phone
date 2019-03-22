@@ -494,9 +494,8 @@ async function warmTransfer(
         target.dialog.id.localTag +
         '>';
 
-    transferOptions.extraHeaders = (transferOptions.extraHeaders || [])
-        .concat(this.ua.defaultHeaders);
-        
+    transferOptions.extraHeaders = (transferOptions.extraHeaders || []).concat(this.ua.defaultHeaders);
+
     return this.refer(referTo, transferOptions);
 }
 

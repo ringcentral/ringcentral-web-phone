@@ -1,5 +1,5 @@
 import {UA, Transport} from 'sip.js';
-import {delay} from "./utils";
+import {delay} from './utils';
 
 export interface WebPhoneSIPTransport extends Transport {
     computeRandomTimeout: typeof computeRandomTimeout;
@@ -76,7 +76,6 @@ var computeRandomTimeout = (
 };
 
 async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: boolean): Promise<void> {
-    var _this = this;
     if (this.reconnectionAttempts > 0) {
         this.logger.log('Reconnection attempt ' + this.reconnectionAttempts + ' failed');
     }
@@ -93,7 +92,7 @@ async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: bool
     if (this.noAvailableServers()) {
         this.logger.warn('no available ws servers left - going to closed state');
         this.status = C.STATUS_CLOSED;
-        this.emit("closed");
+        this.emit('closed');
         this.resetServerErrorStatus();
         return;
     }
@@ -130,11 +129,11 @@ async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: bool
                 this.reconnectionAttempts +
                 ')'
         );
-        this.reconnectTimer = setTimeout(function () {
-           _this.connect();
-           _this.reconnectTimer = undefined;
-       }, this.nextReconnectInterval);
-        this.logger.warn('next reconnection attempt in:' + Math.round(this.nextReconnectInterval / 1000) ' seconds.');
+        this.reconnectTimer = setTimeout(() => {
+            this.connect();
+            this.reconnectTimer = undefined;
+        }, this.nextReconnectInterval);
+        this.logger.warn('next reconnection attempt in:' + Math.round(this.nextReconnectInterval / 1000) + ' seconds.');
     }
 }
 

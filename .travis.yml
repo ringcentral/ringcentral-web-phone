@@ -35,7 +35,7 @@ deploy:
   github-token: $GITHUB_TOKEN
   local-dir: dist
   on:
-    branch: typescript
+    branch: master
 - provider: npm
   email: kirill.konshin@gmail.com
   api_key: $NPM_TOKEN
