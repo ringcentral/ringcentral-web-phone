@@ -118,7 +118,7 @@ async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: bool
         this.emit('transportError');
         this.server = this.getNextWsServer();
         this.reconnectionAttempts = 0;
-        await this.reconnect();
+        await this.connect();
     } else {
         this.logger.log(
             'trying to reconnect to WebSocket ' +
@@ -127,9 +127,9 @@ async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: bool
                 this.reconnectionAttempts +
                 ')'
         );
-        await delay(this.nextReconnectInterval);
-        await this.connect();
         this.logger.warn('next reconnection attempt in:' + Math.round(this.nextReconnectInterval / 1000));
+        await delay(this.nextReconnectInterval);
+        await this.connect();        
     }
 }
 
