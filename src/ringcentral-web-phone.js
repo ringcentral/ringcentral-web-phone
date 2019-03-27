@@ -352,18 +352,12 @@
         // Audio
         session.on('progress', function(incomingResponse) {
             stopPlaying();
-            if (incomingResponse.status_code === 183) {
+            if (incomingResponse.status_code === 183 && incomingResponse.body) {
+                this.logger.log('Receiving 183 In Progress from server');
                 session.createDialog(incomingResponse, 'UAC');
+                session.status = 11; //C.STATUS_EARLY_MEDIA;
                 session.hasAnswer = true;
-                session.status = 11;
-                session.sessionDescriptionHandler.setDescription(incomingResponse.body).catch(function(exception) {
-                    session.logger.warn(exception);
-                    session.failed(incomingResponse, C.causes.BAD_MEDIA_DESCRIPTION);
-                    session.terminate({
-                        status_code: 488,
-                        reason_phrase: 'Bad Media Description'
-                    });
-                });
+                session.sessionDescriptionHandler.setDescription(incomingResponse.body);
             }
         });
 
