@@ -363,7 +363,15 @@
                 session.createDialog(incomingResponse, 'UAC');
                 session.status = 11; //C.STATUS_EARLY_MEDIA;
                 session.hasAnswer = true;
-                session.sessionDescriptionHandler.setDescription(incomingResponse.body);
+                session.sessionDescriptionHandler.setDescription(incomingResponse.body).catch(function(exception) {
+                    session.logger.warn(exception);
+                    session.failed(incomingResponse, C.causes.BAD_MEDIA_DESCRIPTION);
+                    session.terminate({
+                        status_code: 488,
+                        reason_phrase: 'Bad Media Description'
+                    });
+                });
+
             }
         });
 
