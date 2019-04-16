@@ -89,7 +89,7 @@ const calculateStats = (qosStatsObj: QosStats): QosStats => {
 };
 
 const createPublishBody = (calculatedStatsObj: QosStats): string => {
-    const NLR = calculatedStatsObj.JBM || 0;
+    const NLR = calculatedStatsObj.NLR || 0;
     const JBM = calculatedStatsObj.JBM || 0;
     const JBN = calculatedStatsObj.JBN || 0;
     const JDR = calculatedStatsObj.JDR || 0;
