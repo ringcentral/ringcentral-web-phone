@@ -21,6 +21,16 @@ export interface RCHeaders {
     srvLvl?: string;
     srvLvlExt?: string;
     toNm?: string;
+    callAttributes?: string;
+    srcIVRSiteName?: string;
+    queueName?: string;
+    queueExtPin?: string;
+    inDID?: string;
+    inDIDLabel?: string;
+    callerId?: string;
+    callerIdName?: string;
+    displayInfo?: string;
+    displayInfoSub?: string;
 }
 
 export interface RTCPeerConnectionLegacy extends RTCPeerConnection {
@@ -190,8 +200,34 @@ export const patchIncomingSession = (session: WebPhoneSession): void => {
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+const parseRcHeaderString = (str: string = ''): any => {
+    let obj = {};
+    let pairs = str.split(/; */);
+
+    pairs.forEach(pair => {
+        let eq_idx = pair.indexOf('=');
+
+        // skip things that don't look like key=value
+        if (eq_idx < 0) {
+            return;
+        }
+
+        let key = pair.substr(0, eq_idx).trim();
+        let val = pair.substr(++eq_idx, pair.length).trim();
+
+        // only assign once
+        if (undefined === obj[key]) {
+            obj[key] = val;
+        }
+
+    });
+
+    return obj;
+};
+
 const parseRcHeader = (session: WebPhoneSession): any => {
     const prc = session.request.headers['P-Rc'];
+    const prcCallInfo = session.request.headers['P-Rc-Api-Call-Info'];
     if (prc && prc.length) {
         const rawInviteMsg = prc[0].raw;
         const parser = new DOMParser();
@@ -213,6 +249,14 @@ const parseRcHeader = (session: WebPhoneSession): any => {
                 srvLvlExt: bdyNode.getAttribute('SrvLvlExt'),
                 toNm: bdyNode.getAttribute('ToNm')
             });
+        }
+    }
+    if (prcCallInfo && prcCallInfo.length) {
+        const rawCallInfo = prcCallInfo[0].raw;
+
+        if (rawCallInfo) {
+            let parsed = parseRcHeaderString(rawCallInfo);
+            extend(session.rcHeaders, parsed);
         }
     }
 };
