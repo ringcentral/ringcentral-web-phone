@@ -56,7 +56,7 @@ bower install ringcentral-web-phone
 
 ### If you are not using Bower or NPM:
 
-1. Download SIP.JS: [https://sipjs.com/download/sip-0.11.6.js](https://sipjs.com/download/sip-0.11.6.js)
+1. Download SIP.JS: [https://sipjs.com/download/sip-0.13.5.js](https://sipjs.com/download/sip-0.13.5.js)
 2. Download WebPhone SDK: [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/src/ringcentral-web-phone.js](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/src/ringcentral-web-phone.js)
 3. Download audio files:
     1. [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/incoming.ogg](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/incoming.ogg)
@@ -194,7 +194,7 @@ Online demo is hosted at [http://ringcentral.github.io/ringcentral-web-phone](ht
 
 ## API
 
-Except for some RingCentral-specific features the API is 100% the same as SIP.JS: http://sipjs.com/api/0.11.0: most of the time you will be working with RC-flavored [UserAgent](http://sipjs.com/api/0.11.0/ua) and [Session](http://sipjs.com/api/0.11.0/session) objects of SIP.JS.
+Except for some RingCentral-specific features the API is 100% the same as SIP.JS: http://sipjs.com/api/0.13.0: most of the time you will be working with RC-flavored [UserAgent](http://sipjs.com/api/0.13.0/ua) and [Session](http://sipjs.com/api/0.13.0/session) objects of SIP.JS.
 
 We encourage you to take a look at [Guides](http://sipjs.com/guides) section, especially
 [Make A Call](http://sipjs.com/guides/make-call) and [Receive A Call](http://sipjs.com/guides/receive-call/) articles.
@@ -336,11 +336,9 @@ session.stopRecord().then(...);
 
 Not yet implemented. Could be done by dialing \*83. The account should be enabled for barge/whisper access through system admin.
 
-## Upgrade Procedure from v0.4.X to 0.6.3
+## Upgrade Procedure from v0.4.X to 0.7.0
 
-- SDK constructor now allows to add custom UA Configuration parameters like `sessionDescriptionHandlerFactory` , `sessionDescriptionHandlerFactoryOptions` ,  `maxReconnectionAttempts` ,  `reconnectionTimeout`, `connectionTimeout` , `keepAliveDebounce`
-
-- Default values for now set are `maxReconnectionAttempts` = 10 ,  `reconnectionTimeout` = 15 , `connectionTimeout` = 10 and `keepAliveDebounce` = 10
+- SDK constructor now allows to add custom UA Configuration parameters like `sessionDescriptionHandlerFactory` , `sessionDescriptionHandlerFactoryOptions` 
 
 - SDK now handles rendering HTML Media Elements. Pass remoteVideo and localVideo elements via SDK constructor
 
@@ -462,3 +460,4 @@ var session = webPhone.userAgent.invite(number, {
 | Nov 2018 | **0.6.1** | 0.11.6 | 71+, explicit `plan b` SDP support | 62 to 64 |
 | Dec 2018 | 0.6.2 | 0.11.6 | 71+ | 62 to 65 |
 | Feb 2019 | 0.6.3 | 0.11.6 | 71+ | 62 to 65 , :warning: QoS feature not supported |
+| Apr 2019 | 0.7.0 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
