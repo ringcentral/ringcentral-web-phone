@@ -48,7 +48,7 @@ deploy:
   api_key: $GITHUB_TOKEN
   skip_cleanup: true
   file:
-  - src/ringcentral-web-phone.js
+  - dist/ringcentral-web-phone.js
   on:
     node: stable
     tags: true
