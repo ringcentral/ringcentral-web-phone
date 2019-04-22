@@ -38,6 +38,11 @@ export interface WebPhoneOptions {
     connector?: any;
     sipErrorCodes?: string[];
     switchBackInterval?: number;
+    maxReconnectionAttemptsNoBackup ?: number;
+    maxReconnectionAttemptsWithBackup ?: number;
+    reconnectionTimeoutNoBackup ?: number;
+    reconnectionTimeoutWithBackup ?: number;
+
 }
 
 export default class WebPhone {
@@ -142,14 +147,20 @@ export default class WebPhone {
 
         wsServers = wsServers.length ? wsServers : this.sipInfo.wsServers;
 
+        const maxReconnectionAttemptsNoBackup =  options.maxReconnectionAttemptsNoBackup  || 15 ;
+        const maxReconnectionAttemptsWithBackup = options.maxReconnectionAttemptsWithBackup || 10 ;
+
+        const reconnectionTimeoutNoBackup  = options.reconnectionTimeoutNoBackup || 5 ;
+        const reconnectionTimeoutWithBackup = options.reconnectionTimeoutWithBackup || 4;
+
         const configuration = {
             uri: `sip:${this.sipInfo.username}@${this.sipInfo.domain}`,
 
             transportOptions: {
                 wsServers: wsServers,
                 traceSip: true,
-                maxReconnectionAttempts: wsServers.length === 1 ? 5 : 3, //Fallback parameters if no backup prxy specified
-                reconnectionTimeout: wsServers.length === 1 ? 5 : 3, //Fallback parameters if no backup prxy specified
+                maxReconnectionAttempts: wsServers.length === 1 ?  maxReconnectionAttemptsNoBackup : maxReconnectionAttemptsWithBackup , //Fallback parameters if no backup prxy specified
+                reconnectionTimeout: wsServers.length === 1 ?  reconnectionTimeoutNoBackup : reconnectionTimeoutWithBackup , //Fallback parameters if no backup prxy specified
                 connectionTimeout: 5
             },
             authorizationUser: this.sipInfo.authorizationId,
