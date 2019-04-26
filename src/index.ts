@@ -177,7 +177,8 @@ export default class WebPhone {
             register: true,
             userAgentString: userAgentString,
             sessionDescriptionHandlerFactoryOptions: sessionDescriptionHandlerFactoryOptions,
-            sessionDescriptionHandlerFactory: sessionDescriptionHandlerFactory
+            sessionDescriptionHandlerFactory: sessionDescriptionHandlerFactory,
+            allowLegacyNotifications: true
         };
 
         options.sipErrorCodes = sipErrorCodes;

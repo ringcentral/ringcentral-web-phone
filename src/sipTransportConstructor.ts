@@ -20,7 +20,6 @@ export interface WebPhoneSIPTransport extends Transport {
     __isCurrentMainProxy: typeof __isCurrentMainProxy;
     __onConnectedToMain: typeof __onConnectedToMain;
     __onConnectedToBackup: typeof __onConnectedToBackup;
-    __on_check_sync_message: typeof __on_check_sync_message;
     reconnectTimer: any;
 }
 
@@ -41,12 +40,9 @@ export const TransportConstructorWrapper = (SipTransportConstructor: any, webPho
         transport.__afterWSConnected = __afterWSConnected.bind(transport);
         transport.__onConnectedToBackup = __onConnectedToBackup.bind(transport);
         transport.__onConnectedToMain = __onConnectedToMain.bind(transport);
-        transport.__on_message_received = __on_message_received.bind(transport);
-        transport.__on_check_sync_message = __on_check_sync_message.bind(transport);
 
         transport.on('connected', transport.__afterWSConnected);
-        transport.on('message', transport.__on_message_received);
-
+        
         return transport;
     };
 };
@@ -201,17 +197,4 @@ function __onConnectedToBackup(this: WebPhoneSIPTransport): void {
 
 function __afterWSConnected(this: WebPhoneSIPTransport): void {
     this.__isCurrentMainProxy() ? this.__onConnectedToMain() : this.__onConnectedToBackup();
-}
-
-function __on_message_received(this: WebPhoneSIPTransport, message: any): void {
-    if (message.method === 'NOTIFY') {
-        this.__on_check_sync_message(message.data);
-    }
-}
-
-function __on_check_sync_message(this: WebPhoneSIPTransport, data: string): void {
-    //If check-sync message arrived, notify client to update provision info;
-    if (data.match(/Event:\s+check-sync/i)) {
-        this.emit('provisionUpdate');
-    }
 }
