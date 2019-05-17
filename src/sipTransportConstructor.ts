@@ -168,10 +168,10 @@ async function onSipErrorCode(this: WebPhoneSIPTransport): Promise<any> {
     this.logger.warn('Error received from the server. Disconnecting from the proxy');
     this.server.isError = true;
     this.emit('transportError');
+    await this.disconnect({force: true});
     this.server = this.getNextWsServer();
     this.reconnectionAttempts = 0;
-    await this.disconnect({force: true});
-    return this.connect();
+    return this.reconnect();
 }
 
 function __isCurrentMainProxy(this: WebPhoneSIPTransport): boolean {
