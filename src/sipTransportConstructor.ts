@@ -78,9 +78,9 @@ async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: bool
 
     if (forceReconnectToMain) {
         this.logger.log('forcing connect to main WS server');
-        this.server = this.getNextWsServer(true);
-        this.reconnectionAttempts = 0;
         await this.disconnect({force: true});
+        this.server = this.getNextWsServer(true);
+        this.reconnectionAttempts = 0;        
         await this.connect();
         return;
     }
@@ -96,6 +96,7 @@ async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: bool
     if (this.isConnected()) {
         this.logger.warn('attempted to reconnect while connected - forcing disconnect');
         await this.disconnect({force: true});
+        await this.reconnect();
         return;
     }
 
