@@ -5,7 +5,7 @@ export interface WebPhoneSIPTransport extends Transport {
     computeRandomTimeout: typeof computeRandomTimeout;
     reconnect: typeof reconnect;
     isSipErrorCode: typeof isSipErrorCode;
-    scheduleSwithBackMainProxy: typeof scheduleSwithBackMainProxy;
+    scheduleSwitchBackMainProxy: typeof scheduleSwitchBackMainProxy;
     onSipErrorCode: typeof onSipErrorCode;
     reconnectionAttempts?: number;
     logger: typeof UA.prototype.logger;
@@ -34,7 +34,7 @@ export const TransportConstructorWrapper = (SipTransportConstructor: any, webPho
         transport.computeRandomTimeout = computeRandomTimeout;
         transport.reconnect = reconnect.bind(transport);
         transport.isSipErrorCode = isSipErrorCode.bind(transport);
-        transport.scheduleSwithBackMainProxy = scheduleSwithBackMainProxy.bind(transport);
+        transport.scheduleSwitchBackMainProxy = scheduleSwitchBackMainProxy.bind(transport);
         transport.onSipErrorCode = onSipErrorCode.bind(transport);
         transport.__isCurrentMainProxy = __isCurrentMainProxy.bind(transport);
         transport.__afterWSConnected = __afterWSConnected.bind(transport);
@@ -42,7 +42,7 @@ export const TransportConstructorWrapper = (SipTransportConstructor: any, webPho
         transport.__onConnectedToMain = __onConnectedToMain.bind(transport);
 
         transport.on('connected', transport.__afterWSConnected);
-        
+
         return transport;
     };
 };
@@ -80,7 +80,7 @@ async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: bool
         this.logger.log('forcing connect to main WS server');
         await this.disconnect({force: true});
         this.server = this.getNextWsServer(true);
-        this.reconnectionAttempts = 0;        
+        this.reconnectionAttempts = 0;
         await this.connect();
         return;
     }
@@ -141,7 +141,7 @@ function isSipErrorCode(this: WebPhoneSIPTransport, message: string): boolean {
     return statusCode && this.sipErrorCodes && this.sipErrorCodes.length && this.sipErrorCodes.includes(statusCode);
 }
 
-function scheduleSwithBackMainProxy(this: WebPhoneSIPTransport): void {
+function scheduleSwitchBackMainProxy(this: WebPhoneSIPTransport): void {
     const randomInterval = 15 * 60 * 1000; //15 min
 
     let switchBackInterval = this.switchBackInterval ? this.switchBackInterval * 1000 : null;
@@ -192,7 +192,7 @@ function __onConnectedToBackup(this: WebPhoneSIPTransport): void {
     const mainProxy = this.configuration.wsServers[0];
 
     if (!mainProxy.switchBackTimer) {
-        this.scheduleSwithBackMainProxy();
+        this.scheduleSwitchBackMainProxy();
     }
 }
 

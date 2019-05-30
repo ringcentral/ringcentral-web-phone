@@ -523,7 +523,7 @@ async function warmTransfer(
     target: WebPhoneSession,
     transferOptions: any = {}
 ): Promise<ReferClientContext> {
-    await (this.local_hold ? Promise.resolve(null) : this.hold());
+    await (this.localHold ? Promise.resolve(null) : this.hold());
 
     await delay(300);
 
@@ -546,7 +546,7 @@ async function warmTransfer(
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 async function transfer(this: WebPhoneSession, target: WebPhoneSession, options): Promise<ReferClientContext> {
-    await (this.local_hold ? Promise.resolve(null) : this.hold());
+    await (this.localHold ? Promise.resolve(null) : this.hold());
     await delay(300);
     return this.blindTransfer(target, options);
 }
@@ -648,7 +648,7 @@ function unmute(this: WebPhoneSession, silent?: boolean): void {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 function onLocalHold(this: WebPhoneSession): boolean {
-    return this.local_hold;
+    return this.localHold;
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/

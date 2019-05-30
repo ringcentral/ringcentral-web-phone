@@ -46,7 +46,7 @@ export interface WebPhoneOptions {
 }
 
 export default class WebPhone {
-    public static version = '0.7.0';
+    public static version = '0.7.1';
     public static uuid = uuid;
     public static delay = delay;
     public static extend = extend;
@@ -127,7 +127,7 @@ export default class WebPhone {
         const sessionDescriptionHandlerFactory = options.sessionDescriptionHandlerFactory || [];
 
         const sipErrorCodes =
-            regData.sipErrorCodes && regData.sipErrorCodes.length ? regData.sipErrorCodes : ['408', '502', '503'];
+            regData.sipErrorCodes && regData.sipErrorCodes.length ? regData.sipErrorCodes : ['408', '502', '503' , '504'];
 
         let wsServers = [];
 
@@ -182,7 +182,7 @@ export default class WebPhone {
         };
 
         options.sipErrorCodes = sipErrorCodes;
-        options.switchBackInterval = this.sipInfo.switchBackInterval;
+        options.switchBackInterval = this.sipInfo.switchBackInterval || 30;
 
         this.userAgent = patchUserAgent(new UA(configuration) as WebPhoneUserAgent, this.sipInfo, options, id);
     }
