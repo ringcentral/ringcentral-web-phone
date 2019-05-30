@@ -1,6 +1,6 @@
 {
   "name": "ringcentral-web-phone",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "scripts": {
     "test": "npm run test:karma && npm run test:e2e",
     "test:watch": "karma start",
