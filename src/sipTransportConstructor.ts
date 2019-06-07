@@ -20,6 +20,8 @@ export interface WebPhoneSIPTransport extends Transport {
     __isCurrentMainProxy: typeof __isCurrentMainProxy;
     __onConnectedToMain: typeof __onConnectedToMain;
     __onConnectedToBackup: typeof __onConnectedToBackup;
+    __connect: typeof Transport.prototype.connect;
+    connect: typeof __connect;
     reconnectTimer: any;
 }
 
@@ -40,6 +42,8 @@ export const TransportConstructorWrapper = (SipTransportConstructor: any, webPho
         transport.__afterWSConnected = __afterWSConnected.bind(transport);
         transport.__onConnectedToBackup = __onConnectedToBackup.bind(transport);
         transport.__onConnectedToMain = __onConnectedToMain.bind(transport);
+        transport.__connect = transport.connect;
+        transport.connect = __connect.bind(transport);
 
         transport.on('connected', transport.__afterWSConnected);
 
@@ -69,6 +73,10 @@ var computeRandomTimeout = (
     const retryOffset = ((reconnectionAttempts - 1) * (randomMinInterval + randomMaxInterval)) / 2;
 
     return randomInterval + retryOffset;
+};
+
+async function __connect (this: WebPhoneSIPTransport, options?: any): Promise<void>{
+   return await this.__connect(options).catch((err)=>{ this.logger.log('Error while connecting: '+ err)});
 };
 
 async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: boolean): Promise<void> {
