@@ -336,7 +336,7 @@ session.stopRecord().then(...);
 
 Not yet implemented. Could be done by dialing \*83. The account should be enabled for barge/whisper access through system admin.
 
-## Upgrade Procedure from v0.4.X to 0.7.1
+## Upgrade Procedure from v0.4.X to 0.7.2
 
 - SDK constructor now allows to add custom UA Configuration parameters like `sessionDescriptionHandlerFactory` , `sessionDescriptionHandlerFactoryOptions` 
 
