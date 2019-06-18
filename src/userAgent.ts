@@ -90,6 +90,17 @@ export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, i
         }
     });
 
+    userAgent.on('notify', ({request}: any) => {
+        const event =   request &&
+                        request.headers &&
+                        request.headers.Event &&
+                        request.headers.Event[0];
+
+        if (event && event.raw === 'check-sync') {
+            userAgent.emit('provisionUpdate');
+        }
+    });
+
     userAgent.start();
 
     return userAgent;

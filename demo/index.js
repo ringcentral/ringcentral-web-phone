@@ -181,7 +181,14 @@ $(function() {
         webPhone.userAgent.on('message', function() {
             console.log('UA Message', arguments);
         });
-
+        webPhone.userAgent.transport.on('switchBackProxy', function() {
+            console.log('switching back to primary outbound proxy');
+            webPhone.userAgent.transport.reconnect(true);
+        });
+        webPhone.userAgent.transport.on('closed', function() {
+            console.log('WebSocket closed. Attempting to reconnect to primary outbound proxy');
+            webPhone.userAgent.transport.reconnect(true);
+        });
         return webPhone;
     }
 

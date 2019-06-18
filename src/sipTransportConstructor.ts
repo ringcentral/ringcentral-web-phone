@@ -5,7 +5,7 @@ export interface WebPhoneSIPTransport extends Transport {
     computeRandomTimeout: typeof computeRandomTimeout;
     reconnect: typeof reconnect;
     isSipErrorCode: typeof isSipErrorCode;
-    scheduleSwithBackMainProxy: typeof scheduleSwithBackMainProxy;
+    scheduleSwitchBackMainProxy: typeof scheduleSwitchBackMainProxy;
     onSipErrorCode: typeof onSipErrorCode;
     reconnectionAttempts?: number;
     logger: typeof UA.prototype.logger;
@@ -20,7 +20,6 @@ export interface WebPhoneSIPTransport extends Transport {
     __isCurrentMainProxy: typeof __isCurrentMainProxy;
     __onConnectedToMain: typeof __onConnectedToMain;
     __onConnectedToBackup: typeof __onConnectedToBackup;
-    __on_check_sync_message: typeof __on_check_sync_message;
     reconnectTimer: any;
 }
 
@@ -35,17 +34,14 @@ export const TransportConstructorWrapper = (SipTransportConstructor: any, webPho
         transport.computeRandomTimeout = computeRandomTimeout;
         transport.reconnect = reconnect.bind(transport);
         transport.isSipErrorCode = isSipErrorCode.bind(transport);
-        transport.scheduleSwithBackMainProxy = scheduleSwithBackMainProxy.bind(transport);
+        transport.scheduleSwitchBackMainProxy = scheduleSwitchBackMainProxy.bind(transport);
         transport.onSipErrorCode = onSipErrorCode.bind(transport);
         transport.__isCurrentMainProxy = __isCurrentMainProxy.bind(transport);
         transport.__afterWSConnected = __afterWSConnected.bind(transport);
         transport.__onConnectedToBackup = __onConnectedToBackup.bind(transport);
         transport.__onConnectedToMain = __onConnectedToMain.bind(transport);
-        transport.__on_message_received = __on_message_received.bind(transport);
-        transport.__on_check_sync_message = __on_check_sync_message.bind(transport);
 
         transport.on('connected', transport.__afterWSConnected);
-        transport.on('message', transport.__on_message_received);
 
         return transport;
     };
@@ -82,9 +78,9 @@ async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: bool
 
     if (forceReconnectToMain) {
         this.logger.log('forcing connect to main WS server');
+        await this.disconnect({force: true});
         this.server = this.getNextWsServer(true);
         this.reconnectionAttempts = 0;
-        await this.disconnect({force: true});
         await this.connect();
         return;
     }
@@ -100,6 +96,7 @@ async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: bool
     if (this.isConnected()) {
         this.logger.warn('attempted to reconnect while connected - forcing disconnect');
         await this.disconnect({force: true});
+        await this.reconnect();
         return;
     }
 
@@ -144,7 +141,7 @@ function isSipErrorCode(this: WebPhoneSIPTransport, message: string): boolean {
     return statusCode && this.sipErrorCodes && this.sipErrorCodes.length && this.sipErrorCodes.includes(statusCode);
 }
 
-function scheduleSwithBackMainProxy(this: WebPhoneSIPTransport): void {
+function scheduleSwitchBackMainProxy(this: WebPhoneSIPTransport): void {
     const randomInterval = 15 * 60 * 1000; //15 min
 
     let switchBackInterval = this.switchBackInterval ? this.switchBackInterval * 1000 : null;
@@ -172,10 +169,10 @@ async function onSipErrorCode(this: WebPhoneSIPTransport): Promise<any> {
     this.logger.warn('Error received from the server. Disconnecting from the proxy');
     this.server.isError = true;
     this.emit('transportError');
+    await this.disconnect({force: true});
     this.server = this.getNextWsServer();
     this.reconnectionAttempts = 0;
-    await this.disconnect({force: true});
-    return this.connect();
+    return this.reconnect();
 }
 
 function __isCurrentMainProxy(this: WebPhoneSIPTransport): boolean {
@@ -195,23 +192,10 @@ function __onConnectedToBackup(this: WebPhoneSIPTransport): void {
     const mainProxy = this.configuration.wsServers[0];
 
     if (!mainProxy.switchBackTimer) {
-        this.scheduleSwithBackMainProxy();
+        this.scheduleSwitchBackMainProxy();
     }
 }
 
 function __afterWSConnected(this: WebPhoneSIPTransport): void {
     this.__isCurrentMainProxy() ? this.__onConnectedToMain() : this.__onConnectedToBackup();
-}
-
-function __on_message_received(this: WebPhoneSIPTransport, message: any): void {
-    if (message.method === 'NOTIFY') {
-        this.__on_check_sync_message(message.data);
-    }
-}
-
-function __on_check_sync_message(this: WebPhoneSIPTransport, data: string): void {
-    //If check-sync message arrived, notify client to update provision info;
-    if (data.match(/Event:\s+check-sync/i)) {
-        this.emit('provisionUpdate');
-    }
 }
