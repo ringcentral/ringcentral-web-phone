@@ -133,6 +133,7 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.on('progress' as any, (incomingResponse: IncomingResponse) => {
         stopPlaying();
         if (incomingResponse.statusCode === 183) {
+            session.logger.log('Receiving 183 In Progress from server');
             session.createDialog(incomingResponse, 'UAC');
             session.hasAnswer = true;
             session.status = Session.C.STATUS_EARLY_MEDIA;
