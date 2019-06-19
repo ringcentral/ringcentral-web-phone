@@ -169,7 +169,7 @@ export default class WebPhone {
             turnServers: [],
             log: {
                 level: options.logLevel || 1, //FIXME LOG LEVEL 3
-                builtinEnabled: options.builtinEnabled || true,
+                builtinEnabled: true,
                 connector: options.connector || null
             },
             domain: this.sipInfo.domain,
@@ -180,6 +180,13 @@ export default class WebPhone {
             sessionDescriptionHandlerFactory: sessionDescriptionHandlerFactory,
             allowLegacyNotifications: true
         };
+
+        if (options.builtinEnabled === null || options.builtinEnabled === undefined) {
+            configuration.log.builtinEnabled = true;
+        } else {
+            configuration.log.builtinEnabled = options.builtinEnabled;
+        }
+
 
         options.sipErrorCodes = sipErrorCodes;
         options.switchBackInterval = this.sipInfo.switchBackInterval || 30;
