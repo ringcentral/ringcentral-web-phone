@@ -205,7 +205,7 @@ class MediaStreamsImpl {
         this.session.emit(eventState, this.session);
       }
     } else {
-      this.rcWPLoge(this.tag,`Unknown peerConnection state: ${peerConnection.iceConnectionState}`);
+      this.rcWPLogd(this.tag,`Unknown peerConnection state: ${peerConnection.iceConnectionState}`);
     }
     this.rcWPLogd(this.tag, `peerConnection State: ${eventState}`);
   }
