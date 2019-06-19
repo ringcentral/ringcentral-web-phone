@@ -484,8 +484,9 @@ function accept(this: WebPhoneSession, options: any = {}): Promise<WebPhoneSessi
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-function dtmf(this: WebPhoneSession, dtmf: string, duration = 1000): void {
+function dtmf(this: WebPhoneSession, dtmf: string, duration = 1000, interToneGap = 50): void {
     duration = parseInt(duration.toString());
+    interToneGap = parseInt(interToneGap.toString());
     const pc = this.sessionDescriptionHandler.peerConnection;
     const senders = pc.getSenders();
     const audioSender = senders.find(sender => {
@@ -493,7 +494,8 @@ function dtmf(this: WebPhoneSession, dtmf: string, duration = 1000): void {
     });
     const dtmfSender = audioSender.dtmf;
     if (dtmfSender !== undefined && dtmfSender) {
-        return dtmfSender.insertDTMF(dtmf, duration);
+        this.logger.log(`Send DTMF: ${dtmf} Duration: ${duration} InterToneGap: ${interToneGap}`);
+        return dtmfSender.insertDTMF(dtmf, duration, interToneGap);
     }
     const sender = dtmfSender && !dtmfSender.canInsertDTMF ? "can't insert DTMF" : 'Unknown';
     throw new Error('Send DTMF failed: ' + (!dtmfSender ? 'no sender' : sender));
