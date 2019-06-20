@@ -1,5 +1,4 @@
 import {UA, Transport} from 'sip.js';
-import {delay} from './utils';
 
 export interface WebPhoneSIPTransport extends Transport {
     computeRandomTimeout: typeof computeRandomTimeout;
@@ -24,7 +23,7 @@ export interface WebPhoneSIPTransport extends Transport {
     connect: typeof __connect;
     reconnectTimer: any;
     disposeWs: () => void;
-    onError: (e:any) => void;
+    onError: (e: any) => void;
 }
 
 export const TransportConstructorWrapper = (SipTransportConstructor: any, webPhoneOptions: any): any => {
@@ -77,12 +76,12 @@ var computeRandomTimeout = (
     return randomInterval + retryOffset;
 };
 
-async function __connect(this: WebPhoneSIPTransport, options?: any): Promise<void>{
-   return await this.__connect(options).catch(async (err)=>{
-       this.onError(err);
-       this.disposeWs();
-       await this.reconnect();
-       });
+async function __connect(this: WebPhoneSIPTransport, options?: any): Promise<void> {
+    return await this.__connect(options).catch(async err => {
+        this.onError(err);
+        this.disposeWs();
+        await this.reconnect();
+    });
 }
 
 async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: boolean): Promise<void> {

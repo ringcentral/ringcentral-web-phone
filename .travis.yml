@@ -3,6 +3,8 @@ language: node_js
 node_js:
 - stable
 
+dist: trusty
+
 addons:
   apt:
     packages:
@@ -10,6 +12,14 @@ addons:
     - g++
     - libstdc++6
     - pulseaudio
+
+#TODO Use Xenial https://docs.travis-ci.com/user/gui-and-headless-browsers/#using-services
+#dist: xenial
+#services:
+#  - xvfb
+#addons:
+#  chrome: stable
+#script: xvfb-run --auto-servernum --server-num=1 npm test
 
 cache:
   directories:
@@ -21,6 +31,7 @@ before_install:
 #- export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 - export DISPLAY=:99.0
 - sh -e /etc/init.d/xvfb start
+- sleep 3
 - pulseaudio --start
 
 before_script:
