@@ -186,8 +186,13 @@ $(function() {
             webPhone.userAgent.transport.reconnect(true);
         });
         webPhone.userAgent.transport.on('closed', function() {
-            console.log('WebSocket closed. Attempting to reconnect to primary outbound proxy');
-            webPhone.userAgent.transport.reconnect(true);
+            console.log('WebSocket closed.');
+        });
+        webPhone.userAgent.transport.on('transportError', function() {
+            console.log('WebSocket transportError occured');
+        });
+        webPhone.userAgent.transport.on('wsConnectionError', function() {
+            console.log('WebSocket wsConnectionError occured');
         });
         return webPhone;
     }

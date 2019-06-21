@@ -336,7 +336,7 @@ session.stopRecord().then(...);
 
 Not yet implemented. Could be done by dialing \*83. The account should be enabled for barge/whisper access through system admin.
 
-## Upgrade Procedure from v0.4.X to 0.7.1
+## Upgrade Procedure from v0.4.X to 0.7.2
 
 - SDK constructor now allows to add custom UA Configuration parameters like `sessionDescriptionHandlerFactory` , `sessionDescriptionHandlerFactoryOptions` 
 
@@ -461,3 +461,5 @@ var session = webPhone.userAgent.invite(number, {
 | Dec 2018 | 0.6.2 | 0.11.6 | 71+ | 62 to 65 |
 | Feb 2019 | 0.6.3 | 0.11.6 | 71+ | 62 to 65 , :warning: QoS feature not supported |
 | Apr 2019 | 0.7.0 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
+| May 2019 | 0.7.1 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
+| Jun 2019 | 0.7.2 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
