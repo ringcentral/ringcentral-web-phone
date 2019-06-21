@@ -45,7 +45,7 @@ export interface WebPhoneOptions {
 }
 
 export default class WebPhone {
-    public static version = '0.7.1';
+    public static version = '0.7.2';
     public static uuid = uuid;
     public static delay = delay;
     public static extend = extend;
@@ -185,7 +185,7 @@ export default class WebPhone {
         };
 
         options.sipErrorCodes = sipErrorCodes;
-        options.switchBackInterval = this.sipInfo.switchBackInterval || 30;
+        options.switchBackInterval = this.sipInfo.switchBackInterval;
 
         this.userAgent = patchUserAgent(new UA(configuration) as WebPhoneUserAgent, this.sipInfo, options, id);
     }
