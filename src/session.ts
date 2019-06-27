@@ -220,7 +220,6 @@ const parseRcHeaderString = (str: string = ''): any => {
         if (undefined === obj[key]) {
             obj[key] = val;
         }
-
     });
 
     return obj;
@@ -337,7 +336,7 @@ async function replyWithMessage(this: WebPhoneSession, replyOptions: ReplyOption
     return this._sendReceiveConfirmPromise.then(() => {
         return this.sendSessionMessage({
             reqid: messages.replyWithMessage.reqid,
-            body: body
+            body
         });
     });
 }
@@ -360,7 +359,7 @@ async function sendReceive(session: WebPhoneSession, command: any, options?: any
             body: JSON.stringify({
                 request: command
             }),
-            extraHeaders: extraHeaders,
+            extraHeaders,
             receiveResponse: (response: IncomingResponse) => {
                 let timeout = null;
                 if (response.statusCode === 200) {
@@ -380,9 +379,8 @@ async function sendReceive(session: WebPhoneSession, command: any, options?: any
                             if (obj.response.result) {
                                 if (obj.response.result.code.toString() === '0') {
                                     return resolve(obj.response.result);
-                                } else {
-                                    return reject(obj.response.result);
                                 }
+                                return reject(obj.response.result);
                             }
                         }
                         timeout && clearTimeout(timeout);
@@ -594,7 +592,7 @@ async function stopRecord(this: WebPhoneSession): Promise<any> {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 async function flip(this: WebPhoneSession, target): Promise<any> {
-    return sendReceive(this, messages.flip, {target: target});
+    return sendReceive(this, messages.flip, {target});
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/

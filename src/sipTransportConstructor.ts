@@ -20,7 +20,13 @@ export interface WebPhoneSIPTransport extends Transport {
     __isCurrentMainProxy: typeof __isCurrentMainProxy;
     __onConnectedToMain: typeof __onConnectedToMain;
     __onConnectedToBackup: typeof __onConnectedToBackup;
+    __clearSwitchBackTimer: typeof __clearSwitchBackTimer;
+    __connect: typeof Transport.prototype.connect;
+    connect: typeof __connect;
     reconnectTimer: any;
+    disposeWs: () => void;
+    onError: (e:any) => void;
+    mainProxy: any;
 }
 
 export const TransportConstructorWrapper = (SipTransportConstructor: any, webPhoneOptions: any): any => {
@@ -30,6 +36,7 @@ export const TransportConstructorWrapper = (SipTransportConstructor: any, webPho
         transport.nextReconnectInterval = 0;
         transport.sipErrorCodes = webPhoneOptions.sipErrorCodes;
         transport.switchBackInterval = webPhoneOptions.switchBackInterval;
+        transport.mainProxy = transport.configuration.wsServers[0];
 
         transport.computeRandomTimeout = computeRandomTimeout;
         transport.reconnect = reconnect.bind(transport);
@@ -40,6 +47,9 @@ export const TransportConstructorWrapper = (SipTransportConstructor: any, webPho
         transport.__afterWSConnected = __afterWSConnected.bind(transport);
         transport.__onConnectedToBackup = __onConnectedToBackup.bind(transport);
         transport.__onConnectedToMain = __onConnectedToMain.bind(transport);
+        transport.__clearSwitchBackTimer = __clearSwitchBackTimer.bind(transport);
+        transport.__connect = transport.connect;
+        transport.connect = __connect.bind(transport);
 
         transport.on('connected', transport.__afterWSConnected);
 
@@ -71,6 +81,16 @@ var computeRandomTimeout = (
     return randomInterval + retryOffset;
 };
 
+async function __connect(this: WebPhoneSIPTransport, options?: any): Promise<void>{
+    return await this.__connect(options).catch(async (err)=>{
+        this.emit('wsConnectionError',err);
+        this.logger.log('Connection Error occured. Trying to reconnect to websocket...');
+        this.onError(err);
+        this.disposeWs();
+        await this.reconnect();
+    });
+}
+
 async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: boolean): Promise<void> {
     if (this.reconnectionAttempts > 0) {
         this.logger.log('Reconnection attempt ' + this.reconnectionAttempts + ' failed');
@@ -90,6 +110,7 @@ async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: bool
         this.status = C.STATUS_CLOSED;
         this.emit('closed');
         this.resetServerErrorStatus();
+        this.__clearSwitchBackTimer();
         return;
     }
 
@@ -121,10 +142,10 @@ async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: bool
     } else {
         this.logger.log(
             'trying to reconnect to WebSocket ' +
-                this.server.wsUri +
-                ' (reconnection attempt ' +
-                this.reconnectionAttempts +
-                ')'
+            this.server.wsUri +
+            ' (reconnection attempt ' +
+            this.reconnectionAttempts +
+            ')'
         );
         this.reconnectTimer = setTimeout(() => {
             this.connect();
@@ -153,11 +174,9 @@ function scheduleSwitchBackMainProxy(this: WebPhoneSIPTransport): void {
             'Try to switch back to main proxy after ' + Math.round(switchBackInterval / 1000 / 60) + ' min'
         );
 
-        const mainProxy = this.configuration.wsServers[0];
-
-        mainProxy.switchBackTimer = setTimeout(() => {
-            mainProxy.isError = false;
-            mainProxy.switchBackTimer = null;
+        this.mainProxy.switchBackTimer = setTimeout(() => {
+            this.mainProxy.isError = false;
+            this.mainProxy.switchBackTimer = null;
             this.emit('switchBackProxy');
         }, switchBackInterval);
     } else {
@@ -179,19 +198,19 @@ function __isCurrentMainProxy(this: WebPhoneSIPTransport): boolean {
     return this.server === this.configuration.wsServers[0];
 }
 
-function __onConnectedToMain(this: WebPhoneSIPTransport): void {
-    const mainProxy = this.configuration.wsServers[0];
-
-    if (mainProxy.switchBackTimer) {
-        clearTimeout(mainProxy.switchBackTimer);
-        mainProxy.switchBackTimer = null;
+function __clearSwitchBackTimer(this: WebPhoneSIPTransport): void {
+    if (this.mainProxy.switchBackTimer) {
+        clearTimeout(this.mainProxy.switchBackTimer);
+        this.mainProxy.switchBackTimer = null;
     }
 }
 
-function __onConnectedToBackup(this: WebPhoneSIPTransport): void {
-    const mainProxy = this.configuration.wsServers[0];
+function __onConnectedToMain(this: WebPhoneSIPTransport): void {
+    this.__clearSwitchBackTimer();
+}
 
-    if (!mainProxy.switchBackTimer) {
+function __onConnectedToBackup(this: WebPhoneSIPTransport): void {
+    if (!this.mainProxy.switchBackTimer) {
         this.scheduleSwitchBackMainProxy();
     }
 }

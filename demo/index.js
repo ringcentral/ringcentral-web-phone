@@ -42,9 +42,9 @@ $(function() {
 
     function login(server, appKey, appSecret, login, ext, password, ll) {
         sdk = new SDK({
-            appKey: appKey,
-            appSecret: appSecret,
-            server: server
+            appKey,
+            appSecret,
+            server
         });
 
         platform = sdk.platform();
@@ -59,7 +59,7 @@ $(function() {
             .login({
                 username: login,
                 extension: ext || null,
-                password: password
+                password
             })
             .then(function() {
                 return postLogin(server, appKey, appSecret, login, ext, password, ll);
@@ -76,9 +76,9 @@ $(function() {
         console.log('The redirect uri value :', $redirectUri);
 
         sdk = new SDK({
-            appKey: appKey,
-            appSecret: appSecret,
-            server: server,
+            appKey,
+            appSecret,
+            server,
             redirectUri: $redirectUri
         });
 
@@ -186,8 +186,13 @@ $(function() {
             webPhone.userAgent.transport.reconnect(true);
         });
         webPhone.userAgent.transport.on('closed', function() {
-            console.log('WebSocket closed. Attempting to reconnect to primary outbound proxy');
-            webPhone.userAgent.transport.reconnect(true);
+            console.log('WebSocket closed.');
+        });
+        webPhone.userAgent.transport.on('transportError', function() {
+            console.log('WebSocket transportError occured');
+        });
+        webPhone.userAgent.transport.on('wsConnectionError', function() {
+            console.log('WebSocket wsConnectionError occured');
         });
         return webPhone;
     }
@@ -429,7 +434,7 @@ $(function() {
             close();
         });
         session.on('failed', function() {
-            console.log('Event: Failed');
+            console.log('Event: Failed', arguments);
             close();
         });
         session.on('terminated', function() {
@@ -478,7 +483,7 @@ $(function() {
 
         var session = webPhone.userAgent.invite(number, {
             fromNumber: username,
-            homeCountryId: homeCountryId
+            homeCountryId
         });
 
         onAccepted(session);

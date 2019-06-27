@@ -91,8 +91,8 @@ const onInvite = (receverPhone: WebPhone): Promise<WebPhoneSession> =>
     new Promise(resolve => receverPhone.userAgent.once('invite', async receoverSession => resolve(receoverSession)));
 
 const getAcceptOptions = (fromNumber: string, homeCountryId: string): any => ({
-    fromNumber: fromNumber,
-    homeCountryId: homeCountryId
+    fromNumber,
+    homeCountryId
 });
 
 const checkSessionStatus = (session: WebPhoneSession): boolean =>
@@ -150,8 +150,8 @@ const createWebPhone = async (sdk: SDK, credentials: any, id: string): Promise<W
         },
         logLevel: 1,
         media: {
-            remote: remote,
-            local: local
+            remote,
+            local
         },
         enableQos: true,
         onSession: session => {

@@ -38,15 +38,14 @@ export interface WebPhoneOptions {
     connector?: any;
     sipErrorCodes?: string[];
     switchBackInterval?: number;
-    maxReconnectionAttemptsNoBackup ?: number;
-    maxReconnectionAttemptsWithBackup ?: number;
-    reconnectionTimeoutNoBackup ?: number;
-    reconnectionTimeoutWithBackup ?: number;
-
+    maxReconnectionAttemptsNoBackup?: number;
+    maxReconnectionAttemptsWithBackup?: number;
+    reconnectionTimeoutNoBackup?: number;
+    reconnectionTimeoutWithBackup?: number;
 }
 
 export default class WebPhone {
-    public static version = '0.7.1';
+    public static version = '0.7.2';
     public static uuid = uuid;
     public static delay = delay;
     public static extend = extend;
@@ -103,11 +102,11 @@ export default class WebPhone {
                 iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 500,
                 rtcConfiguration: {
                     rtcpMuxPolicy: 'negotiate',
-                    sdpSemantics: sdpSemantics
+                    sdpSemantics
                 }
             },
             constraints: options.mediaConstraints || defaultMediaConstraints,
-            modifiers: modifiers
+            modifiers
         };
 
         const browserUa = navigator.userAgent.toLowerCase();
@@ -127,7 +126,9 @@ export default class WebPhone {
         const sessionDescriptionHandlerFactory = options.sessionDescriptionHandlerFactory || [];
 
         const sipErrorCodes =
-            regData.sipErrorCodes && regData.sipErrorCodes.length ? regData.sipErrorCodes : ['408', '502', '503' , '504'];
+            regData.sipErrorCodes && regData.sipErrorCodes.length
+                ? regData.sipErrorCodes
+                : ['408', '502', '503', '504'];
 
         let wsServers = [];
 
@@ -147,20 +148,22 @@ export default class WebPhone {
 
         wsServers = wsServers.length ? wsServers : this.sipInfo.wsServers;
 
-        const maxReconnectionAttemptsNoBackup =  options.maxReconnectionAttemptsNoBackup  || 15 ;
-        const maxReconnectionAttemptsWithBackup = options.maxReconnectionAttemptsWithBackup || 10 ;
+        const maxReconnectionAttemptsNoBackup = options.maxReconnectionAttemptsNoBackup || 15;
+        const maxReconnectionAttemptsWithBackup = options.maxReconnectionAttemptsWithBackup || 10;
 
-        const reconnectionTimeoutNoBackup  = options.reconnectionTimeoutNoBackup || 5 ;
+        const reconnectionTimeoutNoBackup = options.reconnectionTimeoutNoBackup || 5;
         const reconnectionTimeoutWithBackup = options.reconnectionTimeoutWithBackup || 4;
 
         const configuration = {
             uri: `sip:${this.sipInfo.username}@${this.sipInfo.domain}`,
 
             transportOptions: {
-                wsServers: wsServers,
+                wsServers,
                 traceSip: true,
-                maxReconnectionAttempts: wsServers.length === 1 ?  maxReconnectionAttemptsNoBackup : maxReconnectionAttemptsWithBackup , //Fallback parameters if no backup prxy specified
-                reconnectionTimeout: wsServers.length === 1 ?  reconnectionTimeoutNoBackup : reconnectionTimeoutWithBackup , //Fallback parameters if no backup prxy specified
+                maxReconnectionAttempts:
+                    wsServers.length === 1 ? maxReconnectionAttemptsNoBackup : maxReconnectionAttemptsWithBackup, //Fallback parameters if no backup prxy specified
+                reconnectionTimeout:
+                    wsServers.length === 1 ? reconnectionTimeoutNoBackup : reconnectionTimeoutWithBackup, //Fallback parameters if no backup prxy specified
                 connectionTimeout: 5
             },
             authorizationUser: this.sipInfo.authorizationId,
@@ -175,9 +178,9 @@ export default class WebPhone {
             domain: this.sipInfo.domain,
             autostart: false,
             register: true,
-            userAgentString: userAgentString,
-            sessionDescriptionHandlerFactoryOptions: sessionDescriptionHandlerFactoryOptions,
-            sessionDescriptionHandlerFactory: sessionDescriptionHandlerFactory,
+            userAgentString,
+            sessionDescriptionHandlerFactoryOptions,
+            sessionDescriptionHandlerFactory,
             allowLegacyNotifications: true
         };
 
@@ -189,7 +192,7 @@ export default class WebPhone {
 
 
         options.sipErrorCodes = sipErrorCodes;
-        options.switchBackInterval = this.sipInfo.switchBackInterval || 30;
+        options.switchBackInterval = this.sipInfo.switchBackInterval;
 
         this.userAgent = patchUserAgent(new UA(configuration) as WebPhoneUserAgent, this.sipInfo, options, id);
     }

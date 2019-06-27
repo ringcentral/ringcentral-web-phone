@@ -1,4 +1,4 @@
-import {ClientContext, UA, Transport} from 'sip.js';
+import {ClientContext, UA} from 'sip.js';
 import {AudioHelper} from './audioHelper';
 import {patchSession, patchIncomingSession, WebPhoneSession} from './session';
 import {TransportConstructorWrapper, WebPhoneSIPTransport} from './sipTransportConstructor';
@@ -91,10 +91,7 @@ export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, i
     });
 
     userAgent.on('notify', ({request}: any) => {
-        const event =   request &&
-                        request.headers &&
-                        request.headers.Event &&
-                        request.headers.Event[0];
+        const event = request && request.headers && request.headers.Event && request.headers.Event[0];
 
         if (event && event.raw === 'check-sync') {
             userAgent.emit('provisionUpdate');

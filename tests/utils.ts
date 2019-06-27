@@ -30,9 +30,7 @@ export const screenshot = async (page: Page, name: string, options: ScreenshotOp
     });
 };
 
-export const waitForText = async (page: Page, text: string): Promise<void> => {
-    await page.waitFor(`//*[contains(text(), '${text}')]`, {timeout: 30000});
-};
+export const delay = async (ms: number): Promise<any> => new Promise(resolve => setTimeout(resolve, ms));
 
 export const login = async (page: Page, name, credentials: any): Promise<void> => {
     await openPage(page, '/');
@@ -43,7 +41,8 @@ export const login = async (page: Page, name, credentials: any): Promise<void> =
     await expect(page).toFillForm('form[name="authorize-code"]', {
         server: credentials.server,
         appKey: credentials.appKey,
-        appSecret: credentials.appSecret
+        appSecret: credentials.appSecret,
+        logLevel: '1'
     });
 
     await expect(page).toFillForm('form[name="login-form"]', {

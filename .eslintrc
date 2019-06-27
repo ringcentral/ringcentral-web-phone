@@ -8,6 +8,7 @@
       "never"
     ],
     "import/named": "off",
+    "import/no-default-export": "off",
     "no-console": "off",
     "no-inner-declarations": "off",
     "no-undef": "off",
@@ -23,10 +24,12 @@
       }
     ],
     "@typescript-eslint/camelcase": "off",
+    "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-unused-vars": "off",
     "@typescript-eslint/no-use-before-define": "off",
-    "@typescript-eslint/no-var-requires": "off"
+    "@typescript-eslint/no-var-requires": "off",
+    "ringcentral/specified-comment-with-task-id": "off"
   },
   "settings": {
     "react": {
