@@ -110,6 +110,7 @@ async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: bool
         this.status = C.STATUS_CLOSED;
         this.emit('closed');
         this.resetServerErrorStatus();
+        this.server = this.getNextWsServer(true);
         this.__clearSwitchBackTimer();
         return;
     }
