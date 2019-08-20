@@ -193,10 +193,10 @@ class MediaStreamsImpl {
     return this.ktag;
   }
 
-  onPeerConnectionStateChange(peerConnection) {
+  onPeerConnectionStateChange(sessionDescriptionHandler) {
     let eventState = 'unknown';
-    if (this.connectionState.hasOwnProperty(peerConnection.iceConnectionState)) {
-      eventState = this.connectionState[peerConnection.iceConnectionState];
+    if (this.connectionState.hasOwnProperty(sessionDescriptionHandler.peerConnection.iceConnectionState)) {
+      eventState = this.connectionState[sessionDescriptionHandler.peerConnection.iceConnectionState];
       if (this.onMediaConnectionStateChange) {
         this.onMediaConnectionStateChange(this.session, eventState);
       } else if (this.session && this.session.onMediaConnectionStateChange) {
@@ -205,7 +205,7 @@ class MediaStreamsImpl {
         this.session.emit(eventState, this.session);
       }
     } else {
-      this.rcWPLogd(this.tag,`Unknown peerConnection state: ${peerConnection.iceConnectionState}`);
+      this.rcWPLogd(this.tag,`Unknown peerConnection state: ${sessionDescriptionHandler.peerConnection.iceConnectionState}`);
     }
     this.rcWPLogd(this.tag, `peerConnection State: ${eventState}`);
   }
