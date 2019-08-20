@@ -202,7 +202,7 @@ class MediaStreamsImpl {
       } else if (this.session && this.session.onMediaConnectionStateChange) {
         this.session.onMediaConnectionStateChange(this.session, eventState);
       } else {
-        this.session.emit(eventState, this.session);
+        this.session.emit('mediaConnectionStateChanged', eventState);
       }
     } else {
       this.rcWPLogd(this.tag,`Unknown peerConnection state: ${sessionDescriptionHandler.peerConnection.iceConnectionState}`);
