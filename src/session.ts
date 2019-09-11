@@ -524,10 +524,6 @@ async function warmTransfer(
     target: WebPhoneSession,
     transferOptions: any = {}
 ): Promise<ReferClientContext> {
-    await (this.localHold ? Promise.resolve(null) : this.hold());
-
-    await delay(300);
-
     const referTo =
         '<' +
         target.dialog.remoteTarget.toString() +
@@ -547,8 +543,6 @@ async function warmTransfer(
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 async function transfer(this: WebPhoneSession, target: WebPhoneSession, options): Promise<ReferClientContext> {
-    await (this.localHold ? Promise.resolve(null) : this.hold());
-    await delay(300);
     return this.blindTransfer(target, options);
 }
 
