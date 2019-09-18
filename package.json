@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "getstats": "1.2.0",
-    "sip.js": "git+ssh://git@git.ringcentral.com:Fiji/ringcentral-sip-js.git#jupiter/release/1.6.0"
+    "sip.js": "git+ssh://git@git.ringcentral.com:Fiji/ringcentral-sip-js.git#jupiter/release/1.9.0"
   },
   "devDependencies": {
     "@types/expect-puppeteer": "3.3.1",
