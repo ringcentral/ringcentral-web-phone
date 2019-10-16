@@ -234,13 +234,8 @@ class MediaStreamsImpl {
         pc.createOffer(offerOptions).then (offer => {
           self.session.sessionDescriptionHandler.on('iceCandidate', self.onIceCandidate.bind(self));
           pc.setLocalDescription(offer).then (() => {
-            if (self.validateSDP(pc.localDescription.sdp)) {
               self.rcWPLogd(self.tag, 'reconnecting media');
               resolve('reconnecting media');
-            } else {
-              self.rcWPLoge(self.tag, 'fail to reconnect media');
-              reject(new Error('fail to reconnect media'));
-            }
           }, error => {
             self.rcWPLoge(self.tag, error);
             reject(error);
@@ -261,15 +256,6 @@ class MediaStreamsImpl {
       this.session.sessionDescriptionHandler.removeListener('iceCandidate', this.onIceCandidate);
       this.session.reinvite();
     }
-  }
-
-  validateSDP(sdp) {
-    if (!sdp) {
-      this.rcWPLoge(this.tag, 'The sdp cannot be null!');
-      return false;
-    }
-    let cIP = this.getIPInSDP(sdp, 'c=');
-    return cIP && cIP !== '0.0.0.0';
   }
 
   getIPInSDP(sdp, token) {
