@@ -232,7 +232,7 @@ class MediaStreamsImpl {
         };
         let pc = self.session.sessionDescriptionHandler.peerConnection;
         pc.createOffer(offerOptions).then (offer => {
-          self.session.sessionDescriptionHandler.on('iceCandidate', self.onIceCandidate.bind(self));
+          self.session.sessionDescriptionHandler.on('iceCandidate', self.onIceCandidate);
           pc.setLocalDescription(offer).then (() => {
               self.rcWPLogd(self.tag, 'reconnecting media');
               resolve('reconnecting media');
@@ -250,10 +250,10 @@ class MediaStreamsImpl {
     });
   }
 
-  onIceCandidate(event) {
-    if (!event.candidate) {
+  onIceCandidate = (event: any) => {
+    if (event.candidate === null) {
       this.rcWPLogd(this.tag, 'ice candidate completed for reconnect media');
-      this.session.sessionDescriptionHandler.removeListener('iceCandidate', this.onIceCandidate);
+      this.session.sessionDescriptionHandler.off('iceCandidate', this.onIceCandidate);
       this.session.reinvite();
     }
   }
