@@ -12,6 +12,7 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
     qosStatsObj.localID = session.request.headers.From[0].raw || session.request.headers.From[0];
     qosStatsObj.remoteID = session.request.headers.To[0].raw || session.request.headers.To[0];
     qosStatsObj.origID = session.request.headers.From[0].raw || session.request.headers.From[0];
+
     let previousGetStatsResult;
 
     if (!getStats) throw new Error('getStats module was not provided!');
@@ -25,6 +26,17 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
             qosStatsObj.localAddr = previousGetStatsResult.connectionType.local.ipAddress[0];
             qosStatsObj.remoteAddr = previousGetStatsResult.connectionType.remote.ipAddress[0];
             previousGetStatsResult.results.forEach(function(item) {
+                if (item.type === 'localcandidate') {
+                   qosStatsObj.localcandidate = item;
+                }
+                if (item.type === 'remotecandidate') {
+                    qosStatsObj.remotecandidate = item;
+                }
+                if (item.type === 'ssrc' && item.transportId === 'Channel-audio-1' && item.id.includes('send')) {
+                    if(item.audioInputLevel==0)
+                        session.logger.warn("AudioInputLevel is 0. This might cause one-way audio. Check Microphone Volume settings.");
+                        session.emit('no-input-volume');
+                }
                 if (item.type === 'ssrc' && item.transportId === 'Channel-audio-1' && item.id.includes('recv')) {
                     qosStatsObj.jitterBufferDiscardRate = item.googSecondaryDiscardedRate || 0;
                     qosStatsObj.packetLost = item.packetsLost;
@@ -62,6 +74,9 @@ const publishQosStats = (session: WebPhoneSession, qosStatsObj: QosStats, option
     const calculatedStatsObj = calculateStats(qosStatsObj);
     const body = createPublishBody(calculatedStatsObj);
     const pub = session.ua.publish(targetUrl, event, body, options);
+    session.logger.log("Local Candidate: " + JSON.stringify(qosStatsObj.localcandidate));
+    session.logger.log("Remote Candidate: " + JSON.stringify(qosStatsObj.remotecandidate));
+
     qosStatsObj.status = false;
     pub.close();
     session.emit('qos-published', body);
@@ -157,7 +172,9 @@ const getQoSStatsTemplate = (): QosStats => ({
     JDR: '',
     MOSLQ: 0,
 
-    status: false
+    status: false,
+    localcandidate : {},
+    remotecandidate: {}
 });
 
 const addToMap = (map: any = {}, key: string): any => ({
@@ -218,4 +235,8 @@ export interface QosStats {
     MOSLQ: number;
 
     status: boolean;
+
+    localcandidate : any;
+    remotecandidate: any;
+
 }

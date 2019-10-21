@@ -136,6 +136,7 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
             session.createDialog(incomingResponse, 'UAC');
             session.hasAnswer = true;
             session.status = Session.C.STATUS_EARLY_MEDIA;
+            session.logger.log("Create UAC Dialog");
             session.sessionDescriptionHandler.setDescription(incomingResponse.body).catch(exception => {
                 session.logger.warn(exception);
                 session.failed(incomingResponse, C.causes.BAD_MEDIA_DESCRIPTION);
@@ -143,6 +144,7 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
                     status_code: 488,
                     reason_phrase: 'Bad Media Description'
                 });
+                session.logger.log("Call failed with Bad Media Description");
             });
         }
     });
@@ -173,6 +175,12 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
         session.on('SessionDescriptionHandler-created', () => {
             session.logger.log('SessionDescriptionHandler Created');
             startQosStatsCollection(session);
+            navigator.mediaDevices.enumerateDevices()
+                .then(function(devices) {
+                    devices.forEach(function(device) {
+                        session.logger.log(device.kind + " = " + device.label + JSON.stringify(device));
+                    });
+                });
         });
     }
 
@@ -673,14 +681,16 @@ function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
             const rtrack = receiver.track;
             if (rtrack) {
                 remoteStream.addTrack(rtrack);
+                this.logger.log('Remote track added');
             }
         });
     } else {
         remoteStream = pc.getRemoteStreams()[0];
+        this.logger.log('Remote track added');
     }
     remoteAudio.srcObject = remoteStream;
     remoteAudio.play().catch(() => {
-        this.logger.log('local play was rejected');
+        this.logger.log('Remote play was rejected');
     });
 
     let localStream = new MediaStream();
@@ -689,13 +699,15 @@ function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
             const strack = sender.track;
             if (strack && strack.kind === 'audio') {
                 localStream.addTrack(strack);
+                this.logger.log('Local track added');
             }
         });
     } else {
         localStream = pc.getLocalStreams()[0];
+        this.logger.log('Local track added');
     }
     localAudio.srcObject = localStream;
     localAudio.play().catch(() => {
-        this.logger.log('local play was rejected');
+        this.logger.log('Local play was rejected');
     });
 }
