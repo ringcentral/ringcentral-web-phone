@@ -232,15 +232,10 @@ class MediaStreamsImpl {
         };
         let pc = self.session.sessionDescriptionHandler.peerConnection;
         pc.createOffer(offerOptions).then (offer => {
-          self.rcWPLogd(self.tag, offer);
+          self.session.sessionDescriptionHandler.on('iceCandidate', self.onIceCandidate);
           pc.setLocalDescription(offer).then (() => {
-            if (self.validateSDP(pc.localDescription.sdp)) {
               self.rcWPLogd(self.tag, 'reconnecting media');
               resolve('reconnecting media');
-            } else {
-              self.rcWPLoge(self.tag, 'fail to reconnect media');
-              reject(new Error('fail to reconnect media'));
-            }
           }, error => {
             self.rcWPLoge(self.tag, error);
             reject(error);
@@ -249,21 +244,18 @@ class MediaStreamsImpl {
           self.rcWPLoge(self.tag, error);
           reject(error);
         });
-        self.session.reinvite(options);
       } else {
         self.rcWPLoge(self.tag, 'The session cannot be empty');
       }
     });
   }
 
-  validateSDP(sdp) {
-    if (!sdp) {
-      this.rcWPLoge(this.tag, 'The sdp cannot be null!');
-      return false;
+  onIceCandidate = (event: any) => {
+    if (event.candidate === null) {
+      this.rcWPLogd(this.tag, 'ice candidate completed for reconnect media');
+      this.session.sessionDescriptionHandler.off('iceCandidate', this.onIceCandidate);
+      this.session.reinvite();
     }
-    let cIP = this.getIPInSDP(sdp, 'c=');
-    let aRtcpIP = this.getIPInSDP(sdp, 'a=rtcp:');
-    return cIP && aRtcpIP && cIP !== '0.0.0.0' && aRtcpIP !== '0.0.0.0';
   }
 
   getIPInSDP(sdp, token) {
