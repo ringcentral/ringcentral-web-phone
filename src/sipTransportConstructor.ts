@@ -94,7 +94,7 @@ async function __connect(this: WebPhoneSIPTransport, options?: any): Promise<voi
             let destroyingWs = this.ws;
             this.stopSendingKeepAlives();
             this.disposeWs();
-            destroyingWs.terminate();
+            destroyingWs.close();
             destroyingWs = undefined;
         } catch (e) {
             this.logger.log('Failed to force terminate current transport' + e);
