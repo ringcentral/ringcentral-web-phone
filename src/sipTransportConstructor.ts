@@ -86,6 +86,7 @@ async function __connect(this: WebPhoneSIPTransport, options?: any): Promise<voi
         this.emit('wsConnectionError',err);
         this.logger.log('Connection Error occured. Trying to reconnect to websocket...');
         this.onError(err);
+        this.disconnect({force: true});
         this.disposeWs();
         await this.reconnect();
     });
