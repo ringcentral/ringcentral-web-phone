@@ -1,4 +1,3 @@
- /* eslint-disable */
 import {UA, Transport} from 'sip.js';
 import {delay} from './utils';
 
@@ -87,19 +86,7 @@ async function __connect(this: WebPhoneSIPTransport, options?: any): Promise<voi
         this.emit('wsConnectionError',err);
         this.logger.log('Connection Error occured. Trying to reconnect to websocket...');
         this.onError(err);
-
-        if (this.ws) // tslint:disable-line
-        try {
-            this.logger.log('Try to force terminate current transport');
-            let destroyingWs = this.ws;
-            this.stopSendingKeepAlives();
-            this.disposeWs();
-            destroyingWs.close();
-            destroyingWs = undefined;
-        } catch (e) {
-            this.logger.log('Failed to force terminate current transport' + e);
-        }
-        
+        this.disconnect({force: true});
         this.disposeWs();
         await this.reconnect();
     });
