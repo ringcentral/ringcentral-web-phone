@@ -25,7 +25,7 @@ export interface WebPhoneSIPTransport extends Transport {
     connect: typeof __connect;
     reconnectTimer: any;
     disposeWs: () => void;
-    onError: (e:any) => void;
+    onError: (e: any) => void;
     mainProxy: any;
 }
 
@@ -81,10 +81,10 @@ var computeRandomTimeout = (
     return randomInterval + retryOffset;
 };
 
-async function __connect(this: WebPhoneSIPTransport, options?: any): Promise<void>{
-    return await this.__connect(options).catch(async (err)=>{
-        this.emit('wsConnectionError',err);
-        this.logger.log('Connection Error occured. Trying to reconnect to websocket...');
+async function __connect(this: WebPhoneSIPTransport, options?: any): Promise<void> {
+    return await this.__connect(options).catch(async err => {
+        this.emit('wsConnectionError', err);
+        this.logger.warn('Connection Error occured. Trying to reconnect to websocket...');
         this.onError(err);
         this.disposeWs();
         await this.reconnect();
@@ -93,11 +93,11 @@ async function __connect(this: WebPhoneSIPTransport, options?: any): Promise<voi
 
 async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: boolean): Promise<void> {
     if (this.reconnectionAttempts > 0) {
-        this.logger.log('Reconnection attempt ' + this.reconnectionAttempts + ' failed');
+        this.logger.warn('Reconnection attempt ' + this.reconnectionAttempts + ' failed');
     }
 
     if (forceReconnectToMain) {
-        this.logger.log('forcing connect to main WS server');
+        this.logger.warn('forcing connect to main WS server');
         await this.disconnect({force: true});
         this.server = this.getNextWsServer(true);
         this.reconnectionAttempts = 0;
@@ -133,19 +133,19 @@ async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: bool
 
     if (this.reconnectionAttempts > this.configuration.maxReconnectionAttempts) {
         this.logger.warn('maximum reconnection attempts for WebSocket ' + this.server.wsUri);
-        this.logger.log('transport ' + this.server.wsUri + " failed | connection state set to 'error'");
+        this.logger.warn('transport ' + this.server.wsUri + " failed | connection state set to 'error'");
         this.server.isError = true;
         this.emit('transportError');
         this.server = this.getNextWsServer();
         this.reconnectionAttempts = 0;
         await this.reconnect();
     } else {
-        this.logger.log(
+        this.logger.warn(
             'trying to reconnect to WebSocket ' +
-            this.server.wsUri +
-            ' (reconnection attempt ' +
-            this.reconnectionAttempts +
-            ')'
+                this.server.wsUri +
+                ' (reconnection attempt ' +
+                this.reconnectionAttempts +
+                ')'
         );
         this.reconnectTimer = setTimeout(() => {
             this.connect();
@@ -177,6 +177,7 @@ function scheduleSwitchBackMainProxy(this: WebPhoneSIPTransport): void {
         this.mainProxy.switchBackTimer = setTimeout(() => {
             this.mainProxy.isError = false;
             this.mainProxy.switchBackTimer = null;
+            this.logger.warn('switchBack initiated');
             this.emit('switchBackProxy');
         }, switchBackInterval);
     } else {

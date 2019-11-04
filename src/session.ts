@@ -136,7 +136,7 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
             session.createDialog(incomingResponse, 'UAC');
             session.hasAnswer = true;
             session.status = Session.C.STATUS_EARLY_MEDIA;
-            session.logger.log("Create UAC Dialog");
+            session.logger.log('Created UAC Dialog');
             session.sessionDescriptionHandler.setDescription(incomingResponse.body).catch(exception => {
                 session.logger.warn(exception);
                 session.failed(incomingResponse, C.causes.BAD_MEDIA_DESCRIPTION);
@@ -144,7 +144,7 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
                     status_code: 488,
                     reason_phrase: 'Bad Media Description'
                 });
-                session.logger.log("Call failed with Bad Media Description");
+                session.logger.log('Call failed with Bad Media Description');
             });
         }
     });
@@ -175,12 +175,11 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
         session.on('SessionDescriptionHandler-created', () => {
             session.logger.log('SessionDescriptionHandler Created');
             startQosStatsCollection(session);
-            navigator.mediaDevices.enumerateDevices()
-                .then(function(devices) {
-                    devices.forEach(function(device) {
-                        session.logger.log(device.kind + " = " + device.label + JSON.stringify(device));
-                    });
+            navigator.mediaDevices.enumerateDevices().then(function(devices) {
+                devices.forEach(function(device) {
+                    session.logger.log(device.kind + ' = ' + device.label + JSON.stringify(device));
                 });
+            });
         });
     }
 

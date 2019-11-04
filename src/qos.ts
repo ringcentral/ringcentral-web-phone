@@ -27,15 +27,17 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
             qosStatsObj.remoteAddr = previousGetStatsResult.connectionType.remote.ipAddress[0];
             previousGetStatsResult.results.forEach(function(item) {
                 if (item.type === 'localcandidate') {
-                   qosStatsObj.localcandidate = item;
+                    qosStatsObj.localcandidate = item;
                 }
                 if (item.type === 'remotecandidate') {
                     qosStatsObj.remotecandidate = item;
                 }
                 if (item.type === 'ssrc' && item.transportId === 'Channel-audio-1' && item.id.includes('send')) {
-                    if(item.audioInputLevel==0)
-                        session.logger.warn("AudioInputLevel is 0. This might cause one-way audio. Check Microphone Volume settings.");
-                        session.emit('no-input-volume');
+                    if (item.audioInputLevel === 0)
+                        session.logger.warn(
+                            'AudioInputLevel is 0. This might cause one-way audio. Check Microphone Volume settings.'
+                        );
+                    session.emit('no-input-volume');
                 }
                 if (item.type === 'ssrc' && item.transportId === 'Channel-audio-1' && item.id.includes('recv')) {
                     qosStatsObj.jitterBufferDiscardRate = item.googSecondaryDiscardedRate || 0;
@@ -74,8 +76,8 @@ const publishQosStats = (session: WebPhoneSession, qosStatsObj: QosStats, option
     const calculatedStatsObj = calculateStats(qosStatsObj);
     const body = createPublishBody(calculatedStatsObj);
     const pub = session.ua.publish(targetUrl, event, body, options);
-    session.logger.log("Local Candidate: " + JSON.stringify(qosStatsObj.localcandidate));
-    session.logger.log("Remote Candidate: " + JSON.stringify(qosStatsObj.remotecandidate));
+    session.logger.log('Local Candidate: ' + JSON.stringify(qosStatsObj.localcandidate));
+    session.logger.log('Remote Candidate: ' + JSON.stringify(qosStatsObj.remotecandidate));
 
     qosStatsObj.status = false;
     pub.close();
@@ -173,7 +175,7 @@ const getQoSStatsTemplate = (): QosStats => ({
     MOSLQ: 0,
 
     status: false,
-    localcandidate : {},
+    localcandidate: {},
     remotecandidate: {}
 });
 
@@ -187,6 +189,7 @@ enum networkTypeMap {
     cellular = 'Cellulars',
     ethernet = 'Ethernet',
     wifi = 'WiFi',
+    vpn = 'VPN',
     wimax = 'WiMax',
     '2g' = '2G',
     '3g' = '3G',
@@ -236,7 +239,6 @@ export interface QosStats {
 
     status: boolean;
 
-    localcandidate : any;
+    localcandidate: any;
     remotecandidate: any;
-
 }

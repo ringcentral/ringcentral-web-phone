@@ -67,6 +67,7 @@ export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, i
         userAgent.audioHelper.playIncoming(true);
         patchSession(session);
         patchIncomingSession(session);
+        session.logger.log('UA recieved incoming call invite');
         session._sendReceiveConfirmPromise = session
             .sendReceiveConfirm()
             .then(() => {
@@ -88,6 +89,7 @@ export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, i
         if (message && typeof message === 'string' && userAgent.transport.isSipErrorCode(message)) {
             userAgent.transport.onSipErrorCode();
         }
+        this.logger.warn('UA Registration Failed');
     });
 
     userAgent.on('notify', ({request}: any) => {
@@ -96,6 +98,7 @@ export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, i
         if (event && event.raw === 'check-sync') {
             userAgent.emit('provisionUpdate');
         }
+        this.logger.log('UA recieved notify');
     });
 
     userAgent.start();
@@ -194,8 +197,7 @@ function invite(this: WebPhoneUserAgent, number: string, options: InviteOptions 
         optional: [{DtlsSrtpKeyAgreement: 'true'}]
     };
 
-    console.log(options);
-
     this.audioHelper.playOutgoing(true);
+    this.logger.log('Invite to ' + number + ' created with playOutgoing set to true');
     return patchSession(this.__invite(number, options) as any);
 }
