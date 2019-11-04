@@ -336,7 +336,7 @@ session.stopRecord().then(...);
 
 Not yet implemented. Could be done by dialing \*83. The account should be enabled for barge/whisper access through system admin.
 
-## Upgrade Procedure from v0.4.X to 0.7.2
+## Upgrade Procedure from v0.4.X to 0.7.3
 
 - SDK constructor now allows to add custom UA Configuration parameters like `sessionDescriptionHandlerFactory` , `sessionDescriptionHandlerFactoryOptions` 
 
@@ -351,6 +351,7 @@ Not yet implemented. Could be done by dialing \*83. The account should be enable
     - Client application needs to set custom UA configuration option 'options.enableMidLinesInSDP' to `true` for browser >= FF v63 for hold functionality to work 
     - QoS feature is not supported on FireFox due to browser related bugs. Please set the custom UA configuration option `options.enableQos` to `false`
 
+- SDK can now detect AudioInputLevel if the microphone is not present or the input volume is set to 0. Added event listner `no-input-volume` for the same
 
 ### Initialization
 
@@ -463,3 +464,4 @@ var session = webPhone.userAgent.invite(number, {
 | Apr 2019 | 0.7.0 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
 | May 2019 | 0.7.1 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
 | Jun 2019 | 0.7.2 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
+| Nov 2019 | 0.7.3 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
