@@ -2,7 +2,8 @@
 <html>
 <head>
     <title>WebPhone</title>
-    <link rel="stylesheet" href="//cdn.jsdelivr.net/bootstrap/3.3.7/css/bootstrap.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="bootstrap/dist/css/bootstrap.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="bootstrap/dist/css/bootstrap-theme.css" crossorigin="anonymous">
     <link rel="apple-touch-icon" sizes="57x57" href="img/apple-touch-icon-57x57.png">
     <link rel="apple-touch-icon" sizes="60x60" href="img/apple-touch-icon-60x60.png">
     <link rel="apple-touch-icon" sizes="72x72" href="img/apple-touch-icon-72x72.png">
@@ -74,20 +75,22 @@
 
 <script type="text/html" id="template-call">
 
-    <form class="panel panel-default">
+    <form class="panel panel-default" name="call">
         <div class="panel-heading"><h3 class="panel-title">Make A Call</h3></div>
         <div class="panel-body">
-            <div class="form-inline">
-                <div class="form-group">
-                    <label>Phone Number:</label>
-                    <input type="text" class="form-control" name="number" placeholder="+1 (234) 567-8901">
-                </div>
-                <div class="form-group">
-                    <label>Home Country:</label>
-                    <input type="text" class="form-control" name="homeCountry" value="1">
-                </div>
-                <button class="btn btn-primary" type="submit">Call</button>
+            <div class="username"></div>
+            <div class="form-group">
+                <label>Phone Number:</label>
+                <input type="text" class="form-control" name="number" placeholder="+1 (234) 567-8901">
             </div>
+            <div class="form-group">
+                <label>Home Country:</label>
+                <input type="text" class="form-control" name="homeCountry" value="1">
+            </div>
+        </div>
+        <div class="panel-footer text-center">
+            <button class="btn btn-primary" type="submit">Call</button>
+            <button class="btn btn-danger logout" type="button">Logout</button>
         </div>
     </form>
 
@@ -121,7 +124,7 @@
             </div>
         </div>
         <div class="panel-footer text-center">
-            <button class="btn btn-primary"  type="submit">Authorization Code</button>
+            <button class="btn btn-primary" type="submit">Authorization Code</button>
         </div>
     </form>
 </script>
@@ -133,22 +136,23 @@
                 <h4 class="panel-title">
                     <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">
                         Simple Login
-                    </a><i class="indicator glyphicon glyphicon-chevron-down  pull-right"></i>
+                    </a>
+                    <i class="indicator glyphicon glyphicon-chevron-down pull-right"></i>
                 </h4>
             </div>
             <div id="collapseTwo" class="panel-collapse collapse">
                 <div class="panel-body">
                     <div class="form-group">
-                    <label>Login:</label>
-                    <input type="text" class="form-control" name="login" placeholder="18881234567">
+                        <label>Login:</label>
+                        <input type="text" class="form-control" name="login" placeholder="18881234567">
                     </div>
                     <div class="form-group">
-                    <label>Extension:</label>
-                    <input type="text" class="form-control" name="extension" placeholder="101">
+                        <label>Extension:</label>
+                        <input type="text" class="form-control" name="extension" placeholder="101">
                     </div>
                     <div class="form-group">
-                    <label>Password:</label>
-                    <input type="password" class="form-control" name="password">
+                        <label>Password:</label>
+                        <input type="password" class="form-control" name="password">
                     </div>
                 </div>
                 <div class="panel-footer text-center">
@@ -178,15 +182,15 @@
                            <button class="btn btn-default mute">Mute</button>
                            <button class="btn btn-default unmute">UnMute</button>
                        </span>
-                       <span class="btn-group">
+                        <span class="btn-group">
                             <button class="btn btn-default hold">Hold</button>
                             <button class="btn btn-default unhold">UnHold</button>
                        </span>
-                       <span class="btn-group">
+                        <span class="btn-group">
                             <button class="btn btn-default startRecord">Start Recording</button>
                             <button class="btn btn-default stopRecord">Stop Recording</button>
                        </span>
-                       <span class="btn-group">
+                        <span class="btn-group">
                             <button class="btn btn-default park">Park</button>
                        </span>
                     </div>
@@ -206,7 +210,11 @@
                         </div>
                         <button class="btn btn-primary" type="submit">Transfer</button>
                         <button class="btn btn-primary warm" type="button">Warm</button>
-                        <div className="text-muted"><small>* Please not that warm transfer in this demo will automatically call completeTransfer w/o user interaction</small></div>
+                        <div className="text-muted">
+                            <small>* Please not that warm transfer in this demo will automatically call completeTransfer
+                                   w/o user interaction
+                            </small>
+                        </div>
                     </form>
                     <hr/>
                     <form class="form-inline dtmf-form">
@@ -228,16 +236,11 @@
 
 </script>
 
-<script type="text/javascript" src="//cdn.jsdelivr.net/jquery/3.1.1/jquery.js"></script>
-<script type="text/javascript" src="//cdn.jsdelivr.net/bootstrap/3.3.7/js/bootstrap.js"></script>
-<script type="text/javascript" src="//cdn.jsdelivr.net/fetch/2.0.1/fetch.min.js"></script>
-<script type="text/javascript" src="//cdn.jsdelivr.net/es6-promise/3.1.2/es6-promise.js"></script>
-<script type="text/javascript" src="//cdn.pubnub.com/sdk/javascript/pubnub.4.4.2.js"></script>
-<script type="text/javascript" src="../src/sip-0.11.6.js"></script>
-<script type="text/javascript" src="../src/ringcentral.js"></script>
-<script type="text/javascript" src="../src/ringcentral-web-phone-media-engine.js"></script>
-<script type="text/javascript" src="../src/ringcentral-web-phone.js"></script>
-<script type="text/javascript" src="index.js"></script>
+
+<% htmlWebpackPlugin.files.js.forEach(function (src) { %>
+<script type="text/javascript" src="<%= src %>"></script>
+<% }) %>
+<script type="text/javascript" src="ringcentral-web-phone.js"></script>
 
 </body>
 </html>

@@ -1,11 +1,11 @@
-# Tests
-
-## Installation
+# Installation
 
 ```sh
 $ git clone https://github.com/ringcentral/ringcentral-web-phone.git
 $ npm install
 ```
+
+# Tests
 
 ## Prerequisites
 
@@ -22,7 +22,6 @@ RC_WP_RECEIVER_PASSWORD=xxx
 RC_WP_RECEIVER_APPKEY=xxx
 RC_WP_RECEIVER_APPSECRET=xxx
 RC_WP_RECEIVER_SERVER=https://platform.devtest.ringcentral.com
-RC_WP_MOBILE_NUMBER=16502746490
 ```
 
 Accounts and apps must meet [requirements](https://github.com/ringcentral/ringcentral-web-phone#configuring-your-ringcentral-app).
@@ -40,5 +39,9 @@ $ npm test
 Keep the browser open to manually refresh tests when needed (useful for debug):
 
 ```sh
-$ npm run test-watch
+$ npm run test:watch
 ```
+
+# Releasing
+
+Make sure version in `src/ringcentral-web-phone.js` is bumped.

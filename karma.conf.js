@@ -1,36 +1,52 @@
-module.exports = function(config) {
+process.env.NODE_ENV = 'karma';
 
+const path = require('path');
+const webpackConfig = require('./webpack.config');
+
+module.exports = config => {
     require('dotenv').config({silent: true});
 
-    var path = require('path');
-
     config.set({
+        frameworks: ['jasmine'],
 
-        frameworks: [
-            'mocha',
-            'chai',
-            'sinon-chai'
-        ],
+        reporters: ['coverage-istanbul', 'mocha'],
+
+        preprocessors: {
+            'src/**/*.ts': ['webpack']
+        },
+
+        webpack: webpackConfig,
+
+        webpackMiddleware: {
+            stats: 'errors-only'
+        },
+
+        coverageIstanbulReporter: {
+            reports: ['lcov', 'text-summary'],
+            dir: path.join(__dirname, '.coverage'),
+            fixWebpackSourcePaths: true
+            // 'report-config': {
+            //     html: {outdir: 'html'}
+            // }
+        },
+
+        mime: {
+            'text/x-typescript': ['ts', 'tsx']
+        },
 
         files: [
-            'http://cdn.rawgit.com/onsip/SIP.js/0.11.6/dist/sip-0.11.6.js', //FIXME We use CDN because SIP.JS NPM does not have build version
-            require.resolve('es6-promise/dist/es6-promise.auto'),
-            require.resolve('pubnub/dist/web/pubnub'),
-            require.resolve('whatwg-fetch'),
-            require.resolve('ringcentral/build/ringcentral'),
             {pattern: './audio/**/*.ogg', included: false},
-            './src/ringcentral-web-phone.js',
-            './src/**/*.spec.js'
+            './src/*.spec.ts' //TODO Consider using https://github.com/webpack-contrib/karma-webpack#alternative-usage
         ],
 
-        reporters: ['mocha'],
-
-        logLevel: config.LOG_INFO,
+        // logLevel: config.LOG_INFO,
 
         browsers: [
             //TODO Firefox
             'ChromeNoSecurity'
         ],
+
+        browserNoActivityTimeout: 60000,
 
         customLaunchers: {
             ChromeNoSecurity: {
@@ -38,33 +54,17 @@ module.exports = function(config) {
                     '--use-fake-ui-for-media-stream',
                     '--use-fake-device-for-media-stream',
                     '--allow-http-screen-capture',
-                    '--disable-web-security',
-                    '--no-sandbox'
+                    '--disable-web-security'
                 ].concat(process.env.CI || process.env.TRAVIS ? ['--no-sandbox'] : []),
                 chromeDataDir: path.resolve(__dirname, '.chrome'),
                 base: 'Chrome'
             }
         },
 
-        plugins: [
-            'karma-chrome-launcher',
-            'karma-mocha',
-            'karma-mocha-reporter',
-            'karma-chai-plugins'
-        ],
-
-        singleRun: true,
-
         client: {
-            captureConsole: true,
-            showDebugMessages: true,
-            mocha: {
-                ui: "bdd",
-                timeout: 5000
-            },
+            // captureConsole: true,
+            // showDebugMessages: true,
             env: process.env
         }
-
     });
-
 };

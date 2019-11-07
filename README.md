@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/ringcentral/ringcentral-web-phone.svg?branch=master)](https://travis-ci.org/ringcentral/ringcentral-web-phone)
+[![Coverage Status](https://coveralls.io/repos/github/ringcentral/ringcentral-web-phone/badge.svg?branch=master)](https://coveralls.io/github/ringcentral/ringcentral-web-phone?branch=master)
+
 # RingCentral WebPhone Library
 
 The RingCentral WebPhone Library includes a JavaScript WebRTC library and a WebRTC phone demo app.
@@ -53,8 +56,8 @@ bower install ringcentral-web-phone
 
 ### If you are not using Bower or NPM:
 
-1. Download SIP.JS: [https://sipjs.com/download/sip-0.11.6.js](https://sipjs.com/download/sip-0.11.6.js)
-2. Download WebPhone SDK: [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/src/ringcentral-web-phone.js](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/src/ringcentral-web-phone.js)
+1. Download SIP.JS: [https://sipjs.com/download/sip-0.13.5.js](https://sipjs.com/download/sip-0.13.5.js)
+2. Download WebPhone SDK: [https://github.com/ringcentral/ringcentral-web-phone/releases/latest](https://github.com/ringcentral/ringcentral-web-phone/releases/latest)
 3. Download audio files:
     1. [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/incoming.ogg](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/incoming.ogg)
     2. [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/outgoing.ogg](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/outgoing.ogg)
@@ -142,7 +145,9 @@ platform
                     media:{
                         remote: remoteVideoElement,
                         local: localVideoElement
-                    }
+                    },
+                    //to enable QoS Analytics Feature
+                    enableQos:true
                 });
                 
             });
@@ -181,15 +186,15 @@ If there's any connection problems to Sandbox environment, you may need to switc
 
 WebRTC works with issues when served from file system directly to browser (e.g. `file://` protocol), so you will need a local HTTP server (comes with this package).
 
-Online demo is hosted at [https://ringcentral-web-phone.herokuapp.com/demo](https://ringcentral-web-phone.herokuapp.com/demo)
+Online demo is hosted at [http://ringcentral.github.io/ringcentral-web-phone](http://ringcentral.github.io/ringcentral-web-phone)
 
-** NOTE : If you are using the online demo, please add `https://ringcentral-web-phone.herokuapp.com/demo/callback.html` to the app's OAuth Redirect URI
+** NOTE : If you are using the online demo, please add `http://ringcentral.github.io/ringcentral-web-phone/callback.html` to the app's OAuth Redirect URI
 
 ---
 
 ## API
 
-Except for some RingCentral-specific features the API is 100% the same as SIP.JS: http://sipjs.com/api/0.11.0: most of the time you will be working with RC-flavored [UserAgent](http://sipjs.com/api/0.11.0/ua) and [Session](http://sipjs.com/api/0.11.0/session) objects of SIP.JS.
+Except for some RingCentral-specific features the API is 100% the same as SIP.JS: http://sipjs.com/api/0.13.0: most of the time you will be working with RC-flavored [UserAgent](http://sipjs.com/api/0.13.0/ua) and [Session](http://sipjs.com/api/0.13.0/session) objects of SIP.JS.
 
 We encourage you to take a look at [Guides](http://sipjs.com/guides) section, especially
 [Make A Call](http://sipjs.com/guides/make-call) and [Receive A Call](http://sipjs.com/guides/receive-call/) articles.
@@ -216,6 +221,7 @@ var webPhone = new RingCentral.WebPhone(provisionData, options);
         - `incoming` &mdash; path to `incoming.ogg`, audio file for incoming call
         - `outgoing` &mdash; path to `outgoing.ogg`, audio file for outgoing call
     - `onSession` &mdash; this callback will be fired each time User Agent starts working with session (incoming or outgoing)
+    - `enableQos:true` &mdash; will enable quality of service for webRTC calls , you can view the voice quality of calls in analytics portal
 
 ### Attaching Media Streams
 
@@ -330,15 +336,23 @@ session.stopRecord().then(...);
 
 Not yet implemented. Could be done by dialing \*83. The account should be enabled for barge/whisper access through system admin.
 
-### Upgrade Procedure from v0.4.X to 0.6.1
+## Upgrade Procedure from v0.4.X to 0.7.2
 
-- SDK constructor now allows to add custom UA Configuration parameters like `sessionDescriptionHandlerFactory` , `sessionDescriptionHandlerFactoryOptions` ,  `maxReconnectionAttempts` ,  `reconnectionTimeout`, `connectionTimeout`
+- SDK constructor now allows to add custom UA Configuration parameters like `sessionDescriptionHandlerFactory` , `sessionDescriptionHandlerFactoryOptions` 
 
 - SDK now handles rendering HTML Media Elements. Pass remoteVideo and localVideo elements via SDK constructor
 
 - SDK also offers to addTrack() to handle remoteVideo and localVideo elements outside the constructor too
 
-#### Initialization
+- SDK sets `sdpSemantics` value  to `plan-b`. You can now enable unifiedSDP plan by setting the custom UA configuration option `options.enableUnifiedSDP` to `true`
+
+-  For FireFox browser support 
+    - Client application needs to detect if the browser is firefox. 
+    - Client application needs to set custom UA configuration option 'options.enableMidLinesInSDP' to `true` for browser >= FF v63 for hold functionality to work 
+    - QoS feature is not supported on FireFox due to browser related bugs. Please set the custom UA configuration option `options.enableQos` to `false`
+
+
+### Initialization
 
 Before: 
 ```javascript
@@ -360,21 +374,23 @@ After:
 var remoteVideoElement =  document.getElementById('remoteVideo');
 var localVideoElement  = document.getElementById('localVideo');
 webPhone = new RingCentral.WebPhone(data, {
-            appKey: localStorage.getItem('webPhoneAppKey'),
-            audioHelper: {
-                enabled: true
-            },
-            logLevel: parseInt(logLevel, 10),
-            appName: 'WebPhoneDemo',
-            appVersion: '1.0.0',
-            media: {
-                remote: remoteVideoElement,
-                local: localVideoElement
-            }
-        });
+    appKey: localStorage.getItem('webPhoneAppKey'),
+    audioHelper: {
+        enabled: true
+    },
+    logLevel: parseInt(logLevel, 10),
+    appName: 'WebPhoneDemo',
+    appVersion: '1.0.0',
+    media: {
+        remote: remoteVideoElement,
+        local: localVideoElement
+    },
+    //to enable QoS Analytics Feature  
+    enableQos:true
+});
 ```
 
-#### Accept Invites:
+### Accept Invites:
  
 Before:
 ```javascript
@@ -400,29 +416,50 @@ session.accept().then(function() {
 })
 ```
 
-#### Send Invite:
+### Send Invite:
 
 Before:
 ```javascript
 var session = webPhone.userAgent.invite(number, {
-            media: {
-                render: {
-                    remote: document.getElementById('remoteVideo'),
-                    local: document.getElementById('localVideo')
-                }
-            },
-            fromNumber: username,
-            homeCountryId: homeCountryId
-        });
+    media: {
+        render: {
+            remote: document.getElementById('remoteVideo'),
+            local: document.getElementById('localVideo')
+        }
+    },
+    fromNumber: username,
+    homeCountryId: homeCountryId
+});
 ```
 
 After:
 ```javascript
 var session = webPhone.userAgent.invite(number, {
-            fromNumber: username,
-            homeCountryId: homeCountryId
-        });
+    fromNumber: username,
+    homeCountryId: homeCountryId
+});
 ```
- 
-          
-                                                                                                                                                                            
+
+## Compatibility Matrix
+
+| Date | SDK | SIPJS | Chrome | Firefox |
+|---|---|---|---|---|
+| Feb 2016 | 0.2.0 | 0.6.4 | not known may be v50-70 | :warning: NA |
+| Apr 2016 | 0.3.0 | 0.7.3 | not known may be v50-70 | :warning: NA |
+| Jun 2016 | 0.3.1 | 0.7.4 | not known may be v50-70 | :warning: NA |
+| Aug 2016 | 0.3.2 | 0.7.5 | 54 to 56 | :warning: NA |
+| Sep 2016 | 0.4.0-RC1 | 0.7.5 | 54 to 56 | :warning: NA |
+| Jan 2017 | 0.4.0 | 0.7.5 | 54 to 56 | :warning: NA |
+| Mar 2017 | **0.4.1** | 0.7.7 | 54 to 70, rtcp mux support, media API changes | :warning: Issues with Audio, SBC |
+| Aug 2017 | 0.4.2 | 0.7.7 | 61 to 70 | :warning: Issues with Audio, SBC |
+| Aug 2017 | 0.4.3 | 0.7.8 | 61 to 70 | :warning: Not Tested |
+| Sep 2017 | 0.4.4 | 0.7.8 | 62 to 70 | :warning: Issues with DTMF |
+| Nov 2017 | 0.4.5 | 0.7.8 | 64 to 70 | :warning: Issues with DTMF |
+| Jul 2018 | 0.5.0 | 0.10.0 | 68 to 70 | :warning: Issues with DTMF |
+| Nov 2018 | 0.6.0 | 0.11.3 | 68 to 70 | Regression tested for 62, 63 supported with custom modifiers |
+| Nov 2018 | **0.6.1** | 0.11.6 | 71+, explicit `plan b` SDP support | 62 to 64 |
+| Dec 2018 | 0.6.2 | 0.11.6 | 71+ | 62 to 65 |
+| Feb 2019 | 0.6.3 | 0.11.6 | 71+ | 62 to 65 , :warning: QoS feature not supported |
+| Apr 2019 | 0.7.0 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
+| May 2019 | 0.7.1 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
+| Jun 2019 | 0.7.2 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
