@@ -33,11 +33,12 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
                     qosStatsObj.remotecandidate = item;
                 }
                 if (item.type === 'ssrc' && item.transportId === 'Channel-audio-1' && item.id.includes('send')) {
-                    if (item.audioInputLevel === 0)
+                    if (parseInt(item.audioInputLevel,10) === 0) {
                         session.logger.warn(
                             'AudioInputLevel is 0. This might cause one-way audio. Check Microphone Volume settings.'
                         );
-                    session.emit('no-input-volume');
+                        session.emit('no-input-volume');
+                    }
                 }
                 if (item.type === 'ssrc' && item.transportId === 'Channel-audio-1' && item.id.includes('recv')) {
                     qosStatsObj.jitterBufferDiscardRate = item.googSecondaryDiscardedRate || 0;
