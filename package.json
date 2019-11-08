@@ -71,9 +71,13 @@
     "name": "RingCentral, Inc.",
     "email": "devsupport@ringcentral.com"
   },
+  "jest": {
+    "testEnvironment": "node",
+    "testResultsProcessor": "./node_modules/jest-html-reporter"
+  },
   "contributors": [
     {
-      "name": "Kirill Konshin"
+      "name": "Kirill Konshin, Elias Sun"
     }
   ],
   "repository": {

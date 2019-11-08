@@ -86,6 +86,7 @@ async function __connect(this: WebPhoneSIPTransport, options?: any): Promise<voi
         this.emit('wsConnectionError', err);
         this.logger.warn('Connection Error occured. Trying to reconnect to websocket...');
         this.onError(err);
+        this.disconnect({force: true});
         this.disposeWs();
         await this.reconnect();
     });
@@ -110,6 +111,7 @@ async function reconnect(this: WebPhoneSIPTransport, forceReconnectToMain?: bool
         this.status = C.STATUS_CLOSED;
         this.emit('closed');
         this.resetServerErrorStatus();
+        this.server = this.getNextWsServer(true);
         this.__clearSwitchBackTimer();
         return;
     }

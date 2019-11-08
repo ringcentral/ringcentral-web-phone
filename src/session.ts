@@ -133,6 +133,7 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.on('progress' as any, (incomingResponse: IncomingResponse) => {
         stopPlaying();
         if (incomingResponse.statusCode === 183) {
+            session.logger.log('Receiving 183 In Progress from server');
             session.createDialog(incomingResponse, 'UAC');
             session.hasAnswer = true;
             session.status = Session.C.STATUS_EARLY_MEDIA;
@@ -334,7 +335,7 @@ async function replyWithMessage(this: WebPhoneSession, replyOptions: ReplyOption
 
     if (replyOptions.replyType === 0) {
         body += ' Bdy="' + replyOptions.replyText + '"';
-    } else if (replyOptions.replyType === 1) {
+    } else if (replyOptions.replyType === 1 || replyOptions.replyType ===4) {
         body += ' Vl="' + replyOptions.timeValue + '"';
         body += ' Units="' + replyOptions.timeUnits + '"';
         body += ' Dir="' + replyOptions.callbackDirection + '"';
@@ -488,8 +489,9 @@ function accept(this: WebPhoneSession, options: any = {}): Promise<WebPhoneSessi
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-function dtmf(this: WebPhoneSession, dtmf: string, duration = 1000): void {
+function dtmf(this: WebPhoneSession, dtmf: string, duration = 100, interToneGap = 50): void {
     duration = parseInt(duration.toString());
+    interToneGap = parseInt(interToneGap.toString());
     const pc = this.sessionDescriptionHandler.peerConnection;
     const senders = pc.getSenders();
     const audioSender = senders.find(sender => {
@@ -497,7 +499,8 @@ function dtmf(this: WebPhoneSession, dtmf: string, duration = 1000): void {
     });
     const dtmfSender = audioSender.dtmf;
     if (dtmfSender !== undefined && dtmfSender) {
-        return dtmfSender.insertDTMF(dtmf, duration);
+        this.logger.log(`Send DTMF: ${dtmf} Duration: ${duration} InterToneGap: ${interToneGap}`);
+        return dtmfSender.insertDTMF(dtmf, duration, interToneGap);
     }
     const sender = dtmfSender && !dtmfSender.canInsertDTMF ? "can't insert DTMF" : 'Unknown';
     throw new Error('Send DTMF failed: ' + (!dtmfSender ? 'no sender' : sender));
@@ -528,10 +531,6 @@ async function warmTransfer(
     target: WebPhoneSession,
     transferOptions: any = {}
 ): Promise<ReferClientContext> {
-    await (this.localHold ? Promise.resolve(null) : this.hold());
-
-    await delay(300);
-
     const referTo =
         '<' +
         target.dialog.remoteTarget.toString() +
@@ -551,8 +550,6 @@ async function warmTransfer(
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 async function transfer(this: WebPhoneSession, target: WebPhoneSession, options): Promise<ReferClientContext> {
-    await (this.localHold ? Promise.resolve(null) : this.hold());
-    await delay(300);
     return this.blindTransfer(target, options);
 }
 
@@ -565,17 +562,19 @@ async function forward(
     transferOptions
 ): Promise<ReferClientContext> {
     let interval = null;
-    await this.accept(acceptOptions);
     return new Promise(resolve => {
-        interval = setInterval(() => {
-            if (this.status === Session.C.STATUS_CONFIRMED) {
-                clearInterval(interval);
-                this.mute();
-                setTimeout(() => {
-                    resolve(this.transfer(target, transferOptions));
-                }, 700);
-            }
-        }, 50);
+        this.accept(acceptOptions).then(() => {
+            interval = setInterval(() => {
+                if (this.status === Session.C.STATUS_CONFIRMED) {
+                    clearInterval(interval);
+                    this.mute();
+                    setTimeout(() => {
+                        this.transfer(target, transferOptions);
+                        resolve(null);
+                    }, 700);
+                }
+            }, 50);
+        });
     });
 }
 
