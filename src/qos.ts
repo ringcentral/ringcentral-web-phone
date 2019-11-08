@@ -34,7 +34,7 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
                 }
                 if (item.type === 'ssrc' && item.transportId === 'Channel-audio-1' && item.id.includes('send')) {
                     if (parseInt(item.audioInputLevel,10) === 0) {
-                        session.logger.warn(
+                        session.logger.log(
                             'AudioInputLevel is 0. This might cause one-way audio. Check Microphone Volume settings.'
                         );
                         session.emit('no-input-volume');
@@ -48,6 +48,12 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
                     qosStatsObj.totalIntervalCount += 1;
                     qosStatsObj.JBM = Math.max(qosStatsObj.JBM, parseFloat(item.googJitterBufferMs));
                     qosStatsObj.netType = addToMap(qosStatsObj.netType, network);
+                    if (parseInt(item.audioOutputLevel,10) <= 1) {
+                        session.logger.log(
+                            'Remote audioOutput level is 1. The remote track might be muted or could have potential one-way audio issue'
+                        );
+                        session.emit('no-output-volume');
+                    }
                 }
             });
         },
