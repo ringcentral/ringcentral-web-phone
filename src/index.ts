@@ -190,7 +190,6 @@ export default class WebPhone {
             configuration.log.builtinEnabled = options.builtinEnabled;
         }
 
-
         options.sipErrorCodes = sipErrorCodes;
         options.switchBackInterval = this.sipInfo.switchBackInterval;
 

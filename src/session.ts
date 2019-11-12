@@ -335,7 +335,7 @@ async function replyWithMessage(this: WebPhoneSession, replyOptions: ReplyOption
 
     if (replyOptions.replyType === 0) {
         body += ' Bdy="' + replyOptions.replyText + '"';
-    } else if (replyOptions.replyType === 1 || replyOptions.replyType ===4) {
+    } else if (replyOptions.replyType === 1 || replyOptions.replyType === 4) {
         body += ' Vl="' + replyOptions.timeValue + '"';
         body += ' Units="' + replyOptions.timeUnits + '"';
         body += ' Dir="' + replyOptions.callbackDirection + '"';

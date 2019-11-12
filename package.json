@@ -77,7 +77,10 @@
   },
   "contributors": [
     {
-      "name": "Kirill Konshin, Elias Sun"
+      "name": "Kirill Konshin"
+    },
+    {
+      "name": "Elias Sun"
     }
   ],
   "repository": {
