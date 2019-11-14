@@ -1,6 +1,6 @@
 .cache-loader
 .chrome
-.coverage
+.coverage*
 .idea
 .env
 .screenshots

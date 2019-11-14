@@ -2,11 +2,10 @@
   "name": "ringcentral-web-phone",
   "version": "0.7.5",
   "scripts": {
-    "test": "npm run test:karma && npm run test:e2e",
-    "test:watch": "karma start",
-    "test:karma": "npm run test:watch -- --single-run",
+    "test": "npm run test:ut && npm run test:e2e",
     "test:coverage": "cat .coverage/lcov.info | coveralls -v",
-    "test:e2e": "jest --runInBand",
+    "test:e2e": "jest --config jest.config.e2e.js --runInBand",
+    "test:ut": "jest --config jest.config.ut.js",
     "build": "npm run build:tsc && npm run build:webpack",
     "build:tsc": "tsc",
     "build:webpack": "cross-env NODE_ENV=production webpack --config webpack.config.js --progress --color",
@@ -25,7 +24,6 @@
     "@types/expect-puppeteer": "3.3.1",
     "@types/jest": "24.0.15",
     "@types/jest-environment-puppeteer": "4.0.0",
-    "@types/karma": "3.0.3",
     "@types/node": "12.0.8",
     "bootstrap": "3.4.1",
     "cache-loader": "4.0.0",
@@ -39,18 +37,9 @@
     "http-server": "0.11.1",
     "husky": "2.4.1",
     "istanbul-instrumenter-loader": "3.0.1",
-    "jasmine-core": "3.4.0",
     "jest": "24.8.0",
     "jest-puppeteer": "4.2.0",
     "jquery": "3.4.1",
-    "karma": "4.1.0",
-    "karma-chrome-launcher": "2.2.0",
-    "karma-coverage-istanbul-reporter": "2.0.5",
-    "karma-env": "0.1.0",
-    "karma-jasmine": "2.0.1",
-    "karma-mocha-reporter": "2.2.5",
-    "karma-sourcemap-loader": "0.3.7",
-    "karma-webpack": "4.0.2",
     "lint-staged": "8.2.1",
     "npm-run-all": "4.1.5",
     "puppeteer": "1.18.0",
@@ -70,10 +59,6 @@
   "author": {
     "name": "RingCentral, Inc.",
     "email": "devsupport@ringcentral.com"
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "testResultsProcessor": "./node_modules/jest-html-reporter"
   },
   "contributors": [
     {

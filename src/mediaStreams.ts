@@ -53,7 +53,7 @@
  */
 
 export default class MediaStreams {
-    private mediaStreamsImpl: MediaStreamsImpl;
+    public mediaStreamsImpl: MediaStreamsImpl;
     public release: any;
     public reconnectMedia: any;
     public getMediaStats: any;
@@ -79,20 +79,24 @@ export default class MediaStreams {
 /**
  * MediaStreams Implementation
  */
-class MediaStreamsImpl {
+export class MediaStreamsImpl {
     public onMediaConnectionStateChange: any;
     public onRTPStat: any;
+    public on;
+    public localStream;
+    public remoteStream;
+    public validateSDP;
+    public preRTT: any;
+    public browsers: any;
+    public RTPReports: any;
 
     private ktag: string = 'MediaStreams';
     private session: any;
     private onStateChange: any;
     private connectionState: any;
-    private browsers: any;
     private isChrome: any;
     private isFirefox: any;
     private isSafari: any;
-    private preRTT: any;
-    private RTPReports: any;
     private mediaStatsTimer: any;
 
     public constructor(session) {
@@ -148,10 +152,7 @@ class MediaStreamsImpl {
         };
     }
 
-    public getMediaStats(onMediaStat, interval) {
-        if (!interval) {
-            interval = 1000;
-        }
+    public getMediaStats(onMediaStat = null, interval = 1000) {
         if (onMediaStat) {
             this.onRTPStat = onMediaStat;
         }
@@ -164,7 +165,7 @@ class MediaStreamsImpl {
         }, interval);
     }
 
-    private mediaStatsTimerCallback() {
+    public mediaStatsTimerCallback() {
         let pc = this.session.sessionDescriptionHandler.peerConnection;
         if (!pc) {
             this.rcWPLoge(this.ktag, 'the peer connection cannot be null');
@@ -206,7 +207,7 @@ class MediaStreamsImpl {
             } else if (this.session && this.session.onMediaConnectionStateChange) {
                 this.session.onMediaConnectionStateChange(this.session, eventState);
             } else {
-                this.session.emit('mediaConnectionStateChanged', eventState);
+                this.session.emit(eventState);
             }
         } else {
             this.rcWPLogd(
@@ -217,7 +218,7 @@ class MediaStreamsImpl {
         this.rcWPLogd(this.tag, `peerConnection State: ${eventState}`);
     }
 
-    public reconnectMedia(options) {
+    public reconnectMedia(options?: any) {
         let self = this;
         return new Promise(function(resolve, reject) {
             if (self.session) {
@@ -350,7 +351,7 @@ class MediaStreamsImpl {
             });
     }
 
-    private browser() {
+    public browser() {
         if (navigator.userAgent.search('MSIE') >= 0) {
             return this.browsers['MSIE'];
         } else if (navigator.userAgent.search('Chrome') >= 0) {
