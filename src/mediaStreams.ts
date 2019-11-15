@@ -52,6 +52,24 @@
  *   @state7 'mediaConnectionStateClosed' : RTCPeerConnection media connection is closed.
  */
 
+enum ConnectionState {
+     new: 'mediaConnectionStateNew',
+     checking: 'mediaConnectionStateChecking',
+     connected: 'mediaConnectionStateConnected',
+     completed: 'mediaConnectionStateCompleted',
+     failed: 'mediaConnectionStateFailed',
+     disconnected: 'mediaConnectionStateDisconnected',
+     closed: 'mediaConnectionStateClosed'
+ }
+
+ enum Browsers {
+     MSIE: 'IE', 
+     Chrome: 'Chrome', 
+     Firefox: 'Firefox', 
+     Safari: 'Safari', 
+     Opera: 'Opera'
+ }
+
 export default class MediaStreams {
     public mediaStreamsImpl: MediaStreamsImpl;
     public release: any;
@@ -87,13 +105,11 @@ export class MediaStreamsImpl {
     public remoteStream;
     public validateSDP;
     public preRTT: any;
-    public browsers: any;
     public RTPReports: any;
 
     private ktag: string = 'MediaStreams';
     private session: any;
     private onStateChange: any;
-    private connectionState: any;
     private isChrome: any;
     private isFirefox: any;
     private isSafari: any;
@@ -117,19 +133,9 @@ export class MediaStreamsImpl {
             this.session.sessionDescriptionHandler.on('iceConnectionDisconnected', this.onStateChange);
             this.session.sessionDescriptionHandler.on('iceConnectionClosed', this.onStateChange);
         }
-        this.connectionState = {
-            new: 'mediaConnectionStateNew',
-            checking: 'mediaConnectionStateChecking',
-            connected: 'mediaConnectionStateConnected',
-            completed: 'mediaConnectionStateCompleted',
-            failed: 'mediaConnectionStateFailed',
-            disconnected: 'mediaConnectionStateDisconnected',
-            closed: 'mediaConnectionStateClosed'
-        };
-        this.browsers = {MSIE: 'IE', Chrome: 'Chrome', Firefox: 'Firefox', Safari: 'Safari', Opera: 'Opera'};
-        this.isChrome = this.browser() === this.browsers['Chrome'];
-        this.isFirefox = this.browser() === this.browsers['Firefox'];
-        this.isSafari = this.browser() === this.browsers['Safari'];
+        this.isChrome = this.browser() === Browsers['Chrome'];
+        this.isFirefox = this.browser() === Browsers['Firefox'];
+        this.isSafari = this.browser() === Browsers['Safari'];
 
         this.preRTT = {currentRoundTripTime: 0};
 
@@ -200,8 +206,8 @@ export class MediaStreamsImpl {
 
     public onPeerConnectionStateChange(sessionDescriptionHandler) {
         let eventState = 'unknown';
-        if (this.connectionState.hasOwnProperty(sessionDescriptionHandler.peerConnection.iceConnectionState)) {
-            eventState = this.connectionState[sessionDescriptionHandler.peerConnection.iceConnectionState];
+        if (ConnectionState.hasOwnProperty(sessionDescriptionHandler.peerConnection.iceConnectionState)) {
+            eventState = ConnectionState[sessionDescriptionHandler.peerConnection.iceConnectionState];
             if (this.onMediaConnectionStateChange) {
                 this.onMediaConnectionStateChange(this.session, eventState);
             } else if (this.session && this.session.onMediaConnectionStateChange) {
@@ -239,25 +245,17 @@ export class MediaStreamsImpl {
                     failed: reject
                 };
                 let pc = self.session.sessionDescriptionHandler.peerConnection;
-                pc.createOffer(offerOptions).then(
-                    offer => {
-                        self.session.sessionDescriptionHandler.on('iceCandidate', self.onIceCandidate);
-                        pc.setLocalDescription(offer).then(
-                            () => {
-                                self.rcWPLogd(self.tag, 'reconnecting media');
-                                resolve('reconnecting media');
-                            },
-                            error => {
-                                self.rcWPLoge(self.tag, error);
-                                reject(error);
-                            }
-                        );
-                    },
-                    error => {
-                        self.rcWPLoge(self.tag, error);
-                        reject(error);
-                    }
-                );
+                let offer: any;
+                try {
+                   offer = await pc.createOffer(offerOptions); 
+                   self.session.sessionDescriptionHandler.on('iceCandidate', self.onIceCandidate);
+                   await pc.setLocalDescription(offer);
+                   self.rcWPLogd(self.tag, 'reconnecting media');
+                   resolve('reconnecting media');
+                } catch (e) {
+                   self.rcWPLoge(self.tag, error);
+                   reject(error);
+                }
             } else {
                 self.rcWPLoge(self.tag, 'The session cannot be empty');
             }
@@ -353,15 +351,15 @@ export class MediaStreamsImpl {
 
     public browser() {
         if (navigator.userAgent.search('MSIE') >= 0) {
-            return this.browsers['MSIE'];
+            return Browsers['MSIE'];
         } else if (navigator.userAgent.search('Chrome') >= 0) {
-            return this.browsers['Chrome'];
+            return Browsers['Chrome'];
         } else if (navigator.userAgent.search('Firefox') >= 0) {
-            return this.browsers['Firefox'];
+            return Browsers['Firefox'];
         } else if (navigator.userAgent.search('Safari') >= 0 && navigator.userAgent.search('Chrome') < 0) {
-            return this.browsers['Safari'];
+            return Browsers['Safari'];
         } else if (navigator.userAgent.search('Opera') >= 0) {
-            return this.browsers['Opera'];
+            return Browsers['Opera'];
         }
         return 'unknown';
     }

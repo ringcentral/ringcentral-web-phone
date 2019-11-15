@@ -562,19 +562,17 @@ async function forward(
     transferOptions
 ): Promise<ReferClientContext> {
     let interval = null;
+    await this.accept(acceptOptions);
     return new Promise(resolve => {
-        this.accept(acceptOptions).then(() => {
-            interval = setInterval(() => {
-                if (this.status === Session.C.STATUS_CONFIRMED) {
-                    clearInterval(interval);
-                    this.mute();
-                    setTimeout(() => {
-                        this.transfer(target, transferOptions);
-                        resolve(null);
-                    }, 700);
-                }
-            }, 50);
-        });
+        interval = setInterval(() => {
+            if (this.status === Session.C.STATUS_CONFIRMED) {
+                clearInterval(interval);
+                this.mute();
+                setTimeout(() => {
+                    resolve(this.transfer(target, transferOptions));
+                }, 700);
+            }
+        }, 50);
     });
 }
 
