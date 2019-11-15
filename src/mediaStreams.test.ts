@@ -6,7 +6,7 @@
 
 'use strict';
 
-import {default as MediaStreams, MediaStreamsImpl} from '../src/mediaStreams';
+import {default as MediaStreams, MediaStreamsImpl, RTPReport, Browsers} from '../src/mediaStreams';
 import EventEmitter from 'events';
 
 let globalEmitter = new EventEmitter();
@@ -720,7 +720,7 @@ test('test getRTPReport in MediaStreamsImpl -- session.mediaStreams.onRTPStat', 
     let pc = fadeSession.sessionDescriptionHandler.peerConnection;
     pc.iceConnectionState = 'connected';
     mediaStreams.onRTPStat = jest.fn((report, session) => {});
-    await mediaStreams.getRTPReport(new mediaStreams.RTPReports());
+    await mediaStreams.getRTPReport(new RTPReport());
     expect(mediaStreams.onRTPStat.mock.calls.length).toBe(1);
     mediaStreams.release();
 });
@@ -732,7 +732,7 @@ test('test getRTPReport in MediaStreamsImpl-- session.onRTPStat', async () => {
     let pc = fadeSession.sessionDescriptionHandler.peerConnection;
     pc.iceConnectionState = 'connected';
     fadeSession.onRTPStat = jest.fn((report, session) => {});
-    await mediaStreams.getRTPReport(new mediaStreams.RTPReports());
+    await mediaStreams.getRTPReport(new RTPReport());
     expect(fadeSession.onRTPStat.mock.calls.length).toBe(1);
     mediaStreams.release();
 });
@@ -747,7 +747,7 @@ test('test getRTPReport  in MediaStreamsImpl-- session.on("rtpStat")', async () 
     fadeSession.onRTPStat = null;
     mediaStreams.onRTPStat = null;
     fadeSession.on('rtpStat', onRTPStat);
-    await mediaStreams.getRTPReport(new mediaStreams.RTPReports());
+    await mediaStreams.getRTPReport(new RTPReport());
     expect(onRTPStat.mock.calls.length).toBe(1);
     mediaStreams.release();
 });
@@ -762,7 +762,7 @@ test('test getRTPReport in MediaStreamsImpl -- verify chrome and safari', async 
     fadeSession.onRTPStat = jest.fn((report, session) => {
         reports = report;
     });
-    await mediaStreams.getRTPReport(new mediaStreams.RTPReports());
+    await mediaStreams.getRTPReport(new RTPReport());
     expect(fadeSession.onRTPStat.mock.calls.length).toBe(1);
     expect(reports.inboundRtpReport['bytesReceived']).toEqual(100);
     expect(reports.inboundRtpReport['packetsReceived']).toEqual(200);
@@ -787,7 +787,7 @@ test('test getRTPReport in MediaStreamsImpl -- verify firefox', async () => {
     fadeSession.onRTPStat = jest.fn((report, session) => {
         reports = report;
     });
-    await mediaStreams.getRTPReport(new mediaStreams.RTPReports());
+    await mediaStreams.getRTPReport(new RTPReport());
     expect(fadeSession.onRTPStat.mock.calls.length).toBe(1);
     expect(reports.inboundRtpReport['bytesReceived']).toEqual(100);
     expect(reports.inboundRtpReport['packetsReceived']).toEqual(200);
@@ -812,7 +812,7 @@ test('test getRTPReport in MediaStreamsImpl -- unknow browser and fail to get th
     fadeSession.onRTPStat = jest.fn((report, session) => {
         reports = report;
     });
-    await mediaStreams.getRTPReport(new mediaStreams.RTPReports());
+    await mediaStreams.getRTPReport(new RTPReport());
     expect(fadeSession.onRTPStat.mock.calls.length).toBe(0);
     mediaStreams.release();
 });
@@ -820,9 +820,9 @@ test('test getRTPReport in MediaStreamsImpl -- unknow browser and fail to get th
 test('test getRTPReport in MediaStreamsImpl -- test web browser() type', async () => {
     let fadeSession = new FadeSession();
     let mediaStreams = new MediaStreamsImpl(fadeSession);
-    for (let i in mediaStreams.browsers) {
+    for (let i in Browsers) {
         global['navigator'].userAgent = i;
-        expect(mediaStreams.browser()).toEqual(mediaStreams.browsers[i]);
+        expect(mediaStreams.browser()).toEqual(Browsers[i]);
     }
     mediaStreams.release();
 });
@@ -859,7 +859,7 @@ test('test MediaStreamsImpl and getMediaStats -- opera', async () => {
     global['navigator'].userAgent = global['navigator'].opera;
     let fadeSession = new FadeSession();
     let mediaStreams = new MediaStreamsImpl(fadeSession);
-    expect(mediaStreams.RTPReports).not.toBeNull();
+    expect(RTPReport).not.toBeNull();
 });
 
 test('test property onRTPStat in MediaStreams', async () => {

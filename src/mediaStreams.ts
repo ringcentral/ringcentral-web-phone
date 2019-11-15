@@ -62,7 +62,7 @@ enum ConnectionState {
     closed = 'mediaConnectionStateClosed'
 }
 
-enum Browsers {
+export enum Browsers {
     MSIE = 'IE',
     Chrome = 'Chrome',
     Firefox = 'Firefox',
@@ -226,7 +226,7 @@ export class MediaStreamsImpl {
 
     public reconnectMedia(options?: any) {
         let self = this;
-        return new Promise(function(resolve, reject) {
+        return new Promise(async function(resolve, reject) {
             if (self.session) {
                 const RTCOptions = {
                     offerToReceiveAudio: 1,
@@ -253,8 +253,8 @@ export class MediaStreamsImpl {
                     self.rcWPLogd(self.tag, 'reconnecting media');
                     resolve('reconnecting media');
                 } catch (e) {
-                    self.rcWPLoge(self.tag, error);
-                    reject(error);
+                    self.rcWPLoge(self.tag, e);
+                    reject(e);
                 }
             } else {
                 self.rcWPLoge(self.tag, 'The session cannot be empty');
