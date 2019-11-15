@@ -70,6 +70,18 @@ enum Browsers {
     Opera = 'Opera'
 }
 
+export class RTPReport {
+    public outboundRtpReport: any;
+    public inboundRtpReport: any;
+    public rttMS: any;
+
+    public constructor() {
+        this.outboundRtpReport = {};
+        this.inboundRtpReport = {};
+        this.rttMS = {};
+    }
+}
+
 export default class MediaStreams {
     public mediaStreamsImpl: MediaStreamsImpl;
     public release: any;
@@ -105,7 +117,6 @@ export class MediaStreamsImpl {
     public remoteStream;
     public validateSDP;
     public preRTT: any;
-    public RTPReports: any;
 
     private ktag: string = 'MediaStreams';
     private session: any;
@@ -145,17 +156,6 @@ export class MediaStreamsImpl {
                 `The web browser ${this.browser()} is not in the recommended list [Chrome, Safari, Firefox] !`
             );
         }
-
-        this.RTPReports = class {
-            public outboundRtpReport: any;
-            public inboundRtpReport: any;
-            public rttMS: any;
-            public constructor() {
-                this.outboundRtpReport = {};
-                this.inboundRtpReport = {};
-                this.rttMS = {};
-            }
-        };
     }
 
     public getMediaStats(onMediaStat = null, interval = 1000) {
@@ -190,7 +190,7 @@ export class MediaStreamsImpl {
             );
             return;
         }
-        this.getRTPReport(new this.RTPReports());
+        this.getRTPReport(new RTPReport());
     }
 
     public stopMediaStats() {
