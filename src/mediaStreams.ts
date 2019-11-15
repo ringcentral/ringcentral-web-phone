@@ -53,22 +53,22 @@
  */
 
 enum ConnectionState {
-     new: 'mediaConnectionStateNew',
-     checking: 'mediaConnectionStateChecking',
-     connected: 'mediaConnectionStateConnected',
-     completed: 'mediaConnectionStateCompleted',
-     failed: 'mediaConnectionStateFailed',
-     disconnected: 'mediaConnectionStateDisconnected',
-     closed: 'mediaConnectionStateClosed'
- }
+    new = 'mediaConnectionStateNew',
+    checking = 'mediaConnectionStateChecking',
+    connected = 'mediaConnectionStateConnected',
+    completed = 'mediaConnectionStateCompleted',
+    failed = 'mediaConnectionStateFailed',
+    disconnected = 'mediaConnectionStateDisconnected',
+    closed = 'mediaConnectionStateClosed'
+}
 
- enum Browsers {
-     MSIE: 'IE', 
-     Chrome: 'Chrome', 
-     Firefox: 'Firefox', 
-     Safari: 'Safari', 
-     Opera: 'Opera'
- }
+enum Browsers {
+    MSIE = 'IE',
+    Chrome = 'Chrome',
+    Firefox = 'Firefox',
+    Safari = 'Safari',
+    Opera = 'Opera'
+}
 
 export default class MediaStreams {
     public mediaStreamsImpl: MediaStreamsImpl;
@@ -247,14 +247,14 @@ export class MediaStreamsImpl {
                 let pc = self.session.sessionDescriptionHandler.peerConnection;
                 let offer: any;
                 try {
-                   offer = await pc.createOffer(offerOptions); 
-                   self.session.sessionDescriptionHandler.on('iceCandidate', self.onIceCandidate);
-                   await pc.setLocalDescription(offer);
-                   self.rcWPLogd(self.tag, 'reconnecting media');
-                   resolve('reconnecting media');
+                    offer = await pc.createOffer(offerOptions);
+                    self.session.sessionDescriptionHandler.on('iceCandidate', self.onIceCandidate);
+                    await pc.setLocalDescription(offer);
+                    self.rcWPLogd(self.tag, 'reconnecting media');
+                    resolve('reconnecting media');
                 } catch (e) {
-                   self.rcWPLoge(self.tag, error);
-                   reject(error);
+                    self.rcWPLoge(self.tag, error);
+                    reject(error);
                 }
             } else {
                 self.rcWPLoge(self.tag, 'The session cannot be empty');
