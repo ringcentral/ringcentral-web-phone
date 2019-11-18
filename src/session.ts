@@ -12,6 +12,8 @@ import {responseTimeout, messages} from './constants';
 import {startQosStatsCollection} from './qos';
 import {WebPhoneUserAgent} from './userAgent';
 import {delay, extend} from './utils';
+import { MediaStreams } from './mediaStreams';
+import { RTPReport, InboundRtpReport, OutboundRtpReport, RttReport } from './rtpReport';
 
 export interface RCHeaders {
     sid?: string;
@@ -88,6 +90,10 @@ export type WebPhoneSession = InviteClientContext &
         replyWithMessage: typeof replyWithMessage;
         logger: any;
         on(event: 'muted' | 'unmuted', listener: (session: WebPhoneSession) => void): WebPhoneSession;
+        mediaStreams: MediaStreams;
+        mediaStatsStarted: boolean;
+        noAudioReportCount: number;
+        reinviteForNoAudioSent: boolean;
     };
 
 export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
@@ -185,6 +191,10 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     }
 
     if (session.ua.onSession) session.ua.onSession(session);
+
+    session.mediaStatsStarted = false;
+    session.noAudioReportCount = 0;
+    session.reinviteForNoAudioSent = false;
 
     return session;
 };
@@ -509,6 +519,7 @@ function dtmf(this: WebPhoneSession, dtmf: string, duration = 100, interToneGap 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 function hold(this: WebPhoneSession): Promise<any> {
+    stopMediaStats(this);
     return setLocalHold(this, true);
 }
 
@@ -706,4 +717,46 @@ function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
     localAudio.play().catch(() => {
         this.logger.log('Local play was rejected');
     });
+    if (localStream && remoteStream && !this.mediaStatsStarted) {
+        this.mediaStreams = new MediaStreams(this);
+        this.logger.log('Start gathering media report');
+        this.mediaStatsStarted = true;
+        this.mediaStreams.getMediaStats((report: RTPReport) => {
+            this.logger.log(`Got media report: ${JSON.stringify(report)}`);
+            if (!this.reinviteForNoAudioSent && isNoAudio(report)) {
+                this.logger.log('No audio report');
+                this.noAudioReportCount++;
+                if (this.noAudioReportCount === 3) {
+                    this.logger.log('No audio for 6 sec. Try to recover audio by send Reinvite');
+                    this.mediaStreams.reconnectMedia();
+                    this.reinviteForNoAudioSent = true;
+                    this.noAudioReportCount = 0;
+                }
+            } else if (!isNoAudio(report)) {
+                this.noAudioReportCount = 0;
+            }
+        }, 2000)
+    }
+}
+
+function isNoAudio(report: RTPReport): boolean {
+    if (!report.inboundRtpReport) {
+        return true;
+    }
+    if (!report.outboundRtpReport) {
+        return true;
+    }
+    if (report.inboundRtpReport.packetsReceived === 0 || report.outboundRtpReport.packetsSent === 0) {
+        return true;
+    }
+    return false;
+}
+
+function stopMediaStats(session: WebPhoneSession) {
+    if (!session) {
+        return;
+    }
+    session.mediaStreams && session.mediaStreams.stopMediaStats();
+    session.mediaStatsStarted = false;
+    session.noAudioReportCount = 0;
 }

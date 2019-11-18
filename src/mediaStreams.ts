@@ -392,3 +392,5 @@ export class MediaStreamsImpl {
         }
     }
 }
+
+export {MediaStreams};
