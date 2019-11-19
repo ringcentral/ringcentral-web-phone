@@ -4,6 +4,7 @@ import {uuidKey, defaultMediaConstraints} from './constants';
 import {uuid, delay, extend} from './utils';
 import {WebPhoneSession} from './session';
 import {AudioHelperOptions} from './audioHelper';
+import {default as MediaStreams, MediaStreamsImpl} from './mediaStreams';
 
 const {version} = require('../package.json');
 
@@ -49,6 +50,8 @@ export default class WebPhone {
     public static uuid = uuid;
     public static delay = delay;
     public static extend = extend;
+    public static MediaStreams = MediaStreams;
+    public static MediaStreamsImpl = MediaStreamsImpl;
 
     public sipInfo: any;
     public sipFlags: any;
@@ -172,7 +175,7 @@ export default class WebPhone {
             turnServers: [],
             log: {
                 level: options.logLevel || 1, //FIXME LOG LEVEL 3
-                builtinEnabled: options.builtinEnabled || true,
+                builtinEnabled: typeof options.builtinEnabled === 'undefined' ? options.builtinEnabled : true,
                 connector: options.connector || null
             },
             domain: this.sipInfo.domain,

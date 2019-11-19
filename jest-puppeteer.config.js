@@ -1,7 +1,7 @@
 module.exports = {
     launch: {
         dumpio: true,
-        headless: true,
+        headless: process.env.CI,
         args: [
             // '--single-process',
             '--use-fake-ui-for-media-stream',
