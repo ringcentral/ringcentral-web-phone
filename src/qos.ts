@@ -63,7 +63,7 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
     session.on('terminated', function() {
         previousGetStatsResult && previousGetStatsResult.nomore();
         session.logger.log('Release media streams');
-        session && session.mediaStreams.release();
+        session.mediaStreams && session.mediaStreams.release();
         publishQosStats(session, qosStatsObj);
     });
 };

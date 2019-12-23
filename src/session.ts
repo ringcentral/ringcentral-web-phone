@@ -13,7 +13,7 @@ import {startQosStatsCollection} from './qos';
 import {WebPhoneUserAgent} from './userAgent';
 import {delay, extend} from './utils';
 import { MediaStreams } from './mediaStreams';
-import { RTPReport, InboundRtpReport, OutboundRtpReport, RttReport } from './rtpReport';
+import { RTPReport, InboundRtpReport, OutboundRtpReport, RttReport, isNoAudio } from './rtpReport';
 
 export interface RCHeaders {
     sid?: string;
@@ -94,6 +94,7 @@ export type WebPhoneSession = InviteClientContext &
         mediaStatsStarted: boolean;
         noAudioReportCount: number;
         reinviteForNoAudioSent: boolean;
+        stopMediaStats: typeof stopMediaStats;
     };
 
 export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
@@ -132,6 +133,7 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
 
     session.media = session.ua.media; //TODO Remove
     session.addTrack = addTrack.bind(session);
+    session.stopMediaStats = stopMediaStats.bind(session);
 
     session.on('replaced', patchSession);
 
@@ -745,24 +747,11 @@ function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
     }
 }
 
-function isNoAudio(report: RTPReport): boolean {
-    if (!report.inboundRtpReport) {
-        return true;
-    }
-    if (!report.outboundRtpReport) {
-        return true;
-    }
-    if (report.inboundRtpReport.packetsReceived === 0 || report.outboundRtpReport.packetsSent === 0) {
-        return true;
-    }
-    return false;
-}
-
-function stopMediaStats(session: WebPhoneSession) {
-    if (!session) {
+function stopMediaStats(this: WebPhoneSession) {
+    if (!this) {
         return;
     }
-    session.mediaStreams && session.mediaStreams.stopMediaStats();
-    session.mediaStatsStarted = false;
-    session.noAudioReportCount = 0;
+    this.mediaStreams && this.mediaStreams.stopMediaStats();
+    this.mediaStatsStarted = false;
+    this.noAudioReportCount = 0;
 }
