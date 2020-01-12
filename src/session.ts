@@ -521,7 +521,7 @@ function dtmf(this: WebPhoneSession, dtmf: string, duration = 100, interToneGap 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 function hold(this: WebPhoneSession): Promise<any> {
-    stopMediaStats(this);
+    this.stopMediaStats();
     return setLocalHold(this, true);
 }
 
@@ -748,6 +748,7 @@ function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
 }
 
 function stopMediaStats(this: WebPhoneSession) {
+    this.logger.log('Stopping media stats collection');
     if (!this) {
         return;
     }
