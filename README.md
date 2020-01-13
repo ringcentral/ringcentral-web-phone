@@ -338,13 +338,18 @@ Not yet implemented. Could be done by dialing \*83. The account should be enable
 
 ## Upgrade Procedure from v0.4.X to 0.7.6
 
+- SDK now only supports only Unified SDP plan. You can find more information about this here:  [https://chromestatus.com/feature/5723303167655936](https://chromestatus.com/feature/5723303167655936) 
+
+- SDK now only supports "require" as rtcp-mux policy. We no more support "negotiate". You can find more information about this here: [https://www.juandebravo.com/2017/02/15/rtcp-mux-in-webrtc/](https://www.juandebravo.com/2017/02/15/rtcp-mux-in-webrtc/) 
+
+- SDK now handles SIP Re-Invites, which helps in handling one-way audio issues / reconnecting media due to network reconnections. 
+
 - SDK constructor now allows to add custom UA Configuration parameters like `sessionDescriptionHandlerFactory` , `sessionDescriptionHandlerFactoryOptions` 
 
 - SDK now handles rendering HTML Media Elements. Pass remoteVideo and localVideo elements via SDK constructor
 
 - SDK also offers to addTrack() to handle remoteVideo and localVideo elements outside the constructor too
 
-- SDK sets `sdpSemantics` value  to `plan-b`. You can now enable unifiedSDP plan by setting the custom UA configuration option `options.enableUnifiedSDP` to `true`
 
 -  For FireFox browser support 
     - Client application needs to detect if the browser is firefox. 
@@ -469,3 +474,4 @@ var session = webPhone.userAgent.invite(number, {
 | Jun 2019 | 0.7.2 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
 | Nov 2019 | 0.7.3 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
 | Nov 2019 | 0.7.5 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
+| Jan 2020 | 0.7.6 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
