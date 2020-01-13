@@ -735,7 +735,7 @@ function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
                 this.logger.log('No audio report');
                 this.noAudioReportCount++;
                 if (this.noAudioReportCount === 3) {
-                    this.logger.log('No audio for 6 sec. Try to recover audio by send Reinvite');
+                    this.logger.log('No audio for 6 sec. Trying to recover audio by sending Re-invite');
                     this.mediaStreams.reconnectMedia();
                     this.reinviteForNoAudioSent = true;
                     this.noAudioReportCount = 0;
