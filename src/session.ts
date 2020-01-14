@@ -521,7 +521,7 @@ function dtmf(this: WebPhoneSession, dtmf: string, duration = 100, interToneGap 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 function hold(this: WebPhoneSession): Promise<any> {
-    stopMediaStats(this);
+    this.stopMediaStats();
     return setLocalHold(this, true);
 }
 
@@ -642,7 +642,7 @@ function toggleMute(session: WebPhoneSession, mute: boolean): void {
 /*--------------------------------------------------------------------------------------------------------------------*/
 function mute(this: WebPhoneSession, silent?: boolean): void {
     if (this.status !== Session.C.STATUS_CONFIRMED) {
-        this.logger.warn('An acitve call is required to mute audio');
+        this.logger.warn('An active call is required to mute audio');
         return;
     }
     this.logger.log('Muting Audio');
@@ -735,7 +735,7 @@ function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
                 this.logger.log('No audio report');
                 this.noAudioReportCount++;
                 if (this.noAudioReportCount === 3) {
-                    this.logger.log('No audio for 6 sec. Try to recover audio by send Reinvite');
+                    this.logger.log('No audio for 6 sec. Trying to recover audio by sending Re-invite');
                     this.mediaStreams.reconnectMedia();
                     this.reinviteForNoAudioSent = true;
                     this.noAudioReportCount = 0;
@@ -748,6 +748,7 @@ function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
 }
 
 function stopMediaStats(this: WebPhoneSession) {
+    this.logger.log('Stopping media stats collection');
     if (!this) {
         return;
     }

@@ -32,15 +32,15 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
                 if (item.type === 'remotecandidate') {
                     qosStatsObj.remotecandidate = item;
                 }
-                if (item.type === 'ssrc' && item.transportId === 'Channel-audio-1' && item.id.includes('send')) {
+                if (item.type === 'ssrc' && item.id.includes('send')) {
                     if (parseInt(item.audioInputLevel, 10) === 0) {
                         session.logger.log(
-                            'AudioInputLevel is 0. This might cause one-way audio. Check Microphone Volume settings.'
+                            'AudioInputLevel is 0. The local track might be muted or could have potential one-way audio issue. Check Microphone Volume settings.'
                         );
                         session.emit('no-input-volume');
                     }
                 }
-                if (item.type === 'ssrc' && item.transportId === 'Channel-audio-1' && item.id.includes('recv')) {
+                if (item.type === 'ssrc' && item.id.includes('recv')) {
                     qosStatsObj.jitterBufferDiscardRate = item.googSecondaryDiscardedRate || 0;
                     qosStatsObj.packetLost = item.packetsLost;
                     qosStatsObj.packetsReceived = item.packetsReceived;

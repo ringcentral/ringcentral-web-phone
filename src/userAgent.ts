@@ -89,7 +89,7 @@ export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, i
         if (message && typeof message === 'string' && userAgent.transport.isSipErrorCode(message)) {
             userAgent.transport.onSipErrorCode();
         }
-        this.logger.warn('UA Registration Failed');
+        userAgent.logger.warn('UA Registration Failed');
     });
 
     userAgent.on('notify', ({request}: any) => {
@@ -98,7 +98,7 @@ export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, i
         if (event && event.raw === 'check-sync') {
             userAgent.emit('provisionUpdate');
         }
-        this.logger.log('UA recieved notify');
+        userAgent.logger.log('UA recieved notify');
     });
 
     userAgent.start();

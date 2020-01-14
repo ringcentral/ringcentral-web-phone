@@ -46,7 +46,7 @@ export interface WebPhoneOptions {
 }
 
 export default class WebPhone {
-    public static version = '0.7.5';
+    public static version = '0.7.6';
     public static uuid = uuid;
     public static delay = delay;
     public static extend = extend;
@@ -90,12 +90,6 @@ export default class WebPhone {
         modifiers.push(Web.Modifiers.stripG722);
         modifiers.push(Web.Modifiers.stripTcpCandidates);
 
-        let sdpSemantics = 'plan-b';
-
-        if (options.enableUnifiedSDP) {
-            sdpSemantics = 'unified-plan';
-        }
-
         if (options.enableMidLinesInSDP) {
             modifiers.push(Web.Modifiers.addMidLines);
         }
@@ -103,10 +97,7 @@ export default class WebPhone {
         const sessionDescriptionHandlerFactoryOptions = options.sessionDescriptionHandlerFactoryOptions || {
             peerConnectionOptions: {
                 iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 500,
-                rtcConfiguration: {
-                    rtcpMuxPolicy: 'negotiate',
-                    sdpSemantics
-                }
+                rtcConfiguration: {}
             },
             constraints: options.mediaConstraints || defaultMediaConstraints,
             modifiers
@@ -175,7 +166,7 @@ export default class WebPhone {
             turnServers: [],
             log: {
                 level: options.logLevel || 1, //FIXME LOG LEVEL 3
-                builtinEnabled: typeof options.builtinEnabled === 'undefined' ? options.builtinEnabled : true,
+                builtinEnabled: typeof options.builtinEnabled === 'undefined' ? true : options.builtinEnabled ,
                 connector: options.connector || null
             },
             domain: this.sipInfo.domain,
