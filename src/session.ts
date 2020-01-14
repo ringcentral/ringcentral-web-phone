@@ -642,7 +642,7 @@ function toggleMute(session: WebPhoneSession, mute: boolean): void {
 /*--------------------------------------------------------------------------------------------------------------------*/
 function mute(this: WebPhoneSession, silent?: boolean): void {
     if (this.status !== Session.C.STATUS_CONFIRMED) {
-        this.logger.warn('An acitve call is required to mute audio');
+        this.logger.warn('An active call is required to mute audio');
         return;
     }
     this.logger.log('Muting Audio');
