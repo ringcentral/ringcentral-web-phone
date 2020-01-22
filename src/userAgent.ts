@@ -7,6 +7,7 @@ export interface WebPhoneUserAgent extends UA {
     media: any;
     defaultHeaders: any;
     enableQos: boolean;
+    enableMediaReportLogging:boolean;
     qosCollectInterval: number;
     sipInfo: any;
     audioHelper: AudioHelper;
@@ -29,6 +30,7 @@ export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, i
     userAgent.media = {};
 
     userAgent.enableQos = options.enableQos;
+    userAgent.enableMediaReportLogging = options.enableMediaReportLogging;
 
     userAgent.qosCollectInterval = options.qosCollectInterval || 5000;
 

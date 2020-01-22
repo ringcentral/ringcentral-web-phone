@@ -568,7 +568,7 @@ async function warmTransfer(
 
 async function transfer(this: WebPhoneSession, target: WebPhoneSession, options): Promise<ReferClientContext> {
     await (this.localHold ? Promise.resolve(null) : this.hold());
-    await delay(300);
+    await delay(600);
     return this.blindTransfer(target, options);
 }
 
@@ -730,7 +730,9 @@ function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
         this.logger.log('Start gathering media report');
         this.mediaStatsStarted = true;
         this.mediaStreams.getMediaStats((report: RTPReport) => {
-            this.logger.log(`Got media report: ${JSON.stringify(report)}`);
+            if(this.ua.enableMediaReportLogging) {
+                this.logger.log(`Got media report: ${JSON.stringify(report)}`);
+            }
             if (!this.reinviteForNoAudioSent && isNoAudio(report)) {
                 this.logger.log('No audio report');
                 this.noAudioReportCount++;
