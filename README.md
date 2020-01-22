@@ -336,7 +336,7 @@ session.stopRecord().then(...);
 
 Not yet implemented. Could be done by dialing \*83. The account should be enabled for barge/whisper access through system admin.
 
-## Upgrade Procedure from v0.4.X to 0.7.6
+## Upgrade Procedure from v0.4.X to 0.7.7
 
 - SDK now only supports only Unified SDP plan. You can find more information about this here:  [https://chromestatus.com/feature/5723303167655936](https://chromestatus.com/feature/5723303167655936) 
 
@@ -360,6 +360,7 @@ Not yet implemented. Could be done by dialing \*83. The account should be enable
 
 - SDK can now detect AudioOutputLevel if the headset/speaker device is not configured correctly or the output volume is set to 0. Added event listner `no-output-volume` for the same
 
+- You can now enable logging for AudioInputLevel, AudioOutputLevel and Media Reports by setting the custom UA configuration option `options.enableMediaReportLogging` to true. This will help in providing more information on one-way audio issues if there are any
 
 ### Initialization
 
@@ -395,7 +396,8 @@ webPhone = new RingCentral.WebPhone(data, {
         local: localVideoElement
     },
     //to enable QoS Analytics Feature  
-    enableQos:true
+    enableQos:true,
+    enableMediaReportLogging : true
 });
 ```
 
@@ -475,3 +477,4 @@ var session = webPhone.userAgent.invite(number, {
 | Nov 2019 | 0.7.3 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
 | Nov 2019 | 0.7.5 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
 | Jan 2020 | 0.7.6 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
+| Jan 2020 | 0.7.7 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |

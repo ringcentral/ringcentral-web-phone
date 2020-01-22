@@ -150,7 +150,8 @@ $(function() {
                 remote: remoteVideoElement,
                 local: localVideoElement
             },
-            enableQos: true
+            enableQos: true,
+            enableMediaReportLogging: true
         });
 
         webPhone.userAgent.audioHelper.loadAudio({

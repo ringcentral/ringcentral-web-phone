@@ -32,7 +32,7 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
                 if (item.type === 'remotecandidate') {
                     qosStatsObj.remotecandidate = item;
                 }
-                if (item.type === 'ssrc' && item.id.includes('send')) {
+                if (item.type === 'ssrc' && item.id.includes('send') && session.ua.enableMediaReportLogging) {
                     if (parseInt(item.audioInputLevel, 10) === 0) {
                         session.logger.log(
                             'AudioInputLevel is 0. The local track might be muted or could have potential one-way audio issue. Check Microphone Volume settings.'
@@ -48,11 +48,13 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
                     qosStatsObj.totalIntervalCount += 1;
                     qosStatsObj.JBM = Math.max(qosStatsObj.JBM, parseFloat(item.googJitterBufferMs));
                     qosStatsObj.netType = addToMap(qosStatsObj.netType, network);
-                    if (parseInt(item.audioOutputLevel, 10) <= 1) {
-                        session.logger.log(
-                            'Remote audioOutput level is 1. The remote track might be muted or could have potential one-way audio issue'
-                        );
-                        session.emit('no-output-volume');
+                    if(session.ua.enableMediaReportLogging) {
+                        if (parseInt(item.audioOutputLevel, 10) <= 1) {
+                            session.logger.log(
+                                'Remote audioOutput level is 1. The remote track might be muted or could have potential one-way audio issue'
+                            );
+                            session.emit('no-output-volume');
+                        }
                     }
                 }
             });
