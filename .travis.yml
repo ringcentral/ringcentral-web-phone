@@ -60,6 +60,7 @@ deploy:
   skip_cleanup: true
   file:
   - dist/ringcentral-web-phone.js
+  - dist/ringcentral-web-phone.min.js
   on:
     node: stable
     tags: true
