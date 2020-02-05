@@ -548,20 +548,9 @@ async function warmTransfer(
 
     await delay(300);
 
-    const referTo =
-        '<' +
-        target.dialog.remoteTarget.toString() +
-        '?Replaces=' +
-        target.dialog.id.callId +
-        '%3Bto-tag%3D' +
-        target.dialog.id.remoteTag +
-        '%3Bfrom-tag%3D' +
-        target.dialog.id.localTag +
-        '>';
-
     transferOptions.extraHeaders = (transferOptions.extraHeaders || []).concat(this.ua.defaultHeaders);
 
-    return this.refer(referTo, transferOptions);
+    return this.refer(target, transferOptions);
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
