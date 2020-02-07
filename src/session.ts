@@ -567,8 +567,6 @@ async function warmTransfer(
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 async function transfer(this: WebPhoneSession, target: WebPhoneSession, options): Promise<ReferClientContext> {
-    await (this.localHold ? Promise.resolve(null) : this.hold());
-    await delay(600);
     return this.blindTransfer(target, options);
 }
 
