@@ -117,7 +117,6 @@ export class MediaStreamsImpl {
     public remoteStream;
     public validateSDP;
     public preRTT: any;
-
     private ktag: string = 'MediaStreams';
     private session: any;
     private onStateChange: any;
@@ -313,6 +312,15 @@ export class MediaStreamsImpl {
                                         break;
                                 }
                             });
+                            break;
+                        case 'media-source':
+                            reports.outboundRtpReport['rtpLocalAudioLevel'] = report.audioLevel ? report.audioLevel : 0;
+                            break;
+                        case 'track':
+                            if(!report.remoteSource) {
+                                break;
+                            }
+                            reports.inboundRtpReport['rtpRemoteAudioLevel'] = report.audioLevel ? report.audioLevel : 0;
                             break;
                         default:
                             break;
