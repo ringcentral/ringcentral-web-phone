@@ -533,7 +533,7 @@ function unhold(this: WebPhoneSession): Promise<any> {
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-function blindTransfer(this: WebPhoneSession, target, options = {}): Promise<ReferClientContext> {
+function transfer(this: WebPhoneSession, target, options = {}): Promise<ReferClientContext> {
     return Promise.resolve(this.refer(target, options));
 }
 
@@ -544,19 +544,15 @@ async function warmTransfer(
     target: WebPhoneSession,
     transferOptions: any = {}
 ): Promise<ReferClientContext> {
-    await (this.localHold ? Promise.resolve(null) : this.hold());
-
-    await delay(300);
-
     transferOptions.extraHeaders = (transferOptions.extraHeaders || []).concat(this.ua.defaultHeaders);
-
-    return this.refer(target, transferOptions);
+    return this.transfer(target, transferOptions);
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-async function transfer(this: WebPhoneSession, target: WebPhoneSession, options): Promise<ReferClientContext> {
-    return this.blindTransfer(target, options);
+async function blindTransfer(this: WebPhoneSession, target: WebPhoneSession, options): Promise<ReferClientContext> {
+    options.extraHeaders = (options.extraHeaders || []).concat(this.ua.defaultHeaders);
+    return this.transfer(target, options);
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
