@@ -79,7 +79,7 @@ const publishQosStats = (session: WebPhoneSession, qosStatsObj: QosStats, option
     const event = options.event || 'vq-rtcpxr';
     options.expires = 60;
     options.contentType = 'application/vq-rtcpxr';
-    options.extraHeaders = options.extraHeaders || [];
+    options.extraHeaders = (options.extraHeaders || []).concat(session.ua.defaultHeaders);
     options.extraHeaders.push(
         'p-rc-client-info:' + 'cpuRC=0:0;cpuOS=0:0;netType=' + networkType + ';ram=0:0;effectiveType=' + effectiveType
     );
