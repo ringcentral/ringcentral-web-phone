@@ -555,7 +555,8 @@ async function warmTransfer(
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-async function transfer(this: WebPhoneSession, target: WebPhoneSession, options): Promise<ReferClientContext> {
+async function transfer(this: WebPhoneSession, target: WebPhoneSession, options: any = {}): Promise<ReferClientContext> {
+    options.extraHeaders = (options.extraHeaders || []).concat(this.ua.defaultHeaders);
     return this.blindTransfer(target, options);
 }
 
