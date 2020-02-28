@@ -203,7 +203,7 @@ $(function() {
         console.log('To', session.request.to.displayName, session.request.to.friendlyName);
         console.log('From', session.request.from.displayName, session.request.from.friendlyName);
 
-        if (session.request.headers['Alert-Info'][0].raw === 'Auto Answer') {
+        if (session.request.headers['Alert-Info'] && session.request.headers['Alert-Info'][0].raw === 'Auto Answer') {
             session
                 .accept()
                 .then(function() {
