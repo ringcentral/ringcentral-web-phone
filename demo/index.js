@@ -203,71 +203,82 @@ $(function() {
         console.log('To', session.request.to.displayName, session.request.to.friendlyName);
         console.log('From', session.request.from.displayName, session.request.from.friendlyName);
 
-        var $modal = cloneTemplate($incomingTemplate).modal({
-            backdrop: 'static'
-        });
-
-        $modal.find('.answer').on('click', function() {
-            $modal.find('.before-answer').css('display', 'none');
-            $modal.find('.answered').css('display', '');
+        if (session.request.headers['Alert-Info'][0].raw === 'Auto Answer') {
             session
                 .accept()
                 .then(function() {
-                    $modal.modal('hide');
                     onAccepted(session);
                 })
                 .catch(function(e) {
                     console.error('Accept failed', e.stack || e);
                 });
-        });
+        } else {
+            var $modal = cloneTemplate($incomingTemplate).modal({
+                backdrop: 'static'
+            });
 
-        $modal.find('.decline').on('click', function() {
-            session.reject();
-        });
+            $modal.find('.answer').on('click', function() {
+                $modal.find('.before-answer').css('display', 'none');
+                $modal.find('.answered').css('display', '');
+                session
+                    .accept()
+                    .then(function() {
+                        $modal.modal('hide');
+                        onAccepted(session);
+                    })
+                    .catch(function(e) {
+                        console.error('Accept failed', e.stack || e);
+                    });
+            });
 
-        $modal.find('.toVoicemail').on('click', function() {
-            session.toVoicemail();
-        });
+            $modal.find('.decline').on('click', function() {
+                session.reject();
+            });
 
-        $modal.find('.forward-form').on('submit', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            session
-                .forward(
-                    $modal
-                        .find('input[name=forward]')
-                        .val()
-                        .trim()
-                )
-                .then(function() {
-                    console.log('Forwarded');
-                    $modal.modal('hide');
-                })
-                .catch(function(e) {
-                    console.error('Forward failed', e.stack || e);
-                });
-        });
+            $modal.find('.toVoicemail').on('click', function() {
+                session.toVoicemail();
+            });
 
-        $modal.find('.reply-form').on('submit', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            session
-                .replyWithMessage({
-                    replyType: 0,
-                    replyText: $modal.find('input[name=reply]').val()
-                })
-                .then(function() {
-                    console.log('Replied');
-                    $modal.modal('hide');
-                })
-                .catch(function(e) {
-                    console.error('Reply failed', e.stack || e);
-                });
-        });
+            $modal.find('.forward-form').on('submit', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                session
+                    .forward(
+                        $modal
+                            .find('input[name=forward]')
+                            .val()
+                            .trim()
+                    )
+                    .then(function() {
+                        console.log('Forwarded');
+                        $modal.modal('hide');
+                    })
+                    .catch(function(e) {
+                        console.error('Forward failed', e.stack || e);
+                    });
+            });
 
-        session.on('rejected', function() {
-            $modal.modal('hide');
-        });
+            $modal.find('.reply-form').on('submit', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                session
+                    .replyWithMessage({
+                        replyType: 0,
+                        replyText: $modal.find('input[name=reply]').val()
+                    })
+                    .then(function() {
+                        console.log('Replied');
+                        $modal.modal('hide');
+                    })
+                    .catch(function(e) {
+                        console.error('Reply failed', e.stack || e);
+                    });
+            });
+
+            session.on('rejected', function() {
+                $modal.modal('hide');
+            });
+        }
     }
 
     function onAccepted(session) {
