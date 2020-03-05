@@ -14,7 +14,6 @@ import {WebPhoneUserAgent} from './userAgent';
 import {delay, extend} from './utils';
 import { MediaStreams } from './mediaStreams';
 import { RTPReport, InboundRtpReport, OutboundRtpReport, RttReport, isNoAudio } from './rtpReport';
-import {promises} from "fs";
 
 export interface RCHeaders {
     sid?: string;
