@@ -565,6 +565,7 @@ async function hold(this: WebPhoneSession): Promise<any> {
             return Promise.resolve('Hold completed');
         })
         .catch(function(e) {
+            _this.pendingReinvite = false
             _this.logger.log('Hold not completed');
             return Promise.reject(e);
         });
