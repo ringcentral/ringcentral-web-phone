@@ -8,15 +8,15 @@ The RingCentral WebPhone Library includes a JavaScript WebRTC library and a WebR
 ## Prerequisites
 
 - You will need an active RingCentral account. Don't have an account? [Get your Free RingCentral Developer Account Now!](https://developers.ringcentral.com)
-- App type should be either :  
+- App type should be either :
     - Browser-Based
     - Server/Web
-    
+
 ## Browser Compatibility
 
-Currently, we officially support Google Chrome browser. Official support for Firefox and Safari browsers are coming soon.    
-    
-## Network Requirements 
+Currently, we officially support Google Chrome browser. Official support for Firefox and Safari browsers are coming soon.
+
+## Network Requirements
 
 Please visit Network Requirement links below
 1. Condensed Requirements: [https://netstorage.ringcentral.com/guides/network_condensed.pdf](https://netstorage.ringcentral.com/guides/network_condensed.pdf)
@@ -100,11 +100,11 @@ For this example you will also need to have [RingCentral JS SDK installed](https
 Configure the web-phone
 
 ```js
-var appKey = '...'; 
+var appKey = '...';
 var appSecret = '...';
 var appName = '...';
 var appVersion = '...';
- 
+
 var sdk = new RingCentral.SDK({
     appKey: appKey,
     appSecret: appSecret,
@@ -124,13 +124,13 @@ platform
         password: '...'
     })
     .then(function(loginResponse) {
-    
+
         return platform
             .post('/client-info/sip-provision', {
                 sipInfo: [{transport: 'WSS'}]
             })
             .then(function(res) { // Doing nested then because we need loginResponse in a simple way
-            
+
                 return new RingCentral.WebPhone(res.json(), { // optional
                     appKey: appKey,
                     appName: appName,
@@ -149,14 +149,14 @@ platform
                     //to enable QoS Analytics Feature
                     enableQos:true
                 });
-                
+
             });
-        
+
     })
     .then(function(webPhone){
-    
+
         // YOUR CODE HERE
-    
+
     })
     .catch(function(e){
         console.error(e.stack);
@@ -174,10 +174,10 @@ $ npm start
 ```
 
 1. Open `http://localhost:8080/demo/` in the browser (port may change if `8080` will be already used by other app)
-2. If your Application is of the Scope  
-   `Server/Web`  
-   `Browser-Based`  
-    Then you would need to add `http://localhost:8080/demo/callback.html` as the OAuth Redirect URI for the application in [Developer Portal](https://developer.ringcentral.com)   
+2. If your Application is of the Scope
+   `Server/Web`
+   `Browser-Based`
+    Then you would need to add `http://localhost:8080/demo/callback.html` as the OAuth Redirect URI for the application in [Developer Portal](https://developer.ringcentral.com)
 3. Add your RC credentials and click on `Register`
 4. For making outbound calls, enter phone number and click on `Call`
 5. For receiving incoming calls, Click on `Accept` button when window pops up (will be visible when there is an incoming call)
@@ -207,9 +207,9 @@ var webPhone = new RingCentral.WebPhone(provisionData, options);
 
 - Provision Data &mdash; the JSON returned from `/client-info/sip-provision` API endpoint
 - Options &mdash; object with various configuration options that adjust WebPhone behavior
-    - `appKey` &mdash; your application key 
-    - `appName` &mdash; your application short code name 
-    - `appVersion` &mdash; your application version 
+    - `appKey` &mdash; your application key
+    - `appName` &mdash; your application short code name
+    - `appVersion` &mdash; your application version
     - `uuid` &mdash; manually provide the unique identifier of WebPhone instance (should persist between page reloads)
     - `logLevel` &mdash; controls verboseness in browser console
         - `0` &mdash; Errors only (good for production)
@@ -258,7 +258,7 @@ Callee will be put on hold and the another person can join into the call by dial
 
 ```js
 session.hold().then(...);
-session.unhold().then(...); 
+session.unhold().then(...);
 ```
 
 ### Mute Unmute
@@ -302,20 +302,20 @@ Warm transfer puts current line on hold (if not done yet) then takes an existing
 
 ```js
 session.hold().then(function(){
-    
+
     return new Promise(function(resolve, reject){
-            
+
         var newSession = webPhone.userAgent.invite('PHONE_NUMBER', {
             media: {}
         });
-        
+
         // when ready call the following code, for example when user clicks "Complete Transfer" button
         document.getElementById('complete-transfer').addEventListener('click', function(){
             resolve(session.warmTransfer(newSession));
         });
 
     });
-        
+
 }).then(...).catch(...);
 ```
 
@@ -336,24 +336,24 @@ session.stopRecord().then(...);
 
 Not yet implemented. Could be done by dialing \*83. The account should be enabled for barge/whisper access through system admin.
 
-## Upgrade Procedure from v0.4.X to 0.7.7
+## Upgrade Procedure from v0.4.X to 0.7.8
 
-- SDK now only supports only Unified SDP plan. You can find more information about this here:  [https://chromestatus.com/feature/5723303167655936](https://chromestatus.com/feature/5723303167655936) 
+- SDK now only supports only Unified SDP plan. You can find more information about this here:  [https://chromestatus.com/feature/5723303167655936](https://chromestatus.com/feature/5723303167655936)
 
-- SDK now only supports "require" as rtcp-mux policy. We no more support "negotiate". You can find more information about this here: [https://www.juandebravo.com/2017/02/15/rtcp-mux-in-webrtc/](https://www.juandebravo.com/2017/02/15/rtcp-mux-in-webrtc/) 
+- SDK now only supports "require" as rtcp-mux policy. We no more support "negotiate". You can find more information about this here: [https://www.juandebravo.com/2017/02/15/rtcp-mux-in-webrtc/](https://www.juandebravo.com/2017/02/15/rtcp-mux-in-webrtc/)
 
-- SDK now handles SIP Re-Invites, which helps in handling one-way audio issues / reconnecting media due to network reconnections. 
+- SDK now handles SIP Re-Invites, which helps in handling one-way audio issues / reconnecting media due to network reconnections.
 
-- SDK constructor now allows to add custom UA Configuration parameters like `sessionDescriptionHandlerFactory` , `sessionDescriptionHandlerFactoryOptions` 
+- SDK constructor now allows to add custom UA Configuration parameters like `sessionDescriptionHandlerFactory` , `sessionDescriptionHandlerFactoryOptions`
 
 - SDK now handles rendering HTML Media Elements. Pass remoteVideo and localVideo elements via SDK constructor
 
 - SDK also offers to addTrack() to handle remoteVideo and localVideo elements outside the constructor too
 
 
--  For FireFox browser support 
-    - Client application needs to detect if the browser is firefox. 
-    - Client application needs to set custom UA configuration option 'options.enableMidLinesInSDP' to `true` for browser >= FF v63 for hold functionality to work 
+-  For FireFox browser support
+    - Client application needs to detect if the browser is firefox.
+    - Client application needs to set custom UA configuration option 'options.enableMidLinesInSDP' to `true` for browser >= FF v63 for hold functionality to work
     - QoS feature is not supported on FireFox due to browser related bugs. Please set the custom UA configuration option `options.enableQos` to `false`
 
 - SDK can now detect AudioInputLevel if the microphone device is not present or the input volume is set to 0. Added event listner `no-input-volume` for the same
@@ -362,9 +362,10 @@ Not yet implemented. Could be done by dialing \*83. The account should be enable
 
 - You can now enable logging for AudioInputLevel, AudioOutputLevel and Media Reports by setting the custom UA configuration option `options.enableMediaReportLogging` to true. This will help in providing more information on one-way audio issues if there are any
 
+
 ### Initialization
 
-Before: 
+Before:
 ```javascript
 webPhone = new RingCentral.WebPhone(data, {
             appKey: localStorage.getItem('webPhoneAppKey'),
@@ -378,7 +379,7 @@ webPhone = new RingCentral.WebPhone(data, {
 ```
 
 
-After: 
+After:
 ```javascript
 
 var remoteVideoElement =  document.getElementById('remoteVideo');
@@ -395,35 +396,35 @@ webPhone = new RingCentral.WebPhone(data, {
         remote: remoteVideoElement,
         local: localVideoElement
     },
-    //to enable QoS Analytics Feature  
+    //to enable QoS Analytics Feature
     enableQos:true,
     enableMediaReportLogging : true
 });
 ```
 
 ### Accept Invites:
- 
+
 Before:
 ```javascript
-var acceptOptions = {	
-            media: {	
-                render: {	
-                    remote: document.getElementById('remoteVideo'),	
-                    local: document.getElementById('localVideo')	
-                }	
-            }	
+var acceptOptions = {
+            media: {
+                render: {
+                    remote: document.getElementById('remoteVideo'),
+                    local: document.getElementById('localVideo')
+                }
+            }
       };
 ...
 ...
 session.accept(acceptOptions).then(function() {
-...    
+...
 });;
 ```
 
 After:
 ```javascript
 session.accept().then(function() {
-...    
+...
 })
 ```
 
@@ -450,6 +451,31 @@ var session = webPhone.userAgent.invite(number, {
     homeCountryId: homeCountryId
 });
 ```
+
+
+### Auto Answer incoming calls if Invites containing ``Alert-Info: Auto Answer`` header field:
+
+```javascript
+
+For incoming calls
+function onInvite(session) {
+    if (session.request.headers['Alert-Info'][0].raw === 'Auto Answer') {
+            session
+                .accept()
+                .then(function() {
+                    onAccepted(session);
+                })
+                .catch(function(e) {
+                    console.error('Accept failed', e.stack || e);
+                });
+    }
+...
+...
+}
+```
+
+
+
 
 ## Compatibility Matrix
 
@@ -478,3 +504,5 @@ var session = webPhone.userAgent.invite(number, {
 | Nov 2019 | 0.7.5 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
 | Jan 2020 | 0.7.6 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
 | Jan 2020 | 0.7.7 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
+| Feb 2020 | 0.7.8 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
+| Mar 2020 | 0.7.9 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |

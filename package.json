@@ -1,6 +1,6 @@
 {
   "name": "ringcentral-web-phone",
-  "version": "0.7.7",
+  "version": "0.7.9",
   "scripts": {
     "test": "npm run test:ut && npm run test:e2e",
     "test:coverage": "cat .coverage/lcov.info | coveralls -v",

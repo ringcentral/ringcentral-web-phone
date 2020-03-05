@@ -522,6 +522,7 @@ function dtmf(this: WebPhoneSession, dtmf: string, duration = 100, interToneGap 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 async function hold(this: WebPhoneSession): Promise<any> {
+    this.stopMediaStats();
     var _this = this;
     if (this.localHold) {
         this.logger.log('Session is already on hold, cannot put it on hold again');
@@ -597,7 +598,8 @@ async function warmTransfer(
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-async function transfer(this: WebPhoneSession, target: WebPhoneSession, options): Promise<ReferClientContext> {
+async function transfer(this: WebPhoneSession, target: WebPhoneSession, options: any = {}): Promise<ReferClientContext> {
+    options.extraHeaders = (options.extraHeaders || []).concat(this.ua.defaultHeaders);
     return this.blindTransfer(target, options);
 }
 
