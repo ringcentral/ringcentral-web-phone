@@ -150,8 +150,8 @@ $(function() {
                 remote: remoteVideoElement,
                 local: localVideoElement
             },
-            enableQos: true,
-            enableMediaReportLogging: true
+            enableQos: true
+            // enableMediaReportLogging: true
         });
 
         webPhone.userAgent.audioHelper.loadAudio({
@@ -385,16 +385,17 @@ $(function() {
             e.stopPropagation();
             session.hold().then(function() {
                 var newSession = session.ua.invite($transfer.val().trim());
-
                 newSession.once('accepted', function() {
-                    session
-                        .warmTransfer(newSession)
-                        .then(function() {
-                            console.log('Transferred');
-                        })
-                        .catch(function(e) {
-                            console.error('Transfer failed', e.stack || e);
-                        });
+                    $modal.find('.transfer-form button.complete').on('click', function(e) {
+                        session
+                            .warmTransfer(newSession)
+                            .then(function() {
+                                console.log('Transferred');
+                            })
+                            .catch(function(e) {
+                                console.error('Transfer failed', e.stack || e);
+                            });
+                    });
                 });
             });
         });

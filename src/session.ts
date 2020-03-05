@@ -14,6 +14,7 @@ import {WebPhoneUserAgent} from './userAgent';
 import {delay, extend} from './utils';
 import { MediaStreams } from './mediaStreams';
 import { RTPReport, InboundRtpReport, OutboundRtpReport, RttReport, isNoAudio } from './rtpReport';
+import {promises} from "fs";
 
 export interface RCHeaders {
     sid?: string;
@@ -95,6 +96,7 @@ export type WebPhoneSession = InviteClientContext &
         noAudioReportCount: number;
         reinviteForNoAudioSent: boolean;
         stopMediaStats: typeof stopMediaStats;
+        pendingReinvite: boolean;
     };
 
 export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
@@ -445,11 +447,11 @@ async function setRecord(session: WebPhoneSession, flag: boolean): Promise<any> 
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-async function setLocalHold(session: WebPhoneSession, flag: boolean): Promise<any> {
+function setLocalHold(session: WebPhoneSession, flag: boolean): Promise<any> {
     if (flag) {
-        await session.__hold();
+        session.hold();
     } else {
-        await session.__unhold();
+        session.unhold();
     }
 }
 
@@ -520,15 +522,59 @@ function dtmf(this: WebPhoneSession, dtmf: string, duration = 100, interToneGap 
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-function hold(this: WebPhoneSession): Promise<any> {
-    this.stopMediaStats();
-    return setLocalHold(this, true);
+async function hold(this: WebPhoneSession): Promise<any> {
+    var _this = this;
+    if (this.localHold) {
+        this.logger.log('Session is already on hold, cannot put it on hold again');
+        return;
+    }
+    var options = {
+        modifiers: [],
+        extraHeaders: [],
+        sessionDescriptionHandlerOptions: undefined
+    };
+
+    if (this.pendingReinvite) {
+        this.logger.warn('Hold in progress. Please wait until complete, then try again.');
+        return;
+    }
+    if (!this.sessionDescriptionHandler) {
+        this.logger.warn("No SessionDescriptionHandler, can't put the call on hold.");
+        return;
+    }
+
+    if (this.sessionDescriptionHandler) {
+        options.modifiers.push(this.sessionDescriptionHandler.holdModifier);
+    }
+
+    this.pendingReinvite = true;
+
+    this.sessionDescriptionHandler
+        .getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
+        .then(function (description) {
+            _this.sendRequest(C.INVITE, {
+                // extraHeaders,
+                body: description,
+                receiveResponse(response) {
+                    if (response.statusCode === 200) {
+                        _this.localHold = true;
+                        _this.logger.log('Hold completed');
+                    }
+                    return _this.receiveReinviteResponse(response);
+                }
+            });
+            return Promise.resolve('Hold completed');
+        })
+        .catch(function(e) {
+            _this.logger.log('Hold not completed');
+            return Promise.reject(e);
+        });
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-function unhold(this: WebPhoneSession): Promise<any> {
-    return setLocalHold(this, false);
+async function unhold(this: WebPhoneSession): Promise<any> {
+    await this.__unhold();
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -545,11 +591,7 @@ async function warmTransfer(
     transferOptions: any = {}
 ): Promise<ReferClientContext> {
     await (this.localHold ? Promise.resolve(null) : this.hold());
-
-    await delay(300);
-
     transferOptions.extraHeaders = (transferOptions.extraHeaders || []).concat(this.ua.defaultHeaders);
-
     return this.refer(target, transferOptions);
 }
 
