@@ -47,7 +47,7 @@ export interface WebPhoneOptions {
 }
 
 export default class WebPhone {
-    public static version = '0.7.8';
+    public static version = '0.7.7';
     public static uuid = uuid;
     public static delay = delay;
     public static extend = extend;
