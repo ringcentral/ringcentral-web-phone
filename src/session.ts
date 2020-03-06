@@ -1,6 +1,7 @@
 import {
     C,
     ClientContext,
+    Exceptions,
     IncomingResponse,
     InviteClientContext,
     InviteServerContext,
@@ -522,60 +523,101 @@ function dtmf(this: WebPhoneSession, dtmf: string, duration = 100, interToneGap 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 async function hold(this: WebPhoneSession): Promise<any> {
-    this.stopMediaStats();
-    var _this = this;
-    if (this.localHold) {
-        this.logger.log('Session is already on hold, cannot put it on hold again');
-        return;
-    }
-    var options = {
-        modifiers: [],
-        extraHeaders: [],
-        sessionDescriptionHandlerOptions: undefined
-    };
+    return new Promise((resolve, reject) => {
+        var _this = this;
+        if (this.status !== Session.C.STATUS_WAITING_FOR_ACK && this.status !== Session.C.STATUS_CONFIRMED) {
+            throw new Exceptions.InvalidStateError(this.status);
+        }
+        if (this.localHold) {
+            throw new Error('Session Already on hold');
+        }
+        var options = {
+            modifiers: [],
+            extraHeaders: [],
+            sessionDescriptionHandlerOptions: {}
+        };
 
-    if (this.pendingReinvite) {
-        this.logger.warn('Hold in progress. Please wait until complete, then try again.');
-        return;
-    }
-    if (!this.sessionDescriptionHandler) {
-        this.logger.warn("No SessionDescriptionHandler, can't put the call on hold.");
-        return;
-    }
+        if (this.pendingReinvite) {
+            throw new Error('Hold in progress. Please wait until complete, then try again.');
+        }
 
-    if (this.sessionDescriptionHandler) {
+        if (!this.sessionDescriptionHandler) {
+            throw new Error("No SessionDescriptionHandler, can't put the call on hold.");
+        }
+
         options.modifiers.push(this.sessionDescriptionHandler.holdModifier);
-    }
+        this.pendingReinvite = true;
 
-    this.pendingReinvite = true;
-
-    this.sessionDescriptionHandler
-        .getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
-        .then(function (description) {
-            _this.sendRequest(C.INVITE, {
-                // extraHeaders,
-                body: description,
-                receiveResponse(response) {
-                    if (response.statusCode === 200) {
-                        _this.localHold = true;
-                        _this.logger.log('Hold completed');
+        this.sessionDescriptionHandler
+            .getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
+            .then(description => {
+                _this.sendRequest(C.INVITE, {
+                    // extraHeaders,
+                    body: description,
+                    receiveResponse(response) {
+                        if (response.statusCode === 200) {
+                            _this.localHold = true;
+                            _this.logger.log('Hold completed');
+                            resolve(response);
+                        }
+                        return _this.receiveReinviteResponse(response);
                     }
-                    return _this.receiveReinviteResponse(response);
-                }
+                });
+            })
+            .catch(e => {
+                _this.pendingReinvite = false;
+                _this.logger.log('Hold not completed');
+                reject(e);
             });
-            return Promise.resolve('Hold completed');
-        })
-        .catch(function(e) {
-            _this.pendingReinvite = false
-            _this.logger.log('Hold not completed');
-            return Promise.reject(e);
-        });
+    });
 }
-
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 async function unhold(this: WebPhoneSession): Promise<any> {
-    await this.__unhold();
+    return new Promise((resolve, reject) => {
+        var _this = this;
+        if (this.status !== Session.C.STATUS_WAITING_FOR_ACK && this.status !== Session.C.STATUS_CONFIRMED) {
+            throw new Exceptions.InvalidStateError(this.status);
+        }
+        if (!this.localHold) {
+            throw new Error('Session is not on hold, cannot unhold it');
+        }
+        var options = {
+            modifiers: [],
+            extraHeaders: [],
+            sessionDescriptionHandlerOptions: {}
+        };
+
+        if (this.pendingReinvite) {
+            throw new Error('Unhold in progress. Please wait until complete, then try again.');
+        }
+
+        if (!this.sessionDescriptionHandler) {
+            throw new Error("No SessionDescriptionHandler, can't put the call on unhold.");
+        }
+        this.pendingReinvite = true;
+
+        this.sessionDescriptionHandler
+            .getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
+            .then(description => {
+                _this.sendRequest(C.INVITE, {
+                    body: description,
+                    receiveResponse(response) {
+                        if (response.statusCode === 200) {
+                            _this.localHold = false;
+                            _this.logger.log('Unhold completed');
+                            resolve(response);
+                        }
+                        return _this.receiveReinviteResponse(response);
+                    }
+                });
+            })
+            .catch(e => {
+                _this.pendingReinvite = false;
+                _this.logger.log('Unhold not completed');
+                reject(e);
+            });
+    });
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
