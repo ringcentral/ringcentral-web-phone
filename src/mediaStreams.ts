@@ -314,6 +314,15 @@ export class MediaStreamsImpl {
                                 }
                             });
                             break;
+                        case 'media-source':
+                            reports.outboundRtpReport['rtpLocalAudioLevel'] = report.audioLevel ? report.audioLevel : 0;
+                            break;
+                        case 'track':
+                            if (!report.remoteSource) {
+                                break;
+                            }
+                            reports.inboundRtpReport['rtpRemoteAudioLevel'] = report.audioLevel ? report.audioLevel : 0;
+                            break;
                         default:
                             break;
                     }
