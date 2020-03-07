@@ -446,12 +446,12 @@ async function setRecord(session: WebPhoneSession, flag: boolean): Promise<any> 
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
-
-function setLocalHold(session: WebPhoneSession, flag: boolean): Promise<any> {
+//TODO: Convert to toggleHold() and deprecate function
+async function setLocalHold(session: WebPhoneSession, flag: boolean): Promise<any> {
     if (flag) {
-        session.hold();
+        await session.hold();
     } else {
-        session.unhold();
+        await session.unhold();
     }
 }
 
@@ -529,7 +529,8 @@ async function hold(this: WebPhoneSession): Promise<any> {
             throw new Exceptions.InvalidStateError(this.status);
         }
         if (this.localHold) {
-            throw new Error('Session Already on hold');
+            this.logger.warn('Session already on hold');
+            return Promise.resolve();
         }
         var options = {
             modifiers: [],
@@ -580,7 +581,8 @@ async function unhold(this: WebPhoneSession): Promise<any> {
             throw new Exceptions.InvalidStateError(this.status);
         }
         if (!this.localHold) {
-            throw new Error('Session is not on hold, cannot unhold it');
+            this.logger.warn('Session is not on hold, cannot unhold it');
+            return Promise.resolve();
         }
         var options = {
             modifiers: [],
@@ -634,15 +636,23 @@ async function warmTransfer(
     transferOptions: any = {}
 ): Promise<ReferClientContext> {
     await (this.localHold ? Promise.resolve(null) : this.hold());
-    transferOptions.extraHeaders = (transferOptions.extraHeaders || []).concat(this.ua.defaultHeaders);
-    return this.refer(target, transferOptions);
+    return new Promise(resolve => {
+        transferOptions.extraHeaders = (transferOptions.extraHeaders || []).concat(this.ua.defaultHeaders);
+        this.refer(target, transferOptions);
+    });
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-async function transfer(this: WebPhoneSession, target: WebPhoneSession, options: any = {}): Promise<ReferClientContext> {
-    options.extraHeaders = (options.extraHeaders || []).concat(this.ua.defaultHeaders);
-    return this.blindTransfer(target, options);
+async function transfer(
+    this: WebPhoneSession,
+    target: WebPhoneSession,
+    options: any = {}
+): Promise<ReferClientContext> {
+    return new Promise(resolve => {
+        options.extraHeaders = (options.extraHeaders || []).concat(this.ua.defaultHeaders);
+        this.blindTransfer(target, options);
+    });
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
