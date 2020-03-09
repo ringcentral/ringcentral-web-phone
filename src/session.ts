@@ -625,10 +625,11 @@ async function unhold(this: WebPhoneSession): Promise<any> {
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
-
 async function blindTransfer(this: WebPhoneSession, target, options = {}): Promise<ReferClientContext> {
     return new Promise(resolve => {
+        // @ts-ignore
         options.receiveResponse = () => {
+            // @ts-ignore
             resolve(this.referContext);
         };
         this.logger.log('Initiating call transfer');
