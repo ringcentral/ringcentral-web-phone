@@ -561,6 +561,7 @@ async function hold(this: WebPhoneSession): Promise<any> {
                             _this.logger.log('Hold completed');
                             resolve(response);
                         }
+                        // @ts-ignore
                         return _this.receiveReinviteResponse(response);
                     }
                 });
