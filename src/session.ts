@@ -631,6 +631,7 @@ async function blindTransfer(this: WebPhoneSession, target, options = {}): Promi
         options.receiveResponse = () => {
             resolve(this.referContext);
         };
+        this.logger.log('Initiating call transfer');
         this.refer(target, options)
     });
 }
@@ -648,6 +649,7 @@ async function warmTransfer(
         transferOptions.receiveResponse = (response) => {
             resolve(response);
         };
+        this.logger.log('Completing Warm Transfer');
         this.refer(target, transferOptions);
     });
 }
