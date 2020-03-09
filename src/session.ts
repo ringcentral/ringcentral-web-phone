@@ -610,6 +610,7 @@ async function unhold(this: WebPhoneSession): Promise<any> {
                             _this.logger.log('Unhold completed');
                             resolve(response);
                         }
+                        // @ts-ignore
                         return _this.receiveReinviteResponse(response);
                     }
                 });
