@@ -449,9 +449,9 @@ async function setRecord(session: WebPhoneSession, flag: boolean): Promise<any> 
 //TODO: Convert to toggleHold() and deprecate this function
 async function setLocalHold(session: WebPhoneSession, flag: boolean): Promise<any> {
     if (flag) {
-        await session.hold();
+        await session.__hold();
     } else {
-        await session.unhold();
+        await session.__unhold();
     }
 }
 
