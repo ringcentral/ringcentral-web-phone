@@ -13,8 +13,8 @@ import {responseTimeout, messages} from './constants';
 import {startQosStatsCollection} from './qos';
 import {WebPhoneUserAgent} from './userAgent';
 import {delay, extend} from './utils';
-import { MediaStreams } from './mediaStreams';
-import { RTPReport, InboundRtpReport, OutboundRtpReport, RttReport, isNoAudio } from './rtpReport';
+import {MediaStreams} from './mediaStreams';
+import {RTPReport, InboundRtpReport, OutboundRtpReport, RttReport, isNoAudio} from './rtpReport';
 
 export interface RCHeaders {
     sid?: string;
@@ -446,7 +446,7 @@ async function setRecord(session: WebPhoneSession, flag: boolean): Promise<any> 
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
-//TODO: Convert to toggleHold() and deprecate function
+//TODO: Convert to toggleHold() and deprecate this function
 async function setLocalHold(session: WebPhoneSession, flag: boolean): Promise<any> {
     if (flag) {
         await session.hold();
@@ -628,12 +628,11 @@ async function unhold(this: WebPhoneSession): Promise<any> {
 async function blindTransfer(this: WebPhoneSession, target, options = {}): Promise<ReferClientContext> {
     return new Promise(resolve => {
         // @ts-ignore
-        options.receiveResponse = () => {
-            // @ts-ignore
-            resolve(this.referContext);
+        options.receiveResponse = response => {
+            if (response.statusCode === 202) resolve(response);
         };
-        this.logger.log('Initiating call transfer');
-        this.refer(target, options)
+        this.logger.log('Call transfer initiated');
+        this.refer(target, options);
     });
 }
 
@@ -647,10 +646,10 @@ async function warmTransfer(
     await (this.localHold ? Promise.resolve(null) : this.hold());
     return new Promise(resolve => {
         transferOptions.extraHeaders = (transferOptions.extraHeaders || []).concat(this.ua.defaultHeaders);
-        transferOptions.receiveResponse = (response) => {
-            resolve(response);
+        transferOptions.receiveResponse = response => {
+            if (response.statusCode === 202) resolve(response);
         };
-        this.logger.log('Completing Warm Transfer');
+        this.logger.log('Completing warm transfer');
         this.refer(target, transferOptions);
     });
 }
@@ -824,7 +823,7 @@ function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
         this.logger.log('Start gathering media report');
         this.mediaStatsStarted = true;
         this.mediaStreams.getMediaStats((report: RTPReport) => {
-            if(this.ua.enableMediaReportLogging) {
+            if (this.ua.enableMediaReportLogging) {
                 this.logger.log(`Got media report: ${JSON.stringify(report)}`);
             }
             if (!this.reinviteForNoAudioSent && isNoAudio(report)) {
@@ -839,7 +838,7 @@ function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
             } else if (!isNoAudio(report)) {
                 this.noAudioReportCount = 0;
             }
-        }, 2000)
+        }, 2000);
     }
 }
 
