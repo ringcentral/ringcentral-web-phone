@@ -544,12 +544,7 @@ async function warmTransfer(
     target: WebPhoneSession,
     transferOptions: any = {}
 ): Promise<ReferClientContext> {
-    await (this.localHold ? Promise.resolve(null) : this.hold());
-
-    await delay(300);
-
     transferOptions.extraHeaders = (transferOptions.extraHeaders || []).concat(this.ua.defaultHeaders);
-
     return this.refer(target, transferOptions);
 }
 
