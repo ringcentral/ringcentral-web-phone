@@ -96,6 +96,7 @@ export type WebPhoneSession = InviteClientContext &
         noAudioReportCount: number;
         reinviteForNoAudioSent: boolean;
         stopMediaStats: typeof stopMediaStats;
+        receiveReinviteResponse: any;
         pendingReinvite: boolean;
         _sendReinvite: typeof sendReinvite;
     };
@@ -112,6 +113,7 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.__unhold = session.unhold;
     session.__dtmf = session.dtmf;
     session.__reinvite = session.reinvite;
+    session._sendReinvite = sendReinvite;
 
     session.sendRequest = sendRequest.bind(session);
     session.receiveRequest = receiveRequest.bind(session);
@@ -524,7 +526,7 @@ function dtmf(this: WebPhoneSession, dtmf: string, duration = 100, interToneGap 
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-async function sendReinvite(options: any = {}): Promise<any> {
+async function sendReinvite(this: WebPhoneSession, options: any = {}): Promise<any> {
     if (options === void 0) {
         options = {};
     }
