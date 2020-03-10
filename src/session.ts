@@ -736,7 +736,7 @@ function onLocalHold(this: WebPhoneSession): boolean {
 
 function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
     const pc = this.sessionDescriptionHandler.peerConnection;
-
+    const mediaCheckTimer = 2000;
     let remoteAudio;
     let localAudio;
 
@@ -805,7 +805,7 @@ function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
             } else if (!isNoAudio(report)) {
                 this.noAudioReportCount = 0;
             }
-        }, 2000);
+        }, mediaCheckTimer);
     }
 }
 
