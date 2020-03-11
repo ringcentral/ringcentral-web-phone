@@ -98,6 +98,7 @@ export type WebPhoneSession = InviteClientContext &
         stopMediaStats: typeof stopMediaStats;
         receiveReinviteResponse: any;
         pendingReinvite: boolean;
+        sendReinvite: Promise<any>;
         _sendReinvite: typeof sendReinvite;
     };
 
