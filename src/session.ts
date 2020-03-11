@@ -113,7 +113,6 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.__unhold = session.unhold;
     session.__dtmf = session.dtmf;
     session.__reinvite = session.reinvite;
-    session._sendReinvite = sendReinvite;
 
     session.sendRequest = sendRequest.bind(session);
     session.receiveRequest = receiveRequest.bind(session);
@@ -122,7 +121,6 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.unhold = unhold.bind(session);
     session.dtmf = dtmf.bind(session);
     session.reinvite = reinvite.bind(session);
-    session._sendReinvite = sendReinvite.bind(session);
 
     session.warmTransfer = warmTransfer.bind(session);
     session.blindTransfer = blindTransfer.bind(session);
@@ -140,6 +138,8 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.media = session.ua.media; //TODO Remove
     session.addTrack = addTrack.bind(session);
     session.stopMediaStats = stopMediaStats.bind(session);
+
+    session._sendReinvite = sendReinvite.bind(session);
 
     session.on('replaced', patchSession);
 
