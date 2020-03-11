@@ -287,6 +287,7 @@ const parseRcHeader = (session: WebPhoneSession): any => {
     }
 };
 
+const mediaCheckTimer = 2000;
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 function canUseRCMCallControl(this: WebPhoneSession): boolean {
@@ -528,9 +529,6 @@ function dtmf(this: WebPhoneSession, dtmf: string, duration = 100, interToneGap 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 async function sendReinvite(this: WebPhoneSession, options: any = {}): Promise<any> {
-    if (options === void 0) {
-        options = {};
-    }
     if (this.pendingReinvite) {
         throw new Error('Reinvite in progress. Please wait until complete, then try again.');
     }
@@ -739,7 +737,6 @@ function onLocalHold(this: WebPhoneSession): boolean {
 
 function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
     const pc = this.sessionDescriptionHandler.peerConnection;
-    const mediaCheckTimer = 2000;
     let remoteAudio;
     let localAudio;
 
