@@ -300,23 +300,33 @@ supervisor and the call between customer and agent will be disconnected.
 
 Warm transfer puts current line on hold (if not done yet) then takes an existing line from arguments and makes transfer.
 
-```js
-session.hold().then(function(){
+####Handle Warm Transfer senario (Attended Transfer usecase) :
+Steps:
+1. Put the current session on ``Hold`` as shown in the demo code
+2. Initiate a new session (Start new call)
+3. a. Once new call is answered , ``Complete`` the transfer , or terminate new session.
+   b. If you want to switch to original call, switch the session context and ``Unhold`` the session
 
-    return new Promise(function(resolve, reject){
-
-        var newSession = webPhone.userAgent.invite('PHONE_NUMBER', {
-            media: {}
-        });
-
-        // when ready call the following code, for example when user clicks "Complete Transfer" button
-        document.getElementById('complete-transfer').addEventListener('click', function(){
-            resolve(session.warmTransfer(newSession));
-        });
-
-    });
-
-}).then(...).catch(...);
+```javascript
+$modal.find('.transfer-form button.warm').on('click', function(e) {
+   session.hold().then(function() {
+                console.log('Placing the call on hold, initiating attended transfer');
+                var newSession = session.ua.invite($transfer.val().trim());
+                newSession.once('accepted', function() {
+                    console.log('New call initated. Click Complete to complete the transfer');
+                    $modal.find('.transfer-form button.complete').on('click', function(e) {
+                        session
+                            .warmTransfer(newSession)
+                            .then(function() {
+                                console.log('Warm transfer completed');
+                            })
+                            .catch(function(e) {
+                                console.error('Transfer failed', e.stack || e);
+                            });
+                    });
+                });
+            });
+});
 ```
 
 ### Forward
@@ -336,7 +346,7 @@ session.stopRecord().then(...);
 
 Not yet implemented. Could be done by dialing \*83. The account should be enabled for barge/whisper access through system admin.
 
-## Upgrade Procedure from v0.4.X to 0.7.8
+## Upgrade Procedure from v0.4.X to 0.8.0
 
 - SDK now only supports only Unified SDP plan. You can find more information about this here:  [https://chromestatus.com/feature/5723303167655936](https://chromestatus.com/feature/5723303167655936)
 
@@ -475,8 +485,6 @@ function onInvite(session) {
 ```
 
 
-
-
 ## Compatibility Matrix
 
 | Date | SDK | SIPJS | Chrome | Firefox |
@@ -505,3 +513,4 @@ function onInvite(session) {
 | Jan 2020 | 0.7.6 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
 | Jan 2020 | 0.7.7 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
 | Feb 2020 | 0.7.8 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
+| Mar 2020 | 0.8.0 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |

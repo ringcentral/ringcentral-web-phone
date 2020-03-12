@@ -1,6 +1,7 @@
 import {
     C,
     ClientContext,
+    Exceptions,
     IncomingResponse,
     InviteClientContext,
     InviteServerContext,
@@ -12,8 +13,8 @@ import {responseTimeout, messages} from './constants';
 import {startQosStatsCollection} from './qos';
 import {WebPhoneUserAgent} from './userAgent';
 import {delay, extend} from './utils';
-import { MediaStreams } from './mediaStreams';
-import { RTPReport, InboundRtpReport, OutboundRtpReport, RttReport, isNoAudio } from './rtpReport';
+import {MediaStreams} from './mediaStreams';
+import {RTPReport, InboundRtpReport, OutboundRtpReport, RttReport, isNoAudio} from './rtpReport';
 
 export interface RCHeaders {
     sid?: string;
@@ -95,6 +96,10 @@ export type WebPhoneSession = InviteClientContext &
         noAudioReportCount: number;
         reinviteForNoAudioSent: boolean;
         stopMediaStats: typeof stopMediaStats;
+        receiveReinviteResponse: any;
+        pendingReinvite: boolean;
+        sendReinvite: Promise<any>;
+        _sendReinvite: typeof sendReinvite;
     };
 
 export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
@@ -134,6 +139,8 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.media = session.ua.media; //TODO Remove
     session.addTrack = addTrack.bind(session);
     session.stopMediaStats = stopMediaStats.bind(session);
+
+    session._sendReinvite = sendReinvite.bind(session);
 
     session.on('replaced', patchSession);
 
@@ -280,6 +287,7 @@ const parseRcHeader = (session: WebPhoneSession): any => {
     }
 };
 
+const mediaCheckTimer = 2000;
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 function canUseRCMCallControl(this: WebPhoneSession): boolean {
@@ -444,7 +452,7 @@ async function setRecord(session: WebPhoneSession, flag: boolean): Promise<any> 
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
-
+//TODO: Convert to toggleHold() and deprecate this function
 async function setLocalHold(session: WebPhoneSession, flag: boolean): Promise<any> {
     if (flag) {
         await session.__hold();
@@ -520,20 +528,84 @@ function dtmf(this: WebPhoneSession, dtmf: string, duration = 100, interToneGap 
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-function hold(this: WebPhoneSession): Promise<any> {
-    this.stopMediaStats();
-    return setLocalHold(this, true);
+async function sendReinvite(this: WebPhoneSession, options: any = {}): Promise<any> {
+    if (this.pendingReinvite) {
+        throw new Error('Reinvite in progress. Please wait until complete, then try again.');
+    }
+    if (!this.sessionDescriptionHandler) {
+        throw new Error("No SessionDescriptionHandler, can't send reinvite..");
+    }
+    this.pendingReinvite = true;
+    options.modifiers = options.modifiers || [];
+
+    return new Promise(async (resolve, reject) => {
+        try {
+            const description = await this.sessionDescriptionHandler.getDescription(
+                options.sessionDescriptionHandlerOptions,
+                options.modifiers
+            );
+            this.sendRequest(C.INVITE, {
+                body: description,
+                receiveResponse: (response: IncomingResponse) => {
+                    if (response.statusCode === 200) resolve(response);
+                    return this.receiveReinviteResponse(response);
+                }
+            });
+        } catch (e) {
+            this.pendingReinvite = false;
+            reject(e);
+        }
+    });
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-function unhold(this: WebPhoneSession): Promise<any> {
-    return setLocalHold(this, false);
+async function hold(this: WebPhoneSession): Promise<any> {
+    if (this.status !== Session.C.STATUS_WAITING_FOR_ACK && this.status !== Session.C.STATUS_CONFIRMED) {
+        throw new Exceptions.InvalidStateError(this.status);
+    }
+    if (this.localHold) {
+        throw new Error('Session already on hold');
+    }
+    this.stopMediaStats();
+    let options = {
+        modifiers: []
+    };
+    options.modifiers = options.modifiers || [];
+    options.modifiers.push(this.sessionDescriptionHandler.holdModifier);
+    try {
+        this.logger.log('Hold Initiated');
+        let response = await this._sendReinvite(options);
+        this.localHold = true;
+        this.logger.log('Hold completed: ' + response.body);
+    } catch (e) {
+        throw new Error('Hold could not be completed');
+    }
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+async function unhold(this: WebPhoneSession): Promise<any> {
+    if (this.status !== Session.C.STATUS_WAITING_FOR_ACK && this.status !== Session.C.STATUS_CONFIRMED) {
+        throw new Exceptions.InvalidStateError(this.status);
+    }
+    if (!this.localHold) {
+        throw new Error('Session not on hold, cannot unhold');
+    }
+    try {
+        this.logger.log('Unhold Initiated');
+        let response = await this._sendReinvite();
+        this.localHold = false;
+        this.logger.log('Unhold completed: ' + response.body);
+    } catch (e) {
+        throw new Error('Unhold could not be completed');
+    }
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 function blindTransfer(this: WebPhoneSession, target, options = {}): Promise<ReferClientContext> {
+    this.logger.log('Call transfer initiated');
     return Promise.resolve(this.refer(target, options));
 }
 
@@ -545,17 +617,18 @@ async function warmTransfer(
     transferOptions: any = {}
 ): Promise<ReferClientContext> {
     await (this.localHold ? Promise.resolve(null) : this.hold());
-
-    await delay(300);
-
     transferOptions.extraHeaders = (transferOptions.extraHeaders || []).concat(this.ua.defaultHeaders);
-
-    return this.refer(target, transferOptions);
+    this.logger.log('Completing warm transfer');
+    return Promise.resolve(this.refer(target, transferOptions));
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-async function transfer(this: WebPhoneSession, target: WebPhoneSession, options: any = {}): Promise<ReferClientContext> {
+async function transfer(
+    this: WebPhoneSession,
+    target: WebPhoneSession,
+    options: any = {}
+): Promise<ReferClientContext> {
     options.extraHeaders = (options.extraHeaders || []).concat(this.ua.defaultHeaders);
     return this.blindTransfer(target, options);
 }
@@ -664,7 +737,6 @@ function onLocalHold(this: WebPhoneSession): boolean {
 
 function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
     const pc = this.sessionDescriptionHandler.peerConnection;
-
     let remoteAudio;
     let localAudio;
 
@@ -718,7 +790,7 @@ function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
         this.logger.log('Start gathering media report');
         this.mediaStatsStarted = true;
         this.mediaStreams.getMediaStats((report: RTPReport) => {
-            if(this.ua.enableMediaReportLogging) {
+            if (this.ua.enableMediaReportLogging) {
                 this.logger.log(`Got media report: ${JSON.stringify(report)}`);
             }
             if (!this.reinviteForNoAudioSent && isNoAudio(report)) {
@@ -733,7 +805,7 @@ function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
             } else if (!isNoAudio(report)) {
                 this.noAudioReportCount = 0;
             }
-        }, 2000)
+        }, mediaCheckTimer);
     }
 }
 

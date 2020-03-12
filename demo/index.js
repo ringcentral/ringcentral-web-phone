@@ -395,17 +395,20 @@ $(function() {
             e.preventDefault();
             e.stopPropagation();
             session.hold().then(function() {
+                console.log('Placing the call on hold, initiating attended transfer');
                 var newSession = session.ua.invite($transfer.val().trim());
-
                 newSession.once('accepted', function() {
-                    session
-                        .warmTransfer(newSession)
-                        .then(function() {
-                            console.log('Transferred');
-                        })
-                        .catch(function(e) {
-                            console.error('Transfer failed', e.stack || e);
-                        });
+                    console.log('New call initated. Click Complete to complete the transfer');
+                    $modal.find('.transfer-form button.complete').on('click', function(e) {
+                        session
+                            .warmTransfer(newSession)
+                            .then(function() {
+                                console.log('Warm transfer completed');
+                            })
+                            .catch(function(e) {
+                                console.error('Transfer failed', e.stack || e);
+                            });
+                    });
                 });
             });
         });
