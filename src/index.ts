@@ -44,6 +44,10 @@ export interface WebPhoneOptions {
     maxReconnectionAttemptsWithBackup?: number;
     reconnectionTimeoutNoBackup?: number;
     reconnectionTimeoutWithBackup?: number;
+    instanceId?: string;
+    regId?: number;
+    enableDefaultModifiers?: boolean;
+    enablePlanB: boolean;
 }
 
 export default class WebPhone {
@@ -88,17 +92,27 @@ export default class WebPhone {
             ` RCWEBPHONE/${version}`;
 
         const modifiers = options.modifiers || [];
-        modifiers.push(Web.Modifiers.stripG722);
-        modifiers.push(Web.Modifiers.stripTcpCandidates);
+
+        if (options.enableDefaultModifiers === (true || undefined)) {
+            modifiers.push(Web.Modifiers.stripG722);
+            modifiers.push(Web.Modifiers.stripTcpCandidates);
+        }
 
         if (options.enableMidLinesInSDP) {
             modifiers.push(Web.Modifiers.addMidLines);
         }
 
+        var sdpSemantics = 'unified-plan';
+        if (options.enablePlanB) {
+            sdpSemantics = 'plan-b';
+        }
+
         const sessionDescriptionHandlerFactoryOptions = options.sessionDescriptionHandlerFactoryOptions || {
             peerConnectionOptions: {
                 iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 500,
-                rtcConfiguration: {}
+                rtcConfiguration: {
+                    sdpSemantics
+                }
             },
             constraints: options.mediaConstraints || defaultMediaConstraints,
             modifiers
@@ -176,7 +190,11 @@ export default class WebPhone {
             userAgentString,
             sessionDescriptionHandlerFactoryOptions,
             sessionDescriptionHandlerFactory,
-            allowLegacyNotifications: true
+            allowLegacyNotifications: true,
+            registerOptions: {
+                instanceId: options.uuid || uuid(),
+                regId: options.regId || undefined
+            }
         };
 
         options.sipErrorCodes = sipErrorCodes;

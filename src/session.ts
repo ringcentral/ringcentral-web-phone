@@ -100,6 +100,7 @@ export type WebPhoneSession = InviteClientContext &
         pendingReinvite: boolean;
         sendReinvite: Promise<any>;
         _sendReinvite: typeof sendReinvite;
+        replaceLocalTrack: any;
     };
 
 export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
@@ -149,19 +150,6 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
         stopPlaying();
         if (incomingResponse.statusCode === 183) {
             session.logger.log('Receiving 183 In Progress from server');
-            session.createDialog(incomingResponse, 'UAC');
-            session.hasAnswer = true;
-            session.status = Session.C.STATUS_EARLY_MEDIA;
-            session.logger.log('Created UAC Dialog');
-            session.sessionDescriptionHandler.setDescription(incomingResponse.body).catch(exception => {
-                session.logger.warn(exception);
-                session.failed(incomingResponse, C.causes.BAD_MEDIA_DESCRIPTION);
-                session.terminate({
-                    status_code: 488,
-                    reason_phrase: 'Bad Media Description'
-                });
-                session.logger.log('Call failed with Bad Media Description');
-            });
         }
     });
 
@@ -538,23 +526,19 @@ async function sendReinvite(this: WebPhoneSession, options: any = {}): Promise<a
     this.pendingReinvite = true;
     options.modifiers = options.modifiers || [];
 
-    return new Promise(async (resolve, reject) => {
-        try {
-            const description = await this.sessionDescriptionHandler.getDescription(
-                options.sessionDescriptionHandlerOptions,
-                options.modifiers
-            );
-            this.sendRequest(C.INVITE, {
-                body: description,
-                receiveResponse: (response: IncomingResponse) => {
-                    if (response.statusCode === 200) resolve(response);
-                    return this.receiveReinviteResponse(response);
-                }
-            });
-        } catch (e) {
-            this.pendingReinvite = false;
+    return new Promise((resolve, reject) => {
+        const onAccept = response => {
+            console.error('OnAccepted');
+            console.error(response);
+            resolve(response);
+        };
+        const onReject = (e): void => {
+            console.error(e);
             reject(e);
-        }
+        };
+        this.on('reinviteAccepted', onAccept);
+        this.on('reinviteFailed', onReject);
+        this.sendReinvite(options);
     });
 }
 
@@ -577,7 +561,7 @@ async function hold(this: WebPhoneSession): Promise<any> {
         this.logger.log('Hold Initiated');
         let response = await this._sendReinvite(options);
         this.localHold = true;
-        this.logger.log('Hold completed: ' + response.body);
+        this.logger.log('Hold completed:' + response);
     } catch (e) {
         throw new Error('Hold could not be completed');
     }
@@ -596,7 +580,7 @@ async function unhold(this: WebPhoneSession): Promise<any> {
         this.logger.log('Unhold Initiated');
         let response = await this._sendReinvite();
         this.localHold = false;
-        this.logger.log('Unhold completed: ' + response.body);
+        this.logger.log('Unhold completed: ' + response);
     } catch (e) {
         throw new Error('Unhold could not be completed');
     }
@@ -807,6 +791,14 @@ function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
             }
         }, mediaCheckTimer);
     }
+}
+
+function replaceLocalTrack(this: WebPhoneSession, stream?: MediaStream) {
+    stream.getTracks().forEach(track => {
+        this.sessionDescriptionHandler.peerConnection.getSenders().forEach(sender => {
+            sender.track && sender.track.kind === track.kind && sender.replaceTrack(track);
+        });
+    });
 }
 
 function stopMediaStats(this: WebPhoneSession) {
