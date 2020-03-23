@@ -175,17 +175,17 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.on('failed', stopPlaying);
     session.on('replaced', stopPlaying);
 
-    if (session.ua.enableQos) {
-        session.on('SessionDescriptionHandler-created', () => {
+    session.on('SessionDescriptionHandler-created', () => {
+        if (session.ua.enableQos) {
             session.logger.log('SessionDescriptionHandler Created');
             startQosStatsCollection(session);
-            navigator.mediaDevices.enumerateDevices().then(function(devices) {
-                devices.forEach(function(device) {
+            navigator.mediaDevices.enumerateDevices().then(function (devices) {
+                devices.forEach(function (device) {
                     session.logger.log(device.kind + ' = ' + device.label + JSON.stringify(device));
                 });
             });
-        });
-    }
+        }
+    });
 
     if (session.ua.onSession) session.ua.onSession(session);
 
