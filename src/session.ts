@@ -142,6 +142,7 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.stopMediaStats = stopMediaStats.bind(session);
 
     session._sendReinvite = sendReinvite.bind(session);
+    session.replaceLocalTrack = replaceLocalTrack.bind(session);
 
     session.on('replaced', patchSession);
 
@@ -784,9 +785,13 @@ function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
 
 function replaceLocalTrack(this: WebPhoneSession, stream?: MediaStream) {
     stream.getTracks().forEach(track => {
+        this.logger.log('New track: ' + track.label);
         this.sessionDescriptionHandler.peerConnection.getSenders().forEach(sender => {
+            this.logger.log('is replacing the old track :' + sender.track.label);
             sender.track && sender.track.kind === track.kind && sender.replaceTrack(track);
         });
+        this.emit('trackAdded');
+        this.emit('userMedia', stream);
     });
 }
 
