@@ -518,17 +518,13 @@ function dtmf(this: WebPhoneSession, dtmf: string, duration = 100, interToneGap 
 
 async function sendReinvite(this: WebPhoneSession, options: any = {}): Promise<any> {
     options.modifiers = options.modifiers || [];
-
     return new Promise((resolve, reject) => {
         const onAccept = response => {
-            console.error('OnAccepted');
-            console.error(response);
             const dir = response.sessionDescriptionHandler.getDirection();
-            console.error(dir);
+            this.localHold = dir === 'sendonly';
             resolve(response);
         };
         const onReject = (e): void => {
-            console.error(e);
             reject(e);
         };
         this.once('reinviteAccepted', onAccept);
@@ -554,9 +550,8 @@ async function hold(this: WebPhoneSession): Promise<any> {
     options.modifiers.push(this.sessionDescriptionHandler.holdModifier);
     try {
         this.logger.log('Hold Initiated');
-        let response = await this._sendReinvite(options);
-        this.localHold = true;
-        this.logger.log('Hold completed:' + response);
+        const response = await this._sendReinvite(options);
+        this.logger.log('Hold completed:' + response.getDirection());
     } catch (e) {
         throw new Error('Hold could not be completed');
     }
@@ -573,9 +568,8 @@ async function unhold(this: WebPhoneSession): Promise<any> {
     }
     try {
         this.logger.log('Unhold Initiated');
-        let response = await this._sendReinvite();
-        this.localHold = false;
-        this.logger.log('Unhold completed: ' + response);
+        const response = await this._sendReinvite();
+        this.logger.log('Unhold completed: ' + response.getDirection());
     } catch (e) {
         throw new Error('Unhold could not be completed');
     }
