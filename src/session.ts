@@ -517,27 +517,22 @@ function dtmf(this: WebPhoneSession, dtmf: string, duration = 100, interToneGap 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 async function sendReinvite(this: WebPhoneSession, options: any = {}): Promise<any> {
-    if (this.pendingReinvite) {
-        throw new Error('Reinvite in progress. Please wait until complete, then try again.');
-    }
-    if (!this.sessionDescriptionHandler) {
-        throw new Error("No SessionDescriptionHandler, can't send reinvite..");
-    }
-    this.pendingReinvite = true;
     options.modifiers = options.modifiers || [];
 
     return new Promise((resolve, reject) => {
         const onAccept = response => {
             console.error('OnAccepted');
             console.error(response);
+            const dir = response.sessionDescriptionHandler.getDirection();
+            console.error(dir);
             resolve(response);
         };
         const onReject = (e): void => {
             console.error(e);
             reject(e);
         };
-        this.on('reinviteAccepted', onAccept);
-        this.on('reinviteFailed', onReject);
+        this.once('reinviteAccepted', onAccept);
+        this.once('reinviteFailed', onReject);
         this.sendReinvite(options);
     });
 }
