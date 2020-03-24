@@ -37,12 +37,15 @@
 <video id="remoteVideo" hidden="hidden"></video>
 <video id="localVideo" hidden="hidden" muted="muted"></video>
 
-<div class="select">
-    <label for="audioOutput">Audio output destination: </label><select id="audioOutput"></select>
+<div id="globalDevices">
+    <div class="select">
+        <label for="audioOutput">Audio output destination: </label><select id="audioOutput"></select>
+    </div>
+    <div class="select">
+        <label for="audioSource">Audio input source: </label><select id="audioSource"></select>
+    </div>
 </div>
-<div class="select">
-    <label for="audioSource">Audio input source: </label><select id="audioSource"></select>
-</div>
+
 
 <script type="text/html" id="template-incoming">
 
@@ -234,6 +237,7 @@
                     </form>
                     <hr/>
                     <pre class="info"></pre>
+                    <div id="callDevices"></div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-danger hangup">Hang Up</button>

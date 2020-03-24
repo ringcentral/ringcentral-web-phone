@@ -28,10 +28,13 @@ $(function() {
     var $callTemplate = $('#template-call');
     var $incomingTemplate = $('#template-incoming');
     var $acceptedTemplate = $('#template-accepted');
+    window.acceptedTemplate = $acceptedTemplate;
+    var $globalDevices = $('#globalDevices');
 
     var remoteVideoElement = document.getElementById('remoteVideo');
     var localVideoElement = document.getElementById('localVideo');
-    const videoElement = document.querySelector('video');
+    var videoElement = document.querySelector('video');
+
     const audioInputSelect = document.querySelector('select#audioSource');
     const audioOutputSelect = document.querySelector('select#audioOutput');
     const selectors = [audioInputSelect, audioOutputSelect];
@@ -379,6 +382,12 @@ $(function() {
         var $transfer = $modal.find('input[name=transfer]').eq(0);
         var $flip = $modal.find('input[name=flip]').eq(0);
 
+        var $callDevices = $modal.find('#callDevices').eq(0);
+        var $devicesSelects = $globalDevices.children();
+        for (var i = 0; i < $devicesSelects.length; i++) {
+            var newChild = $devicesSelects[i];
+            $callDevices.append(newChild);
+        }
         var interval = setInterval(function() {
             var time = session.startTime ? Math.round((Date.now() - session.startTime) / 1000) + 's' : 'Ringing';
 
@@ -387,6 +396,11 @@ $(function() {
 
         function close() {
             clearInterval(interval);
+            var $devicesSelects = $callDevices.children();
+            for (var i = 0; i < $devicesSelects.length; i++) {
+                var newChild = $devicesSelects[i];
+                $globalDevices.append(newChild);
+            }
             $modal.modal('hide');
         }
 
