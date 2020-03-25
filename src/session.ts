@@ -96,10 +96,6 @@ export type WebPhoneSession = InviteClientContext &
         noAudioReportCount: number;
         reinviteForNoAudioSent: boolean;
         stopMediaStats: typeof stopMediaStats;
-        receiveReinviteResponse: any;
-        pendingReinvite: boolean;
-        sendReinvite: Promise<any>;
-        _sendReinvite: typeof sendReinvite;
         replaceLocalTrack: any;
     };
 
@@ -141,7 +137,6 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.addTrack = addTrack.bind(session);
     session.stopMediaStats = stopMediaStats.bind(session);
 
-    session._sendReinvite = sendReinvite.bind(session);
     session.replaceLocalTrack = replaceLocalTrack.bind(session);
 
     session.on('replaced', patchSession);
@@ -477,7 +472,6 @@ function accept(this: WebPhoneSession, options: any = {}): Promise<WebPhoneSessi
     options.RTCConstraints = options.RTCConstraints || {
         optional: [{DtlsSrtpKeyAgreement: 'true'}]
     };
-
     return new Promise((resolve, reject) => {
         const onAnswered = (): void => {
             resolve(this);
@@ -517,26 +511,26 @@ function dtmf(this: WebPhoneSession, dtmf: string, duration = 100, interToneGap 
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-async function sendReinvite(this: WebPhoneSession, options: any = {}): Promise<any> {
-    options.modifiers = options.modifiers || [];
+async function reinvite(this: WebPhoneSession, options: any = {}, modifiers: any = []): Promise<any> {
     return new Promise((resolve, reject) => {
-        const onAccept = response => {
-            const dir = response.sessionDescriptionHandler.getDirection();
-            this.localHold = dir === 'sendonly';
+        const onSuccess = response => {
+            this.logger.log('Reinvite Success');
+            this.localHold = response.sessionDescriptionHandler.getDirection() === 'sendonly';
             resolve(response);
         };
-        const onReject = (e): void => {
+        const onFailure = e => {
+            this.logger.log('Reinvite Failure');
             reject(e);
         };
-        this.once('reinviteAccepted', onAccept);
-        this.once('reinviteFailed', onReject);
-        this.sendReinvite(options);
+        this.once('reinviteAccepted', onSuccess);
+        this.once('reinviteFailed', onFailure);
+        this.__reinvite(options, modifiers);
     });
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-async function hold(this: WebPhoneSession): Promise<any> {
+async function hold(this: WebPhoneSession, options: any = {}, modifiers: any = []): Promise<any> {
     if (this.status !== Session.C.STATUS_WAITING_FOR_ACK && this.status !== Session.C.STATUS_CONFIRMED) {
         throw new Exceptions.InvalidStateError(this.status);
     }
@@ -544,15 +538,14 @@ async function hold(this: WebPhoneSession): Promise<any> {
         throw new Error('Session already on hold');
     }
     this.stopMediaStats();
-    let options = {
-        modifiers: []
-    };
-    options.modifiers = options.modifiers || [];
-    options.modifiers.push(this.sessionDescriptionHandler.holdModifier);
+    modifiers.push(this.sessionDescriptionHandler.holdModifier);
     try {
         this.logger.log('Hold Initiated');
-        const response = await this._sendReinvite(options);
-        this.logger.log('Hold completed:' + response.getDirection());
+        const response = await this.reinvite(options, modifiers);
+        if (this.localHold) {
+            this.logger.log('Hold completed');
+            return response;
+        }
     } catch (e) {
         throw new Error('Hold could not be completed');
     }
@@ -560,7 +553,7 @@ async function hold(this: WebPhoneSession): Promise<any> {
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-async function unhold(this: WebPhoneSession): Promise<any> {
+async function unhold(this: WebPhoneSession, options: any = {}, modifiers: any = []): Promise<any> {
     if (this.status !== Session.C.STATUS_WAITING_FOR_ACK && this.status !== Session.C.STATUS_CONFIRMED) {
         throw new Exceptions.InvalidStateError(this.status);
     }
@@ -569,8 +562,11 @@ async function unhold(this: WebPhoneSession): Promise<any> {
     }
     try {
         this.logger.log('Unhold Initiated');
-        const response = await this._sendReinvite();
-        this.logger.log('Unhold completed: ' + response.getDirection());
+        var response = await this.reinvite();
+        if (!this.localHold) {
+            this.logger.log('Unhold completed:');
+            return response;
+        }
     } catch (e) {
         throw new Error('Unhold could not be completed');
     }
@@ -652,13 +648,6 @@ async function flip(this: WebPhoneSession, target): Promise<any> {
 
 function park(this: WebPhoneSession): Promise<any> {
     return sendReceive(this, messages.park);
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-function reinvite(this: WebPhoneSession, options: any = {}, modifier = null): void {
-    options.sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions || {};
-    return this.__reinvite(options, modifier);
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
