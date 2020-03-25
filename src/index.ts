@@ -47,7 +47,7 @@ export interface WebPhoneOptions {
     instanceId?: string;
     regId?: number;
     enableDefaultModifiers?: boolean;
-    enablePlanB: boolean;
+    enablePlanB?: boolean;
 }
 
 export default class WebPhone {
@@ -200,6 +200,11 @@ export default class WebPhone {
         options.sipErrorCodes = sipErrorCodes;
         options.switchBackInterval = this.sipInfo.switchBackInterval;
 
-        this.userAgent = patchUserAgent(new UA(configuration) as WebPhoneUserAgent, this.sipInfo, options, id);
+        this.userAgent = patchUserAgent(
+            (new UA(configuration) as unknown) as WebPhoneUserAgent,
+            this.sipInfo,
+            options,
+            id
+        );
     }
 }
