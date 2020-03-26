@@ -187,8 +187,7 @@ export default class WebPhone {
             },
             authorizationUser: this.sipInfo.authorizationId,
             password: this.sipInfo.password,
- //FIXME Hardcoded?
-            turnServers: [],
+            // turnServers: [],
             log: {
                 level: options.logLevel || 1, //FIXME LOG LEVEL 3
                 builtinEnabled: typeof options.builtinEnabled === 'undefined' ? true : options.builtinEnabled ,
