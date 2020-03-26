@@ -48,6 +48,7 @@ export interface WebPhoneOptions {
     regId?: number;
     enableDefaultModifiers?: boolean;
     enablePlanB?: boolean;
+    stunServers?: any;
 }
 
 export default class WebPhone {
@@ -177,7 +178,7 @@ export default class WebPhone {
             },
             authorizationUser: this.sipInfo.authorizationId,
             password: this.sipInfo.password,
-            stunServers: this.sipInfo.stunServers || ['stun:74.125.194.127:19302'], //FIXME Hardcoded?
+            stunServers: options.stunServers || this.sipInfo.stunServers || ['stun:74.125.194.127:19302'], //FIXME Hardcoded?
             turnServers: [],
             log: {
                 level: options.logLevel || 1, //FIXME LOG LEVEL 3
