@@ -94,7 +94,7 @@ export default class WebPhone {
 
         const modifiers = options.modifiers || [];
 
-        if (options.enableDefaultModifiers === (true || undefined)) {
+        if (options.enableDefaultModifiers !== false) {
             modifiers.push(Web.Modifiers.stripG722);
             modifiers.push(Web.Modifiers.stripTcpCandidates);
         }
