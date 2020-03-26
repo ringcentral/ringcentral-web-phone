@@ -108,11 +108,20 @@ export default class WebPhone {
             sdpSemantics = 'plan-b';
         }
 
+        var stunServerArr = options.stunServers || this.sipInfo.stunServers || ['stun:74.125.194.127:19302'];
+
+        var iceServers = [];
+        stunServerArr.forEach(addr => {
+            addr = !/^(stun:)/.test(addr) ? 'stun:' + addr : addr;
+            iceServers.push({urls: addr});
+        });
+
         const sessionDescriptionHandlerFactoryOptions = options.sessionDescriptionHandlerFactoryOptions || {
             peerConnectionOptions: {
                 iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 500,
                 rtcConfiguration: {
-                    sdpSemantics
+                    sdpSemantics,
+                    iceServers
                 }
             },
             constraints: options.mediaConstraints || defaultMediaConstraints,
@@ -178,7 +187,7 @@ export default class WebPhone {
             },
             authorizationUser: this.sipInfo.authorizationId,
             password: this.sipInfo.password,
-            stunServers: options.stunServers || this.sipInfo.stunServers || ['stun:74.125.194.127:19302'], //FIXME Hardcoded?
+ //FIXME Hardcoded?
             turnServers: [],
             log: {
                 level: options.logLevel || 1, //FIXME LOG LEVEL 3
