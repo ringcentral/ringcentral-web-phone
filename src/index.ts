@@ -201,7 +201,7 @@ export default class WebPhone {
             sessionDescriptionHandlerFactory,
             allowLegacyNotifications: true,
             registerOptions: {
-                instanceId: options.uuid || uuid(),
+                instanceId: options.instanceId || uuid(),
                 regId: options.regId || undefined
             }
         };
