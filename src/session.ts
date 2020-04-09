@@ -23,6 +23,7 @@ export interface RCHeaders {
     to?: string;
     srvLvl?: string;
     srvLvlExt?: string;
+    nm?: string;
     toNm?: string;
     callAttributes?: string;
     srcIVRSiteName?: string;
@@ -273,6 +274,7 @@ const parseRcHeader = (session: WebPhoneSession): any => {
             extend(session.rcHeaders, {
                 srvLvl: bdyNode.getAttribute('SrvLvl'),
                 srvLvlExt: bdyNode.getAttribute('SrvLvlExt'),
+                nm: bdyNode.getAttribute('Nm'),
                 toNm: bdyNode.getAttribute('ToNm')
             });
         }
