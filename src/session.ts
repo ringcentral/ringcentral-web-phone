@@ -101,6 +101,8 @@ export type WebPhoneSession = InviteClientContext &
         pendingReinvite: boolean;
         sendReinvite: Promise<any>;
         _sendReinvite: typeof sendReinvite;
+        getIncomingInfoContent: typeof getIncomingInfoContent;
+        sendMoveResponse: typeof sendMoveResponse;
     };
 
 export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
@@ -140,6 +142,8 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.media = session.ua.media; //TODO Remove
     session.addTrack = addTrack.bind(session);
     session.stopMediaStats = stopMediaStats.bind(session);
+    session.getIncomingInfoContent = getIncomingInfoContent.bind(session);
+    session.sendMoveResponse = sendMoveResponse.bind(session);
 
     session._sendReinvite = sendReinvite.bind(session);
 
@@ -464,12 +468,57 @@ async function setLocalHold(session: WebPhoneSession, flag: boolean): Promise<an
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
+function getIncomingInfoContent(this: WebPhoneSession, request): any {
+    if (!request || !request.body) {
+        return {};
+    }
+    let ret = {};
+    try {
+        ret = JSON.parse(request.body);
+    } catch (e) {
+        return {}
+    }
+    return ret;
+}
+
+function sendMoveResponse(this: WebPhoneSession,
+                               reqid: number,
+                               options?: any) {
+    const extraHeaders = (options.extraHeaders || [])
+            .concat(this.ua.defaultHeaders)
+            .concat(['Content-Type: application/json;charset=utf-8']);
+    this.sendRequest(C.INFO, {
+        body: JSON.stringify(
+            {response: {
+                reqId: reqid,
+                command: 'move',
+                result: {
+                    code: 0,
+                    description: "Succeeded"
+                }
+            }
+        }),
+        extraHeaders});
+}
 
 function receiveRequest(this: WebPhoneSession, request): any {
     switch (request.method) {
         case C.INFO:
+            // For the Move2RCV request from server
+            const content = this.getIncomingInfoContent(request);
+            if (content
+            && content.request
+            && content.request.reqId
+            && content.request.command === 'move'
+            && content.request.target === 'rcv') {
+                request.reply(200);
+                this.emit('RC_MOVE_TO_RCV', content.request);
+                this.sendMoveResponse(content.request.reqId);
+                return this;
+            }
+            // For other SIP INFO from server
             this.emit('RC_SIP_INFO', request);
-            //SIP.js does not support application/json content type, so we monkey override its behaviour in this case
+            // SIP.js does not support application/json content type, so we monkey override its behaviour in this case
             if (this.status === Session.C.STATUS_CONFIRMED || this.status === Session.C.STATUS_WAITING_FOR_ACK) {
                 const contentType = request.getHeader('content-type');
                 if (contentType.match(/^application\/json/i)) {
