@@ -482,19 +482,21 @@ function getIncomingInfoContent(this: WebPhoneSession, request): any {
 }
 
 function sendMoveResponse(this: WebPhoneSession,
-                               reqid: number,
-                               options?: any) {
+                          reqId: number,
+                          code: number,
+                          description: string,
+                          options?: any) {
     const extraHeaders = (options.extraHeaders || [])
             .concat(this.ua.defaultHeaders)
             .concat(['Content-Type: application/json;charset=utf-8']);
     this.sendRequest(C.INFO, {
         body: JSON.stringify(
             {response: {
-                reqId: reqid,
+                reqId: reqId,
                 command: 'move',
                 result: {
-                    code: 0,
-                    description: "Succeeded"
+                    code: code,
+                    description: description
                 }
             }
         }),
@@ -513,7 +515,6 @@ function receiveRequest(this: WebPhoneSession, request): any {
             && content.request.target === 'rcv') {
                 request.reply(200);
                 this.emit('RC_MOVE_TO_RCV', content.request);
-                this.sendMoveResponse(content.request.reqId);
                 return this;
             }
             // For other SIP INFO from server
