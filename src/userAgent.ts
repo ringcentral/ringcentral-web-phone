@@ -77,7 +77,6 @@ export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, i
             })
             .catch(error => {
                 session.logger.error('failed to send receive confirmation via SIP MESSAGE due to ' + error);
-                throw error;
             });
     });
 
