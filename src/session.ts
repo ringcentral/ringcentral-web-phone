@@ -485,7 +485,7 @@ function sendMoveResponse(this: WebPhoneSession,
                           reqId: number,
                           code: number,
                           description: string,
-                          options?: any) {
+                          options: any = {}) {
     const extraHeaders = (options.extraHeaders || [])
             .concat(this.ua.defaultHeaders)
             .concat(['Content-Type: application/json;charset=utf-8']);
