@@ -508,14 +508,12 @@ function receiveRequest(this: WebPhoneSession, request): any {
         case C.INFO:
             // For the Move2RCV request from server
             const content = this.getIncomingInfoContent(request);
-            if (content
-            && content.request
-            && content.request.reqId
-            && content.request.command === 'move'
-            && content.request.target === 'rcv') {
-                request.reply(200);
-                this.emit('RC_MOVE_TO_RCV', content.request);
-                return this;
+            if (content?.request?.reqId
+                && content.request.command === 'move'
+                && content.request.target === 'rcv') {
+                    request.reply(200);
+                    this.emit('moveToRcv', content.request);
+                    return this;
             }
             // For other SIP INFO from server
             this.emit('RC_SIP_INFO', request);
