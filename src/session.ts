@@ -486,9 +486,9 @@ function sendMoveResponse(this: WebPhoneSession,
                           code: number,
                           description: string,
                           options: any = {}) {
-    const extraHeaders = (options.extraHeaders || [])
-            .concat(this.ua.defaultHeaders)
-            .concat(['Content-Type: application/json;charset=utf-8']);
+    const extraHeaders = [...(options.extraHeaders || []),
+                          ...this.ua.defaultHeaders,
+                          'Content-Type: application/json;charset=utf-8'];
     this.sendRequest(C.INFO, {
         body: JSON.stringify(
             {response: {
