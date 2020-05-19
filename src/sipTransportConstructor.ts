@@ -31,7 +31,7 @@ export interface WebPhoneSIPTransport extends Transport {
 
 export const TransportConstructorWrapper = (SipTransportConstructor: any, webPhoneOptions: any): any => {
     return (logger: typeof UA.prototype.logger, options: any): WebPhoneSIPTransport => {
-        let transport = new SipTransportConstructor(logger, options);
+        const transport = new SipTransportConstructor(logger, options);
 
         transport.nextReconnectInterval = 0;
         transport.sipErrorCodes = webPhoneOptions.sipErrorCodes;
@@ -65,11 +65,7 @@ const C = {
     STATUS_CLOSED: 3
 };
 
-var computeRandomTimeout = (
-    reconnectionAttempts: number = 1,
-    randomMinInterval: number = 0,
-    randomMaxInterval: number = 0
-): number => {
+var computeRandomTimeout = (reconnectionAttempts = 1, randomMinInterval = 0, randomMaxInterval = 0): number => {
     if (randomMinInterval < 0 || randomMaxInterval < 0 || reconnectionAttempts < 1) {
         throw new Error('Arguments must be positive numbers');
     }

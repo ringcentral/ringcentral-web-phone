@@ -4,7 +4,7 @@ import {WebPhoneSession} from './session';
 const formatFloat = (input: any): string => parseFloat(input.toString()).toFixed(2);
 
 export const startQosStatsCollection = (session: WebPhoneSession): void => {
-    let qosStatsObj = getQoSStatsTemplate();
+    const qosStatsObj = getQoSStatsTemplate();
 
     qosStatsObj.callID = session.request.callId || '';
     qosStatsObj.fromTag = session.request.fromTag || '';
@@ -48,7 +48,7 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
                     qosStatsObj.totalIntervalCount += 1;
                     qosStatsObj.JBM = Math.max(qosStatsObj.JBM, parseFloat(item.googJitterBufferMs));
                     qosStatsObj.netType = addToMap(qosStatsObj.netType, network);
-                    if(session.ua.enableMediaReportLogging) {
+                    if (session.ua.enableMediaReportLogging) {
                         if (parseInt(item.audioOutputLevel, 10) <= 1) {
                             session.logger.log(
                                 'Remote audioOutput level is 1. The remote track might be muted or could have potential one-way audio issue'

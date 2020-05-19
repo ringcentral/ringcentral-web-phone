@@ -7,7 +7,7 @@ export interface WebPhoneUserAgent extends UA {
     media: any;
     defaultHeaders: any;
     enableQos: boolean;
-    enableMediaReportLogging:boolean;
+    enableMediaReportLogging: boolean;
     qosCollectInterval: number;
     sipInfo: any;
     audioHelper: AudioHelper;

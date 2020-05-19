@@ -4,12 +4,10 @@
  * Copyright © RingCentral. All rights reserved.
  */
 
-'use strict';
-
 import {default as MediaStreams, MediaStreamsImpl, RTPReport, Browsers} from '../src/mediaStreams';
 import EventEmitter from 'events';
 
-let globalEmitter = new EventEmitter();
+const globalEmitter = new EventEmitter();
 
 globalEmitter.setMaxListeners(0);
 
@@ -161,7 +159,12 @@ class FadePeerConnection {
                 fractionLost: 500,
                 mediaType: 'audio'
             },
-            {type: 'outbound-rtp', bytesSent: 100, packetsSent: 200, mediaType: 'audio'},
+            {
+                type: 'outbound-rtp',
+                bytesSent: 100,
+                packetsSent: 200,
+                mediaType: 'audio'
+            },
             {
                 type: 'candidate-pair',
                 currentRoundTripTime: 1.05
@@ -177,7 +180,12 @@ class FadePeerConnection {
                 roundTripTime: 1000,
                 mediaType: 'audio'
             },
-            {type: 'outbound-rtp', bytesSent: 100, packetsSent: 200, mediaType: 'audio'},
+            {
+                type: 'outbound-rtp',
+                bytesSent: 100,
+                packetsSent: 200,
+                mediaType: 'audio'
+            },
             {
                 type: 'candidate-pair',
                 whatever: 1.05
@@ -205,14 +213,13 @@ class FadePeerConnection {
             options.ok = true;
         }
 
-        let promise = new Promise(function(resolve, reject) {
+        return new Promise(function(resolve, reject) {
             if (options.ok === true) {
                 resolve(options); //offer = options
             } else {
                 reject(options); //error = options
             }
         });
-        return promise;
     }
 
     public setLocalDescription(offer) {
@@ -221,7 +228,7 @@ class FadePeerConnection {
         }
         this.localOffer = offer;
         var self = this;
-        let promise = new Promise(function(resolve, reject) {
+        return new Promise(function(resolve, reject) {
             if (offer.offerok === true) {
                 resolve('true');
             } else {
@@ -229,7 +236,6 @@ class FadePeerConnection {
                 reject('false');
             }
         });
-        return promise;
     }
 
     public getStats() {
@@ -256,7 +262,7 @@ test('input wrong parameters in MediaStreamsImpl constructor', () => {
 });
 
 test('test media connection - event received in session', async () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
 
     mediaStreams.on = function(event, func) {
@@ -274,13 +280,13 @@ test('test media connection - event received in session', async () => {
             }, 500);
         })
     ).resolves.toEqual('new');
-    let f = mediaStreams.onPeerConnectionStateChange.bind(mediaStreams);
-    let r = f === mediaStreams.onPeerConnectionStateChange.bind(mediaStreams);
+    const f = mediaStreams.onPeerConnectionStateChange.bind(mediaStreams);
+    const r = f === mediaStreams.onPeerConnectionStateChange.bind(mediaStreams);
     mediaStreams.release();
 });
 
 test('test media connection - callback in MediaStreamsImpl class', async () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
 
     mediaStreams.onMediaConnectionStateChange = function(session, eventState) {
@@ -302,7 +308,7 @@ test('test media connection - callback in MediaStreamsImpl class', async () => {
 });
 
 test('test media connection - callback in session', async () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
 
     fadeSession.onMediaConnectionStateChange = function(session, eventState) {
@@ -324,7 +330,7 @@ test('test media connection - callback in session', async () => {
 });
 
 test('test media connection - event - checking ', async () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
 
     mediaStreams.on = function(event, func) {
@@ -348,7 +354,7 @@ test('test media connection - event - checking ', async () => {
 });
 
 test('test media connection - event - connected ', async () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
 
     mediaStreams.on = function(event, func) {
@@ -372,7 +378,7 @@ test('test media connection - event - connected ', async () => {
 });
 
 test('test media connection - event - completed ', async () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
 
     mediaStreams.on = function(event, func) {
@@ -396,7 +402,7 @@ test('test media connection - event - completed ', async () => {
 });
 
 test('test media connection - event - failed ', async () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
 
     mediaStreams.on = function(event, func) {
@@ -420,7 +426,7 @@ test('test media connection - event - failed ', async () => {
 });
 
 test('test media connection - event - disconnected ', async () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
 
     mediaStreams.on = function(event, func) {
@@ -444,7 +450,7 @@ test('test media connection - event - disconnected ', async () => {
 });
 
 test('test media connection - event - closed ', async () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
 
     mediaStreams.on = function(event, func) {
@@ -468,7 +474,7 @@ test('test media connection - event - closed ', async () => {
 });
 
 test('test change media stream', () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
     mediaStreams.localStream = new FadeStream('lStream2');
     mediaStreams.remoteStream = new FadeStream('rStream2');
@@ -478,7 +484,7 @@ test('test change media stream', () => {
 });
 
 test('test media reconnect with invalid parameters', async () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
 
     mediaStreams.reconnectMedia();
@@ -497,7 +503,7 @@ test('test media reconnect with invalid parameters', async () => {
 });
 
 test('test media reconnect with the correct customized settings', async () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
 
     var options: any = {};
@@ -527,7 +533,7 @@ test('test media reconnect with the correct customized settings', async () => {
 });
 
 test('test media reconnect - fail to set local offer', async () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
 
     var options: any = {};
@@ -558,7 +564,7 @@ test('test media reconnect - fail to set local offer', async () => {
 });
 
 test.skip('test media reconnect - check validateSDP', () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
     var case1 = mediaStreams.validateSDP('c=IN IP4 50.237.72.154\r\na=rtcp:61349 IN IP4 50.237.72.154\r\n');
     expect(case1).toBe(true);
@@ -574,9 +580,9 @@ test.skip('test media reconnect - check validateSDP', () => {
 });
 
 test('test getMediaStats in MediaStreamsImpl- getMediaStats(func, interval)', async () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
-    let pc = fadeSession.sessionDescriptionHandler.peerConnection;
+    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
     pc.iceConnectionState = 'connected';
     jest.useFakeTimers();
     mediaStreams.getMediaStats(function(report, session) {
@@ -587,9 +593,9 @@ test('test getMediaStats in MediaStreamsImpl- getMediaStats(func, interval)', as
 });
 
 test('test getMediaStats in MediaStreamsImpl - getMediaStats(func)', async () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
-    let pc = fadeSession.sessionDescriptionHandler.peerConnection;
+    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
     pc.iceConnectionState = 'connected';
     jest.useFakeTimers();
     mediaStreams.getMediaStats(function(report, session) {
@@ -600,9 +606,9 @@ test('test getMediaStats in MediaStreamsImpl - getMediaStats(func)', async () =>
 });
 
 test('test getMediaStats in MediaStreamsImpl - getMediaStats()', async () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
-    let pc = fadeSession.sessionDescriptionHandler.peerConnection;
+    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
     pc.iceConnectionState = 'connected';
     jest.useFakeTimers();
     mediaStreams.getMediaStats();
@@ -615,9 +621,9 @@ test('test getMediaStats in MediaStreamsImpl- mediaStatsTimerCallback - no callb
         warn: jest.fn(),
         log: jest.fn()
     } as any;
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
-    let pc = fadeSession.sessionDescriptionHandler.peerConnection;
+    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
     pc.iceConnectionState = 'new';
     mediaStreams.mediaStatsTimerCallback();
     expect(mediaStreams.preRTT['currentRoundTripTime']).toEqual(0);
@@ -638,13 +644,13 @@ test('test getMediaStats in MediaStreamsImpl- mediaStatsTimerCallback - no callb
 });
 
 test('test getMediaStats in MediaStreamsImpl - mediaStatsTimerCallback - listen on the event', () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
-    let pc = fadeSession.sessionDescriptionHandler.peerConnection;
+    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
     pc.iceConnectionState = 'new';
     mediaStreams.mediaStatsTimerCallback();
     pc.iceConnectionState = 'connected';
-    let mockCallback = jest.fn(report => {});
+    const mockCallback = jest.fn(report => {});
     mediaStreams.getRTPReport = jest.fn(reports => {});
     fadeSession.on('rtpStat', mockCallback);
     mediaStreams.mediaStatsTimerCallback();
@@ -653,9 +659,9 @@ test('test getMediaStats in MediaStreamsImpl - mediaStatsTimerCallback - listen 
 });
 
 test('test getMediaStats in MediaStreamsImpl - mediaStatsTimerCallback - session.onRTPStat ', () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
-    let pc = fadeSession.sessionDescriptionHandler.peerConnection;
+    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
     pc.iceConnectionState = 'new';
     mediaStreams.mediaStatsTimerCallback();
     pc.iceConnectionState = 'connected';
@@ -671,9 +677,9 @@ test('test getMediaStats in MediaStreamsImpl - mediaStatsTimerCallback - session
         warn: jest.fn(),
         log: jest.fn()
     } as any;
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
-    let pc = fadeSession.sessionDescriptionHandler.peerConnection;
+    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
     pc.iceConnectionState = 'new';
     mediaStreams.mediaStatsTimerCallback();
     pc.iceConnectionState = 'connected';
@@ -685,9 +691,9 @@ test('test getMediaStats in MediaStreamsImpl - mediaStatsTimerCallback - session
 });
 
 test('test getMediaStats  in MediaStreamsImpl- mediaStatsTimerCallback -  if (connectionState !== "connected" && connectionState !== "completed") ', () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
-    let pc = fadeSession.sessionDescriptionHandler.peerConnection;
+    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
     pc.iceConnectionState = 'new';
     mediaStreams.mediaStatsTimerCallback();
     pc.iceConnectionState = 'new';
@@ -699,7 +705,7 @@ test('test getMediaStats  in MediaStreamsImpl- mediaStatsTimerCallback -  if (co
 });
 
 test('test getMediaStats in MediaStreamsImpl - mediaStatsTimerCallback -  if (!pc)) ', () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
     let pc = fadeSession.sessionDescriptionHandler.peerConnection;
     pc.iceConnectionState = 'new';
@@ -715,9 +721,9 @@ test('test getMediaStats in MediaStreamsImpl - mediaStatsTimerCallback -  if (!p
 
 test('test getRTPReport in MediaStreamsImpl -- session.mediaStreams.onRTPStat', async () => {
     global['navigator'].userAgent = global['navigator'].chrome;
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
-    let pc = fadeSession.sessionDescriptionHandler.peerConnection;
+    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
     pc.iceConnectionState = 'connected';
     mediaStreams.onRTPStat = jest.fn((report, session) => {});
     await mediaStreams.getRTPReport(new RTPReport());
@@ -727,9 +733,9 @@ test('test getRTPReport in MediaStreamsImpl -- session.mediaStreams.onRTPStat', 
 
 test('test getRTPReport in MediaStreamsImpl-- session.onRTPStat', async () => {
     global['navigator'].userAgent = global['navigator'].chrome;
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
-    let pc = fadeSession.sessionDescriptionHandler.peerConnection;
+    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
     pc.iceConnectionState = 'connected';
     fadeSession.onRTPStat = jest.fn((report, session) => {});
     await mediaStreams.getRTPReport(new RTPReport());
@@ -739,11 +745,11 @@ test('test getRTPReport in MediaStreamsImpl-- session.onRTPStat', async () => {
 
 test('test getRTPReport  in MediaStreamsImpl-- session.on("rtpStat")', async () => {
     global['navigator'].userAgent = global['navigator'].chrome;
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
-    let pc = fadeSession.sessionDescriptionHandler.peerConnection;
+    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
     pc.iceConnectionState = 'connected';
-    let onRTPStat = jest.fn(function(report, session) {});
+    const onRTPStat = jest.fn(function(report, session) {});
     fadeSession.onRTPStat = null;
     mediaStreams.onRTPStat = null;
     fadeSession.on('rtpStat', onRTPStat);
@@ -754,9 +760,9 @@ test('test getRTPReport  in MediaStreamsImpl-- session.on("rtpStat")', async () 
 
 test('test getRTPReport in MediaStreamsImpl -- verify chrome and safari', async () => {
     global['navigator'].userAgent = global['navigator'].chrome;
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
-    let pc = fadeSession.sessionDescriptionHandler.peerConnection;
+    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
     pc.iceConnectionState = 'connected';
     let reports: any = {};
     fadeSession.onRTPStat = jest.fn((report, session) => {
@@ -779,9 +785,9 @@ test('test getRTPReport in MediaStreamsImpl -- verify chrome and safari', async 
 
 test('test getRTPReport in MediaStreamsImpl -- verify firefox', async () => {
     global['navigator'].userAgent = global['navigator'].firefox;
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
-    let pc = fadeSession.sessionDescriptionHandler.peerConnection;
+    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
     pc.iceConnectionState = 'connected';
     let reports: any = {};
     fadeSession.onRTPStat = jest.fn((report, session) => {
@@ -804,9 +810,9 @@ test('test getRTPReport in MediaStreamsImpl -- verify firefox', async () => {
 
 test('test getRTPReport in MediaStreamsImpl -- unknow browser and fail to get the statistics', async () => {
     global['navigator'].userAgent = 'unknow';
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
-    let pc = fadeSession.sessionDescriptionHandler.peerConnection;
+    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
     pc.iceConnectionState = 'connected';
     let reports = {};
     fadeSession.onRTPStat = jest.fn((report, session) => {
@@ -818,9 +824,9 @@ test('test getRTPReport in MediaStreamsImpl -- unknow browser and fail to get th
 });
 
 test('test getRTPReport in MediaStreamsImpl -- test web browser() type', async () => {
-    let fadeSession = new FadeSession();
-    let mediaStreams = new MediaStreamsImpl(fadeSession);
-    for (let i in Browsers) {
+    const fadeSession = new FadeSession();
+    const mediaStreams = new MediaStreamsImpl(fadeSession);
+    for (const i in Browsers) {
         global['navigator'].userAgent = i;
         expect(mediaStreams.browser()).toEqual(Browsers[i]);
     }
@@ -828,20 +834,20 @@ test('test getRTPReport in MediaStreamsImpl -- test web browser() type', async (
 });
 
 test('test MediaStreamsImpl and getMediaStats -- release without timer', async () => {
-    let fadeSession = new FadeSession();
-    let mediaStreams = new MediaStreamsImpl(fadeSession);
-    let rtpStatInSession = fadeSession.sessionDescriptionHandler.listeners('iceConnection');
+    const fadeSession = new FadeSession();
+    const mediaStreams = new MediaStreamsImpl(fadeSession);
+    const rtpStatInSession = fadeSession.sessionDescriptionHandler.listeners('iceConnection');
     expect(rtpStatInSession.length).toEqual(1);
     mediaStreams.release();
-    let rtpStatInSession2 = fadeSession.sessionDescriptionHandler.listeners('iceConnection');
+    const rtpStatInSession2 = fadeSession.sessionDescriptionHandler.listeners('iceConnection');
     expect(rtpStatInSession.length - rtpStatInSession2.length).toEqual(1);
 });
 
 test('test MediaStreamsImpl and getMediaStats -- release with stopMediaStat', async () => {
-    let fadeSession = new FadeSession();
-    let mediaStreams = new MediaStreamsImpl(fadeSession);
-    let rtpStatInSession = fadeSession.sessionDescriptionHandler.listeners('iceConnection');
-    let pc = fadeSession.sessionDescriptionHandler.peerConnection;
+    const fadeSession = new FadeSession();
+    const mediaStreams = new MediaStreamsImpl(fadeSession);
+    const rtpStatInSession = fadeSession.sessionDescriptionHandler.listeners('iceConnection');
+    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
     let reports;
     expect(rtpStatInSession.length).toEqual(1);
     pc.iceConnectionState = 'connected';
@@ -850,20 +856,20 @@ test('test MediaStreamsImpl and getMediaStats -- release with stopMediaStat', as
     });
     mediaStreams.getMediaStats(fadeSession.onRTPStat, 2000);
     mediaStreams.release();
-    let rtpStatInSession2 = fadeSession.sessionDescriptionHandler.listeners('iceConnection');
+    const rtpStatInSession2 = fadeSession.sessionDescriptionHandler.listeners('iceConnection');
     expect(rtpStatInSession.length - rtpStatInSession2.length).toEqual(1);
     expect(fadeSession.onRTPStat.mock.calls.length).toBe(0);
 });
 
 test('test MediaStreamsImpl and getMediaStats -- opera', async () => {
     global['navigator'].userAgent = global['navigator'].opera;
-    let fadeSession = new FadeSession();
-    let mediaStreams = new MediaStreamsImpl(fadeSession);
+    const fadeSession = new FadeSession();
+    const mediaStreams = new MediaStreamsImpl(fadeSession);
     expect(RTPReport).not.toBeNull();
 });
 
 test('test property onRTPStat in MediaStreams', async () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreams(fadeSession);
 
     var options: any = {};
@@ -873,14 +879,14 @@ test('test property onRTPStat in MediaStreams', async () => {
         restart: 15,
         ok: true
     };
-    let onRTPStat = jest.fn((report, session) => {});
+    const onRTPStat = jest.fn((report, session) => {});
     mediaStreams.onRTPStat = onRTPStat;
     expect(onRTPStat).toEqual(mediaStreams.mediaStreamsImpl.onRTPStat);
     mediaStreams.release();
 });
 
 test('test property onMediaConnectionStateChange in MediaStreams', async () => {
-    let fadeSession = new FadeSession();
+    const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreams(fadeSession);
 
     var options: any = {};
@@ -890,7 +896,7 @@ test('test property onMediaConnectionStateChange in MediaStreams', async () => {
         restart: 15,
         ok: true
     };
-    let onMediaConnectionStateChange = jest.fn((state, session) => {});
+    const onMediaConnectionStateChange = jest.fn((state, session) => {});
     mediaStreams.onMediaConnectionStateChange = onMediaConnectionStateChange;
     expect(onMediaConnectionStateChange).toEqual(mediaStreams.mediaStreamsImpl.onMediaConnectionStateChange);
     mediaStreams.release();
