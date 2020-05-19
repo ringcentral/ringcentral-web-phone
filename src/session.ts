@@ -232,9 +232,9 @@ export const patchIncomingSession = (session: WebPhoneSession): void => {
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-const parseRcHeaderString = (str: string = ''): any => {
-    let obj = {};
-    let pairs = str.split(/; */);
+const parseRcHeaderString = (str = ''): any => {
+    const obj = {};
+    const pairs = str.split(/; */);
 
     pairs.forEach(pair => {
         let eq_idx = pair.indexOf('=');
@@ -244,8 +244,8 @@ const parseRcHeaderString = (str: string = ''): any => {
             return;
         }
 
-        let key = pair.substr(0, eq_idx).trim();
-        let val = pair.substr(++eq_idx, pair.length).trim();
+        const key = pair.substr(0, eq_idx).trim();
+        const val = pair.substr(++eq_idx, pair.length).trim();
 
         // only assign once
         if (undefined === obj[key]) {
@@ -287,7 +287,7 @@ const parseRcHeader = (session: WebPhoneSession): any => {
         const rawCallInfo = prcCallInfo[0].raw;
 
         if (rawCallInfo) {
-            let parsed = parseRcHeaderString(rawCallInfo);
+            const parsed = parseRcHeaderString(rawCallInfo);
             extend(session.rcHeaders, parsed);
         }
     }
@@ -399,7 +399,7 @@ async function sendReceive(session: WebPhoneSession, command: any, options?: any
                     cseq = response.cseq;
                     const onInfo = (request: OutgoingRequest): void => {
                         if (response.cseq !== cseq) return;
-                        let body = (request && request.body) || '{}';
+                        const body = (request && request.body) || '{}';
                         let obj;
 
                         try {
@@ -492,11 +492,11 @@ function sendMoveResponse(this: WebPhoneSession,
     this.sendRequest(C.INFO, {
         body: JSON.stringify(
             {response: {
-                reqId: reqId,
+                reqId,
                 command: 'move',
                 result: {
-                    code: code,
-                    description: description
+                    code,
+                    description
                 }
             }
         }),
@@ -509,8 +509,8 @@ function receiveRequest(this: WebPhoneSession, request): any {
             // For the Move2RCV request from server
             const content = this.getIncomingInfoContent(request);
             if (content?.request?.reqId
-                && content.request.command === 'move'
-                && content.request.target === 'rcv') {
+                && content?.request?.command === 'move'
+                && content?.request?.target === 'rcv') {
                     request.reply(200);
                     this.emit('moveToRcv', content.request);
                     return this;
@@ -618,14 +618,14 @@ async function hold(this: WebPhoneSession): Promise<any> {
         throw new Error('Session already on hold');
     }
     this.stopMediaStats();
-    let options = {
+    const options = {
         modifiers: []
     };
     options.modifiers = options.modifiers || [];
     options.modifiers.push(this.sessionDescriptionHandler.holdModifier);
     try {
         this.logger.log('Hold Initiated');
-        let response = await this._sendReinvite(options);
+        const response = await this._sendReinvite(options);
         this.localHold = true;
         this.logger.log('Hold completed: ' + response.body);
     } catch (e) {
@@ -644,7 +644,7 @@ async function unhold(this: WebPhoneSession): Promise<any> {
     }
     try {
         this.logger.log('Unhold Initiated');
-        let response = await this._sendReinvite();
+        const response = await this._sendReinvite();
         this.localHold = false;
         this.logger.log('Unhold completed: ' + response.body);
     } catch (e) {

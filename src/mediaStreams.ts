@@ -4,8 +4,6 @@
  * Copyright © RingCentral. All rights reserved.
  */
 
-'use strict';
-
 /**
  * @Supported browsers: @Chrome  @Firefox @Safari
  *
@@ -118,7 +116,7 @@ export class MediaStreamsImpl {
     public validateSDP;
     public preRTT: any;
 
-    private ktag: string = 'MediaStreams';
+    private ktag = 'MediaStreams';
     private session: any;
     private onStateChange: any;
     private isChrome: any;
@@ -172,18 +170,18 @@ export class MediaStreamsImpl {
     }
 
     public mediaStatsTimerCallback() {
-        let pc = this.session.sessionDescriptionHandler.peerConnection;
+        const pc = this.session.sessionDescriptionHandler.peerConnection;
         if (!pc) {
             this.rcWPLoge(this.ktag, 'the peer connection cannot be null');
             return;
         }
-        let connectionState = pc.iceConnectionState;
+        const connectionState = pc.iceConnectionState;
         if (connectionState !== 'connected' && connectionState !== 'completed') {
             this.preRTT['currentRoundTripTime'] = 0;
             return;
         }
-        let rtpStatInSession = this.session.listeners('rtpStat');
-        if (!this.session.onRTPStat && !this.onRTPStat && !(rtpStatInSession.length > 0)) {
+        const rtpStatInSession = this.session.listeners('rtpStat');
+        if (!this.session.onRTPStat && !this.onRTPStat && rtpStatInSession.length <= 0) {
             this.rcWPLoge(
                 this.ktag,
                 'No callback to accept receive media report. usage: session.on("rtpStat") = function(report) or session.onRTPStat = function(report) or set a mediaCallback as a paramter'
@@ -225,7 +223,7 @@ export class MediaStreamsImpl {
     }
 
     public reconnectMedia(options?: any) {
-        let self = this;
+        const self = this;
         return new Promise(async function(resolve, reject) {
             if (self.session) {
                 const RTCOptions = {
@@ -233,7 +231,7 @@ export class MediaStreamsImpl {
                     offerToReceiveVideo: 0,
                     iceRestart: true
                 };
-                let offerOptions = (options && options.RTCOptions) || RTCOptions;
+                const offerOptions = (options && options.RTCOptions) || RTCOptions;
                 if (!options) {
                     options = {};
                 }
@@ -244,7 +242,7 @@ export class MediaStreamsImpl {
                     succeeded: resolve,
                     failed: reject
                 };
-                let pc = self.session.sessionDescriptionHandler.peerConnection;
+                const pc = self.session.sessionDescriptionHandler.peerConnection;
                 let offer: any;
                 try {
                     offer = await pc.createOffer(offerOptions);
@@ -271,8 +269,8 @@ export class MediaStreamsImpl {
     };
 
     public getRTPReport(reports) {
-        let self = this;
-        let pc = self.session.sessionDescriptionHandler.peerConnection;
+        const self = this;
+        const pc = self.session.sessionDescriptionHandler.peerConnection;
         pc.getStats()
             .then(stats => {
                 stats.forEach(report => {

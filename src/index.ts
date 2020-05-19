@@ -23,7 +23,7 @@ export interface WebPhoneOptions {
     enableUnifiedSDP?: boolean;
     enableMidLinesInSDP?: boolean;
     enableQos?: boolean;
-    enableMediaReportLogging?:boolean;
+    enableMediaReportLogging?: boolean;
     onSession?: (session: WebPhoneSession) => any;
     audioHelper?: AudioHelperOptions;
     modifiers?: SessionDescriptionHandlerModifiers;
@@ -167,7 +167,7 @@ export default class WebPhone {
             turnServers: [],
             log: {
                 level: options.logLevel || 1, //FIXME LOG LEVEL 3
-                builtinEnabled: typeof options.builtinEnabled === 'undefined' ? true : options.builtinEnabled ,
+                builtinEnabled: typeof options.builtinEnabled === 'undefined' ? true : options.builtinEnabled,
                 connector: options.connector || null
             },
             domain: this.sipInfo.domain,
