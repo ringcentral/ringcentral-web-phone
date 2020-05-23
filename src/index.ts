@@ -44,6 +44,11 @@ export interface WebPhoneOptions {
     maxReconnectionAttemptsWithBackup?: number;
     reconnectionTimeoutNoBackup?: number;
     reconnectionTimeoutWithBackup?: number;
+    instanceId?: string;
+    regId?: number;
+    enableDefaultModifiers?: boolean;
+    enablePlanB?: boolean;
+    stunServers?: any;
 }
 
 export default class WebPhone {
@@ -88,17 +93,36 @@ export default class WebPhone {
             ` RCWEBPHONE/${version}`;
 
         const modifiers = options.modifiers || [];
-        modifiers.push(Web.Modifiers.stripG722);
-        modifiers.push(Web.Modifiers.stripTcpCandidates);
+
+        if (options.enableDefaultModifiers !== false) {
+            modifiers.push(Web.Modifiers.stripG722);
+            modifiers.push(Web.Modifiers.stripTcpCandidates);
+        }
 
         if (options.enableMidLinesInSDP) {
             modifiers.push(Web.Modifiers.addMidLines);
         }
 
+        var sdpSemantics = 'unified-plan';
+        if (options.enablePlanB) {
+            sdpSemantics = 'plan-b';
+        }
+
+        var stunServerArr = options.stunServers || this.sipInfo.stunServers || ['stun:74.125.194.127:19302'];
+
+        var iceServers = [];
+        stunServerArr.forEach(addr => {
+            addr = !/^(stun:)/.test(addr) ? 'stun:' + addr : addr;
+            iceServers.push({urls: addr});
+        });
+
         const sessionDescriptionHandlerFactoryOptions = options.sessionDescriptionHandlerFactoryOptions || {
             peerConnectionOptions: {
                 iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 500,
-                rtcConfiguration: {}
+                rtcConfiguration: {
+                    sdpSemantics,
+                    iceServers
+                }
             },
             constraints: options.mediaConstraints || defaultMediaConstraints,
             modifiers
@@ -163,8 +187,7 @@ export default class WebPhone {
             },
             authorizationUser: this.sipInfo.authorizationId,
             password: this.sipInfo.password,
-            stunServers: this.sipInfo.stunServers || ['stun:74.125.194.127:19302'], //FIXME Hardcoded?
-            turnServers: [],
+            // turnServers: [],
             log: {
                 level: options.logLevel || 1, //FIXME LOG LEVEL 3
                 builtinEnabled: typeof options.builtinEnabled === 'undefined' ? true : options.builtinEnabled,
@@ -176,7 +199,11 @@ export default class WebPhone {
             userAgentString,
             sessionDescriptionHandlerFactoryOptions,
             sessionDescriptionHandlerFactory,
-            allowLegacyNotifications: true
+            allowLegacyNotifications: true,
+            registerOptions: {
+                instanceId: options.instanceId || uuid(),
+                regId: options.regId || undefined
+            }
         };
 
         options.sipErrorCodes = sipErrorCodes;
