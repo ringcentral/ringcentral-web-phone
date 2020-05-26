@@ -52,7 +52,7 @@ export interface WebPhoneOptions {
 }
 
 export default class WebPhone {
-    public static version = '0.8.0';
+    public static version = '0.8.1';
     public static uuid = uuid;
     public static delay = delay;
     public static extend = extend;
@@ -201,8 +201,8 @@ export default class WebPhone {
             sessionDescriptionHandlerFactory,
             allowLegacyNotifications: true,
             registerOptions: {
-                instanceId: options.instanceId || uuid(),
-                regId: options.regId || undefined
+                instanceId: options.instanceId || '',
+                regId: options.regId || ''
             }
         };
 
