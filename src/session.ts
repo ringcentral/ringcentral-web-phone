@@ -64,6 +64,7 @@ export type WebPhoneSession = InviteClientContext &
         failed: any; //FIXME PROTECTED
         sessionDescriptionHandler: {
             peerConnection: RTCPeerConnectionLegacy; //FIXME Not documented
+            getDirection;
         };
         // non-sip
         __patched: boolean;
@@ -625,8 +626,7 @@ async function hold(this: WebPhoneSession): Promise<any> {
     try {
         this.logger.log('Hold Initiated');
         var response = await this._sendReinvite(options);
-        // @ts-ignore
-        this.localHold = (response.statusCode === 200 && (this.sessionDescriptionHandler.direction === 'sendonly'));
+        this.localHold = (response.statusCode === 200 && (this.sessionDescriptionHandler.getDirection() === 'sendonly'));
         this.logger.log('Hold completed, localhold is set to ' + this.localHold);
     } catch (e) {
         throw new Error('Hold could not be completed');
@@ -645,8 +645,7 @@ async function unhold(this: WebPhoneSession): Promise<any> {
     try {
         this.logger.log('Unhold Initiated');
         const response = await this._sendReinvite();
-        // @ts-ignore
-        this.localHold = (response.statusCode === 200 && (this.sessionDescriptionHandler.direction === 'sendonly'));
+        this.localHold = response.statusCode === 200 && this.sessionDescriptionHandler.getDirection() === 'sendonly';
         this.logger.log('Unhold completed, localhold is set to ' + this.localHold);
     } catch (e) {
         throw new Error('Unhold could not be completed');
