@@ -606,7 +606,7 @@ async function sendReinvite(this: WebPhoneSession, options: any = {}): Promise<a
         return result;
     } catch (e) {
         this.pendingReinvite = false;
-        throw new Error('Reinvite Failed with the reason ' + e);
+        throw new Error('Reinvite Failed with the reason ' + e.message);
     }
 }
 
