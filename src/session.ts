@@ -624,8 +624,9 @@ async function hold(this: WebPhoneSession): Promise<any> {
     options.modifiers.push(this.sessionDescriptionHandler.holdModifier);
     try {
         this.logger.log('Hold Initiated');
-        var result = await this._sendReinvite(options);
-        this.localHold = (result.statusCode === 200 && (this.sessionDescriptionHandler.direction === 'sendonly'));
+        var response = await this._sendReinvite(options);
+        // @ts-ignore
+        this.localHold = (response.statusCode === 200 && (this.sessionDescriptionHandler.direction === 'sendonly'));
         this.logger.log('Hold completed, localhold is set to ' + this.localHold);
     } catch (e) {
         throw new Error('Hold could not be completed');
@@ -643,8 +644,9 @@ async function unhold(this: WebPhoneSession): Promise<any> {
     }
     try {
         this.logger.log('Unhold Initiated');
-        var result = await this._sendReinvite();
-        this.localHold = (result.statusCode === 200 && (this.sessionDescriptionHandler.direction === 'sendonly'));
+        const response = await this._sendReinvite();
+        // @ts-ignore
+        this.localHold = (response.statusCode === 200 && (this.sessionDescriptionHandler.direction === 'sendonly'));
         this.logger.log('Unhold completed, localhold is set to ' + this.localHold);
     } catch (e) {
         throw new Error('Unhold could not be completed');
