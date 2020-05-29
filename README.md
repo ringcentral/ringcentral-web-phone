@@ -19,8 +19,8 @@ Currently, we officially support Google Chrome browser. Official support for Fir
 ## Network Requirements
 
 Please visit Network Requirement links below
-1. Condensed Requirements: [https://netstorage.ringcentral.com/guides/network_condensed.pdf](https://netstorage.ringcentral.com/guides/network_condensed.pdf)
-2. Extended Requirements: [https://netstorage.ringcentral.com/guides/network_extended.pdf](https://netstorage.ringcentral.com/guides/network_extended.pdf)
+1. Network Requirements and Recommendations | RingCentral Office : [https://support.ringcentral.com/s/article/9233?language=en_US](https://support.ringcentral.com/s/article/9233?language=en_US)
+2. Network Requirements and Recommendations - Resources : [https://support.ringcentral.com/s/article/Network-Requirements-and-Recommendations-Resources?language=en_US](https://support.ringcentral.com/s/article/Network-Requirements-and-Recommendations-Resources?language=en_US)
 
 ## Table of Contents
 

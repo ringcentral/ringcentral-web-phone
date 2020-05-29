@@ -64,6 +64,7 @@ export type WebPhoneSession = InviteClientContext &
         failed: any; //FIXME PROTECTED
         sessionDescriptionHandler: {
             peerConnection: RTCPeerConnectionLegacy; //FIXME Not documented
+            getDirection;
         };
         // non-sip
         __patched: boolean;
@@ -588,24 +589,25 @@ async function sendReinvite(this: WebPhoneSession, options: any = {}): Promise<a
     this.pendingReinvite = true;
     options.modifiers = options.modifiers || [];
 
-    return new Promise(async (resolve, reject) => {
-        try {
-            const description = await this.sessionDescriptionHandler.getDescription(
-                options.sessionDescriptionHandlerOptions,
-                options.modifiers
-            );
+    try {
+        const description = await this.sessionDescriptionHandler.getDescription(
+            options.sessionDescriptionHandlerOptions,
+            options.modifiers
+        );
+        const result = await new Promise((resolve, reject) => {
             this.sendRequest(C.INVITE, {
                 body: description,
                 receiveResponse: (response: IncomingResponse) => {
                     if (response.statusCode === 200) resolve(response);
-                    return this.receiveReinviteResponse(response);
                 }
             });
-        } catch (e) {
-            this.pendingReinvite = false;
-            reject(e);
-        }
-    });
+        });
+        await this.receiveReinviteResponse(result);
+        return result;
+    } catch (e) {
+        this.pendingReinvite = false;
+        throw new Error('Reinvite Failed with the reason ' + e.message);
+    }
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -621,13 +623,12 @@ async function hold(this: WebPhoneSession): Promise<any> {
     const options = {
         modifiers: []
     };
-    options.modifiers = options.modifiers || [];
     options.modifiers.push(this.sessionDescriptionHandler.holdModifier);
     try {
         this.logger.log('Hold Initiated');
-        const response = await this._sendReinvite(options);
-        this.localHold = true;
-        this.logger.log('Hold completed: ' + response.body);
+        var response = await this._sendReinvite(options);
+        this.localHold = (response.statusCode === 200 && (this.sessionDescriptionHandler.getDirection() === 'sendonly'));
+        this.logger.log('Hold completed, localhold is set to ' + this.localHold);
     } catch (e) {
         throw new Error('Hold could not be completed');
     }
@@ -645,8 +646,8 @@ async function unhold(this: WebPhoneSession): Promise<any> {
     try {
         this.logger.log('Unhold Initiated');
         const response = await this._sendReinvite();
-        this.localHold = false;
-        this.logger.log('Unhold completed: ' + response.body);
+        this.localHold = response.statusCode === 200 && this.sessionDescriptionHandler.getDirection() === 'sendonly';
+        this.logger.log('Unhold completed, localhold is set to ' + this.localHold);
     } catch (e) {
         throw new Error('Unhold could not be completed');
     }
