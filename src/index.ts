@@ -5,6 +5,9 @@ import {uuid, delay, extend} from './utils';
 import {WebPhoneSession} from './session';
 import {AudioHelperOptions} from './audioHelper';
 import {default as MediaStreams, MediaStreamsImpl} from './mediaStreams';
+import {DefaultSessionDescriptionHandler} from "./DefaultSessionDescriptionHandler";
+import {Logger} from "sip.js/types/logger-factory";
+import {SessionDescriptionHandlerObserver} from 'sip.js/lib/Web/SessionDescriptionHandlerObserver';
 
 const {version} = require('../package.json');
 
@@ -142,7 +145,11 @@ export default class WebPhone {
             sessionDescriptionHandlerFactoryOptions.alwaysAcquireMediaFirst = true;
         }
 
-        const sessionDescriptionHandlerFactory = options.sessionDescriptionHandlerFactory || [];
+        const sessionDescriptionHandlerFactory = function(session, options) {
+            const logger: Logger = session.ua.getLogger("sip.invitecontext.defaultSessionDescriptionHandler", session.id);
+            const observer: SessionDescriptionHandlerObserver = new SessionDescriptionHandlerObserver(session, options);
+            return new DefaultSessionDescriptionHandler(logger, observer, sessionDescriptionHandlerFactoryOptions);
+        };
 
         const sipErrorCodes =
             regData.sipErrorCodes && regData.sipErrorCodes.length
