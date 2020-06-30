@@ -4,6 +4,5 @@
 .idea
 .env
 .screenshots
-lib
 *npm-debug*
 node_modules

@@ -54,7 +54,7 @@
   },
   "preferGlobal": false,
   "private": false,
-  "main": "./lib/index.js",
+  "main": "lib/index.js",
   "types": "./lib/index.d.ts",
   "author": {
     "name": "RingCentral, Inc.",
