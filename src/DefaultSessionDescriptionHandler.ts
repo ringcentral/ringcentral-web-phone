@@ -468,13 +468,13 @@ export class DefaultSessionDescriptionHandler extends EventEmitter implements We
             this.peerConnection.close();
         }
 
-        console.error('RTCConfiguration: ',options.rtcConfiguration);
+        console.error('RTCConfiguration: ', options.rtcConfiguration);
         this.peerConnection = new this.WebRTC.RTCPeerConnection(options.rtcConfiguration, {
             optional: [{googDscp: true}]
         });
 
         this.logger.log('New peer connection created');
-        console.error('newPeerconnection',this.peerConnection);
+        console.error('newPeerconnection', this.peerConnection);
 
         if ('ontrack' in this.peerConnection) {
             this.peerConnection.addEventListener('track', (e: any) => {
@@ -636,6 +636,23 @@ export class DefaultSessionDescriptionHandler extends EventEmitter implements We
                             (this.peerConnection as any).addStream(stream);
                         }
                     });
+
+                    this.peerConnection
+                        .getSenders()
+                        .filter(sender => sender.track)
+                        .forEach(sender => {
+                            const params = sender.getParameters();
+                            console.error('getsender params =', params);
+                            params.priority = 'high';
+                            sender.setParameters(params).catch(error => {
+                                console.error(
+                                    `Error while setting encodings parameters for ${sender.track.kind} Track ${
+                                        sender.track.id
+                                    }: ${error.message || error.name}`
+                                );
+                            });
+                        });
+
                 } catch (e) {
                     return Promise.reject(e);
                 }
