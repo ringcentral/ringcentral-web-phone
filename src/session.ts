@@ -328,7 +328,7 @@ async function ignore(this: WebPhoneSession): Promise<ClientContext> {
 
 async function sendSessionMessage(this: WebPhoneSession, options): Promise<ClientContext> {
     if (!this.rcHeaders) {
-        throw new Error("Can't send SIP MESSAGE related to session: no RC headers available");
+        this.logger.error("Can't send SIP MESSAGE related to session: no RC headers available");
     }
     return this.ua.sendMessage(this.rcHeaders.from, this.createSessionMessage(options));
 }
