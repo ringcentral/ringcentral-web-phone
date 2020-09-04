@@ -186,9 +186,9 @@ If there's any connection problems to Sandbox environment, you may need to switc
 
 WebRTC works with issues when served from file system directly to browser (e.g. `file://` protocol), so you will need a local HTTP server (comes with this package).
 
-Online demo is hosted at [http://ringcentral.github.io/ringcentral-web-phone](http://ringcentral.github.io/ringcentral-web-phone)
+Online demo is hosted at [https://ringcentral.github.io/ringcentral-web-phone](https://ringcentral.github.io/ringcentral-web-phone)
 
-** NOTE : If you are using the online demo, please add `http://ringcentral.github.io/ringcentral-web-phone/callback.html` to the app's OAuth Redirect URI
+** NOTE : If you are using the online demo, please add `https://ringcentral.github.io/ringcentral-web-phone/callback.html` to the app's OAuth Redirect URI
 
 ---
 
