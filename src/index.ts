@@ -52,7 +52,7 @@ export interface WebPhoneOptions {
 }
 
 export default class WebPhone {
-    public static version = '0.8.1';
+    public static version = '0.8.2';
     public static uuid = uuid;
     public static delay = delay;
     public static extend = extend;
@@ -108,7 +108,7 @@ export default class WebPhone {
             sdpSemantics = 'plan-b';
         }
 
-        var stunServerArr = options.stunServers || this.sipInfo.stunServers || ['stun:74.125.194.127:19302'];
+        var stunServerArr = options.stunServers || this.sipInfo.stunServers || ['stun.l.google.com:19302'];
 
         var iceServers = [];
         stunServerArr.forEach(addr => {
