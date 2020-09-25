@@ -52,6 +52,7 @@ export type WebPhoneSession = InviteClientContext &
         __dtmf: typeof InviteClientContext.prototype.dtmf;
         __reinvite: typeof InviteClientContext.prototype.reinvite;
         sendRequest: typeof sendRequest;
+        sendReceive: typeof sendReceive;
         receiveRequest: typeof receiveRequest;
         accept: typeof accept;
         hold: typeof hold;
@@ -80,6 +81,8 @@ export type WebPhoneSession = InviteClientContext &
         startRecord: typeof startRecord;
         stopRecord: typeof stopRecord;
         flip: typeof flip;
+        whisper: typeof whisper;
+        barge: typeof barge;
         mute: typeof mute;
         unmute: typeof unmute;
         onLocalHold: typeof onLocalHold;
@@ -120,6 +123,8 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.__reinvite = session.reinvite;
 
     session.sendRequest = sendRequest.bind(session);
+    session.sendReceive = sendReceive.bind(session);
+
     session.receiveRequest = receiveRequest.bind(session);
     session.accept = accept.bind(session);
     session.hold = hold.bind(session);
@@ -135,6 +140,8 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.startRecord = startRecord.bind(session);
     session.stopRecord = stopRecord.bind(session);
     session.flip = flip.bind(session);
+    session.whisper = whisper.bind(session);
+    session.barge = barge.bind(session);
 
     session.mute = mute.bind(session);
     session.unmute = unmute.bind(session);
@@ -723,6 +730,18 @@ async function stopRecord(this: WebPhoneSession): Promise<any> {
 
 async function flip(this: WebPhoneSession, target): Promise<any> {
     return sendReceive(this, messages.flip, {target});
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+async function whisper(this: WebPhoneSession): Promise<any> {
+    return sendReceive(this, messages.whisper);
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+async function barge(this: WebPhoneSession): Promise<any> {
+    return sendReceive(this, messages.barge);
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
