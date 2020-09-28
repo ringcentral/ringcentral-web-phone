@@ -19,6 +19,8 @@ export interface WebPhoneUserAgent extends UA {
     __unregister: typeof UA.prototype.unregister;
     __transportConstructor: any;
     __onTransportConnected: () => void; // It is a private method
+    invite: (number: string, options: InviteOptions ) => WebPhoneSession;
+    switchFrom: (activeCall: ActiveCallInfo, options: InviteOptions) => WebPhoneSession;
     onTransportConnected: typeof onTransportConnected;
     configuration: typeof UA.prototype.configuration;
     transport: WebPhoneSIPTransport;
@@ -49,6 +51,8 @@ export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, i
 
     userAgent.__unregister = userAgent.unregister;
     userAgent.unregister = unregister.bind(userAgent);
+
+    userAgent.switchFrom = switchFrom.bind(userAgent);
 
     userAgent.audioHelper = new AudioHelper(options.audioHelper);
 
@@ -201,4 +205,33 @@ function invite(this: WebPhoneUserAgent, number: string, options: InviteOptions 
     this.audioHelper.playOutgoing(true);
     this.logger.log('Invite to ' + number + ' created with playOutgoing set to true');
     return patchSession(this.__invite(number, options) as any);
+}
+
+export interface ActiveCallInfo {
+    id: string;
+    from: string;
+    to: string;
+    direction: string;
+    sipData: {
+        toTag: string;
+        fromTag: string;
+    }
+}
+
+/**
+ * Support to switch call from other device to current web phone device
+ * need active call information from details presence API for switching
+ * https://developers.ringcentral.com/api-reference/Detailed-Extension-Presence-with-SIP-Event
+ */
+function switchFrom(this: WebPhoneUserAgent, activeCall: ActiveCallInfo, options: InviteOptions = {}): WebPhoneSession {
+    const replaceHeaders = [];
+    replaceHeaders.push(
+      `Replaces: ${activeCall.id};to-tag=${activeCall.sipData.fromTag};from-tag=${activeCall.sipData.toTag}`,
+    );
+    replaceHeaders.push('RC-call-type: replace');
+    const toNumber = activeCall.direction === 'Outbound' ? activeCall.to : activeCall.from;
+    const fromNumber = activeCall.direction === 'Outbound' ? activeCall.from : activeCall.to;
+    options.extraHeaders = (options.extraHeaders || []).concat(replaceHeaders);
+    options.fromNumber = options.fromNumber || fromNumber;
+    return this.invite(toNumber, options);
 }
