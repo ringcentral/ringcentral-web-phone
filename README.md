@@ -408,6 +408,7 @@ webPhone = new RingCentral.WebPhone(data, {
     },
     //to enable QoS Analytics Feature
     enableQos:true,
+    //to enable media stats logging
     enableMediaReportLogging : true
 });
 ```
