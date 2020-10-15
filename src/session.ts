@@ -123,7 +123,6 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.__reinvite = session.reinvite;
 
     session.sendRequest = sendRequest.bind(session);
-    session.sendReceive = sendReceive.bind(session);
     session.receiveRequest = receiveRequest.bind(session);
     session.accept = accept.bind(session);
     session.hold = hold.bind(session);
