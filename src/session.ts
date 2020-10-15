@@ -52,7 +52,6 @@ export type WebPhoneSession = InviteClientContext &
         __dtmf: typeof InviteClientContext.prototype.dtmf;
         __reinvite: typeof InviteClientContext.prototype.reinvite;
         sendRequest: typeof sendRequest;
-        sendReceive: typeof sendReceive;
         receiveRequest: typeof receiveRequest;
         accept: typeof accept;
         hold: typeof hold;
