@@ -31,6 +31,9 @@ $(function() {
 
     var remoteVideoElement = document.getElementById('remoteVideo');
     var localVideoElement = document.getElementById('localVideo');
+    var activeCallInfo = '';
+    var outboundCall = true;
+    var confSessionId = '';
 
     /**
      * @param {jQuery|HTMLElement} $tpl
@@ -199,6 +202,7 @@ $(function() {
     }
 
     function onInvite(session) {
+        outboundCall = false;
         console.log('EVENT: Invite', session.request);
         console.log('To', session.request.to.displayName, session.request.to.friendlyName);
         console.log('From', session.request.from.displayName, session.request.from.friendlyName);
@@ -281,6 +285,31 @@ $(function() {
         }
     }
 
+    const activeCallInfoTemplate = () => ({
+        id: '',
+        from: '',
+        to: '',
+        direction: '',
+        sipData: {
+            toTag: '',
+            fromTag: ''
+        }
+    });
+
+    function captureActiveCallInfo(session) {
+        const direction = outboundCall ? 'Outbound' : 'Inbound';
+        var activeCallInfo = activeCallInfoTemplate();
+        activeCallInfo.from = session.request.from.uri.user;
+        activeCallInfo.to = session.request.to.uri.user;
+        activeCallInfo.direction = direction;
+        activeCallInfo.id = session.dialog.id.callId;
+        activeCallInfo.sipData.fromTag = session.dialog.id.remoteTag;
+        activeCallInfo.sipData.toTag = session.dialog.id.localTag;
+        if (!localStorage.getItem('activeCallInfo')) {
+            localStorage.setItem('activeCallInfo', JSON.stringify(activeCallInfo));
+        }
+    }
+
     function onAccepted(session) {
         console.log('EVENT: Accepted', session.request);
         console.log('To', session.request.to.displayName, session.request.to.friendlyName);
@@ -292,6 +321,7 @@ $(function() {
         var $dtmf = $modal.find('input[name=dtmf]').eq(0);
         var $transfer = $modal.find('input[name=transfer]').eq(0);
         var $flip = $modal.find('input[name=flip]').eq(0);
+        var $conference = $modal.find('input[name=conference]').eq(0);
 
         var interval = setInterval(function() {
             var time = session.startTime ? Math.round((Date.now() - session.startTime) / 1000) + 's' : 'Ringing';
@@ -434,12 +464,19 @@ $(function() {
             $dtmf.val('');
         });
 
+        var $startConfButton = $modal.find('.startConf');
+
+        $startConfButton.on('click', function(e) {
+            initConference();
+        });
+
         $modal.find('.hangup').on('click', function() {
             session.terminate();
         });
 
         session.on('accepted', function() {
             console.log('Event: Accepted');
+            captureActiveCallInfo(session);
         });
         session.on('progress', function() {
             console.log('Event: Progress');
@@ -454,6 +491,7 @@ $(function() {
         });
         session.on('terminated', function() {
             console.log('Event: Terminated');
+            localStorage.setItem('activeCallInfo', '');
             close();
         });
         session.on('cancel', function() {
@@ -488,6 +526,7 @@ $(function() {
     }
 
     function makeCall(number, homeCountryId) {
+        outboundCall = true;
         homeCountryId =
             homeCountryId ||
             (extension &&
@@ -504,6 +543,65 @@ $(function() {
         onAccepted(session);
     }
 
+    function switchCall() {
+        var activeCallItem = JSON.parse(localStorage.getItem('activeCallInfo'));
+        console.log('Switching active call to current tab: ', activeCallItem);
+        var session = webPhone.userAgent.switchFrom(activeCallItem);
+        onAccepted(session);
+    }
+
+    var onConference = false;
+
+    function initConference() {
+        if (!onConference) {
+            getPresenceActiveCalls().then(res => {
+                var response = res.json();
+                var pId = response.activeCalls[0].partyId;
+                var tId = response.activeCalls[0].telephonySessionId;
+                getConfVoiceToken(pId, tId).then(voiceToken => {
+                    startConferenceCall(voiceToken, pId, tId);
+                    onConference = true;
+                });
+            });
+        }
+    }
+
+    function getPresenceActiveCalls() {
+        return platform.get('/restapi/v1.0/account/~/extension/~/presence?detailedTelephonyState=true');
+    }
+
+    function getConfVoiceToken(pId, tId) {
+        return platform.post('/restapi/v1.0/account/~/telephony/conference', {}).then(res => {
+            confSessionId = res.json().session.id;
+            return res.json().session.voiceCallToken;
+        });
+    }
+
+    function startConferenceCall(number, pId, tId) {
+        var session = webPhone.userAgent.invite(number, {
+            fromNumber: username
+        });
+        session.on('accepted', function() {
+            onAccepted(session);
+            console.log('Conference call started');
+            bringIn(tId, pId)
+                .then(response => {
+                    console.log('Adding call to conference succesful', response.json());
+                })
+                .catch(function(e) {
+                    console.error('Conference call failed', e.stack || e);
+                });
+        });
+    }
+
+    function bringIn(tId, pId) {
+        var url = '/restapi/v1.0/account/accountId/telephony/sessions/' + confSessionId + '/parties/bring-in';
+        return platform.post(url, {
+            telephonySessionId: tId,
+            partyId: pId
+        });
+    }
+
     function makeCallForm() {
         var $form = cloneTemplate($callTemplate);
 
@@ -511,6 +609,7 @@ $(function() {
         var $homeCountry = $form.find('input[name=homeCountry]').eq(0);
         var $username = $form.find('.username').eq(0);
         var $logout = $form.find('.logout').eq(0);
+        var $switch = $form.find('.switch').eq(0);
 
         $username.html(
             '<dl>' +
@@ -532,6 +631,10 @@ $(function() {
             webPhone.userAgent.unregister();
             e.preventDefault();
             location.reload();
+        });
+
+        $switch.on('click', function(e) {
+            switchCall();
         });
 
         $number.val(localStorage.getItem('webPhoneLastNumber') || '');
