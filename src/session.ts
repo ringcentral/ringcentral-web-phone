@@ -385,7 +385,7 @@ async function sendReceive(session: WebPhoneSession, command: any, options?: any
     options = options || {};
 
     extend(command, options);
-
+    delete command.extraHeaders;
     let cseq;
 
     return new Promise((resolve, reject) => {
