@@ -151,7 +151,6 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.sendMoveResponse = sendMoveResponse.bind(session);
 
     session._sendReinvite = sendReinvite.bind(session);
-
     session.on('replaced', patchSession);
 
     // Audio
@@ -197,6 +196,9 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.on('failed', stopPlaying);
     session.on('replaced', stopPlaying);
 
+
+    session.on('reinviteAccepted', patchIncomingSession);
+
     if (session.ua.enableQos) {
         session.on('SessionDescriptionHandler-created', () => {
             session.logger.log('SessionDescriptionHandler Created');
@@ -233,6 +235,7 @@ export const patchIncomingSession = (session: WebPhoneSession): void => {
     session.ignore = ignore;
     session.toVoicemail = toVoicemail;
     session.replyWithMessage = replyWithMessage;
+    session.receiveRequest = receiveRequest;
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
