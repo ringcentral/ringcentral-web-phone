@@ -123,7 +123,6 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.__reinvite = session.reinvite;
 
     session.sendRequest = sendRequest.bind(session);
-    session.sendReceive = sendReceive.bind(session);
     session.receiveRequest = receiveRequest.bind(session);
     session.accept = accept.bind(session);
     session.hold = hold.bind(session);
@@ -151,6 +150,7 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.stopMediaStats = stopMediaStats.bind(session);
     session.getIncomingInfoContent = getIncomingInfoContent.bind(session);
     session.sendMoveResponse = sendMoveResponse.bind(session);
+    session.sendReceive = sendReceive.bind(session);
 
     session._sendReinvite = sendReinvite.bind(session);
     session.on('replaced', patchSession);
