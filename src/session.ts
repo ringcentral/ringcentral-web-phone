@@ -106,6 +106,7 @@ export type WebPhoneSession = InviteClientContext &
         _sendReinvite: typeof sendReinvite;
         getIncomingInfoContent: typeof getIncomingInfoContent;
         sendMoveResponse: typeof sendMoveResponse;
+        sendReceive: typeof sendReceive;
     };
 
 export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
@@ -149,9 +150,9 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.stopMediaStats = stopMediaStats.bind(session);
     session.getIncomingInfoContent = getIncomingInfoContent.bind(session);
     session.sendMoveResponse = sendMoveResponse.bind(session);
+    session.sendReceive = sendReceive.bind(session);
 
     session._sendReinvite = sendReinvite.bind(session);
-
     session.on('replaced', patchSession);
 
     // Audio
@@ -197,6 +198,9 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.on('failed', stopPlaying);
     session.on('replaced', stopPlaying);
 
+
+    session.on('reinviteAccepted', patchIncomingSession);
+
     if (session.ua.enableQos) {
         session.on('SessionDescriptionHandler-created', () => {
             session.logger.log('SessionDescriptionHandler Created');
@@ -233,6 +237,7 @@ export const patchIncomingSession = (session: WebPhoneSession): void => {
     session.ignore = ignore;
     session.toVoicemail = toVoicemail;
     session.replyWithMessage = replyWithMessage;
+    session.receiveRequest = receiveRequest;
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -385,7 +390,7 @@ async function sendReceive(session: WebPhoneSession, command: any, options?: any
     options = options || {};
 
     extend(command, options);
-
+    delete command.extraHeaders;
     let cseq;
 
     return new Promise((resolve, reject) => {
