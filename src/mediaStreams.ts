@@ -72,11 +72,17 @@ export class RTPReport {
     public outboundRtpReport: any;
     public inboundRtpReport: any;
     public rttMS: any;
+    public localCandidates: any[];
+    public remoteCandidates: any[];
+    public transport: any;
 
     public constructor() {
         this.outboundRtpReport = {};
         this.inboundRtpReport = {};
         this.rttMS = {};
+        this.localCandidates = [];
+        this.remoteCandidates = [];
+        this.transport = {};
     }
 }
 
@@ -312,6 +318,36 @@ export class MediaStreamsImpl {
                                 }
                             });
                             break;
+                        case 'local-candidate':
+                            var local_candidates = {};
+                            Object.keys(report).forEach(function (statName) {
+                                switch (statName) {
+                                    case 'id':
+                                    case 'isRemote':
+                                    case 'ip':
+                                    case 'candidateType':
+                                    case 'networkType':
+                                        local_candidates[statName] = report[statName];
+                                        break;
+                                }
+                            });
+                            reports.localCandidates.push(local_candidates);
+                            break;
+                        case 'remote-candidate':
+                            var remote_candaida = {};
+                            Object.keys(report).forEach(function (statName) {
+                                switch (statName) {
+                                    case 'id':
+                                    case 'isRemote':
+                                    case 'ip':
+                                    case 'candidateType':
+                                    case 'networkType':
+                                        remote_candaida[statName] = report[statName];
+                                        break;
+                                }
+                            });
+                            reports.remoteCandidates.push(remote_candaida);
+                            break;
                         case 'media-source':
                             reports.outboundRtpReport['rtpLocalAudioLevel'] = report.audioLevel ? report.audioLevel : 0;
                             break;
@@ -320,6 +356,19 @@ export class MediaStreamsImpl {
                                 break;
                             }
                             reports.inboundRtpReport['rtpRemoteAudioLevel'] = report.audioLevel ? report.audioLevel : 0;
+                            break;
+                        case 'transport':
+                            Object.keys(report).forEach(function (statName) {
+                                switch (statName) {
+                                    case 'dtlsState':
+                                    case 'packetsSent':
+                                    case 'packetsReceived':
+                                    case 'selectedCandidatePairChanges':
+                                    case 'selectedCandidatePairId':
+                                        reports.transport[statName] = report[statName];
+                                        break;
+                                }
+                            });
                             break;
                         default:
                             break;
