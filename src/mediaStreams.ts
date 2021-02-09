@@ -319,7 +319,7 @@ export class MediaStreamsImpl {
                             });
                             break;
                         case 'local-candidate':
-                            var local_candidates = {};
+                            let local_candidate = {};
                             Object.keys(report).forEach(function (statName) {
                                 switch (statName) {
                                     case 'id':
@@ -327,26 +327,25 @@ export class MediaStreamsImpl {
                                     case 'ip':
                                     case 'candidateType':
                                     case 'networkType':
-                                        local_candidates[statName] = report[statName];
+                                        local_candidate[statName] = report[statName];
                                         break;
                                 }
                             });
-                            reports.localCandidates.push(local_candidates);
+                            reports.localCandidates.push(local_candidate);
                             break;
                         case 'remote-candidate':
-                            var remote_candaida = {};
+                            let remote_candidate = {};
                             Object.keys(report).forEach(function (statName) {
                                 switch (statName) {
                                     case 'id':
                                     case 'isRemote':
                                     case 'ip':
                                     case 'candidateType':
-                                    case 'networkType':
-                                        remote_candaida[statName] = report[statName];
+                                        remote_candidate[statName] = report[statName];
                                         break;
                                 }
                             });
-                            reports.remoteCandidates.push(remote_candaida);
+                            reports.remoteCandidates.push(remote_candidate);
                             break;
                         case 'media-source':
                             reports.outboundRtpReport['rtpLocalAudioLevel'] = report.audioLevel ? report.audioLevel : 0;
