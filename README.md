@@ -170,6 +170,7 @@ platform
 ```sh
 $ git clone https://github.com/ringcentral/ringcentral-web-phone.git
 $ cd ringcentral-web-phone
+$ npm install
 $ npm start
 ```
 
