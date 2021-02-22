@@ -346,7 +346,7 @@ session.stopRecord().then(...);
 
 Not yet implemented. Could be done by dialing \*83. The account should be enabled for barge/whisper access through system admin.
 
-## Upgrade Procedure from v0.4.X to 0.8.4
+## Upgrade Procedure from v0.4.X to 0.8.5
 
 - SDK now only supports only Unified SDP plan. You can find more information about this here:  [https://chromestatus.com/feature/5723303167655936](https://chromestatus.com/feature/5723303167655936)
 
@@ -519,3 +519,4 @@ function onInvite(session) {
 | Jul 2020 | 0.8.2 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
 | Oct 2020 | 0.8.3 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
 | Dec 2020 | 0.8.4 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
+| Feb 2021 | 0.8.5 | 0.13.5 | 71+ | 62 to 65 , :warning: QoS feature not supported |
