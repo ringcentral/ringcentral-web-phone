@@ -327,6 +327,8 @@ export class MediaStreamsImpl {
                                     case 'ip':
                                     case 'candidateType':
                                     case 'networkType':
+                                    case 'priority':
+                                    case 'port':
                                         local_candidate[statName] = report[statName];
                                         break;
                                 }
@@ -340,6 +342,8 @@ export class MediaStreamsImpl {
                                     case 'id':
                                     case 'isRemote':
                                     case 'ip':
+                                    case 'priority':
+                                    case 'port':
                                     case 'candidateType':
                                         remote_candidate[statName] = report[statName];
                                         break;
