@@ -52,6 +52,7 @@ export type WebPhoneSession = InviteClientContext &
         __dtmf: typeof InviteClientContext.prototype.dtmf;
         __reinvite: typeof InviteClientContext.prototype.reinvite;
         sendRequest: typeof sendRequest;
+        sendReceive: typeof sendReceive;
         receiveRequest: typeof receiveRequest;
         accept: typeof accept;
         hold: typeof hold;
@@ -123,6 +124,8 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.__reinvite = session.reinvite;
 
     session.sendRequest = sendRequest.bind(session);
+    session.sendReceive = sendReceive.bind(session);
+
     session.receiveRequest = receiveRequest.bind(session);
     session.accept = accept.bind(session);
     session.hold = hold.bind(session);
@@ -735,6 +738,18 @@ async function flip(this: WebPhoneSession, target): Promise<any> {
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
+async function whisper(this: WebPhoneSession): Promise<any> {
+    return sendReceive(this, messages.whisper);
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+async function barge(this: WebPhoneSession): Promise<any> {
+    return sendReceive(this, messages.barge);
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
 async function whisper(this: WebPhoneSession): Promise<any> {
     return sendReceive(this, messages.whisper);
 }
