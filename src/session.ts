@@ -79,6 +79,7 @@ export type WebPhoneSession = InviteClientContext &
         forward: typeof forward;
         startRecord: typeof startRecord;
         stopRecord: typeof stopRecord;
+        setLocalRecord: typeof setLocalRecord;
         flip: typeof flip;
         whisper: typeof whisper;
         barge: typeof barge;
@@ -137,6 +138,7 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.forward = forward.bind(session);
     session.startRecord = startRecord.bind(session);
     session.stopRecord = stopRecord.bind(session);
+    session.setLocalRecord = setLocalRecord.bind(session);
     session.flip = flip.bind(session);
     session.whisper = whisper.bind(session);
     session.barge = barge.bind(session);
@@ -726,6 +728,12 @@ async function startRecord(this: WebPhoneSession): Promise<any> {
 
 async function stopRecord(this: WebPhoneSession): Promise<any> {
     return setRecord(this, false);
+}
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+function setLocalRecord(this: WebPhoneSession): any {
+	this.__onRecord = true;
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
