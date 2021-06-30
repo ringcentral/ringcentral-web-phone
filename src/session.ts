@@ -1,7 +1,7 @@
 import {
     C,
     ClientContext,
-    Exceptions,
+    Exceptions, Grammar,
     IncomingResponse,
     InviteClientContext,
     InviteServerContext,
@@ -536,6 +536,53 @@ function receiveRequest(this: WebPhoneSession, request): any {
                 }
             }
             break;
+        case C.NOTIFY:
+            console.error('inside notify')
+            const contentType: string | undefined = request.hasHeader("Content-Type") ?
+                request.getHeader("Content-Type") : undefined;
+
+            console.error('contentType' , contentType)
+
+            if (contentType && contentType.search(/^message\/sipfrag/) !== -1) {
+
+                console.error('inside content type')
+
+                const messageBody: any = Grammar.parse(request.body, "sipfrag");
+
+                console.error('message Body = ' , messageBody)
+
+                if (messageBody === -1) {
+                    request.reply(489, "Bad Event");
+                    return;
+                }
+
+                const statusCode= messageBody.status_code;
+                console.error('messsgaebody status code ', statusCode)
+
+                switch (true) {
+                    case (/^1[0-9]{2}$/.test(messageBody.status_Code)):
+                        this.emit("referProgress", this);
+                        console.error('referProgress' , messageBody.status_code)
+                        break;
+                    case (/^2[0-9]{2}$/.test(messageBody.status_code)):
+                        this.emit("referAccepted", this);
+                        // if (!this.options.activeAfterTransfer && this.applicant.terminate) {
+                        //     this.applicant.terminate();
+                        // }
+                        console.error('referAccepted' , messageBody.status_code)
+                        break;
+                    default:
+                        this.emit("referRejected", this);
+                        console.error('referRejected' , messageBody.status_code)
+                        break;
+                }
+                request.reply(200);
+                this.emit("notify", request);
+                console.error('notify is finalized')
+                return;
+            }
+            console.error('notify is outside switch')
+            request.reply(489, "Bad Event");
     }
     return this.__receiveRequest.apply(this, arguments);
 }

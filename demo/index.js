@@ -154,7 +154,7 @@ $(function() {
                 local: localVideoElement
             },
             enableQos: true,
-            enableMediaReportLogging: true
+            enableMediaReportLogging: false
         });
 
         webPhone.userAgent.audioHelper.loadAudio({
