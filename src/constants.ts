@@ -21,3 +21,5 @@ export const defaultMediaConstraints = {
     audio: true,
     video: false
 };
+
+export const kReferTimeout = 30 * 1000;
