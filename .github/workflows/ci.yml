@@ -1,0 +1,32 @@
+name: CI Pipeline
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest # Firefox in it
+    strategy:
+      matrix:
+        node-version: [14.x]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm install
+      - run: DEBUG=eslint:cli-engine npm run lint:all
+      - run: npm run build
+      - run: pulseaudio --start
+      - run: xvfb-run --auto-servernum -- npm test
+        env:
+          CHROME_BIN: chromium-browser
+          DISPLAY: :99.0
+          NO_PROXY: "localhost, 0.0.0.0/4201, 0.0.0.0/9876"
+      - run: cat ./coverage/lcov.info
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
