@@ -19,11 +19,7 @@ jobs:
       - run: npm install
       - run: DEBUG=eslint:cli-engine npm run lint:all
       - run: npm run build
-      - run: xvfb-run --auto-servernum -- npm test
-        env:
-          CHROME_BIN: chromium-browser
-          DISPLAY: :99.0
-          NO_PROXY: "localhost, 0.0.0.0/4201, 0.0.0.0/9876"
+      - run: npm test
       - run: cat ./coverage/lcov.info
       - name: Coveralls
         uses: coverallsapp/github-action@master
