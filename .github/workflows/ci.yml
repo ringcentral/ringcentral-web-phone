@@ -20,7 +20,6 @@ jobs:
       - run: DEBUG=eslint:cli-engine npm run lint:all
       - run: npm run build
       - run: npm run test:ut
-      - run: cat .coverage/lcov.info
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:
@@ -55,7 +54,6 @@ jobs:
           RC_WP_CALLER_PASSWORD: ${{ secrets.RC_WP_CALLER_PASSWORD }}
           RC_WP_RECEIVER_USERNAME: ${{ secrets.RC_WP_RECEIVER_USERNAME }}
           RC_WP_RECEIVER_PASSWORD: ${{ secrets.RC_WP_RECEIVER_PASSWORD }}
-      - run: cat .coverage/lcov.info
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:
