@@ -20,7 +20,7 @@ jobs:
       - run: DEBUG=eslint:cli-engine npm run lint:all
       - run: npm run build
       - run: npm run test:ut
-      - run: cat ./coverage/lcov.info
+      - run: cat .coverage/lcov.info
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:
