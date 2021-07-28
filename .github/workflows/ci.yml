@@ -25,6 +25,7 @@ jobs:
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: .coverage/lcov.info
   e2e-test:
     if: ${{ github.repository_owner == 'ringcentral' }}
     runs-on: ubuntu-latest # Firefox in it
@@ -54,8 +55,9 @@ jobs:
           RC_WP_CALLER_PASSWORD: ${{ secrets.RC_WP_CALLER_PASSWORD }}
           RC_WP_RECEIVER_USERNAME: ${{ secrets.RC_WP_RECEIVER_USERNAME }}
           RC_WP_RECEIVER_PASSWORD: ${{ secrets.RC_WP_RECEIVER_PASSWORD }}
-      - run: cat ./coverage/lcov.info
+      - run: cat .coverage/lcov.info
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: .coverage/lcov.info
