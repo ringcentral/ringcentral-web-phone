@@ -21,7 +21,16 @@ jobs:
       - run: npm run build
       - run: npm test
         env:
-          CI: true
+          RC_WP_CALLER_APPKEY: ${{ secrets.RC_WP_CALLER_APPKEY }}
+          RC_WP_CALLER_APPSECRET: ${{ secrets.RC_WP_CALLER_APPSECRET }}
+          RC_WP_CALLER_SERVER: ${{ secrets.RC_WP_CALLER_SERVER }}
+          RC_WP_RECEIVER_APPKEY: ${{ secrets.RC_WP_RECEIVER_APPKEY }}
+          RC_WP_RECEIVER_APPSECRET: ${{ secrets.RC_WP_RECEIVER_APPSECRET }}
+          RC_WP_RECEIVER_SERVER: ${{ secrets.RC_WP_RECEIVER_SERVER }}
+          RC_WP_CALLER_USERNAME: ${{ secrets.RC_WP_CALLER_USERNAME }}
+          RC_WP_CALLER_PASSWORD: ${{ secrets.RC_WP_CALLER_PASSWORD }}
+          RC_WP_RECEIVER_USERNAME: ${{ secrets.RC_WP_RECEIVER_USERNAME }}
+          RC_WP_RECEIVER_PASSWORD: ${{ secrets.RC_WP_RECEIVER_PASSWORD }}
       - run: cat ./coverage/lcov.info
       - name: Coveralls
         uses: coverallsapp/github-action@master
