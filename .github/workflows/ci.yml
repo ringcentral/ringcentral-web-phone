@@ -19,7 +19,6 @@ jobs:
       - run: npm install
       - run: DEBUG=eslint:cli-engine npm run lint:all
       - run: npm run build
-      - run: pulseaudio --start
       - run: xvfb-run --auto-servernum -- npm test
         env:
           CHROME_BIN: chromium-browser
