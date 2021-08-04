@@ -9,7 +9,7 @@ import {
     ReferClientContext,
     Session
 } from 'sip.js';
-import {messages, responseTimeout} from './constants';
+import {responseTimeout, messages } from './constants';
 import {startQosStatsCollection} from './qos';
 import {WebPhoneUserAgent} from './userAgent';
 import {delay, extend} from './utils';
@@ -152,7 +152,6 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.sendMoveResponse = sendMoveResponse.bind(session);
     session.sendReceive = sendReceive.bind(session);
     session._sendReinvite = sendReinvite.bind(session);
-
     session.on('replaced', patchSession);
 
     // Audio
@@ -890,4 +889,3 @@ function stopMediaStats(this: WebPhoneSession) {
     this.mediaStatsStarted = false;
     this.noAudioReportCount = 0;
 }
-

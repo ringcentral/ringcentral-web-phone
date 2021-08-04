@@ -261,7 +261,6 @@ export class MediaStreamsImpl {
                     reject(e);
                 }
             } else {
-                // self.rcWPLoge(self.tag, 'The session cannot be empty');
                 reject(new Error('The session cannot be empty'))
             }
         });
