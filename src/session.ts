@@ -2,8 +2,6 @@ import {
     C,
     ClientContext,
     Exceptions,
-    Grammar,
-    IncomingRequest,
     IncomingResponse,
     InviteClientContext,
     InviteServerContext,
@@ -11,7 +9,7 @@ import {
     ReferClientContext,
     Session
 } from 'sip.js';
-import {kReferTimeout, messages, responseTimeout} from './constants';
+import {messages, responseTimeout} from './constants';
 import {startQosStatsCollection} from './qos';
 import {WebPhoneUserAgent} from './userAgent';
 import {delay, extend} from './utils';
@@ -109,12 +107,6 @@ export type WebPhoneSession = InviteClientContext &
         getIncomingInfoContent: typeof getIncomingInfoContent;
         sendMoveResponse: typeof sendMoveResponse;
         sendReceive: typeof sendReceive;
-
-        _isReferAccepted: boolean;
-        _referTimeout: NodeJS.Timeout | null;
-        _clearReferTimeout: typeof _clearReferTimeout;
-        _referClientContext: any;
-        _listenReferEvent: any;
     };
 
 export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
@@ -160,9 +152,6 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.sendMoveResponse = sendMoveResponse.bind(session);
     session.sendReceive = sendReceive.bind(session);
     session._sendReinvite = sendReinvite.bind(session);
-
-    session._listenReferEvent = _listenReferEvent.bind(session);
-    session._clearReferTimeout =_clearReferTimeout.bind(session);
 
     session.on('replaced', patchSession);
 
@@ -229,9 +218,6 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.mediaStatsStarted = false;
     session.noAudioReportCount = 0;
     session.reinviteForNoAudioSent = false;
-
-    session._isReferAccepted = false;
-    session._referTimeout = null;
 
     return session;
 };
@@ -550,28 +536,6 @@ function receiveRequest(this: WebPhoneSession, request): any {
                 }
             }
             break;
-
-        case C.NOTIFY:
-            if (!this._isReferAccepted) {
-                this.logger.log('refer request is not accepted, ignore notify request');
-                return;
-            }
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const messageBody: any = Grammar.parse(request.body, 'sipfrag');
-            switch (true) {
-                case /^1[0-9]{2}$/.test(messageBody.status_code):
-                    break;
-                case /^2[0-9]{2}$/.test(messageBody.status_code):
-                    this.emit('notify-success',messageBody.status_code);
-                    this._isReferAccepted = false;
-                    this._clearReferTimeout();
-                    break;
-                default:
-                    this.emit('notify-failed',messageBody?.reason_phrase);
-                    this._isReferAccepted = false;
-                    this._clearReferTimeout();
-                    break;
-            }
     }
     return this.__receiveRequest.apply(this, arguments);
 }
@@ -927,36 +891,3 @@ function stopMediaStats(this: WebPhoneSession) {
     this.noAudioReportCount = 0;
 }
 
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-function _clearReferTimeout(this: WebPhoneSession) {
-    this._referTimeout && clearTimeout(this._referTimeout);
-    this._referTimeout = null;
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-function _listenReferEvent(referClientContext: ReferClientContext) {
-    if (this._referTimeout) {
-        this.logger.warn(
-            'Refer timer is not null when starting to listen refer event'
-        );
-        clearTimeout(this._referTimeout);
-    }
-    this.logger.log(`Schedule refer timeout ${kReferTimeout}s`);
-    this._referTimeout = setTimeout(() => {
-        this.logger.warn('Refer timedout');
-        this._referTimeout = null;
-        this.emit('refer-timeout', 'refer-timeout');
-        this._isReferAccepted = false;
-    }, kReferTimeout);
-
-    this._referClientContext = referClientContext;
-    this._referClientContext.on('referRequestRejected', () => {
-        this.emit('notify-failed', 'referRequestRejected');
-        this._clearReferTimeout();
-    });
-    this._referClientContext.on('referRequestAccepted', () => {
-        this._isReferAccepted = true;
-    });
-}
