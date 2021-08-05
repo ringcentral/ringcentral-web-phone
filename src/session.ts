@@ -9,7 +9,7 @@ import {
     ReferClientContext,
     Session
 } from 'sip.js';
-import {responseTimeout, messages} from './constants';
+import {responseTimeout, messages } from './constants';
 import {startQosStatsCollection} from './qos';
 import {WebPhoneUserAgent} from './userAgent';
 import {delay, extend} from './utils';
@@ -151,7 +151,6 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.getIncomingInfoContent = getIncomingInfoContent.bind(session);
     session.sendMoveResponse = sendMoveResponse.bind(session);
     session.sendReceive = sendReceive.bind(session);
-
     session._sendReinvite = sendReinvite.bind(session);
     session.on('replaced', patchSession);
 
@@ -676,7 +675,6 @@ async function warmTransfer(
     target: WebPhoneSession,
     transferOptions: any = {}
 ): Promise<ReferClientContext> {
-    await (this.localHold ? Promise.resolve(null) : this.hold());
     transferOptions.extraHeaders = (transferOptions.extraHeaders || []).concat(this.ua.defaultHeaders);
     this.logger.log('Completing warm transfer');
     return Promise.resolve(this.refer(target, transferOptions));
@@ -836,7 +834,7 @@ function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
     }
     remoteAudio.srcObject = remoteStream;
     remoteAudio.play().catch(() => {
-        this.logger.log('Remote play was rejected');
+        this.logger.error('Remote play was rejected');
     });
 
     let localStream = new MediaStream();
@@ -854,7 +852,7 @@ function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
     }
     localAudio.srcObject = localStream;
     localAudio.play().catch(() => {
-        this.logger.log('Local play was rejected');
+        this.logger.error('Local play was rejected');
     });
     if (localStream && remoteStream && !this.mediaStatsStarted) {
         this.mediaStreams = new MediaStreams(this);
@@ -879,6 +877,8 @@ function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
         }, mediaCheckTimer);
     }
 }
+
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 function stopMediaStats(this: WebPhoneSession) {
     this.logger.log('Stopping media stats collection');
