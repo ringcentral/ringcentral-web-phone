@@ -9,42 +9,42 @@ jobs:
   release:
     if: ${{ github.repository_owner == 'ringcentral' }}
     runs-on: ubuntu-latest # Firefox in it
-    strategy:
-      matrix:
-        node-version: [14.x]
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-        registry-url: 'https://registry.npmjs.org'
-    - run: npm install
-    - run: npm run build
-    - name: Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: |
-          dist/ringcentral-web-phone.js
-          dist/ringcentral-web-phone.min.js
-      env:
-        GITHUB_REPOSITORY: ringcentral/ringcentral-web-phone
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm install
+      - run: npm run build
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/ringcentral-web-phone.js
+            dist/ringcentral-web-phone.min.js
+        env:
+          GITHUB_REPOSITORY: ringcentral/ringcentral-web-phone
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   npm:
     if: ${{ github.repository_owner == 'ringcentral' }}
     runs-on: ubuntu-latest # Firefox in it
-    strategy:
-      matrix:
-        node-version: [14.x]
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-        registry-url: 'https://registry.npmjs.org'
-    - run: npm install
-    - run: npm run build
-    - run: npm publish
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm install
+      - run: npm run build
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
