@@ -49,6 +49,7 @@ export interface WebPhoneOptions {
     enableDefaultModifiers?: boolean;
     enablePlanB?: boolean;
     stunServers?: any;
+    autoStop?: boolean;
 }
 
 export default class WebPhone {
@@ -195,6 +196,7 @@ export default class WebPhone {
             },
             domain: this.sipInfo.domain,
             autostart: false,
+            autostop: typeof options.autoStop === 'undefined' ? true : options.autoStop, // SIP.js 0.13.x has memory leak with autostop enabled.
             register: true,
             userAgentString,
             sessionDescriptionHandlerFactoryOptions,
