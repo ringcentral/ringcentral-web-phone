@@ -30,21 +30,6 @@ jobs:
         env:
           GITHUB_REPOSITORY: ringcentral/ringcentral-web-phone
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  npm:
-    if: ${{ github.repository_owner == 'ringcentral' }}
-    runs-on: ubuntu-latest # Firefox in it
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          persist-credentials: false
-      - name: Setup Node.js
-        uses: actions/setup-node@v1
-        with:
-          node-version: 14.x
-          registry-url: 'https://registry.npmjs.org'
-      - run: npm install
-      - run: npm run build
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
