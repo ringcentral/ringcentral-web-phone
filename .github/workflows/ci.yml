@@ -3,7 +3,7 @@ name: CI Pipeline
 on: [push, pull_request]
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest # Firefox in it
     strategy:
       matrix:
@@ -22,31 +22,8 @@ jobs:
       - run: DEBUG=eslint:cli-engine npm run lint:all
       - run: npm run build
       - run: npm run test:ut
-      - name: Coveralls
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: .coverage/lcov.info
-  e2e-test:
-    if: ${{ github.repository_owner == 'ringcentral' }}
-    runs-on: ubuntu-latest # Firefox in it
-    strategy:
-      matrix:
-        node-version: [14.x]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          persist-credentials: false
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
-          registry-url: 'https://registry.npmjs.org'
-      - run: npm install
-      - run: DEBUG=eslint:cli-engine npm run lint:all
-      - run: npm run build
-      - run: npm test
+      - run: npm run test:e2e
+        if: ${{ secrets.RC_WP_RECEIVER_PASSWORD != '' &&  secrets.RC_WP_CALLER_PASSWORD != '' }}
         env:
           RC_WP_CALLER_APPKEY: ${{ secrets.RC_WP_CALLER_APPKEY }}
           RC_WP_CALLER_APPSECRET: ${{ secrets.RC_WP_CALLER_APPSECRET }}
@@ -63,26 +40,26 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path-to-lcov: .coverage/lcov.info
-  pages:
-    needs: [test, e2e-test]
-    if: ${{ github.ref == 'refs/heads/master' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          persist-credentials: false
-      - name: Setup Node.js
-        uses: actions/setup-node@v1
-        with:
-          node-version: 14.x
-          registry-url: 'https://registry.npmjs.org'
-      - run: npm install
-      - run: npm run build
       - name: Github Pages
+        if: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
         uses: JamesIves/github-pages-deploy-action@3.7.1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages
           FOLDER: dist
           CLEAN: true
+      - run: echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+      - name: Release
+        if: ${{ env.TAG != '' && !contains(env.TAG, '/') && !contains(env.TAG, '-') }}
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/ringcentral-web-phone.js
+            dist/ringcentral-web-phone.min.js
+        env:
+          GITHUB_REPOSITORY: ringcentral/ringcentral-web-phone
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: npm publish
+        if: ${{ env.TAG != '' && !contains(env.TAG, '/') && !contains(env.TAG, '-') && github.repository_owner == 'ringcentral' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
