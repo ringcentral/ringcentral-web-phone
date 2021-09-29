@@ -514,6 +514,11 @@ function sendMoveResponse(this: WebPhoneSession,
 
 function receiveRequest(this: WebPhoneSession, request): any {
     switch (request.method) {
+        case C.UPDATE:
+            this.logger.log('Receive UPDATE request. Do nothing just return 200 OK');
+            request.reply(200);
+            this.emit('updateReceived', request);
+            return this;
         case C.INFO:
             // For the Move2RCV request from server
             const content = this.getIncomingInfoContent(request);
