@@ -178,7 +178,7 @@ $ npm start
 2. If your Application is of the Scope
    `Server/Web`
    `Browser-Based`
-    Then you would need to add `http://localhost:8080/demo/callback.html` as the OAuth Redirect URI for the application in [Developer Portal](https://developer.ringcentral.com)
+    Then you would need to add `http://localhost:8080/callback.html` as the OAuth Redirect URI for the application in [Developer Portal](https://developer.ringcentral.com)
 3. Add your RC credentials and click on `Register`
 4. For making outbound calls, enter phone number and click on `Call`
 5. For receiving incoming calls, Click on `Accept` button when window pops up (will be visible when there is an incoming call)
@@ -347,7 +347,7 @@ session.stopRecord().then(...);
 
 Not yet implemented. Could be done by dialing \*83. The account should be enabled for barge/whisper access through system admin.
 
-## Upgrade Procedure from v0.4.X to 0.8.8
+## Upgrade Procedure from v0.4.X to 0.8.9
 
 - SDK now only supports only Unified SDP plan. You can find more information about this here:  [https://chromestatus.com/feature/5723303167655936](https://chromestatus.com/feature/5723303167655936)
 
