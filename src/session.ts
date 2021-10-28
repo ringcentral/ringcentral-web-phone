@@ -416,18 +416,17 @@ async function sendReceive(session: WebPhoneSession, command: any, options?: any
                         } catch (e) {
                             obj = {};
                         }
-
                         if (obj.response && obj.response.command === command.command) {
                             if (obj.response.result) {
+                                timeout && clearTimeout(timeout);
+                                session.removeListener('RC_SIP_INFO', onInfo);
                                 if (obj.response.result.code.toString() === '0') {
                                     return resolve(obj.response.result);
                                 }
                                 return reject(obj.response.result);
                             }
                         }
-                        timeout && clearTimeout(timeout);
-                        session.removeListener('RC_SIP_INFO', onInfo);
-                        resolve(null); //FIXME What to resolve
+                        this.logger.log('Receive SIP INFO does not match the request command. Ignore it');
                     };
                     timeout = setTimeout(() => {
                         reject(new Error('Timeout: no reply'));
