@@ -426,7 +426,6 @@ async function sendReceive(session: WebPhoneSession, command: any, options?: any
                                 return reject(obj.response.result);
                             }
                         }
-                        this.logger.log('Receive SIP INFO does not match the request command. Ignore it');
                     };
                     timeout = setTimeout(() => {
                         reject(new Error('Timeout: no reply'));
