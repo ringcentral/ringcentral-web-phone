@@ -48,7 +48,9 @@ export interface WebPhoneOptions {
     regId?: number;
     enableDefaultModifiers?: boolean;
     enablePlanB?: boolean;
+    enableTurnServers?: boolean;
     stunServers?: any;
+    turnServers?: any;
     autoStop?: boolean;
 }
 
@@ -110,13 +112,19 @@ export default class WebPhone {
         }
 
         var stunServerArr = options.stunServers || this.sipInfo.stunServers || ['stun.l.google.com:19302'];
+        var turnServerArr = options.turnServers;
 
         var iceServers = [];
-        stunServerArr.forEach(addr => {
-            addr = !/^(stun:)/.test(addr) ? 'stun:' + addr : addr;
-            iceServers.push({urls: addr});
-        });
-
+        if (options.enableTurnServers && options.turnServers!== 'undefined' && options.turnServers.length!==0) {
+            turnServerArr.forEach(server => {
+                iceServers.push(server);
+            });
+        } else {
+            stunServerArr.forEach(addr => {
+                addr = !/^(stun:)/.test(addr) ? 'stun:' + addr : addr;
+                iceServers.push({urls: addr});
+            });
+        }
         const sessionDescriptionHandlerFactoryOptions = options.sessionDescriptionHandlerFactoryOptions || {
             peerConnectionOptions: {
                 iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 500,
