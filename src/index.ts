@@ -115,7 +115,7 @@ export default class WebPhone {
         var turnServerArr = options.turnServers;
 
         var iceServers = [];
-        if (options.enableTurnServers && options.turnServers!== 'undefined' && options.turnServers.length!==0) {
+        if (options.enableTurnServers && options.turnServers !== undefined && options.turnServers.length !== 0) {
             turnServerArr.forEach(server => {
                 iceServers.push(server);
             });
