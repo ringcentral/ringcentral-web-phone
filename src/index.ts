@@ -51,6 +51,7 @@ export interface WebPhoneOptions {
     enableTurnServers?: boolean;
     stunServers?: any;
     turnServers?: any;
+    iceCheckingTimeout?: number;
     autoStop?: boolean;
 }
 
@@ -119,6 +120,7 @@ export default class WebPhone {
             turnServerArr.forEach(server => {
                 iceServers.push(server);
             });
+            options.iceCheckingTimeout = options.iceCheckingTimeout || 2000;
         } else {
             stunServerArr.forEach(addr => {
                 addr = !/^(stun:)/.test(addr) ? 'stun:' + addr : addr;
@@ -127,7 +129,7 @@ export default class WebPhone {
         }
         const sessionDescriptionHandlerFactoryOptions = options.sessionDescriptionHandlerFactoryOptions || {
             peerConnectionOptions: {
-                iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 500,
+                iceCheckingTimeout: options.iceCheckingTimeout || this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 500,
                 rtcConfiguration: {
                     sdpSemantics,
                     iceServers
