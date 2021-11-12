@@ -155,6 +155,10 @@ $(function() {
             },
             enableQos: true,
             enableMediaReportLogging: true
+            // enableTurnServers: true or false,
+            // turnServers: [{urls:'turn:192.168.0.1', username : 'turn' , credential: 'turn'}],
+            // iceTransportPolicy: "all" or "relay",
+            // iceCheckingTimeout:500
         });
 
         webPhone.userAgent.audioHelper.loadAudio({
