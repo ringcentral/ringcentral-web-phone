@@ -48,12 +48,16 @@ export interface WebPhoneOptions {
     regId?: number;
     enableDefaultModifiers?: boolean;
     enablePlanB?: boolean;
+    enableTurnServers?: boolean;
     stunServers?: any;
+    turnServers?: any;
+    iceCheckingTimeout?: number;
+    iceTransportPolicy?: string;
     autoStop?: boolean;
 }
 
 export default class WebPhone {
-    public static version = '0.8.8';
+    public static version = '0.8.9';
     public static uuid = uuid;
     public static delay = delay;
     public static extend = extend;
@@ -110,19 +114,26 @@ export default class WebPhone {
         }
 
         var stunServerArr = options.stunServers || this.sipInfo.stunServers || ['stun.l.google.com:19302'];
-
+        var turnServerArr = options.turnServers;
+        var iceTransportPolicy = options.iceTransportPolicy || 'all';
         var iceServers = [];
+        if (options.enableTurnServers && options.turnServers !== undefined && options.turnServers.length !== 0) {
+            turnServerArr.forEach(server => {
+                iceServers.push(server);
+            });
+            options.iceCheckingTimeout = options.iceCheckingTimeout || 2000;
+        }
         stunServerArr.forEach(addr => {
             addr = !/^(stun:)/.test(addr) ? 'stun:' + addr : addr;
             iceServers.push({urls: addr});
         });
-
         const sessionDescriptionHandlerFactoryOptions = options.sessionDescriptionHandlerFactoryOptions || {
             peerConnectionOptions: {
-                iceCheckingTimeout: this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 500,
+                iceCheckingTimeout: options.iceCheckingTimeout || this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 500,
                 rtcConfiguration: {
                     sdpSemantics,
-                    iceServers
+                    iceServers,
+                    iceTransportPolicy
                 }
             },
             constraints: options.mediaConstraints || defaultMediaConstraints,
