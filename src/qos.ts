@@ -1,5 +1,5 @@
 import getStats from 'getstats';
-import {WebPhoneSession} from './session';
+import { WebPhoneSession } from './session';
 
 const formatFloat = (input: any): string => parseFloat(input.toString()).toFixed(2);
 

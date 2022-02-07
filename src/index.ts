@@ -1,60 +1,92 @@
-import {patchUserAgent, WebPhoneUserAgent} from './userAgent';
-import {UA, Web, SessionDescriptionHandlerModifiers} from 'sip.js';
-import {uuidKey, defaultMediaConstraints} from './constants';
-import {uuid, delay, extend} from './utils';
-import {WebPhoneSession} from './session';
-import {AudioHelperOptions} from './audioHelper';
-import {default as MediaStreams, MediaStreamsImpl} from './mediaStreams';
+import { LogLevel, UserAgent, Web, SessionDescriptionHandlerModifier, UserAgentOptions } from 'sip.js';
+import { SessionDescriptionHandlerFactoryOptions } from 'sip.js/lib/platform/web';
+import { Levels as LogLevels } from 'sip.js/lib/core/log';
 
-const {version} = require('../package.json');
-
+import { createWebPhoneUserAgent, WebPhoneUserAgent } from './userAgent';
+import { uuidKey, defaultMediaConstraints } from './constants';
+import { uuid, delay, extend } from './utils';
+// import { WebPhoneSession } from './session';
+// import { AudioHelperOptions } from './audioHelper';
+import { default as MediaStreams, MediaStreamsImpl } from './mediaStreams';
+// const { version } = require('../package.json');
 export interface WebPhoneRegData {
     sipInfo?: any;
     sipFlags?: any;
     sipErrorCodes?: string[];
 }
 
+export interface TransportServer {
+    uri: string;
+    isError?: boolean;
+}
+
 export interface WebPhoneOptions {
-    uuid?: string;
-    uuidKey?: string;
     appKey?: string;
     appName?: string;
     appVersion?: string;
-    enableUnifiedSDP?: boolean;
-    enableMidLinesInSDP?: boolean;
-    enableQos?: boolean;
-    enableMediaReportLogging?: boolean;
-    onSession?: (session: WebPhoneSession) => any;
-    audioHelper?: AudioHelperOptions;
-    modifiers?: SessionDescriptionHandlerModifiers;
-    media?: any;
-    mediaConstraints?: any;
-    sessionDescriptionHandlerFactoryOptions?: any;
-    sessionDescriptionHandlerFactory?: any;
-    maxReconnectionAttempts?: number;
-    reconnectionTimeout?: number;
-    connectionTimeout?: number;
-    keepAliveDebounce?: number;
-    logLevel?: any; // import {Levels} from "sip.js/types/logger-factory";
+    audioHelper?: any;
+    autoStop?: boolean;
     builtinEnabled?: boolean;
     connector?: any;
-    sipErrorCodes?: string[];
-    switchBackInterval?: number;
-    maxReconnectionAttemptsNoBackup?: number;
-    maxReconnectionAttemptsWithBackup?: number;
-    reconnectionTimeoutNoBackup?: number;
-    reconnectionTimeoutWithBackup?: number;
-    instanceId?: string;
-    regId?: number;
+    earlyMedia?: boolean;
     enableDefaultModifiers?: boolean;
+    enableMediaReportLogging?: boolean;
+    enableMidLinesInSDP?: boolean;
     enablePlanB?: boolean;
+    enableQos?: boolean;
     enableTurnServers?: boolean;
-    stunServers?: any;
-    turnServers?: any;
     iceCheckingTimeout?: number;
     iceTransportPolicy?: string;
-    autoStop?: boolean;
+    instanceId?: string;
+    keepAliveDebounce?: number;
+    keepAliveInterval?: number;
+    logLevel?: number;
+    maxReconnectionAttempts?: number;
+    maxReconnectionAttemptsNoBackup?: number;
+    maxReconnectionAttemptsWithBackup?: number;
+    media?: any;
+    mediaConstraints?: any;
+    modifiers?: SessionDescriptionHandlerModifier[];
+    onSession?: (session: any) => any;
+    qosCollectInterval?: number;
+    reconnectionTimeout?: number;
+    reconnectionTimeoutNoBackup?: number;
+    reconnectionTimeoutWithBackup?: number;
+    regId?: number;
+    sessionDescriptionHandlerFactory?: any;
+    sessionDescriptionHandlerFactoryOptions?: any;
+    sipErrorCodes?: string[];
+    stunServers?: string[];
+    switchBackInterval?: number;
+    transportServers?: TransportServer[];
+    turnServers?: string[];
+    uuid?: string;
+    uuidKey?: string;
 }
+
+const defaultWebPhoneOptions: WebPhoneOptions = {
+    autoStop: true,
+    builtinEnabled: true,
+    earlyMedia: false,
+    enableDefaultModifiers: true,
+    iceTransportPolicy: 'all',
+    maxReconnectionAttemptsNoBackup: 15,
+    maxReconnectionAttemptsWithBackup: 10,
+    mediaConstraints: defaultMediaConstraints,
+    modifiers: [],
+    //FIXME: This should be in seconds but will be  a breaking change
+    qosCollectInterval: 5000,
+    reconnectionTimeoutNoBackup: 5,
+    reconnectionTimeoutWithBackup: 4,
+    transportServers: [],
+    turnServers: [],
+    uuid: uuid(),
+    uuidKey
+};
+
+const defaultStunServers = ['stun.l.google.com:19302'];
+const defaultSipErrorCodes = ['408', '502', '503', '504'];
+const defaultLogLevel = 'debug';
 
 export default class WebPhone {
     public static version = '0.8.9';
@@ -66,10 +98,10 @@ export default class WebPhone {
 
     public sipInfo: any;
     public sipFlags: any;
-    public uuidKey: string;
-    public appKey: string;
-    public appName: string;
-    public appVersion: string;
+    public uuidKey: string | undefined;
+    public appKey: string | undefined;
+    public appName: string | undefined;
+    public appVersion: string | undefined;
     public userAgent: WebPhoneUserAgent;
 
     /**
@@ -77,151 +109,132 @@ export default class WebPhone {
      * TODO: parse wsservers from new api spec
      */
     public constructor(regData: WebPhoneRegData = {}, options: WebPhoneOptions = {}) {
+        options = Object.assign({}, defaultWebPhoneOptions, options);
+
         this.sipInfo = regData.sipInfo[0] || regData.sipInfo;
         this.sipFlags = regData.sipFlags;
 
-        this.uuidKey = options.uuidKey || uuidKey;
-
-        const id = options.uuid || localStorage.getItem(this.uuidKey) || uuid(); //TODO Make configurable
-        localStorage.setItem(this.uuidKey, id);
-
+        this.uuidKey = options.uuidKey;
         this.appKey = options.appKey;
         this.appName = options.appName;
         this.appVersion = options.appVersion;
 
-        const ua_match = navigator.userAgent.match(/\((.*?)\)/);
-        const app_client_os = (ua_match && ua_match.length && ua_match[1]).replace(/[^a-zA-Z0-9.:_]+/g, '-') || '';
+        const id = options.uuid; //TODO Make configurable
+        localStorage.setItem(this.uuidKey as string, id as string);
+        const uaMatch = navigator.userAgent.match(/\((.*?)\)/);
+        const appClientOs = (uaMatch && uaMatch.length && uaMatch[1]).replace(/[^a-zA-Z0-9.:_]+/g, '-') || '';
 
         const userAgentString =
             (options.appName ? options.appName + (options.appVersion ? '/' + options.appVersion : '') + ' ' : '') +
-            (app_client_os ? app_client_os : '') +
-            ` RCWEBPHONE/${version}`;
+            (appClientOs ? appClientOs : '') +
+            ` RCWEBPHONE/${WebPhone.version}`;
 
-        const modifiers = options.modifiers || [];
+        const modifiers = options.modifiers;
 
-        if (options.enableDefaultModifiers !== false) {
-            modifiers.push(Web.Modifiers.stripG722);
-            modifiers.push(Web.Modifiers.stripTcpCandidates);
+        if (!options.enableDefaultModifiers) {
+            modifiers.push(Web.stripG722);
+            modifiers.push(Web.stripTcpCandidates);
         }
 
         if (options.enableMidLinesInSDP) {
-            modifiers.push(Web.Modifiers.addMidLines);
+            modifiers.push(Web.addMidLines);
         }
 
-        var sdpSemantics = 'unified-plan';
+        // FIXME: SIPjs does not seem to have support for this. Why are we even using this? For the future?
+        // https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/RTCPeerConnection
+        let sdpSemantics = 'unified-plan';
         if (options.enablePlanB) {
             sdpSemantics = 'plan-b';
         }
 
-        var stunServerArr = options.stunServers || this.sipInfo.stunServers || ['stun.l.google.com:19302'];
-        var turnServerArr = options.turnServers;
-        var iceTransportPolicy = options.iceTransportPolicy || 'all';
-        var iceServers = [];
-        if (options.enableTurnServers && options.turnServers !== undefined && options.turnServers.length !== 0) {
-            turnServerArr.forEach(server => {
-                iceServers.push(server);
-            });
+        const stunServers = options.stunServers || this.sipInfo.stunServers || defaultStunServers;
+        const iceTransportPolicy = options.iceTransportPolicy;
+        let iceServers = [];
+        if (options.enableTurnServers) {
+            iceServers = options.turnServers.map(url => ({ urls: url }));
             options.iceCheckingTimeout = options.iceCheckingTimeout || 2000;
         }
-        stunServerArr.forEach(addr => {
-            addr = !/^(stun:)/.test(addr) ? 'stun:' + addr : addr;
-            iceServers.push({urls: addr});
-        });
-        const sessionDescriptionHandlerFactoryOptions = options.sessionDescriptionHandlerFactoryOptions || {
-            peerConnectionOptions: {
-                iceCheckingTimeout: options.iceCheckingTimeout || this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 500,
-                rtcConfiguration: {
-                    sdpSemantics,
-                    iceServers,
-                    iceTransportPolicy
-                }
-            },
-            constraints: options.mediaConstraints || defaultMediaConstraints,
-            modifiers
+        iceServers = [
+            ...iceServers,
+            ...stunServers.map(_url => {
+                const url = !/^(stun:)/.test(_url) ? `stun:${_url}` : _url;
+                return { urls: url };
+            })
+        ];
+
+        const sessionDescriptionHandlerFactoryOptions: SessionDescriptionHandlerFactoryOptions = options.sessionDescriptionHandlerFactoryOptions || {
+            iceGatheringTimeout:
+                options.iceCheckingTimeout ||
+                this.sipInfo.iceCheckingTimeout ||
+                this.sipInfo.iceGatheringTimeout ||
+                500,
+            peerConnectionConfiguration: {
+                iceServers,
+                iceTransportPolicy
+            }
         };
 
+        options.modifiers = modifiers;
+
         const browserUa = navigator.userAgent.toLowerCase();
-        let isSafari = false;
-        let isFirefox = false;
 
-        if (browserUa.indexOf('safari') > -1 && browserUa.indexOf('chrome') < 0) {
-            isSafari = true;
-        } else if (browserUa.indexOf('firefox') > -1 && browserUa.indexOf('chrome') < 0) {
-            isFirefox = true;
+        if (browserUa.includes('firefox') && !browserUa.includes('chrome')) {
+            // FIXME: alwaysAcquireMediaFirst has been removed from SIP.js. Is it the same as earlyMedia?
+            options.earlyMedia = true;
         }
 
-        if (isFirefox) {
-            sessionDescriptionHandlerFactoryOptions.alwaysAcquireMediaFirst = true;
-        }
-
-        const sessionDescriptionHandlerFactory = options.sessionDescriptionHandlerFactory || [];
+        const sessionDescriptionHandlerFactory = options.sessionDescriptionHandlerFactory || undefined;
 
         const sipErrorCodes =
-            regData.sipErrorCodes && regData.sipErrorCodes.length
-                ? regData.sipErrorCodes
-                : ['408', '502', '503', '504'];
+            regData.sipErrorCodes && regData.sipErrorCodes.length ? regData.sipErrorCodes : defaultSipErrorCodes;
 
-        let wsServers = [];
-
+        let reconnectionTimeout = options.reconnectionTimeoutWithBackup;
+        let maxReconnectionAttempts = options.maxReconnectionAttemptsWithBackup;
         if (this.sipInfo.outboundProxy && this.sipInfo.transport) {
-            wsServers.push({
-                wsUri: this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxy,
-                weight: 10
+            options.transportServers.push({
+                uri: this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxy
             });
+            reconnectionTimeout = options.reconnectionTimeoutNoBackup || 5;
+            maxReconnectionAttempts = options.maxReconnectionAttemptsNoBackup;
         }
 
         if (this.sipInfo.outboundProxyBackup && this.sipInfo.transport) {
-            wsServers.push({
-                wsUri: this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxyBackup,
-                weight: 0
+            options.transportServers.push({
+                uri: this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxyBackup
             });
         }
 
-        wsServers = wsServers.length ? wsServers : this.sipInfo.wsServers;
+        options.reconnectionTimeout = options.reconnectionTimeout || reconnectionTimeout;
+        options.maxReconnectionAttempts = options.maxReconnectionAttempts || maxReconnectionAttempts;
 
-        const maxReconnectionAttemptsNoBackup = options.maxReconnectionAttemptsNoBackup || 15;
-        const maxReconnectionAttemptsWithBackup = options.maxReconnectionAttemptsWithBackup || 10;
+        const transportServer = options.transportServers.length ? options.transportServers[0].uri : '';
 
-        const reconnectionTimeoutNoBackup = options.reconnectionTimeoutNoBackup || 5;
-        const reconnectionTimeoutWithBackup = options.reconnectionTimeoutWithBackup || 4;
-
-        const configuration = {
-            uri: `sip:${this.sipInfo.username}@${this.sipInfo.domain}`,
-
+        const configuration: UserAgentOptions = {
+            uri: UserAgent.makeURI(`sip:${this.sipInfo.username}@${this.sipInfo.domain}`),
             transportOptions: {
-                wsServers,
+                server: transportServer,
                 traceSip: true,
-                maxReconnectionAttempts:
-                    wsServers.length === 1 ? maxReconnectionAttemptsNoBackup : maxReconnectionAttemptsWithBackup, //Fallback parameters if no backup prxy specified
-                reconnectionTimeout:
-                    wsServers.length === 1 ? reconnectionTimeoutNoBackup : reconnectionTimeoutWithBackup, //Fallback parameters if no backup prxy specified
-                connectionTimeout: 5
+                connectionTimeout: 5,
+                keepAliveDebounce: options.keepAliveDebounce,
+                keepAliveInterval: options.keepAliveInterval
             },
-            authorizationUser: this.sipInfo.authorizationId,
-            password: this.sipInfo.password,
-            // turnServers: [],
-            log: {
-                level: options.logLevel || 1, //FIXME LOG LEVEL 3
-                builtinEnabled: typeof options.builtinEnabled === 'undefined' ? true : options.builtinEnabled,
-                connector: options.connector || null
-            },
-            domain: this.sipInfo.domain,
-            autostart: false,
-            autostop: typeof options.autoStop === 'undefined' ? true : options.autoStop, // SIP.js 0.13.x has memory leak with autostop enabled.
-            register: true,
+            // WebPhoneTransport will handle reconnection.
+            reconnectionAttempts: 0,
+            authorizationUsername: this.sipInfo.authorizationId,
+            authorizationPassword: this.sipInfo.password,
+            logLevel: ((LogLevels[options.logLevel] as unknown) as LogLevel) || defaultLogLevel,
+            logBuiltinEnabled: options.builtinEnabled,
+            logConnector: options.connector || null,
+            autoStart: false,
+            autoStop: options.autoStop,
             userAgentString,
             sessionDescriptionHandlerFactoryOptions,
             sessionDescriptionHandlerFactory,
-            allowLegacyNotifications: true,
-            registerOptions: {
-                instanceId: options.instanceId || undefined,
-                regId: options.regId || undefined
-            }
+            allowLegacyNotifications: true
         };
 
         options.sipErrorCodes = sipErrorCodes;
         options.switchBackInterval = this.sipInfo.switchBackInterval;
-
-        this.userAgent = patchUserAgent(new UA(configuration) as WebPhoneUserAgent, this.sipInfo, options, id);
+        this.userAgent = createWebPhoneUserAgent(configuration, this.sipInfo, options, id);
     }
 }

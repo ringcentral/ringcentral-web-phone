@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "getstats": "1.2.0",
-    "sip.js": "0.13.5"
+    "sip.js": "0.20.0"
   },
   "devDependencies": {
     "@types/expect-puppeteer": "3.3.1",

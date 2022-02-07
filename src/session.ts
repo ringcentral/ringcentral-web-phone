@@ -1,20 +1,9 @@
-import {
-    C,
-    ClientContext,
-    Exceptions,
-    IncomingResponse,
-    InviteClientContext,
-    InviteServerContext,
-    OutgoingRequest,
-    ReferClientContext,
-    Session
-} from 'sip.js';
-import {responseTimeout, messages } from './constants';
-import {startQosStatsCollection} from './qos';
-import {WebPhoneUserAgent} from './userAgent';
-import {delay, extend} from './utils';
-import {MediaStreams} from './mediaStreams';
-import {RTPReport, InboundRtpReport, OutboundRtpReport, RttReport, isNoAudio} from './rtpReport';
+import { Invitation, Inviter } from 'sip.js';
+import { IncomingResponse } from 'sip.js/lib/core';
+
+import { extend } from './utils';
+import { messages } from './constants';
+import { WebPhoneUserAgent } from './userAgent';
 
 export interface RCHeaders {
     sid?: string;
@@ -37,79 +26,42 @@ export interface RCHeaders {
     displayInfoSub?: string;
 }
 
+interface ReplyOptions {
+    replyType: number; //TODO Use enum
+    replyText: string;
+    timeValue: string;
+    timeUnits: string;
+    callbackDirection: string;
+}
+
 export interface RTCPeerConnectionLegacy extends RTCPeerConnection {
     getRemoteStreams: () => MediaStream[];
     getLocalStreams: () => MediaStream[];
 }
 
-export type WebPhoneSession = InviteClientContext &
-    InviteServerContext & {
-        __sendRequest: typeof InviteServerContext.prototype.sendRequest;
-        __receiveRequest: typeof InviteServerContext.prototype.receiveRequest;
-        __accept: typeof InviteServerContext.prototype.accept;
-        __hold: typeof InviteClientContext.prototype.hold;
-        __unhold: typeof InviteClientContext.prototype.unhold;
-        __dtmf: typeof InviteClientContext.prototype.dtmf;
-        __reinvite: typeof InviteClientContext.prototype.reinvite;
-        sendRequest: typeof sendRequest;
-        receiveRequest: typeof receiveRequest;
-        accept: typeof accept;
-        hold: typeof hold;
-        unhold: typeof unhold;
-        dtmf: typeof dtmf;
-        reinvite: typeof reinvite;
-        _sendReceiveConfirmPromise: Promise<any>;
-        ua: WebPhoneUserAgent;
-        local_hold: boolean;
-        failed: any; //FIXME PROTECTED
-        sessionDescriptionHandler: {
-            peerConnection: RTCPeerConnectionLegacy; //FIXME Not documented
-            getDirection;
-        };
-        // non-sip
-        __patched: boolean;
-        __onRecord: boolean;
-        hasAnswer: boolean;
-        media: any;
-        rcHeaders: RCHeaders;
-        warmTransfer: typeof warmTransfer;
-        blindTransfer: typeof blindTransfer;
-        transfer: typeof transfer;
-        park: typeof park;
-        forward: typeof forward;
-        startRecord: typeof startRecord;
-        stopRecord: typeof stopRecord;
-        flip: typeof flip;
-        whisper: typeof whisper;
-        barge: typeof barge;
-        mute: typeof mute;
-        unmute: typeof unmute;
-        onLocalHold: typeof onLocalHold;
-        addTrack: typeof addTrack;
-        canUseRCMCallControl: typeof canUseRCMCallControl;
-        createSessionMessage: typeof createSessionMessage;
-        sendSessionMessage: typeof sendSessionMessage;
-        sendReceiveConfirm: typeof sendReceiveConfirm;
-        ignore: typeof ignore;
-        toVoicemail: typeof toVoicemail;
-        replyWithMessage: typeof replyWithMessage;
-        logger: any;
-        on(event: 'muted' | 'unmuted', listener: (session: WebPhoneSession) => void): WebPhoneSession;
-        mediaStreams: MediaStreams;
-        mediaStatsStarted: boolean;
-        noAudioReportCount: number;
-        reinviteForNoAudioSent: boolean;
-        stopMediaStats: typeof stopMediaStats;
-        receiveReinviteResponse: any;
-        pendingReinvite: boolean;
-        sendReinvite: Promise<any>;
-        _sendReinvite: typeof sendReinvite;
-        getIncomingInfoContent: typeof getIncomingInfoContent;
-        sendMoveResponse: typeof sendMoveResponse;
-        sendReceive: typeof sendReceive;
-    };
+type CommonSession = {
+    rcHeaders?: RCHeaders;
+    userAgent: WebPhoneUserAgent;
+    __patched: boolean;
+    canUseRCMCallControl: typeof canUseRCMCallControl;
+    createSessionMessage: typeof createSessionMessage;
+    ignore: typeof ignore;
+    receiveRequest: typeof receiveRequest;
+    replyWithMessage: typeof replyWithMessage;
+    sendReceiveConfirm: typeof sendReceiveConfirm;
+    sendSessionMessage: typeof sendSessionMessage;
+    toVoicemail: typeof toVoicemail;
+};
 
-export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
+export type WebPhoneSession = WebPhoneInvitation | WebPhoneInviter;
+
+export type WebPhoneInvitation = Invitation & CommonSession;
+
+export type WebPhoneInviter = Inviter & CommonSession;
+
+const mediaCheckTimer = 2000;
+
+export function patchWebphoneSession(session: WebPhoneSession): WebPhoneSession {
     if (session.__patched) return session;
 
     session.__patched = true;
@@ -197,7 +149,6 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.on('failed', stopPlaying);
     session.on('replaced', stopPlaying);
 
-
     session.on('reinviteAccepted', patchIncomingSession);
 
     if (session.ua.enableQos) {
@@ -219,59 +170,42 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.reinviteForNoAudioSent = false;
 
     return session;
-};
+}
 
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-export const patchIncomingSession = (session: WebPhoneSession): void => {
+export function patchIncomingWebphoneSession(session: WebPhoneSession): void {
     try {
         parseRcHeader(session);
     } catch (e) {
-        session.logger.error("Can't parse RC headers from invite request due to " + e);
+        (session as any).logger.error("Can't parse RC headers from invite request due to " + e);
     }
-    session.canUseRCMCallControl = canUseRCMCallControl;
-    session.createSessionMessage = createSessionMessage;
-    session.sendSessionMessage = sendSessionMessage;
-    session.sendReceiveConfirm = sendReceiveConfirm;
-    session.ignore = ignore;
-    session.toVoicemail = toVoicemail;
-    session.replyWithMessage = replyWithMessage;
-    session.receiveRequest = receiveRequest;
-};
+    session.canUseRCMCallControl = canUseRCMCallControl.bind(session);
+    session.createSessionMessage = createSessionMessage.bind(session);
+    session.ignore = ignore.bind(session);
+    session.receiveRequest = receiveRequest.bind(session);
+    session.replyWithMessage = replyWithMessage.bind(session);
+    session.sendReceiveConfirm = sendReceiveConfirm.bind(session);
+    session.sendSessionMessage = sendSessionMessage.bind(session);
+    session.toVoicemail = toVoicemail.bind(session);
+}
 
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-const parseRcHeaderString = (str = ''): any => {
-    const obj = {};
-    const pairs = str.split(/; */);
-
-    pairs.forEach(pair => {
-        let eq_idx = pair.indexOf('=');
-
-        // skip things that don't look like key=value
-        if (eq_idx < 0) {
-            return;
-        }
-
-        const key = pair.substr(0, eq_idx).trim();
-        const val = pair.substr(++eq_idx, pair.length).trim();
-
+const parseRcHeaderString = (str = ''): { string?: string } => {
+    const pairs = str.split(/; */).filter(pair => pair.includes('=')); // skip things that don't look like key=value
+    return pairs.reduce((seed, pair) => {
+        let [key, value] = pair.split('=');
+        key = key.trim();
+        value = value.trim();
         // only assign once
-        if (undefined === obj[key]) {
-            obj[key] = val;
-        }
-    });
-
-    return obj;
+        seed[key] = seed[key] || value;
+        return seed;
+    }, {});
 };
 
-const parseRcHeader = (session: WebPhoneSession): any => {
-    const prc = session.request.headers['P-Rc'];
-    const prcCallInfo = session.request.headers['P-Rc-Api-Call-Info'];
-    if (prc && prc.length) {
-        const rawInviteMsg = prc[0].raw;
+const parseRcHeader = (session: WebPhoneSession): void => {
+    const prc = session.request.getHeader('P-Rc');
+    const prcCallInfo = session.request.getHeader('P-Rc-Api-Call-Info');
+    if (prc) {
         const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(rawInviteMsg, 'text/xml');
+        const xmlDoc = parser.parseFromString(prc, 'text/xml');
         const hdrNode = xmlDoc.getElementsByTagName('Hdr')[0];
         const bdyNode = xmlDoc.getElementsByTagName('Bdy')[0];
 
@@ -292,24 +226,17 @@ const parseRcHeader = (session: WebPhoneSession): any => {
             });
         }
     }
-    if (prcCallInfo && prcCallInfo.length) {
-        const rawCallInfo = prcCallInfo[0].raw;
-
-        if (rawCallInfo) {
-            const parsed = parseRcHeaderString(rawCallInfo);
+    if (prcCallInfo) {
+        if (prcCallInfo) {
+            const parsed = parseRcHeaderString(prcCallInfo);
             extend(session.rcHeaders, parsed);
         }
     }
 };
 
-const mediaCheckTimer = 2000;
-/*--------------------------------------------------------------------------------------------------------------------*/
-
 function canUseRCMCallControl(this: WebPhoneSession): boolean {
     return !!this.rcHeaders;
 }
-
-/*--------------------------------------------------------------------------------------------------------------------*/
 
 function createSessionMessage(this: WebPhoneSession, options: RCHeaders): string {
     if (!this.rcHeaders) {
@@ -321,51 +248,38 @@ function createSessionMessage(this: WebPhoneSession, options: RCHeaders): string
         from: this.rcHeaders.to,
         to: this.rcHeaders.from
     });
-    return this.ua.createRcMessage(options);
+    return this.userAgent.createRcMessage(options);
 }
 
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-async function ignore(this: WebPhoneSession): Promise<ClientContext> {
-    return this._sendReceiveConfirmPromise.then(() => {
-        return this.sendSessionMessage(messages.ignore);
-    });
+//FIXME: Return type has changed and loggin has been included here itself
+async function sendReceiveConfirm(this: WebPhoneSession): Promise<void> {
+    return this.sendSessionMessage(messages.receiveConfirm)
+        .then(() => (this as any).logger.log('sendReceiveConfirm success'))
+        .catch(error =>
+            (this as any).logger.error(`failed to send receive confirmation via SIP MESSAGE due to ${error}`)
+        );
 }
 
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-async function sendSessionMessage(this: WebPhoneSession, options): Promise<ClientContext> {
+//FIXME: Return type has changed
+function sendSessionMessage(this: WebPhoneSession, options): Promise<IncomingResponse> {
     if (!this.rcHeaders) {
-        this.logger.error("Can't send SIP MESSAGE related to session: no RC headers available");
+        (this as any).logger.error("Can't send SIP MESSAGE related to session: no RC headers available");
     }
-    return this.ua.sendMessage(this.rcHeaders.from, this.createSessionMessage(options));
+    return this.userAgent.sendMessage(this.rcHeaders.from, this.createSessionMessage(options));
 }
 
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-async function sendReceiveConfirm(this: WebPhoneSession): Promise<ClientContext> {
-    return this.sendSessionMessage(messages.receiveConfirm);
+//FIXME: Return type has changed
+function ignore(this: WebPhoneSession): Promise<IncomingResponse> {
+    return this.sendReceiveConfirm().then(() => this.sendSessionMessage(messages.ignore));
 }
 
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-async function toVoicemail(this: WebPhoneSession): Promise<ClientContext> {
-    return this._sendReceiveConfirmPromise.then(() => {
-        return this.sendSessionMessage(messages.toVoicemail);
-    });
+//FIXME: Return type has changed
+function toVoicemail(this: WebPhoneSession): Promise<IncomingResponse> {
+    return this.sendReceiveConfirm().then(() => this.sendSessionMessage(messages.toVoicemail));
 }
 
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-interface ReplyOptions {
-    replyType: number; //TODO Use enum
-    replyText: string;
-    timeValue: string;
-    timeUnits: string;
-    callbackDirection: string;
-}
-
-async function replyWithMessage(this: WebPhoneSession, replyOptions: ReplyOptions): Promise<ClientContext> {
+//FIXME: Return type has changed
+function replyWithMessage(this: WebPhoneSession, replyOptions: ReplyOptions): Promise<IncomingResponse> {
     let body = 'RepTp="' + replyOptions.replyType + '"';
 
     if (replyOptions.replyType === 0) {
@@ -375,520 +289,7 @@ async function replyWithMessage(this: WebPhoneSession, replyOptions: ReplyOption
         body += ' Units="' + replyOptions.timeUnits + '"';
         body += ' Dir="' + replyOptions.callbackDirection + '"';
     }
-    return this._sendReceiveConfirmPromise.then(() => {
-        return this.sendSessionMessage({
-            reqid: messages.replyWithMessage.reqid,
-            body
-        });
-    });
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-async function sendReceive(session: WebPhoneSession, command: any, options?: any): Promise<any> {
-    options = options || {};
-
-    extend(command, options);
-    delete command.extraHeaders;
-    let cseq;
-
-    return new Promise((resolve, reject) => {
-        const extraHeaders = (options.extraHeaders || [])
-            .concat(session.ua.defaultHeaders)
-            .concat(['Content-Type: application/json;charset=utf-8']);
-
-        session.sendRequest(C.INFO, {
-            body: JSON.stringify({
-                request: command
-            }),
-            extraHeaders,
-            receiveResponse: (response: IncomingResponse) => {
-                let timeout = null;
-                if (response.statusCode === 200) {
-                    cseq = response.cseq;
-                    const onInfo = (request: OutgoingRequest): void => {
-                        if (response.cseq !== cseq) return;
-                        const body = (request && request.body) || '{}';
-                        let obj;
-
-                        try {
-                            obj = JSON.parse(body);
-                        } catch (e) {
-                            obj = {};
-                        }
-                        if (obj.response && obj.response.command === command.command) {
-                            if (obj.response.result) {
-                                timeout && clearTimeout(timeout);
-                                session.removeListener('RC_SIP_INFO', onInfo);
-                                if (obj.response.result.code.toString() === '0') {
-                                    return resolve(obj.response.result);
-                                }
-                                return reject(obj.response.result);
-                            }
-                        }
-                    };
-                    timeout = setTimeout(() => {
-                        reject(new Error('Timeout: no reply'));
-                        session.removeListener('RC_SIP_INFO', onInfo);
-                    }, responseTimeout);
-                    session.on('RC_SIP_INFO' as any, onInfo);
-                } else {
-                    reject(
-                        new Error('The INFO response status code is: ' + response.statusCode + ' (waiting for 200)')
-                    );
-                }
-            }
-        });
-    });
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-function sendRequest(this: WebPhoneSession, type, config): InviteServerContext {
-    if (type === C.PRACK) {
-        // type = C.ACK;
-        return this;
-    }
-    return this.__sendRequest(type, config);
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-async function setRecord(session: WebPhoneSession, flag: boolean): Promise<any> {
-    const message = !!flag ? messages.startRecord : messages.stopRecord;
-
-    if ((session.__onRecord && !flag) || (!session.__onRecord && flag)) {
-        const data = await sendReceive(session, message);
-        session.__onRecord = !!flag;
-        return data;
-    }
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-//TODO: Convert to toggleHold() and deprecate this function
-async function setLocalHold(session: WebPhoneSession, flag: boolean): Promise<any> {
-    if (flag) {
-        await session.__hold();
-    } else {
-        await session.__unhold();
-    }
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-function getIncomingInfoContent(this: WebPhoneSession, request): any {
-    if (!request || !request.body) {
-        return {};
-    }
-    let ret = {};
-    try {
-        ret = JSON.parse(request.body);
-    } catch (e) {
-        return {}
-    }
-    return ret;
-}
-
-function sendMoveResponse(this: WebPhoneSession,
-                          reqId: number,
-                          code: number,
-                          description: string,
-                          options: any = {}) {
-    const extraHeaders = [...(options.extraHeaders || []),
-                          ...this.ua.defaultHeaders,
-                          'Content-Type: application/json;charset=utf-8'];
-    this.sendRequest(C.INFO, {
-        body: JSON.stringify(
-            {response: {
-                reqId,
-                command: 'move',
-                result: {
-                    code,
-                    description
-                }
-            }
-        }),
-        extraHeaders});
-}
-
-function receiveRequest(this: WebPhoneSession, request): any {
-    switch (request.method) {
-        case C.UPDATE:
-            this.logger.log('Receive UPDATE request. Do nothing just return 200 OK');
-            request.reply(200);
-            this.emit('updateReceived', request);
-            return this;
-        case C.INFO:
-            // For the Move2RCV request from server
-            const content = this.getIncomingInfoContent(request);
-            if (content?.request?.reqId
-                && content?.request?.command === 'move'
-                && content?.request?.target === 'rcv') {
-                    request.reply(200);
-                    this.emit('moveToRcv', content.request);
-                    return this;
-            }
-            // For other SIP INFO from server
-            this.emit('RC_SIP_INFO', request);
-            // SIP.js does not support application/json content type, so we monkey override its behaviour in this case
-            if (this.status === Session.C.STATUS_CONFIRMED || this.status === Session.C.STATUS_WAITING_FOR_ACK) {
-                const contentType = request.getHeader('content-type');
-                if (contentType.match(/^application\/json/i)) {
-                    request.reply(200);
-                    return this;
-                }
-            }
-            break;
-    }
-    return this.__receiveRequest.apply(this, arguments);
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-function accept(this: WebPhoneSession, options: any = {}): Promise<WebPhoneSession> {
-    options = options || {};
-    options.extraHeaders = (options.extraHeaders || []).concat(this.ua.defaultHeaders);
-    options.RTCConstraints = options.RTCConstraints || {
-        optional: [{DtlsSrtpKeyAgreement: 'true'}]
-    };
-
-    return new Promise((resolve, reject) => {
-        const onAnswered = (): void => {
-            resolve(this);
-            this.removeListener('failed', onFail);
-        };
-
-        const onFail = (e): void => {
-            reject(e);
-            this.removeListener('accepted', onAnswered);
-        };
-
-        //TODO More events?
-        this.once('accepted', onAnswered);
-        this.once('failed', onFail);
-        this.__accept(options);
-    });
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-function dtmf(this: WebPhoneSession, dtmf: string, duration = 100, interToneGap = 50): void {
-    duration = parseInt(duration.toString());
-    interToneGap = parseInt(interToneGap.toString());
-    const pc = this.sessionDescriptionHandler.peerConnection;
-    const senders = pc.getSenders();
-    const audioSender = senders.find(sender => {
-        return sender.track && sender.track.kind === 'audio';
-    });
-    const dtmfSender = audioSender.dtmf;
-    if (dtmfSender !== undefined && dtmfSender) {
-        this.logger.log(`Send DTMF: ${dtmf} Duration: ${duration} InterToneGap: ${interToneGap}`);
-        return dtmfSender.insertDTMF(dtmf, duration, interToneGap);
-    }
-    const sender = dtmfSender && !dtmfSender.canInsertDTMF ? "can't insert DTMF" : 'Unknown';
-    throw new Error('Send DTMF failed: ' + (!dtmfSender ? 'no sender' : sender));
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-async function sendReinvite(this: WebPhoneSession, options: any = {}): Promise<any> {
-    if (this.pendingReinvite) {
-        throw new Error('Reinvite in progress. Please wait until complete, then try again.');
-    }
-    if (!this.sessionDescriptionHandler) {
-        throw new Error("No SessionDescriptionHandler, can't send reinvite..");
-    }
-    this.pendingReinvite = true;
-    options.modifiers = options.modifiers || [];
-
-    try {
-        const description = await this.sessionDescriptionHandler.getDescription(
-            options.sessionDescriptionHandlerOptions,
-            options.modifiers
-        );
-        const result = await new Promise((resolve, reject) => {
-            this.sendRequest(C.INVITE, {
-                body: description,
-                receiveResponse: (response: IncomingResponse) => {
-                    if (response.statusCode === 200) resolve(response);
-                }
-            });
-        });
-        await this.receiveReinviteResponse(result);
-        return result;
-    } catch (e) {
-        this.pendingReinvite = false;
-        throw new Error('Reinvite Failed with the reason ' + e.message);
-    }
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-async function hold(this: WebPhoneSession): Promise<any> {
-    if (this.status !== Session.C.STATUS_WAITING_FOR_ACK && this.status !== Session.C.STATUS_CONFIRMED) {
-        throw new Exceptions.InvalidStateError(this.status);
-    }
-    if (this.localHold) {
-        throw new Error('Session already on hold');
-    }
-    this.stopMediaStats();
-    const options = {
-        modifiers: []
-    };
-    options.modifiers.push(this.sessionDescriptionHandler.holdModifier);
-    try {
-        this.logger.log('Hold Initiated');
-        var response = await this._sendReinvite(options);
-        this.localHold = (response.statusCode === 200 && (this.sessionDescriptionHandler.getDirection() === 'sendonly'));
-        this.logger.log('Hold completed, localhold is set to ' + this.localHold);
-    } catch (e) {
-        throw new Error('Hold could not be completed');
-    }
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-async function unhold(this: WebPhoneSession): Promise<any> {
-    if (this.status !== Session.C.STATUS_WAITING_FOR_ACK && this.status !== Session.C.STATUS_CONFIRMED) {
-        throw new Exceptions.InvalidStateError(this.status);
-    }
-    if (!this.localHold) {
-        throw new Error('Session not on hold, cannot unhold');
-    }
-    try {
-        this.logger.log('Unhold Initiated');
-        const response = await this._sendReinvite();
-        this.localHold = response.statusCode === 200 && this.sessionDescriptionHandler.getDirection() === 'sendonly';
-        this.logger.log('Unhold completed, localhold is set to ' + this.localHold);
-    } catch (e) {
-        throw new Error('Unhold could not be completed');
-    }
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-function blindTransfer(this: WebPhoneSession, target, options = {}): Promise<ReferClientContext> {
-    this.logger.log('Call transfer initiated');
-    return Promise.resolve(this.refer(target, options));
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-async function warmTransfer(
-    this: WebPhoneSession,
-    target: WebPhoneSession,
-    transferOptions: any = {}
-): Promise<ReferClientContext> {
-    transferOptions.extraHeaders = (transferOptions.extraHeaders || []).concat(this.ua.defaultHeaders);
-    this.logger.log('Completing warm transfer');
-    return Promise.resolve(this.refer(target, transferOptions));
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-async function transfer(
-    this: WebPhoneSession,
-    target: WebPhoneSession,
-    options: any = {}
-): Promise<ReferClientContext> {
-    options.extraHeaders = (options.extraHeaders || []).concat(this.ua.defaultHeaders);
-    return this.blindTransfer(target, options);
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-async function forward(
-    this: WebPhoneSession,
-    target: WebPhoneSession,
-    acceptOptions,
-    transferOptions
-): Promise<ReferClientContext> {
-    let interval = null;
-    await this.accept(acceptOptions);
-    return new Promise(resolve => {
-        interval = setInterval(() => {
-            if (this.status === Session.C.STATUS_CONFIRMED) {
-                clearInterval(interval);
-                this.mute();
-                setTimeout(() => {
-                    resolve(this.transfer(target, transferOptions));
-                }, 700);
-            }
-        }, 50);
-    });
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-async function startRecord(this: WebPhoneSession): Promise<any> {
-    return setRecord(this, true);
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-async function stopRecord(this: WebPhoneSession): Promise<any> {
-    return setRecord(this, false);
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-async function flip(this: WebPhoneSession, target): Promise<any> {
-    return sendReceive(this, messages.flip, {target});
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-async function whisper(this: WebPhoneSession): Promise<any> {
-    return sendReceive(this, messages.whisper);
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-async function barge(this: WebPhoneSession): Promise<any> {
-    return sendReceive(this, messages.barge);
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-function park(this: WebPhoneSession): Promise<any> {
-    return sendReceive(this, messages.park);
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-function reinvite(this: WebPhoneSession, options: any = {}, modifier = null): void {
-    options.sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions || {};
-    return this.__reinvite(options, modifier);
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-function toggleMute(session: WebPhoneSession, mute: boolean): void {
-    const pc = session.sessionDescriptionHandler.peerConnection;
-    if (pc.getSenders) {
-        pc.getSenders().forEach(sender => {
-            if (sender.track) {
-                sender.track.enabled = !mute;
-            }
-        });
-    }
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-function mute(this: WebPhoneSession, silent?: boolean): void {
-    if (this.status !== Session.C.STATUS_CONFIRMED) {
-        this.logger.warn('An active call is required to mute audio');
-        return;
-    }
-    this.logger.log('Muting Audio');
-    if (!silent) {
-        this.emit('muted', this);
-    }
-    return toggleMute(this, true);
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-function unmute(this: WebPhoneSession, silent?: boolean): void {
-    if (this.status !== Session.C.STATUS_CONFIRMED) {
-        this.logger.warn('An active call is required to unmute audio');
-        return;
-    }
-    this.logger.log('Unmuting Audio');
-    if (!silent) {
-        this.emit('unmuted', this);
-    }
-    return toggleMute(this, false);
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-function onLocalHold(this: WebPhoneSession): boolean {
-    return this.localHold;
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
-    const pc = this.sessionDescriptionHandler.peerConnection;
-    let remoteAudio;
-    let localAudio;
-
-    if (remoteAudioEle && localAudioEle) {
-        remoteAudio = remoteAudioEle;
-        localAudio = localAudioEle;
-    } else if (this.media) {
-        remoteAudio = this.media.remote;
-        localAudio = this.media.local;
-    } else {
-        throw new Error('HTML Media Element not Defined');
-    }
-
-    let remoteStream = new MediaStream();
-    if (pc.getReceivers) {
-        pc.getReceivers().forEach(receiver => {
-            const rtrack = receiver.track;
-            if (rtrack) {
-                remoteStream.addTrack(rtrack);
-                this.logger.log('Remote track added');
-            }
-        });
-    } else {
-        remoteStream = pc.getRemoteStreams()[0];
-        this.logger.log('Remote track added');
-    }
-    remoteAudio.srcObject = remoteStream;
-    remoteAudio.play().catch(() => {
-        this.logger.error('Remote play was rejected');
-    });
-
-    let localStream = new MediaStream();
-    if (pc.getSenders) {
-        pc.getSenders().forEach(sender => {
-            const strack = sender.track;
-            if (strack && strack.kind === 'audio') {
-                localStream.addTrack(strack);
-                this.logger.log('Local track added');
-            }
-        });
-    } else {
-        localStream = pc.getLocalStreams()[0];
-        this.logger.log('Local track added');
-    }
-    localAudio.srcObject = localStream;
-    localAudio.play().catch(() => {
-        this.logger.error('Local play was rejected');
-    });
-    if (localStream && remoteStream && !this.mediaStatsStarted) {
-        this.mediaStreams = new MediaStreams(this);
-        this.logger.log('Start gathering media report');
-        this.mediaStatsStarted = true;
-        this.mediaStreams.getMediaStats((report: RTPReport) => {
-            if (this.ua.enableMediaReportLogging) {
-                this.logger.log(`Got media report: ${JSON.stringify(report)}`);
-            }
-            if (!this.reinviteForNoAudioSent && isNoAudio(report)) {
-                this.logger.log('No audio report');
-                this.noAudioReportCount++;
-                if (this.noAudioReportCount === 3) {
-                    this.logger.log('No audio for 6 sec. Trying to recover audio by sending Re-invite');
-                    this.mediaStreams.reconnectMedia();
-                    this.reinviteForNoAudioSent = true;
-                    this.noAudioReportCount = 0;
-                }
-            } else if (!isNoAudio(report)) {
-                this.noAudioReportCount = 0;
-            }
-        }, mediaCheckTimer);
-    }
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-function stopMediaStats(this: WebPhoneSession) {
-    this.logger.log('Stopping media stats collection');
-    if (!this) {
-        return;
-    }
-    this.mediaStreams && this.mediaStreams.stopMediaStats();
-    this.mediaStatsStarted = false;
-    this.noAudioReportCount = 0;
+    return this.sendReceiveConfirm().then(() =>
+        this.sendSessionMessage({ reqid: messages.replyWithMessage.reqid, body })
+    );
 }
