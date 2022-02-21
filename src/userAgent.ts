@@ -10,18 +10,25 @@ import {
     Messager
 } from 'sip.js';
 import { IncomingResponse } from 'sip.js/lib/core';
+import { WebPhoneTransport, createWebPhoneTransport } from './transport';
 
 import { WebPhoneOptions } from './index';
-import { WebPhoneTransport, createWebPhoneTransport } from './transport';
 import { AudioHelper } from './audioHelper';
 import { Events } from './events';
-import { patchIncomingWebphoneSession, patchWebphoneSession, WebPhoneSession } from './session';
+import {
+    onSessionDescriptionHandlerCreated,
+    patchIncomingWebphoneSession,
+    patchWebphoneSession,
+    WebPhoneInvitation,
+    WebPhoneSession
+} from './session';
 
 export interface ActiveCallInfo {
     id: string;
     from: string;
     to: string;
     direction: string;
+    1;
     sipData: {
         toTag: string;
         fromTag: string;
@@ -43,10 +50,9 @@ export interface WebPhoneUserAgent extends UserAgent {
     modifiers?: SessionDescriptionHandlerModifier[];
     earlyMedia?: boolean;
     constraints?: object;
-    // FIXME: REturn should be session type
-    invite?: (number: string, options: InviteOptions) => Promise<void>;
-    // FIXME: REturn should be session type
-    switchFrom?: (activeCall: ActiveCallInfo, options: InviteOptions) => any;
+    onSession?: (session: WebPhoneSession) => void;
+    invite?: (number: string, options: InviteOptions) => WebPhoneSession;
+    switchFrom?: (activeCall: ActiveCallInfo, options: InviteOptions) => WebPhoneSession;
     off?: typeof EventEmitter.prototype.off;
     on?: typeof EventEmitter.prototype.on;
     emit?: typeof EventEmitter.prototype.emit;
@@ -72,11 +78,11 @@ export function createWebPhoneUserAgent(
     const extraConfiguration: UserAgentOptions = {
         delegate: {
             onConnect: (): Promise<void> => userAgent.register(),
-            onInvite: (invitation: WebPhoneSession): void => {
+            onInvite: (invitation: WebPhoneInvitation): void => {
                 userAgent.audioHelper.playIncoming(true);
                 // FIXME:
                 patchIncomingWebphoneSession(invitation);
-                // patchIncomingSession(session);
+                patchWebphoneSession(invitation);
                 (invitation as any).logger.log('UA recieved incoming call invite');
                 invitation.sendReceiveConfirm();
                 userAgent.emit(Events.UserAgent.Invite, invitation);
@@ -116,6 +122,7 @@ export function createWebPhoneUserAgent(
     userAgent.constraints = options.mediaConstraints;
     userAgent.earlyMedia = options.earlyMedia;
     userAgent.audioHelper = new AudioHelper(options.audioHelper);
+    userAgent.onSession = options.onSession;
     const eventEmitter = new EventEmitter();
     (userAgent as any)._transport = createWebPhoneTransport(userAgent.transport, options);
     (userAgent as any).onTransportDisconnect = onTransportDisconnect.bind(userAgent);
@@ -215,15 +222,14 @@ async function unregister(this: WebPhoneUserAgent): Promise<void> {
     });
 }
 
-// FIXME: return type should be WebphoneSession
-function invite(this: WebPhoneUserAgent, number: string, options: InviteOptions = {}): any {
+function invite(this: WebPhoneUserAgent, number: string, options: InviteOptions = {}): WebPhoneSession {
     const inviterOptions: InviterOptions = {};
-    inviterOptions.extraHeaders = (options.extraHeaders || [])
-        .concat(this.defaultHeaders)
-        .concat([
-            `P-Asserted-Identity: sip: ${(options.fromNumber || this.sipInfo.username) + '@' + this.sipInfo.domain}`
-        ]) //FIXME: Phone Number?
-        .concat(options.homeCountryId ? [`P-rc-country-id: ${options.homeCountryId}`] : []); //FIXME: Backend should know it already
+    inviterOptions.extraHeaders = [
+        ...(options.extraHeaders || []),
+        ...this.defaultHeaders,
+        `P-Asserted-Identity: sip: ${(options.fromNumber || this.sipInfo.username) + '@' + this.sipInfo.domain}`,
+        ...(options.homeCountryId ? [`P-rc-country-id: ${options.homeCountryId}`] : []) //FIXME: Backend should know it already
+    ];
 
     options.RTCConstraints = options.RTCConstraints || {
         optional: [{ DtlsSrtpKeyAgreement: 'true' }]
@@ -231,19 +237,21 @@ function invite(this: WebPhoneUserAgent, number: string, options: InviteOptions 
     inviterOptions.sessionDescriptionHandlerModifiers = this.modifiers;
     inviterOptions.sessionDescriptionHandlerOptions = { constraints: this.constraints };
     inviterOptions.earlyMedia = this.earlyMedia;
+    inviterOptions.delegate = {
+        onSessionDescriptionHandler: (): void => onSessionDescriptionHandlerCreated(inviter),
+        onNotify: notification => notification.accept()
+    };
     // FIXME:
     this.audioHelper.playOutgoing(true);
     (this as any).logger.log(`Invite to ${number} created with playOutgoing set to true`);
-    const inviter = new Inviter(this, UserAgent.makeURI(`sip:${number}@${this.sipInfo.domain}`), inviterOptions);
-    inviter.invite({
-        requestDelegate: {
-            onAccept: (): void => {
-                this.emit(Events.UserAgent.InviteSent);
-            }
-        }
-    });
-    // FIXME:
-    // return patchSession(this.__invite(number, options) as any);
+    const inviter: WebPhoneSession = new Inviter(
+        this,
+        UserAgent.makeURI(`sip:${number}@${this.sipInfo.domain}`),
+        inviterOptions
+    );
+    inviter.invite().then(() => this.emit(Events.UserAgent.InviteSent));
+    patchWebphoneSession(inviter);
+    return inviter;
 }
 
 /**
@@ -252,8 +260,7 @@ function invite(this: WebPhoneUserAgent, number: string, options: InviteOptions 
  * https://developers.ringcentral.com/api-reference/Detailed-Extension-Presence-with-SIP-Event
  */
 
-// FIXME: return type should be WebphoneSession
-function switchFrom(this: WebPhoneUserAgent, activeCall: ActiveCallInfo, options: InviteOptions = {}): any {
+function switchFrom(this: WebPhoneUserAgent, activeCall: ActiveCallInfo, options: InviteOptions = {}): WebPhoneSession {
     const replaceHeaders = [
         `Replaces: ${activeCall.id};to-tag=${activeCall.sipData.fromTag};from-tag=${activeCall.sipData.toTag}`,
         'RC-call-type: replace'
@@ -262,5 +269,9 @@ function switchFrom(this: WebPhoneUserAgent, activeCall: ActiveCallInfo, options
         activeCall.direction === 'Outbound' ? [activeCall.to, activeCall.from] : [activeCall.from, activeCall.to];
     options.extraHeaders = (options.extraHeaders || []).concat(replaceHeaders);
     options.fromNumber = options.fromNumber || fromNumber;
-    return this.invite(toNumber, options);
+    const inviterOptions: InviterOptions = {
+        extraHeaders: options.extraHeaders,
+        sessionDescriptionHandlerOptions: { constraints: options.RTCConstraints }
+    };
+    return this.invite(toNumber, inviterOptions);
 }

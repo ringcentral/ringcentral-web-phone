@@ -90,7 +90,7 @@ $(function() {
         var loginUrl = platform.loginUrl();
 
         platform
-            .loginWindow({url: loginUrl}) // this method also allows to supply more options to control window position
+            .loginWindow({ url: loginUrl }) // this method also allows to supply more options to control window position
             .then(platform.login.bind(platform))
             .then(function() {
                 return postLogin(server, appKey, appSecret, '', '', '', ll);
@@ -306,9 +306,10 @@ $(function() {
         activeCallInfo.from = session.request.from.uri.user;
         activeCallInfo.to = session.request.to.uri.user;
         activeCallInfo.direction = direction;
+        // FIXME:
         activeCallInfo.id = session.dialog.id.callId;
-        activeCallInfo.sipData.fromTag = session.dialog.id.remoteTag;
-        activeCallInfo.sipData.toTag = session.dialog.id.localTag;
+        activeCallInfo.sipData.fromTag = session.dialog.remoteTag;
+        activeCallInfo.sipData.toTag = session.dialog.localTag;
         if (!localStorage.getItem('activeCallInfo')) {
             localStorage.setItem('activeCallInfo', JSON.stringify(activeCallInfo));
         }
@@ -339,14 +340,14 @@ $(function() {
         }
 
         $modal.find('.increase-volume').on('click', function() {
-            session.ua.audioHelper.setVolume(
-                (session.ua.audioHelper.volume !== null ? session.ua.audioHelper.volume : 0.5) + 0.1
+            session.userAgent.audioHelper.setVolume(
+                (session.userAgent.audioHelper.volume !== null ? session.userAgent.audioHelper.volume : 0.5) + 0.1
             );
         });
 
         $modal.find('.decrease-volume').on('click', function() {
-            session.ua.audioHelper.setVolume(
-                (session.ua.audioHelper.volume !== null ? session.ua.audioHelper.volume : 0.5) - 0.1
+            session.userAgent.audioHelper.setVolume(
+                (session.userAgent.audioHelper.volume !== null ? session.userAgent.audioHelper.volume : 0.5) - 0.1
             );
         });
 
@@ -419,6 +420,7 @@ $(function() {
                 .transfer($transfer.val().trim())
                 .then(function() {
                     console.log('Transferred');
+                    $modal.modal('hide');
                 })
                 .catch(function(e) {
                     console.error('Transfer failed', e.stack || e);
@@ -430,14 +432,16 @@ $(function() {
             e.stopPropagation();
             session.hold().then(function() {
                 console.log('Placing the call on hold, initiating attended transfer');
-                var newSession = session.ua.invite($transfer.val().trim());
-                newSession.once('accepted', function() {
+                var newSession = session.userAgent.invite($transfer.val().trim());
+                // FIXME: Event name changed
+                newSession.on('established', function() {
                     console.log('New call initated. Click Complete to complete the transfer');
                     $modal.find('.transfer-form button.complete').on('click', function(e) {
                         session
                             .warmTransfer(newSession)
                             .then(function() {
                                 console.log('Warm transfer completed');
+                                $modal.modal('hide');
                             })
                             .catch(function(e) {
                                 console.error('Transfer failed', e.stack || e);
@@ -475,11 +479,12 @@ $(function() {
         });
 
         $modal.find('.hangup').on('click', function() {
-            session.terminate();
+            // FIXME:
+            session.dispose();
         });
 
-        session.on('accepted', function() {
-            console.log('Event: Accepted');
+        session.on('established', function() {
+            console.log('Event: Established');
             captureActiveCallInfo(session);
         });
         session.on('progress', function() {
@@ -585,7 +590,7 @@ $(function() {
         var session = webPhone.userAgent.invite(number, {
             fromNumber: username
         });
-        session.on('accepted', function() {
+        session.on('established', function() {
             onAccepted(session);
             console.log('Conference call started');
             bringIn(tId, pId)

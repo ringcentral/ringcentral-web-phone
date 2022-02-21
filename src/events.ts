@@ -40,5 +40,30 @@ export const Events = {
          * Fired when Invitation is received.
          */
         Invite: 'invite'
+    },
+    /**
+     * All WebPhone events related to Session
+     */
+    Session: {
+        /**
+         * Fired when session is muted.
+         */
+        Muted: 'muted',
+        /**
+         * Fired when session is unmuted.
+         */
+        Unmuted: 'unmuted',
+        /**
+         * Fired when session is established
+         */
+        Established: 'established',
+        /**
+         * Fired when session is terminating
+         */
+        Terminating: 'terminating',
+        /**
+         * Fired when session is terminated
+         */
+        Terminated: 'terminated'
     }
 };

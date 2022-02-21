@@ -1,6 +1,8 @@
 import getStats from 'getstats';
 import { WebPhoneSession } from './session';
 
+import { SessionDescriptionHandler } from 'sip.js/lib/platform/web';
+
 const formatFloat = (input: any): string => parseFloat(input.toString()).toFixed(2);
 
 export const startQosStatsCollection = (session: WebPhoneSession): void => {
@@ -9,20 +11,20 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
     qosStatsObj.callID = session.request.callId || '';
     qosStatsObj.fromTag = session.request.fromTag || '';
     qosStatsObj.toTag = session.request.toTag || '';
-    qosStatsObj.localID = session.request.headers.From[0].raw || session.request.headers.From[0];
-    qosStatsObj.remoteID = session.request.headers.To[0].raw || session.request.headers.To[0];
-    qosStatsObj.origID = session.request.headers.From[0].raw || session.request.headers.From[0];
+    qosStatsObj.localID = session.request.getHeader('From');
+    qosStatsObj.remoteID = session.request.getHeader('To');
+    qosStatsObj.origID = session.request.getHeader('From');
 
     let previousGetStatsResult;
 
     if (!getStats) throw new Error('getStats module was not provided!');
 
     getStats(
-        session.sessionDescriptionHandler.peerConnection,
+        (session.sessionDescriptionHandler as SessionDescriptionHandler).peerConnection,
         function(getStatsResult) {
             previousGetStatsResult = getStatsResult;
             qosStatsObj.status = true;
-            var network = getNetworkType(previousGetStatsResult.connectionType);
+            const network = getNetworkType(previousGetStatsResult.connectionType);
             qosStatsObj.localAddr = previousGetStatsResult.connectionType.local.ipAddress[0];
             qosStatsObj.remoteAddr = previousGetStatsResult.connectionType.remote.ipAddress[0];
             previousGetStatsResult.results.forEach(function(item) {
@@ -32,9 +34,9 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
                 if (item.type === 'remotecandidate') {
                     qosStatsObj.remotecandidate = item;
                 }
-                if (item.type === 'ssrc' && item.id.includes('send') && session.ua.enableMediaReportLogging) {
+                if (item.type === 'ssrc' && item.id.includes('send') && session.userAgent.enableMediaReportLogging) {
                     if (parseInt(item.audioInputLevel, 10) === 0) {
-                        session.logger.log(
+                        (session as any).logger.log(
                             'AudioInputLevel is 0. The local track might be muted or could have potential one-way audio issue. Check Microphone Volume settings.'
                         );
                         session.emit('no-input-volume');
@@ -48,9 +50,9 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
                     qosStatsObj.totalIntervalCount += 1;
                     qosStatsObj.JBM = Math.max(qosStatsObj.JBM, parseFloat(item.googJitterBufferMs));
                     qosStatsObj.netType = addToMap(qosStatsObj.netType, network);
-                    if (session.ua.enableMediaReportLogging) {
+                    if (session.userAgent.enableMediaReportLogging) {
                         if (parseInt(item.audioOutputLevel, 10) <= 1) {
-                            session.logger.log(
+                            (session as any).logger.log(
                                 'Remote audioOutput level is 1. The remote track might be muted or could have potential one-way audio issue'
                             );
                             session.emit('no-output-volume');
@@ -59,12 +61,12 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
                 }
             });
         },
-        session.ua.qosCollectInterval
+        session.userAgent.qosCollectInterval
     );
 
     session.on('terminated', function() {
         previousGetStatsResult && previousGetStatsResult.nomore();
-        session.logger.log('Release media streams');
+        (session as any).logger.log('Release media streams');
         session.mediaStreams && session.mediaStreams.release();
         publishQosStats(session, qosStatsObj);
     });
@@ -73,25 +75,26 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
 const publishQosStats = (session: WebPhoneSession, qosStatsObj: QosStats, options: any = {}): void => {
     options = options || {};
 
-    const effectiveType = navigator['connection'].effectiveType || '';
+    //FIXME: check
+    const effectiveType = (navigator['connection'] as any).effectiveType || '';
     const networkType = calculateNetworkUsage(qosStatsObj) || '';
     const targetUrl = options.targetUrl || 'rtcpxr@rtcpxr.ringcentral.com:5060';
     const event = options.event || 'vq-rtcpxr';
     options.expires = 60;
     options.contentType = 'application/vq-rtcpxr';
-    options.extraHeaders = (options.extraHeaders || []).concat(session.ua.defaultHeaders);
+    options.extraHeaders = (options.extraHeaders || []).concat(session.userAgent.defaultHeaders);
     options.extraHeaders.push(
         'p-rc-client-info:' + 'cpuRC=0:0;cpuOS=0:0;netType=' + networkType + ';ram=0:0;effectiveType=' + effectiveType
     );
 
     const calculatedStatsObj = calculateStats(qosStatsObj);
     const body = createPublishBody(calculatedStatsObj);
-    const pub = session.ua.publish(targetUrl, event, body, options);
-    session.logger.log('Local Candidate: ' + JSON.stringify(qosStatsObj.localcandidate));
-    session.logger.log('Remote Candidate: ' + JSON.stringify(qosStatsObj.remotecandidate));
+    // const pub = session.userAgent.publish(targetUrl, event, body, options);
+    (session as any).logger.log('Local Candidate: ' + JSON.stringify(qosStatsObj.localcandidate));
+    (session as any).logger.log('Remote Candidate: ' + JSON.stringify(qosStatsObj.remotecandidate));
 
     qosStatsObj.status = false;
-    pub.close();
+    // pub.close();
     session.emit('qos-published', body);
 };
 

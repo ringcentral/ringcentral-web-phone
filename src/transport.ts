@@ -1,15 +1,11 @@
-/* eslint-disable no-console */
-/* eslint-disable @typescript-eslint/no-use-before-define */
-/* eslint-disable @typescript-eslint/unbound-method */
-
 import { EventEmitter } from 'events';
-
-import { Transport, TransportState } from 'sip.js';
-import { TransportOptions, Transport as WebTransport } from 'sip.js/lib/platform/web/transport';
 import { Exception, Logger } from 'sip.js/lib/core';
+import { Transport } from 'sip.js/lib/api/transport';
+import { Transport as WebTransport } from 'sip.js/lib/platform/web/transport';
+import { TransportOptions } from 'sip.js/lib/platform/web/transport/transport-options';
+import { TransportState } from 'sip.js';
 
 import { TransportServer, WebPhoneOptions } from './index';
-
 import { Events } from './events';
 
 export interface WebPhoneTransport extends Transport {

@@ -1,13 +1,14 @@
-import { LogLevel, UserAgent, Web, SessionDescriptionHandlerModifier, UserAgentOptions } from 'sip.js';
+import { Levels as LogLevels } from 'sip.js/lib/core/log/levels';
+import { LogLevel } from 'sip.js/lib/api/user-agent-options';
 import { SessionDescriptionHandlerFactoryOptions } from 'sip.js/lib/platform/web';
-import { Levels as LogLevels } from 'sip.js/lib/core/log';
+import { UserAgent, Web, SessionDescriptionHandlerModifier, UserAgentOptions } from 'sip.js';
 
 import { createWebPhoneUserAgent, WebPhoneUserAgent } from './userAgent';
-import { uuidKey, defaultMediaConstraints } from './constants';
-import { uuid, delay, extend } from './utils';
-// import { WebPhoneSession } from './session';
-// import { AudioHelperOptions } from './audioHelper';
 import { default as MediaStreams, MediaStreamsImpl } from './mediaStreams';
+import { uuid, delay, extend } from './utils';
+import { uuidKey, defaultMediaConstraints } from './constants';
+import packageJson from '../package.json';
+// FIXME:
 // const { version } = require('../package.json');
 export interface WebPhoneRegData {
     sipInfo?: any;
@@ -74,7 +75,7 @@ const defaultWebPhoneOptions: WebPhoneOptions = {
     maxReconnectionAttemptsWithBackup: 10,
     mediaConstraints: defaultMediaConstraints,
     modifiers: [],
-    //FIXME: This should be in seconds but will be  a breaking change
+    //FIXME: This should be in seconds but will be a breaking change
     qosCollectInterval: 5000,
     reconnectionTimeoutNoBackup: 5,
     reconnectionTimeoutWithBackup: 4,
@@ -89,7 +90,7 @@ const defaultSipErrorCodes = ['408', '502', '503', '504'];
 const defaultLogLevel = 'debug';
 
 export default class WebPhone {
-    public static version = '0.8.9';
+    public static version = packageJson.version;
     public static uuid = uuid;
     public static delay = delay;
     public static extend = extend;
@@ -151,28 +152,29 @@ export default class WebPhone {
         const iceTransportPolicy = options.iceTransportPolicy;
         let iceServers = [];
         if (options.enableTurnServers) {
-            iceServers = options.turnServers.map(url => ({ urls: url }));
+            iceServers = options.turnServers.map((url) => ({ urls: url }));
             options.iceCheckingTimeout = options.iceCheckingTimeout || 2000;
         }
         iceServers = [
             ...iceServers,
-            ...stunServers.map(_url => {
+            ...stunServers.map((_url) => {
                 const url = !/^(stun:)/.test(_url) ? `stun:${_url}` : _url;
                 return { urls: url };
             })
         ];
 
-        const sessionDescriptionHandlerFactoryOptions: SessionDescriptionHandlerFactoryOptions = options.sessionDescriptionHandlerFactoryOptions || {
-            iceGatheringTimeout:
-                options.iceCheckingTimeout ||
-                this.sipInfo.iceCheckingTimeout ||
-                this.sipInfo.iceGatheringTimeout ||
-                500,
-            peerConnectionConfiguration: {
-                iceServers,
-                iceTransportPolicy
-            }
-        };
+        const sessionDescriptionHandlerFactoryOptions: SessionDescriptionHandlerFactoryOptions =
+            options.sessionDescriptionHandlerFactoryOptions || {
+                iceGatheringTimeout:
+                    options.iceCheckingTimeout ||
+                    this.sipInfo.iceCheckingTimeout ||
+                    this.sipInfo.iceGatheringTimeout ||
+                    500,
+                peerConnectionConfiguration: {
+                    iceServers,
+                    iceTransportPolicy
+                }
+            };
 
         options.modifiers = modifiers;
 
@@ -222,7 +224,7 @@ export default class WebPhone {
             reconnectionAttempts: 0,
             authorizationUsername: this.sipInfo.authorizationId,
             authorizationPassword: this.sipInfo.password,
-            logLevel: ((LogLevels[options.logLevel] as unknown) as LogLevel) || defaultLogLevel,
+            logLevel: (LogLevels[options.logLevel] as unknown as LogLevel) || defaultLogLevel,
             logBuiltinEnabled: options.builtinEnabled,
             logConnector: options.connector || null,
             autoStart: false,

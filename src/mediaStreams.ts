@@ -139,6 +139,7 @@ export class MediaStreamsImpl {
         this.session = session;
         this.onMediaConnectionStateChange = null;
         this.onStateChange = this.onPeerConnectionStateChange.bind(this);
+        //FIXME:
         if (this.session && this.session.sessionDescriptionHandler) {
             this.session.sessionDescriptionHandler.on('iceConnection', this.onStateChange);
             this.session.sessionDescriptionHandler.on('iceConnectionChecking', this.onStateChange);
@@ -152,7 +153,7 @@ export class MediaStreamsImpl {
         this.isFirefox = this.browser() === Browsers['Firefox'];
         this.isSafari = this.browser() === Browsers['Safari'];
 
-        this.preRTT = {currentRoundTripTime: 0};
+        this.preRTT = { currentRoundTripTime: 0 };
 
         if (!this.isChrome && !this.isFirefox && !this.isSafari) {
             this.rcWPLoge(
@@ -261,7 +262,7 @@ export class MediaStreamsImpl {
                     reject(e);
                 }
             } else {
-                reject(new Error('The session cannot be empty'))
+                reject(new Error('The session cannot be empty'));
             }
         });
     }
@@ -319,8 +320,8 @@ export class MediaStreamsImpl {
                             });
                             break;
                         case 'local-candidate':
-                            let local_candidate = {};
-                            Object.keys(report).forEach(function (statName) {
+                            const local_candidate = {};
+                            Object.keys(report).forEach(function(statName) {
                                 switch (statName) {
                                     case 'id':
                                     case 'isRemote':
@@ -336,8 +337,8 @@ export class MediaStreamsImpl {
                             reports.localCandidates.push(local_candidate);
                             break;
                         case 'remote-candidate':
-                            let remote_candidate = {};
-                            Object.keys(report).forEach(function (statName) {
+                            const remote_candidate = {};
+                            Object.keys(report).forEach(function(statName) {
                                 switch (statName) {
                                     case 'id':
                                     case 'isRemote':
@@ -361,7 +362,7 @@ export class MediaStreamsImpl {
                             reports.inboundRtpReport['rtpRemoteAudioLevel'] = report.audioLevel ? report.audioLevel : 0;
                             break;
                         case 'transport':
-                            Object.keys(report).forEach(function (statName) {
+                            Object.keys(report).forEach(function(statName) {
                                 switch (statName) {
                                     case 'dtlsState':
                                     case 'packetsSent':
@@ -452,4 +453,4 @@ export class MediaStreamsImpl {
     }
 }
 
-export {MediaStreams};
+export { MediaStreams };

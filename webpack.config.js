@@ -69,12 +69,12 @@ if (isProduction) {
         [`${key}.min`]: src
     };
     libConfig.optimization = {
-        minimize: true,
-        minimizer: [
-            new UglifyJsPlugin({
-                include: /\.min\.js$/
-            })
-        ]
+        minimize: true
+        // minimizer: [
+        //     new UglifyJsPlugin({
+        //         include: /\.min\.js$/
+        //     })
+        // ]
     };
 }
 
@@ -113,9 +113,9 @@ module.exports = [
             }),
             //FIXME Replace with file loader
             new CopyPlugin([
-                {from: 'node_modules/bootstrap', to: 'bootstrap'},
-                {from: 'audio', to: 'audio'},
-                {from: 'demo/img', to: 'img'}
+                { from: 'node_modules/bootstrap', to: 'bootstrap' },
+                { from: 'audio', to: 'audio' },
+                { from: 'demo/img', to: 'img' }
             ])
         ],
         optimization: {
