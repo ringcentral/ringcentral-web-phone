@@ -8,8 +8,6 @@ import { default as MediaStreams, MediaStreamsImpl } from './mediaStreams';
 import { uuid, delay, extend } from './utils';
 import { uuidKey, defaultMediaConstraints } from './constants';
 import packageJson from '../package.json';
-// FIXME:
-// const { version } = require('../package.json');
 export interface WebPhoneRegData {
     sipInfo?: any;
     sipFlags?: any;
@@ -75,7 +73,7 @@ const defaultWebPhoneOptions: WebPhoneOptions = {
     maxReconnectionAttemptsWithBackup: 10,
     mediaConstraints: defaultMediaConstraints,
     modifiers: [],
-    //FIXME: This should be in seconds but will be a breaking change
+    //FIXME: This should be in seconds since every other config is in seconds
     qosCollectInterval: 5000,
     reconnectionTimeoutNoBackup: 5,
     reconnectionTimeoutWithBackup: 4,

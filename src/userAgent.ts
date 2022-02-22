@@ -22,6 +22,7 @@ import {
     WebPhoneInvitation,
     WebPhoneSession
 } from './session';
+import { patchUserAgentCore } from './userAgentCore';
 
 export interface ActiveCallInfo {
     id: string;
@@ -80,9 +81,8 @@ export function createWebPhoneUserAgent(
             onConnect: (): Promise<void> => userAgent.register(),
             onInvite: (invitation: WebPhoneInvitation): void => {
                 userAgent.audioHelper.playIncoming(true);
-                // FIXME:
-                patchIncomingWebphoneSession(invitation);
                 patchWebphoneSession(invitation);
+                patchIncomingWebphoneSession(invitation);
                 (invitation as any).logger.log('UA recieved incoming call invite');
                 invitation.sendReceiveConfirm();
                 userAgent.emit(Events.UserAgent.Invite, invitation);
@@ -135,6 +135,7 @@ export function createWebPhoneUserAgent(
     userAgent.sendMessage = sendMessage.bind(userAgent);
     userAgent.createRcMessage = createRcMessage.bind(userAgent);
     userAgent.switchFrom = switchFrom.bind(userAgent);
+    patchUserAgentCore(userAgent);
 
     userAgent.start();
     return userAgent;
@@ -177,10 +178,16 @@ function createRcMessage(this: WebPhoneUserAgent, options: any): string {
     );
 }
 
-// FIXME: ClientContext class has been removed. New type is IncomingResponse
+// DOCUMENT: ClientContext class has been removed. New type is IncomingResponse
 function sendMessage(this: WebPhoneUserAgent, to: string, messageData: string): Promise<IncomingResponse> {
     const extraHeaders = [`P-rc-ws: ${this.contact}`];
-    const messager = new Messager(this, UserAgent.makeURI(to), messageData, 'x-rc/agent', { extraHeaders });
+    // For some reason, UserAgent.makeURI is unable to parse username starting with #
+    // Fix in later release if this is fixed by SIP.js
+    const [user] = to.split('@');
+    to = to.startsWith('#') ? `sip:${to.substring(1)}` : `sip:${to}`;
+    const uri = UserAgent.makeURI(to);
+    uri.user = user;
+    const messager = new Messager(this, uri, messageData, 'x-rc/agent', { extraHeaders });
 
     return new Promise((resolve, reject) => {
         messager.message({
@@ -198,7 +205,7 @@ async function register(this: WebPhoneUserAgent): Promise<void> {
             onAccept: (): void => {
                 this.emit(Events.UserAgent.Registrerd);
             },
-            // FIXME: Verify this
+            // FIXME: Test this
             onReject: (response): void => {
                 if (!response) {
                     return;
@@ -239,9 +246,8 @@ function invite(this: WebPhoneUserAgent, number: string, options: InviteOptions 
     inviterOptions.earlyMedia = this.earlyMedia;
     inviterOptions.delegate = {
         onSessionDescriptionHandler: (): void => onSessionDescriptionHandlerCreated(inviter),
-        onNotify: notification => notification.accept()
+        onNotify: (notification) => notification.accept()
     };
-    // FIXME:
     this.audioHelper.playOutgoing(true);
     (this as any).logger.log(`Invite to ${number} created with playOutgoing set to true`);
     const inviter: WebPhoneSession = new Inviter(
