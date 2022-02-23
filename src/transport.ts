@@ -32,6 +32,7 @@ export interface WebPhoneTransport extends Transport {
     __resetServersErrorStatus?: typeof __resetServersErrorStatus;
     __scheduleSwitchBackToMainProxy?: typeof __scheduleSwitchBackToMainProxy;
     __setServerIsError?: typeof __setServerIsError;
+    addListener?: typeof EventEmitter.prototype.addListener;
     emit?: typeof EventEmitter.prototype.emit;
     getNextWsServer?: (force?: boolean) => TransportServer;
     isSipErrorCode?: typeof isSipErrorCode;
@@ -40,19 +41,22 @@ export interface WebPhoneTransport extends Transport {
     on?: typeof EventEmitter.prototype.on;
     onSipErrorCode?: typeof onSipErrorCode;
     reconnect?: typeof WebTransport.prototype.connect;
+    removeListener?: typeof EventEmitter.prototype.removeListener;
 }
 
 export function createWebPhoneTransport(transport: WebPhoneTransport, options: WebPhoneOptions): WebPhoneTransport {
     transport.reconnectionAttempts = 0;
     transport.servers = options.transportServers;
     const eventEmitter = new EventEmitter();
+    transport.on = eventEmitter.on.bind(eventEmitter);
+    transport.off = eventEmitter.off.bind(eventEmitter);
+    transport.addListener = eventEmitter.addListener.bind(eventEmitter);
+    transport.removeListener = eventEmitter.removeListener.bind(eventEmitter);
+    transport.emit = eventEmitter.emit.bind(eventEmitter);
     transport.mainProxy = options.transportServers[0];
     transport.switchBackInterval = options.switchBackInterval;
     transport.reconnectionTimeout = options.reconnectionTimeout;
     transport.maxReconnectionAttempts = options.maxReconnectionAttempts;
-    transport.on = eventEmitter.on.bind(eventEmitter);
-    transport.off = eventEmitter.off.bind(eventEmitter);
-    transport.emit = eventEmitter.emit.bind(eventEmitter);
     transport.__afterWSConnected = __afterWSConnected.bind(transport);
     transport.__clearSwitchBackToMainProxyTimer = __clearSwitchBackToMainProxyTimer.bind(transport);
     transport.__computeRandomTimeout = __computeRandomTimeout.bind(transport);
@@ -69,9 +73,25 @@ export function createWebPhoneTransport(transport: WebPhoneTransport, options: W
     transport.noAvailableServers = noAvailableServers.bind(transport);
     transport.onSipErrorCode = onSipErrorCode.bind(transport);
     transport.reconnect = reconnect.bind(transport);
-    transport.stateChange.addListener(state => {
-        if (state === TransportState.Connected) {
-            transport.__afterWSConnected();
+    transport.stateChange.addListener((newState) => {
+        switch (newState) {
+            case TransportState.Connecting: {
+                transport.emit(Events.Transport.Connecting);
+                break;
+            }
+            case TransportState.Connected: {
+                transport.emit(Events.Transport.Connected);
+                transport.__afterWSConnected();
+                break;
+            }
+            case TransportState.Disconnecting: {
+                transport.emit(Events.Transport.Disconnecting);
+                break;
+            }
+            case TransportState.Disconnected: {
+                transport.emit(Events.Transport.Disconnected);
+                break;
+            }
         }
     });
     return transport;
@@ -98,7 +118,7 @@ function __computeRandomTimeout(reconnectionAttempts = 1, randomMinInterval = 0,
 }
 
 function __setServerIsError(this: WebPhoneTransport, uri: string): void {
-    this.servers.forEach(server => {
+    this.servers.forEach((server) => {
         if (server.uri === uri && !server.isError) {
             server.isError = true;
         }
@@ -106,7 +126,7 @@ function __setServerIsError(this: WebPhoneTransport, uri: string): void {
 }
 
 function __resetServersErrorStatus(this: WebPhoneTransport): void {
-    this.servers.forEach(server => {
+    this.servers.forEach((server) => {
         server.isError = false;
     });
 }
@@ -257,7 +277,7 @@ function isSipErrorCode(this: WebPhoneTransport, statusCode: number | undefined)
     );
 }
 
-async function onSipErrorCode(this: WebPhoneTransport): Promise<any> {
+async function onSipErrorCode(this: WebPhoneTransport): Promise<void> {
     this.logger.warn('Error received from the server. Disconnecting from the proxy');
     this.__setServerIsError(this.server);
     this.emit(Events.Transport.ConnectionFailure);

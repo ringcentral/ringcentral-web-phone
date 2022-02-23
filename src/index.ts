@@ -1,13 +1,21 @@
 import { Levels as LogLevels } from 'sip.js/lib/core/log/levels';
 import { LogLevel } from 'sip.js/lib/api/user-agent-options';
 import { SessionDescriptionHandlerFactoryOptions } from 'sip.js/lib/platform/web';
-import { UserAgent, Web, SessionDescriptionHandlerModifier, UserAgentOptions } from 'sip.js';
+import {
+    UserAgent,
+    Web,
+    SessionDescriptionHandlerModifier,
+    UserAgentOptions,
+    LogConnector,
+    SessionDescriptionHandlerFactory
+} from 'sip.js';
 
 import { createWebPhoneUserAgent, WebPhoneUserAgent } from './userAgent';
 import { default as MediaStreams, MediaStreamsImpl } from './mediaStreams';
 import { uuid, delay, extend } from './utils';
 import { uuidKey, defaultMediaConstraints } from './constants';
 import packageJson from '../package.json';
+import { WebPhoneSession } from './session';
 export interface WebPhoneRegData {
     sipInfo?: any;
     sipFlags?: any;
@@ -26,7 +34,7 @@ export interface WebPhoneOptions {
     audioHelper?: any;
     autoStop?: boolean;
     builtinEnabled?: boolean;
-    connector?: any;
+    connector?: LogConnector;
     earlyMedia?: boolean;
     enableDefaultModifiers?: boolean;
     enableMediaReportLogging?: boolean;
@@ -35,7 +43,7 @@ export interface WebPhoneOptions {
     enableQos?: boolean;
     enableTurnServers?: boolean;
     iceCheckingTimeout?: number;
-    iceTransportPolicy?: string;
+    iceTransportPolicy?: RTCIceTransportPolicy;
     instanceId?: string;
     keepAliveDebounce?: number;
     keepAliveInterval?: number;
@@ -46,14 +54,14 @@ export interface WebPhoneOptions {
     media?: any;
     mediaConstraints?: any;
     modifiers?: SessionDescriptionHandlerModifier[];
-    onSession?: (session: any) => any;
+    onSession?: (session: WebPhoneSession) => any;
     qosCollectInterval?: number;
     reconnectionTimeout?: number;
     reconnectionTimeoutNoBackup?: number;
     reconnectionTimeoutWithBackup?: number;
     regId?: number;
-    sessionDescriptionHandlerFactory?: any;
-    sessionDescriptionHandlerFactoryOptions?: any;
+    sessionDescriptionHandlerFactory?: SessionDescriptionHandlerFactory;
+    sessionDescriptionHandlerFactoryOptions?: SessionDescriptionHandlerFactoryOptions;
     sipErrorCodes?: string[];
     stunServers?: string[];
     switchBackInterval?: number;

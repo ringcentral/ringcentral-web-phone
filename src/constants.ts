@@ -1,3 +1,9 @@
+export interface Command {
+    reqid: number;
+    command: string;
+    extraHeaders?: Array<string>;
+}
+
 export const messages = {
     park: { reqid: 1, command: 'callpark' },
     startRecord: { reqid: 2, command: 'startcallrecord' },

@@ -1,16 +1,17 @@
 import { EventEmitter } from 'events';
 
 import { UserAgentCore, C, IncomingRequestMessage } from 'sip.js/lib/core';
+import { Events } from './events';
 
 import { WebPhoneUserAgent } from './userAgent';
 
 export type WehPhoneUserAgentCore = UserAgentCore & {
-    on?: typeof EventEmitter.prototype.on;
-    off?: typeof EventEmitter.prototype.off;
-    addListener?: typeof EventEmitter.prototype.addListener;
-    removeListener?: typeof EventEmitter.prototype.removeListener;
-    emit?: typeof EventEmitter.prototype.emit;
     _receiveIncomingRequestFromTransport?: typeof UserAgentCore.prototype.receiveIncomingRequestFromTransport;
+    addListener?: typeof EventEmitter.prototype.addListener;
+    emit?: typeof EventEmitter.prototype.emit;
+    off?: typeof EventEmitter.prototype.off;
+    on?: typeof EventEmitter.prototype.on;
+    removeListener?: typeof EventEmitter.prototype.removeListener;
 };
 
 export function patchUserAgentCore(userAgent: WebPhoneUserAgent) {
@@ -29,13 +30,13 @@ export function patchUserAgentCore(userAgent: WebPhoneUserAgent) {
     );
 }
 
-function receiveIncomingRequestFromTransport(this: WehPhoneUserAgentCore, message: IncomingRequestMessage): any {
+function receiveIncomingRequestFromTransport(this: WehPhoneUserAgentCore, message: IncomingRequestMessage): void {
     switch (message.method) {
         case C.UPDATE: {
             (this as any).logger.log('Receive UPDATE request. Do nothing just return 200 OK');
             this.replyStateless(message, { statusCode: 200 });
             // DOCUMENT: type has changed
-            this.emit('updateReceived', message);
+            this.emit(Events.Session.UpdateReceived, message);
             return;
         }
         case C.INFO: {
@@ -43,7 +44,7 @@ function receiveIncomingRequestFromTransport(this: WehPhoneUserAgentCore, messag
             const content = getIncomingInfoContent(message);
             if (content?.request?.reqId && content?.request?.command === 'move' && content?.request?.target === 'rcv') {
                 this.replyStateless(message, { statusCode: 200 });
-                this.emit('moveToRcv', content.request);
+                this.emit(Events.Session.MoveToRcv, content.request);
                 return;
             }
             // For other SIP INFO from server

@@ -4,6 +4,22 @@ export const Events = {
      */
     Transport: {
         /**
+         * Fired when Transport is connecting.
+         */
+        Connecting: 'connecting',
+        /**
+         * Fired when Transport is connected.
+         */
+        Connected: 'connected',
+        /**
+         * Fired when Transport is disconnecting.
+         */
+        Disconnecting: 'disconnecting',
+        /**
+         * Fired when Transport is disconnected.
+         */
+        Disconnected: 'disconnected',
+        /**
          * Fired everytime a transport connection attempt fails.
          */
         ConnectionAttemptFailure: 'wsConnectionError',
@@ -39,7 +55,19 @@ export const Events = {
         /**
          * Fired when Invitation is received.
          */
-        Invite: 'invite'
+        Invite: 'invite',
+        /**
+         * Fired when provisionUpdate notification is received.
+         */
+        ProvisionUpdate: 'ProvisionUpdate',
+        /**
+         * Fired when UserAgent is started.
+         */
+        Started: 'started',
+        /**
+         * Fired when UserAgent is stopped.
+         */
+        Stopped: 'stopped'
     },
     /**
      * All WebPhone events related to Session
@@ -56,6 +84,10 @@ export const Events = {
         /**
          * Fired when session is established
          */
+        Establishing: 'establishing',
+        /**
+         * Fired when session is established
+         */
         Established: 'established',
         /**
          * Fired when session is terminating
@@ -64,6 +96,14 @@ export const Events = {
         /**
          * Fired when session is terminated
          */
-        Terminated: 'terminated'
+        Terminated: 'terminated',
+        /**
+         * Fired when UPDATE request is recieved over socket
+         */
+        UpdateReceived: 'updateReceived',
+        /**
+         * Fired when INFO request is recieved over socket with move to rcv instruction
+         */
+        MoveToRcv: 'moveToRcv'
     }
 };

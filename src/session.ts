@@ -25,7 +25,7 @@ import {
 } from 'sip.js/lib/platform/web/session-description-handler';
 
 import { extend } from './utils';
-import { responseTimeout, messages } from './constants';
+import { responseTimeout, messages, Command } from './constants';
 import { MediaStreams } from './mediaStreams';
 import { RTPReport, isNoAudio } from './rtpReport';
 import { WebPhoneUserAgent } from './userAgent';
@@ -34,6 +34,8 @@ import { WehPhoneUserAgentCore } from './userAgentCore';
 // import { startQosStatsCollection } from "./qos";
 
 export interface RCHeaders {
+    body?: string;
+    reqid?: string;
     sid?: string;
     request?: string;
     from?: string;
@@ -72,9 +74,10 @@ type CommonSession = {
     // sendRequest?: typeof sendRequest
     // onLocalHold?: typeof onLocalHold
     // receiveRequest?: typeof receiveRequest;
-    __userAgentCoreEventsSetup?: boolean;
+    __isRecording?: boolean;
     __patched?: boolean;
-    __onRecord?: boolean;
+    __userAgentCoreEventsSetup?: boolean;
+    eventEmitter?: EventEmitter;
     held?: boolean;
     media?: any;
     mediaStatsStarted?: boolean;
@@ -86,6 +89,7 @@ type CommonSession = {
     userAgent: WebPhoneUserAgent;
     __accept?: typeof Invitation.prototype.accept;
     accept?: typeof Invitation.prototype.accept;
+    addListener?: typeof EventEmitter.prototype.addListener;
     addTrack?: typeof addTrack;
     barge?: typeof barge;
     blindTransfer?: typeof blindTransfer;
@@ -95,18 +99,14 @@ type CommonSession = {
     emit?: typeof EventEmitter.prototype.emit;
     flip?: typeof flip;
     forward?: typeof forward;
-    //FIXME: Remove
-    getIncomingInfoContent?: typeof getIncomingInfoContent;
     hold?: typeof hold;
     ignore?: typeof ignore;
     mute?: typeof mute;
-    eventEmitter?: EventEmitter;
     off?: typeof EventEmitter.prototype.off;
     on?: typeof EventEmitter.prototype.on;
-    addListener?: typeof EventEmitter.prototype.addListener;
-    removeListener?: typeof EventEmitter.prototype.removeListener;
     park?: typeof park;
     reinvite?: typeof reinvite;
+    removeListener?: typeof EventEmitter.prototype.removeListener;
     replyWithMessage?: typeof replyWithMessage;
     sendInfoAndRecieveResponse?: typeof sendInfoAndRecieveResponse;
     sendMoveResponse?: typeof sendMoveResponse;
@@ -147,7 +147,6 @@ export function patchWebphoneSession(session: WebPhoneSession): WebPhoneSession 
     session.removeListener = eventEmitter.removeListener.bind(eventEmitter);
     session.emit = eventEmitter.emit.bind(eventEmitter);
     session.sendInfoAndRecieveResponse = sendInfoAndRecieveResponse.bind(session);
-    session.getIncomingInfoContent = getIncomingInfoContent.bind(session);
     session.startRecord = startRecord.bind(session);
     session.stopRecord = stopRecord.bind(session);
     session.sendMoveResponse = sendMoveResponse.bind(session);
@@ -167,8 +166,13 @@ export function patchWebphoneSession(session: WebPhoneSession): WebPhoneSession 
     session.dtmf = dtmf.bind(session);
     session.reinvite = reinvite.bind(session);
     session.forward = forward.bind(session); // FIXME: Not needed?
+    setupUserAgentCoreEvent(session);
     session.stateChange.addListener((newState) => {
         switch (newState) {
+            case SessionState.Establishing: {
+                session.emit(Events.Session.Establishing);
+                break;
+            }
             case SessionState.Established: {
                 stopPlaying(session);
                 (session.sessionDescriptionHandler as SessionDescriptionHandler).peerConnectionDelegate = {
@@ -189,11 +193,6 @@ export function patchWebphoneSession(session: WebPhoneSession): WebPhoneSession 
             }
         }
     });
-    setupUserAgentCoreEvent(session);
-    //FIXME: Remove
-    // Patch user agent core at the end once session is patched
-    // The patched logic depends on emit method which will be only made available after session is patched
-    // patchUserAgentCore(session);
 
     // FIXME: Do we need this? The replaced session is part of existing sessions and would have already been patched
     // NEEDED - inviter.ts L191
@@ -223,8 +222,6 @@ export function patchIncomingWebphoneSession(session: WebPhoneSession): void {
     session.__accept = (session as Invitation).accept.bind(session);
     session.accept = accept.bind(session);
     setupUserAgentCoreEvent(session);
-    //FIXME: Remove
-    // patchUserAgentCore(session);
 }
 
 function canUseRCMCallControl(this: WebPhoneSession): boolean {
@@ -262,7 +259,7 @@ function sendSessionMessage(this: WebPhoneSession, options): Promise<IncomingRes
 }
 
 //DOCUMENT: Name has changed
-async function sendInfoAndRecieveResponse(this: WebPhoneSession, command: any, options?: any): Promise<any> {
+async function sendInfoAndRecieveResponse(this: WebPhoneSession, command: Command, options?: any): Promise<any> {
     options = options || {};
     extend(command, options);
     delete command.extraHeaders;
@@ -326,25 +323,12 @@ async function stopRecord(this: WebPhoneSession): Promise<any> {
     return setRecord(this, false);
 }
 
-function getIncomingInfoContent(this: WebPhoneSession, message: IncomingRequestMessage): any {
-    if (!message || !message.body) {
-        return {};
-    }
-    let ret = {};
-    try {
-        ret = JSON.parse(message.body);
-    } catch (e) {
-        return {};
-    }
-    return ret;
-}
-
 function sendMoveResponse(
     this: WebPhoneSession,
     reqId: number,
     code: number,
     description: string,
-    options: any = {}
+    options: { extraHeaders?: Array<string> } = {}
 ): void {
     const extraHeaders = options.extraHeaders || [];
     const requestOptions: RequestOptions = {
@@ -574,7 +558,7 @@ async function transfer(
 function reinvite(this: WebPhoneSession, options: SessionInviteOptions = {}): Promise<OutgoingInviteRequest> {
     options.sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions || {};
     const originalOnAccept = options.requestDelegate.onAccept;
-    options.requestDelegate.onAccept = (...args): any => {
+    options.requestDelegate.onAccept = (...args): void => {
         originalOnAccept(...args);
         patchIncomingWebphoneSession(this);
     };
@@ -603,10 +587,6 @@ async function unhold(this: WebPhoneSession): Promise<void> {
 }
 
 function dtmf(this: WebPhoneSession, dtmf: string, duration = 100, interToneGap = 50): void {
-    if (!/^[0-9A-D#*,]$/.exec(dtmf)) {
-        (this as any).logger.warn('Invalid DTMF tone');
-        return;
-    }
     duration = parseInt(duration.toString());
     interToneGap = parseInt(interToneGap.toString());
     const sessionDescriptionHandler = this.sessionDescriptionHandler as SessionDescriptionHandler;
@@ -652,7 +632,6 @@ async function forward(
 ): Promise<OutgoingReferRequest> {
     await this.accept(acceptOptions);
     return new Promise((resolve) => {
-        // FIXME: Check with old code
         this.mute();
         setTimeout(() => {
             resolve(this.transfer(target, transferOptions));
@@ -711,9 +690,9 @@ function parseRcHeader(session: WebPhoneSession): void {
 async function setRecord(session: WebPhoneSession, flag: boolean): Promise<any> {
     const message = flag ? messages.startRecord : messages.stopRecord;
 
-    if ((session.__onRecord && !flag) || (!session.__onRecord && flag)) {
+    if ((session.__isRecording && !flag) || (!session.__isRecording && flag)) {
         const data = await session.sendInfoAndRecieveResponse(message);
-        session.__onRecord = !!flag;
+        session.__isRecording = !!flag;
         return data;
     }
 }
@@ -815,7 +794,6 @@ function stopPlaying(session: WebPhoneSession): void {
     session.userAgent.audioHelper.playIncoming(false);
 }
 
-// FIXME: Also add to incomming invite
 export function onSessionDescriptionHandlerCreated(session: WebPhoneSession): void {
     (session as any).logger.log('SessionDescriptionHandler created');
     // startQosStatsCollection(session);
@@ -831,8 +809,9 @@ function setupUserAgentCoreEvent(session: WebPhoneSession) {
         return;
     }
     const userAgentCore: WehPhoneUserAgentCore = session.userAgent.userAgentCore;
-    userAgentCore.on('updateReceived', (payload) => session.emit('updateReceived', payload));
-    userAgentCore.on('moveToRcv', (payload) => session.emit('moveToRcv', payload));
+    userAgentCore.on(Events.Session.UpdateReceived, (payload) => session.emit(Events.Session.UpdateReceived, payload));
+    userAgentCore.on(Events.Session.MoveToRcv, (payload) => session.emit(Events.Session.MoveToRcv, payload));
+    // RC_SIP_INFO event is for internal use
     userAgentCore.on('RC_SIP_INFO', (payload) => session.emit('RC_SIP_INFO', payload));
     session.__userAgentCoreEventsSetup = true;
 }

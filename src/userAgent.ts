@@ -19,6 +19,7 @@ import {
     onSessionDescriptionHandlerCreated,
     patchIncomingWebphoneSession,
     patchWebphoneSession,
+    RCHeaders,
     WebPhoneInvitation,
     WebPhoneSession
 } from './session';
@@ -37,30 +38,32 @@ export interface ActiveCallInfo {
 }
 
 export interface WebPhoneUserAgent extends UserAgent {
-    media?: any;
-    defaultHeaders?: string[];
-    enableQos?: boolean;
-    enableMediaReportLogging?: boolean;
-    qosCollectInterval?: number;
-    sipInfo?: any;
     audioHelper?: AudioHelper;
-    transport: WebPhoneTransport;
-    regId?: number;
-    instanceId?: string;
-    registerer?: Registerer;
-    modifiers?: SessionDescriptionHandlerModifier[];
-    earlyMedia?: boolean;
     constraints?: object;
-    onSession?: (session: WebPhoneSession) => void;
+    defaultHeaders?: string[];
+    earlyMedia?: boolean;
+    enableMediaReportLogging?: boolean;
+    enableQos?: boolean;
+    instanceId?: string;
+    media?: any;
+    modifiers?: SessionDescriptionHandlerModifier[];
+    qosCollectInterval?: number;
+    regId?: number;
+    registerer?: Registerer;
+    sipInfo?: any;
+    transport: WebPhoneTransport;
+    addListener?: typeof EventEmitter.prototype.addListener;
+    createRcMessage?: (options: RCHeaders) => string;
+    emit?: typeof EventEmitter.prototype.emit;
     invite?: (number: string, options: InviteOptions) => WebPhoneSession;
-    switchFrom?: (activeCall: ActiveCallInfo, options: InviteOptions) => WebPhoneSession;
     off?: typeof EventEmitter.prototype.off;
     on?: typeof EventEmitter.prototype.on;
-    emit?: typeof EventEmitter.prototype.emit;
+    onSession?: (session: WebPhoneSession) => void;
     register?: () => Promise<void>;
-    unregister?: () => Promise<void>;
+    removeListener?: typeof EventEmitter.prototype.removeListener;
     sendMessage?: (to: string, messageData: string) => Promise<IncomingResponse>;
-    createRcMessage?: (options: any) => string;
+    switchFrom?: (activeCall: ActiveCallInfo, options: InviteOptions) => WebPhoneSession;
+    unregister?: () => Promise<void>;
 }
 
 export interface InviteOptions {
@@ -81,6 +84,8 @@ export function createWebPhoneUserAgent(
             onConnect: (): Promise<void> => userAgent.register(),
             onInvite: (invitation: WebPhoneInvitation): void => {
                 userAgent.audioHelper.playIncoming(true);
+                invitation.delegate = {};
+                invitation.delegate.onSessionDescriptionHandler = () => onSessionDescriptionHandlerCreated(invitation);
                 patchWebphoneSession(invitation);
                 patchIncomingWebphoneSession(invitation);
                 (invitation as any).logger.log('UA recieved incoming call invite');
@@ -90,7 +95,7 @@ export function createWebPhoneUserAgent(
             onNotify: (notification): void => {
                 const event = notification.request.getHeader('Event');
                 if (event === '') {
-                    userAgent.emit('provisionUpdate');
+                    userAgent.emit(Events.UserAgent.ProvisionUpdate);
                 }
                 (userAgent as any).logger.log('UA recieved notify');
                 notification.accept();
@@ -99,6 +104,11 @@ export function createWebPhoneUserAgent(
     };
     const extendedConfiguration = Object.assign({}, extraConfiguration, configuration);
     const userAgent: WebPhoneUserAgent = new UserAgent(extendedConfiguration) as WebPhoneUserAgent;
+    const eventEmitter = new EventEmitter();
+    userAgent.on = eventEmitter.on.bind(eventEmitter);
+    userAgent.off = eventEmitter.off.bind(eventEmitter);
+    userAgent.addListener = eventEmitter.addListener.bind(eventEmitter);
+    userAgent.removeListener = eventEmitter.removeListener.bind(eventEmitter);
     userAgent.defaultHeaders = [`P-rc-endpoint-id: ${id}`, `Client-id: ${options.appKey}`];
     userAgent.regId = options.regId;
     userAgent.instanceId = options.instanceId;
@@ -123,11 +133,8 @@ export function createWebPhoneUserAgent(
     userAgent.earlyMedia = options.earlyMedia;
     userAgent.audioHelper = new AudioHelper(options.audioHelper);
     userAgent.onSession = options.onSession;
-    const eventEmitter = new EventEmitter();
     (userAgent as any)._transport = createWebPhoneTransport(userAgent.transport, options);
     (userAgent as any).onTransportDisconnect = onTransportDisconnect.bind(userAgent);
-    userAgent.on = eventEmitter.on.bind(eventEmitter);
-    userAgent.off = eventEmitter.off.bind(eventEmitter);
     userAgent.emit = eventEmitter.emit.bind(eventEmitter);
     userAgent.register = register.bind(userAgent);
     userAgent.unregister = unregister.bind(userAgent);
@@ -136,8 +143,20 @@ export function createWebPhoneUserAgent(
     userAgent.createRcMessage = createRcMessage.bind(userAgent);
     userAgent.switchFrom = switchFrom.bind(userAgent);
     patchUserAgentCore(userAgent);
-
     userAgent.start();
+    userAgent.stateChange.addListener((newState) => {
+        switch (newState) {
+            case UserAgentState.Started: {
+                userAgent.emit(Events.UserAgent.Started);
+                break;
+            }
+            case UserAgentState.Stopped: {
+                userAgent.emit(Events.UserAgent.Stopped);
+                break;
+            }
+        }
+    });
+
     return userAgent;
 }
 
@@ -154,7 +173,7 @@ function onTransportDisconnect(this: WebPhoneUserAgent, error?: Error): void {
     }
 }
 
-function createRcMessage(this: WebPhoneUserAgent, options: any): string {
+function createRcMessage(this: WebPhoneUserAgent, options: RCHeaders): string {
     options.body = options.body || '';
     return (
         '<Msg>' +
@@ -235,14 +254,14 @@ function invite(this: WebPhoneUserAgent, number: string, options: InviteOptions 
         ...(options.extraHeaders || []),
         ...this.defaultHeaders,
         `P-Asserted-Identity: sip: ${(options.fromNumber || this.sipInfo.username) + '@' + this.sipInfo.domain}`,
-        ...(options.homeCountryId ? [`P-rc-country-id: ${options.homeCountryId}`] : []) //FIXME: Backend should know it already
+        ...(options.homeCountryId ? [`P-rc-country-id: ${options.homeCountryId}`] : [])
     ];
 
     options.RTCConstraints = options.RTCConstraints || {
         optional: [{ DtlsSrtpKeyAgreement: 'true' }]
     };
     inviterOptions.sessionDescriptionHandlerModifiers = this.modifiers;
-    inviterOptions.sessionDescriptionHandlerOptions = { constraints: this.constraints };
+    inviterOptions.sessionDescriptionHandlerOptions = { constraints: options.RTCConstraints };
     inviterOptions.earlyMedia = this.earlyMedia;
     inviterOptions.delegate = {
         onSessionDescriptionHandler: (): void => onSessionDescriptionHandlerCreated(inviter),
