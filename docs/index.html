@@ -1,0 +1,576 @@
+<!DOCTYPE html><html class="default"><head><meta charSet="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>RingCentral Webphone SDK - v0.8.9</title><meta name="description" content="Documentation for RingCentral Webphone SDK - v0.8.9"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script async src="assets/search.js" id="search-script"></script></head><body><script>document.body.classList.add(localStorage.getItem("tsd-theme") || "os")</script><header><div class="tsd-page-toolbar"><div class="container"><div class="table-wrap"><div class="table-cell" id="tsd-search" data-base="."><div class="field"><label for="tsd-search-field" class="tsd-widget search no-caption">Search</label><input type="text" id="tsd-search-field"/></div><ul class="results"><li class="state loading">Preparing search index...</li><li class="state failure">The search index is not available</li></ul><a href="index.html" class="title">RingCentral Webphone SDK - v0.8.9</a></div><div class="table-cell" id="tsd-widgets"><div id="tsd-filter"><a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a><div class="tsd-filter-group"><div class="tsd-select" id="tsd-filter-visibility"><span class="tsd-select-label">All</span><ul class="tsd-select-list"><li data-value="public">Public</li><li data-value="protected">Public/Protected</li><li data-value="private" class="selected">All</li></ul></div> <input type="checkbox" id="tsd-filter-inherited" checked/><label class="tsd-widget" for="tsd-filter-inherited">Inherited</label><input type="checkbox" id="tsd-filter-externals" checked/><label class="tsd-widget" for="tsd-filter-externals">Externals</label></div></div><a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a></div></div></div></div><div class="tsd-page-title"><div class="container"><h1> RingCentral Webphone SDK - v0.8.9</h1></div></div></header><div class="container container-main"><div class="row"><div class="col-8 col-content"><div class="tsd-panel tsd-typography"><p><a href="https://travis-ci.org/ringcentral/ringcentral-web-phone"><img src="https://travis-ci.org/ringcentral/ringcentral-web-phone.svg?branch=master" alt="Build Status"></a>
+<a href="https://coveralls.io/github/ringcentral/ringcentral-web-phone?branch=master"><img src="https://coveralls.io/repos/github/ringcentral/ringcentral-web-phone/badge.svg?branch=master" alt="Coverage Status"></a></p>
+
+<a href="#ringcentral-webphone-library" id="ringcentral-webphone-library" style="color: inherit; text-decoration: none;">
+  <h1>RingCentral WebPhone Library</h1>
+</a>
+<p>The RingCentral WebPhone Library includes a JavaScript WebRTC library and a WebRTC phone demo app.</p>
+
+<a href="#prerequisites" id="prerequisites" style="color: inherit; text-decoration: none;">
+  <h2>Prerequisites</h2>
+</a>
+<ul>
+<li>You will need an active RingCentral account. Don&#39;t have an account? <a href="https://developers.ringcentral.com">Get your Free RingCentral Developer Account Now!</a></li>
+<li>App type should be either :<ul>
+<li>Browser-Based</li>
+<li>Server/Web</li>
+</ul>
+</li>
+</ul>
+
+<a href="#browser-compatibility" id="browser-compatibility" style="color: inherit; text-decoration: none;">
+  <h2>Browser Compatibility</h2>
+</a>
+<p>Currently, we officially support Google Chrome browser. Official support for Firefox and Safari browsers are coming soon.</p>
+
+<a href="#network-requirements" id="network-requirements" style="color: inherit; text-decoration: none;">
+  <h2>Network Requirements</h2>
+</a>
+<p>Please visit Network Requirement links below</p>
+<ol>
+<li>Network Requirements and Recommendations | RingCentral Office : <a href="https://support.ringcentral.com/s/article/9233?language=en_US">https://support.ringcentral.com/s/article/9233?language=en_US</a></li>
+<li>Network Requirements and Recommendations - Resources : <a href="https://support.ringcentral.com/s/article/Network-Requirements-and-Recommendations-Resources?language=en_US">https://support.ringcentral.com/s/article/Network-Requirements-and-Recommendations-Resources?language=en_US</a></li>
+</ol>
+
+<a href="#table-of-contents" id="table-of-contents" style="color: inherit; text-decoration: none;">
+  <h2>Table of Contents</h2>
+</a>
+<ol>
+<li><a href="#installation">Installation</a></li>
+<li><a href="#usage">Usage</a></li>
+<li><a href="#configuring-your-ringcentral-app">Configuring your RingCentral app</a></li>
+<li><a href="#include-library-and-html-elements">Include Library And HTML Elements</a></li>
+<li><a href="#application">Application</a></li>
+<li><a href="#demo">Demo</a></li>
+<li><a href="#api">API</a></li>
+<li><a href="#initiating-the-call">Initiating The Call</a></li>
+<li><a href="#accepting-incoming-call">Accepting Incoming Call</a></li>
+<li><a href="#dtmf">DTMF</a></li>
+<li><a href="#hold-unhold">Hold Unhold</a></li>
+<li><a href="#mute-unmute">Mute Unmute</a></li>
+<li><a href="#park">Park</a></li>
+<li><a href="#flip">Flip</a></li>
+<li><a href="#transfer">Transfer</a></li>
+<li><a href="#warm-transfer">Warm Transfer</a></li>
+<li><a href="#forward">Forward</a></li>
+<li><a href="#startstop-recording">Start/Stop Recording</a></li>
+<li><a href="#bargewhisper">Barge/Whisper</a></li>
+</ol>
+<hr>
+
+<a href="#installation" id="installation" style="color: inherit; text-decoration: none;">
+  <h2>Installation</h2>
+</a>
+<pre><code class="language-ssh">npm install ringcentral-web-phone
+// or
+bower install ringcentral-web-phone
+</code></pre>
+
+<a href="#if-you-are-not-using-bower-or-npm" id="if-you-are-not-using-bower-or-npm" style="color: inherit; text-decoration: none;">
+  <h3>If you are not using Bower or NPM:</h3>
+</a>
+<ol>
+<li>Download SIP.JS: <a href="https://sipjs.com/download/sip-0.13.5.js">https://sipjs.com/download/sip-0.13.5.js</a></li>
+<li>Download WebPhone SDK: <a href="https://github.com/ringcentral/ringcentral-web-phone/releases/latest">https://github.com/ringcentral/ringcentral-web-phone/releases/latest</a></li>
+<li>Download audio files:<ol>
+<li><a href="https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/incoming.ogg">https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/incoming.ogg</a></li>
+<li><a href="https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/outgoing.ogg">https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/outgoing.ogg</a></li>
+</ol>
+</li>
+</ol>
+<hr>
+
+<a href="#usage" id="usage" style="color: inherit; text-decoration: none;">
+  <h2>Usage</h2>
+</a>
+
+<a href="#configuring-your-ringcentral-app" id="configuring-your-ringcentral-app" style="color: inherit; text-decoration: none;">
+  <h3>Configuring your RingCentral app</h3>
+</a>
+<p>Ensure your app has the following properties set. If these are not set, the error specified will be returned.</p>
+<table>
+<thead>
+<tr>
+<th>App Property</th>
+<th>Value</th>
+<th>Error if not set</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Permissions</td>
+<td><code>VoIP Calling</code></td>
+<td><code>Specific application permission required</code></td>
+</tr>
+<tr>
+<td>Platform type</td>
+<td><code>Browser-based</code></td>
+<td><code>Client edition is not compatible with current Brand</code></td>
+</tr>
+</tbody></table>
+<p>Since WebRTC enables dialing out, you need to have a <code>DIGITAL LINE</code> attached to an extension to use this capability. You can configure this in Online Web Portal for <a href="https://service.ringcentral.com/">Production</a> and <a href="https://service.devtest.ringcentral.com/">Sandbox</a> accounts. More information on Digital Lines and their configuration is available in the following RingCentral Knowledge Base article topics:</p>
+<ol>
+<li><a href="http://success.ringcentral.com/articles/en_US/RC_Knowledge_Article/5862">Digital Line Overview (KB 5862)</a></li>
+<li><a href="http://success.ringcentral.com/articles/RC_Knowledge_Article/5-10-Adding-Phones-to-other-extensions-via-Web">Adding a Digital Line (KB 3136)</a>. A limited number of Digital Lines are free with each sandbox account which can be configured with the free RingCentral for Desktop softphone.</li>
+<li><a href="http://success.ringcentral.com/articles/en_US/RC_Knowledge_Article/How-to-Assign-an-Existing-Digital-Line-to-a-different-extension">Reassigning an Existing Digital Line (KB 3748)</a></li>
+</ol>
+<p>These permissions be configured for your app in the <a href="https://developers.ringcentral.com/">RingCentral Developer Portal</a>. Fill this <a href="https://docs.google.com/forms/d/15kK_zJ5FhyXiH8gwOqiaG7_BuTWGCeeVr4MAv4OBpUM/viewform">Registration Form</a> to get access to WebRTC permissions. Please contact <a href="mailto:devsupport@ringcentral.com">devsupport@ringcentral.com</a> to request these permissions.</p>
+
+<a href="#include-library-and-html-elements" id="include-library-and-html-elements" style="color: inherit; text-decoration: none;">
+  <h3>Include Library And HTML Elements</h3>
+</a>
+<pre><code class="language-html"><span class="hl-0">&lt;</span><span class="hl-1">video</span><span class="hl-2"> </span><span class="hl-3">id</span><span class="hl-2">=</span><span class="hl-4">&quot;remoteVideo&quot;</span><span class="hl-2"> </span><span class="hl-3">hidden</span><span class="hl-2">=</span><span class="hl-4">&quot;hidden&quot;</span><span class="hl-0">&gt;&lt;/</span><span class="hl-1">video</span><span class="hl-0">&gt;</span><br/><span class="hl-0">&lt;</span><span class="hl-1">video</span><span class="hl-2"> </span><span class="hl-3">id</span><span class="hl-2">=</span><span class="hl-4">&quot;localVideo&quot;</span><span class="hl-2"> </span><span class="hl-3">hidden</span><span class="hl-2">=</span><span class="hl-4">&quot;hidden&quot;</span><span class="hl-2"> </span><span class="hl-3">muted</span><span class="hl-2">=</span><span class="hl-4">&quot;muted&quot;</span><span class="hl-0">&gt;&lt;/</span><span class="hl-1">video</span><span class="hl-0">&gt;</span><br/><br/><span class="hl-0">&lt;</span><span class="hl-1">script</span><span class="hl-5"> </span><span class="hl-3">src</span><span class="hl-5">=</span><span class="hl-4">&quot;.../sip.js&quot;</span><span class="hl-5"> </span><span class="hl-3">type</span><span class="hl-5">=</span><span class="hl-4">&quot;text/javascript&quot;</span><span class="hl-0">&gt;&lt;/</span><span class="hl-1">script</span><span class="hl-0">&gt;</span><br/><span class="hl-0">&lt;</span><span class="hl-1">script</span><span class="hl-5"> </span><span class="hl-3">src</span><span class="hl-5">=</span><span class="hl-4">&quot;.../ringcentral-web-phone.js&quot;</span><span class="hl-5"> </span><span class="hl-3">type</span><span class="hl-5">=</span><span class="hl-4">&quot;text/javascript&quot;</span><span class="hl-0">&gt;&lt;/</span><span class="hl-1">script</span><span class="hl-0">&gt;</span>
+</code></pre>
+
+<a href="#application" id="application" style="color: inherit; text-decoration: none;">
+  <h3>Application</h3>
+</a>
+<p>For this example you will also need to have <a href="https://github.com/ringcentral/ringcentral-js#installation">RingCentral JS SDK installed</a>.</p>
+<p>Configure the web-phone</p>
+<pre><code class="language-js"><span class="hl-6">var</span><span class="hl-2"> </span><span class="hl-7">appKey</span><span class="hl-2"> = </span><span class="hl-8">&#39;...&#39;</span><span class="hl-2">;</span><br/><span class="hl-6">var</span><span class="hl-2"> </span><span class="hl-7">appSecret</span><span class="hl-2"> = </span><span class="hl-8">&#39;...&#39;</span><span class="hl-2">;</span><br/><span class="hl-6">var</span><span class="hl-2"> </span><span class="hl-7">appName</span><span class="hl-2"> = </span><span class="hl-8">&#39;...&#39;</span><span class="hl-2">;</span><br/><span class="hl-6">var</span><span class="hl-2"> </span><span class="hl-7">appVersion</span><span class="hl-2"> = </span><span class="hl-8">&#39;...&#39;</span><span class="hl-2">;</span><br/><br/><span class="hl-6">var</span><span class="hl-2"> </span><span class="hl-7">sdk</span><span class="hl-2"> = </span><span class="hl-6">new</span><span class="hl-2"> </span><span class="hl-7">RingCentral</span><span class="hl-2">.</span><span class="hl-9">SDK</span><span class="hl-2">({</span><br/><span class="hl-2">    </span><span class="hl-7">appKey:</span><span class="hl-2"> </span><span class="hl-7">appKey</span><span class="hl-2">,</span><br/><span class="hl-2">    </span><span class="hl-7">appSecret:</span><span class="hl-2"> </span><span class="hl-7">appSecret</span><span class="hl-2">,</span><br/><span class="hl-2">    </span><span class="hl-7">appName:</span><span class="hl-2"> </span><span class="hl-7">appName</span><span class="hl-2">,</span><br/><span class="hl-2">    </span><span class="hl-7">appVersion:</span><span class="hl-2"> </span><span class="hl-7">appVersion</span><span class="hl-2">,</span><br/><span class="hl-2">    </span><span class="hl-7">server:</span><span class="hl-2"> </span><span class="hl-7">RingCentral</span><span class="hl-2">.</span><span class="hl-10">SDK</span><span class="hl-2">.</span><span class="hl-7">server</span><span class="hl-2">.</span><span class="hl-7">production</span><span class="hl-2"> </span><span class="hl-11">// or .sandbox</span><br/><span class="hl-2">});</span><br/><br/><span class="hl-6">var</span><span class="hl-2"> </span><span class="hl-7">remoteVideoElement</span><span class="hl-2"> =  </span><span class="hl-7">document</span><span class="hl-2">.</span><span class="hl-9">getElementById</span><span class="hl-2">(</span><span class="hl-8">&#39;remoteVideo&#39;</span><span class="hl-2">);</span><br/><span class="hl-6">var</span><span class="hl-2"> </span><span class="hl-7">localVideoElement</span><span class="hl-2">  = </span><span class="hl-7">document</span><span class="hl-2">.</span><span class="hl-9">getElementById</span><span class="hl-2">(</span><span class="hl-8">&#39;localVideo&#39;</span><span class="hl-2">);</span><br/><br/><span class="hl-6">var</span><span class="hl-2"> </span><span class="hl-7">platform</span><span class="hl-2"> = </span><span class="hl-7">sdk</span><span class="hl-2">.</span><span class="hl-9">platform</span><span class="hl-2">();</span><br/><br/><span class="hl-7">platform</span><br/><span class="hl-2">    .</span><span class="hl-9">login</span><span class="hl-2">({</span><br/><span class="hl-2">        </span><span class="hl-7">username:</span><span class="hl-2"> </span><span class="hl-8">&#39;...&#39;</span><span class="hl-2">,</span><br/><span class="hl-2">        </span><span class="hl-7">password:</span><span class="hl-2"> </span><span class="hl-8">&#39;...&#39;</span><br/><span class="hl-2">    })</span><br/><span class="hl-2">    .</span><span class="hl-9">then</span><span class="hl-2">(</span><span class="hl-6">function</span><span class="hl-2">(</span><span class="hl-7">loginResponse</span><span class="hl-2">) {</span><br/><br/><span class="hl-2">        </span><span class="hl-12">return</span><span class="hl-2"> </span><span class="hl-7">platform</span><br/><span class="hl-2">            .</span><span class="hl-9">post</span><span class="hl-2">(</span><span class="hl-8">&#39;/client-info/sip-provision&#39;</span><span class="hl-2">, {</span><br/><span class="hl-2">                </span><span class="hl-7">sipInfo:</span><span class="hl-2"> [{</span><span class="hl-7">transport:</span><span class="hl-2"> </span><span class="hl-8">&#39;WSS&#39;</span><span class="hl-2">}]</span><br/><span class="hl-2">            })</span><br/><span class="hl-2">            .</span><span class="hl-9">then</span><span class="hl-2">(</span><span class="hl-6">function</span><span class="hl-2">(</span><span class="hl-7">res</span><span class="hl-2">) { </span><span class="hl-11">// Doing nested then because we need loginResponse in a simple way</span><br/><br/><span class="hl-2">                </span><span class="hl-12">return</span><span class="hl-2"> </span><span class="hl-6">new</span><span class="hl-2"> </span><span class="hl-7">RingCentral</span><span class="hl-2">.</span><span class="hl-9">WebPhone</span><span class="hl-2">(</span><span class="hl-7">res</span><span class="hl-2">.</span><span class="hl-9">json</span><span class="hl-2">(), { </span><span class="hl-11">// optional</span><br/><span class="hl-2">                    </span><span class="hl-7">appKey:</span><span class="hl-2"> </span><span class="hl-7">appKey</span><span class="hl-2">,</span><br/><span class="hl-2">                    </span><span class="hl-7">appName:</span><span class="hl-2"> </span><span class="hl-7">appName</span><span class="hl-2">,</span><br/><span class="hl-2">                    </span><span class="hl-7">appVersion:</span><span class="hl-2"> </span><span class="hl-7">appVersion</span><span class="hl-2">,</span><br/><span class="hl-2">                    </span><span class="hl-7">uuid:</span><span class="hl-2"> </span><span class="hl-7">loginResponse</span><span class="hl-2">.</span><span class="hl-9">json</span><span class="hl-2">().</span><span class="hl-7">endpoint_id</span><span class="hl-2">,</span><br/><span class="hl-2">                    </span><span class="hl-7">logLevel:</span><span class="hl-2"> </span><span class="hl-13">1</span><span class="hl-2">, </span><span class="hl-11">// error 0, warn 1, log: 2, debug: 3</span><br/><span class="hl-2">                    </span><span class="hl-7">audioHelper:</span><span class="hl-2"> {</span><br/><span class="hl-2">                        </span><span class="hl-7">enabled:</span><span class="hl-2"> </span><span class="hl-6">true</span><span class="hl-2">, </span><span class="hl-11">// enables audio feedback when web phone is ringing or making a call</span><br/><span class="hl-2">                        </span><span class="hl-7">incoming:</span><span class="hl-2"> </span><span class="hl-8">&#39;path-to-audio/incoming.ogg&#39;</span><span class="hl-2">, </span><span class="hl-11">// path to audio file for incoming call</span><br/><span class="hl-2">                        </span><span class="hl-7">outgoing:</span><span class="hl-2"> </span><span class="hl-8">&#39;path-to-audio/outgoing.ogg&#39;</span><span class="hl-2"> </span><span class="hl-11">// path to aduotfile for outgoing call</span><br/><span class="hl-2">                    },</span><br/><span class="hl-2">                    </span><span class="hl-7">media:</span><span class="hl-2">{</span><br/><span class="hl-2">                        </span><span class="hl-7">remote:</span><span class="hl-2"> </span><span class="hl-7">remoteVideoElement</span><span class="hl-2">,</span><br/><span class="hl-2">                        </span><span class="hl-7">local:</span><span class="hl-2"> </span><span class="hl-7">localVideoElement</span><br/><span class="hl-2">                    },</span><br/><span class="hl-2">                    </span><span class="hl-11">//to enable QoS Analytics Feature</span><br/><span class="hl-2">                    </span><span class="hl-7">enableQos:</span><span class="hl-6">true</span><br/><span class="hl-2">                });</span><br/><br/><span class="hl-2">            });</span><br/><br/><span class="hl-2">    })</span><br/><span class="hl-2">    .</span><span class="hl-9">then</span><span class="hl-2">(</span><span class="hl-6">function</span><span class="hl-2">(</span><span class="hl-7">webPhone</span><span class="hl-2">){</span><br/><br/><span class="hl-2">        </span><span class="hl-11">// YOUR CODE HERE</span><br/><br/><span class="hl-2">    })</span><br/><span class="hl-2">    .</span><span class="hl-9">catch</span><span class="hl-2">(</span><span class="hl-6">function</span><span class="hl-2">(</span><span class="hl-7">e</span><span class="hl-2">){</span><br/><span class="hl-2">        </span><span class="hl-7">console</span><span class="hl-2">.</span><span class="hl-9">error</span><span class="hl-2">(</span><span class="hl-7">e</span><span class="hl-2">.</span><span class="hl-7">stack</span><span class="hl-2">);</span><br/><span class="hl-2">    });</span>
+</code></pre>
+<hr>
+
+<a href="#demo" id="demo" style="color: inherit; text-decoration: none;">
+  <h2>Demo</h2>
+</a>
+<pre><code class="language-sh"><span class="hl-2">$ git clone https://github.com/ringcentral/ringcentral-web-phone.git</span><br/><span class="hl-2">$ </span><span class="hl-9">cd</span><span class="hl-2"> ringcentral-web-phone</span><br/><span class="hl-2">$ npm install</span><br/><span class="hl-2">$ npm start</span>
+</code></pre>
+<ol>
+<li>Open <code>http://localhost:8080/demo/</code> in the browser (port may change if <code>8080</code> will be already used by other app)</li>
+<li>If your Application is of the Scope
+<code>Server/Web</code>
+<code>Browser-Based</code>
+ Then you would need to add <code>http://localhost:8080/callback.html</code> as the OAuth Redirect URI for the application in <a href="https://developer.ringcentral.com">Developer Portal</a></li>
+<li>Add your RC credentials and click on <code>Register</code></li>
+<li>For making outbound calls, enter phone number and click on <code>Call</code></li>
+<li>For receiving incoming calls, Click on <code>Accept</code> button when window pops up (will be visible when there is an incoming call)</li>
+</ol>
+<p>If there&#39;s any connection problems to Sandbox environment, you may need to switch to the Production environment.</p>
+<p>WebRTC works with issues when served from file system directly to browser (e.g. <code>file://</code> protocol), so you will need a local HTTP server (comes with this package).</p>
+<p>Online demo is hosted at <a href="https://ringcentral.github.io/ringcentral-web-phone">https://ringcentral.github.io/ringcentral-web-phone</a></p>
+<p>** NOTE : If you are using the online demo, please add <code>https://ringcentral.github.io/ringcentral-web-phone/callback.html</code> to the app&#39;s OAuth Redirect URI</p>
+<hr>
+
+<a href="#api" id="api" style="color: inherit; text-decoration: none;">
+  <h2>API</h2>
+</a>
+<p>Except for some RingCentral-specific features the API is 100% the same as SIP.JS: <a href="http://sipjs.com/api/0.13.0">http://sipjs.com/api/0.13.0</a>: most of the time you will be working with RC-flavored <a href="http://sipjs.com/api/0.13.0/ua">UserAgent</a> and <a href="http://sipjs.com/api/0.13.0/session">Session</a> objects of SIP.JS.</p>
+<p>We encourage you to take a look at <a href="http://sipjs.com/guides">Guides</a> section, especially
+<a href="http://sipjs.com/guides/make-call">Make A Call</a> and <a href="http://sipjs.com/guides/receive-call/">Receive A Call</a> articles.</p>
+
+<a href="#constructor" id="constructor" style="color: inherit; text-decoration: none;">
+  <h3>Constructor</h3>
+</a>
+<pre><code class="language-js"><span class="hl-6">var</span><span class="hl-2"> </span><span class="hl-7">webPhone</span><span class="hl-2"> = </span><span class="hl-6">new</span><span class="hl-2"> </span><span class="hl-7">RingCentral</span><span class="hl-2">.</span><span class="hl-9">WebPhone</span><span class="hl-2">(</span><span class="hl-7">provisionData</span><span class="hl-2">, </span><span class="hl-7">options</span><span class="hl-2">);</span>
+</code></pre>
+<ul>
+<li>Provision Data &mdash; the JSON returned from <code>/client-info/sip-provision</code> API endpoint</li>
+<li>Options &mdash; object with various configuration options that adjust WebPhone behavior<ul>
+<li><code>appKey</code> &mdash; your application key</li>
+<li><code>appName</code> &mdash; your application short code name</li>
+<li><code>appVersion</code> &mdash; your application version</li>
+<li><code>uuid</code> &mdash; manually provide the unique identifier of WebPhone instance (should persist between page reloads)</li>
+<li><code>logLevel</code> &mdash; controls verboseness in browser console<ul>
+<li><code>0</code> &mdash; Errors only (good for production)</li>
+<li><code>1</code> &mdash; Errors &amp; warnings</li>
+<li><code>2</code> &mdash; Errors, warnings, logs</li>
+<li><code>3</code> &mdash; Everything including debug information (good for development)</li>
+</ul>
+</li>
+<li><code>audioHelper</code> &mdash; audio feedback when web phone is ringing or making a call<ul>
+<li><code>enabled</code> &mdash; turns feedback on and off</li>
+<li><code>incoming</code> &mdash; path to <code>incoming.ogg</code>, audio file for incoming call</li>
+<li><code>outgoing</code> &mdash; path to <code>outgoing.ogg</code>, audio file for outgoing call</li>
+</ul>
+</li>
+<li><code>onSession</code> &mdash; this callback will be fired each time User Agent starts working with session (incoming or outgoing)</li>
+<li><code>enableQos:true</code> &mdash; will enable quality of service for webRTC calls , you can view the voice quality of calls in analytics portal</li>
+</ul>
+</li>
+</ul>
+
+<a href="#attaching-media-streams" id="attaching-media-streams" style="color: inherit; text-decoration: none;">
+  <h3>Attaching Media Streams</h3>
+</a>
+<p>For futher information, refer SIP.js guide to <a href="https://sipjs.com/guides/attach-media/">attach media</a></p>
+
+<a href="#initiating-the-call" id="initiating-the-call" style="color: inherit; text-decoration: none;">
+  <h3>Initiating The Call</h3>
+</a>
+<pre><code class="language-javascript"><span class="hl-6">var</span><span class="hl-2"> </span><span class="hl-7">session</span><span class="hl-2"> = </span><span class="hl-7">webPhone</span><span class="hl-2">.</span><span class="hl-7">userAgent</span><span class="hl-2">.</span><span class="hl-9">invite</span><span class="hl-2">(</span><span class="hl-8">&#39;PHONE_NUMBER&#39;</span><span class="hl-2">, {</span><br/><span class="hl-2">    </span><span class="hl-7">fromNumber:</span><span class="hl-2"> </span><span class="hl-8">&#39;PHONE_NUMBER&#39;</span><span class="hl-2">, </span><span class="hl-11">// Optional, Company Number will be used as default</span><br/><span class="hl-2">    </span><span class="hl-7">homeCountryId:</span><span class="hl-2"> </span><span class="hl-8">&#39;1&#39;</span><span class="hl-2"> </span><span class="hl-11">// Optional, the value of</span><br/><span class="hl-2">});</span>
+</code></pre>
+
+<a href="#accepting-incoming-call" id="accepting-incoming-call" style="color: inherit; text-decoration: none;">
+  <h3>Accepting Incoming Call</h3>
+</a>
+<pre><code class="language-javascript"><span class="hl-7">webPhone</span><span class="hl-2">.</span><span class="hl-7">userAgent</span><span class="hl-2">.</span><span class="hl-9">on</span><span class="hl-2">(</span><span class="hl-8">&#39;invite&#39;</span><span class="hl-2">, </span><span class="hl-6">function</span><span class="hl-2">(</span><span class="hl-7">session</span><span class="hl-2">){</span><br/><span class="hl-2">    </span><span class="hl-7">session</span><span class="hl-2">.</span><span class="hl-9">accept</span><span class="hl-2">().</span><span class="hl-9">then</span><span class="hl-2">(...);</span><br/><span class="hl-2">});</span>
+</code></pre>
+
+<a href="#dtmf" id="dtmf" style="color: inherit; text-decoration: none;">
+  <h3>DTMF</h3>
+</a>
+<p>Callee will be put on hold and the another person can join into the call by dialing the extension number announced within the call.</p>
+<pre><code class="language-js"><span class="hl-7">session</span><span class="hl-2">.</span><span class="hl-9">dtmf</span><span class="hl-2">(</span><span class="hl-8">&#39;DTMF_DIGITS&#39;</span><span class="hl-2">).</span><span class="hl-9">then</span><span class="hl-2">(...);</span>
+</code></pre>
+
+<a href="#hold-unhold" id="hold-unhold" style="color: inherit; text-decoration: none;">
+  <h3>Hold Unhold</h3>
+</a>
+<p>Callee will be put on hold and the another person can join into the call by dialing the extension number announced within the call.</p>
+<pre><code class="language-js"><span class="hl-7">session</span><span class="hl-2">.</span><span class="hl-9">hold</span><span class="hl-2">().</span><span class="hl-9">then</span><span class="hl-2">(...);</span><br/><span class="hl-7">session</span><span class="hl-2">.</span><span class="hl-9">unhold</span><span class="hl-2">().</span><span class="hl-9">then</span><span class="hl-2">(...);</span>
+</code></pre>
+
+<a href="#mute-unmute" id="mute-unmute" style="color: inherit; text-decoration: none;">
+  <h3>Mute Unmute</h3>
+</a>
+<p>Callee will be put on mute or unmute</p>
+<pre><code class="language-js"><span class="hl-7">session</span><span class="hl-2">.</span><span class="hl-9">mute</span><span class="hl-2">();</span><br/><span class="hl-7">session</span><span class="hl-2">.</span><span class="hl-9">unmute</span><span class="hl-2">();</span>
+</code></pre>
+
+<a href="#park" id="park" style="color: inherit; text-decoration: none;">
+  <h3>Park</h3>
+</a>
+<p>Callee will be put on hold and the another person can join into the call by dialing the extension number announced within the call.</p>
+<pre><code class="language-js"><span class="hl-7">session</span><span class="hl-2">.</span><span class="hl-9">park</span><span class="hl-2">().</span><span class="hl-9">then</span><span class="hl-2">(...);</span>
+</code></pre>
+
+<a href="#flip" id="flip" style="color: inherit; text-decoration: none;">
+  <h3>Flip</h3>
+</a>
+<p>Caller can filp calls to different devices logged in through the same credentials.</p>
+<pre><code class="language-js"><span class="hl-7">session</span><span class="hl-2">.</span><span class="hl-9">flip</span><span class="hl-2">(</span><span class="hl-8">&#39;TARGET_NUMBER&#39;</span><span class="hl-2">).</span><span class="hl-9">then</span><span class="hl-2">(...);</span>
+</code></pre>
+
+<a href="#transfer" id="transfer" style="color: inherit; text-decoration: none;">
+  <h3>Transfer</h3>
+</a>
+<pre><code class="language-js"><span class="hl-7">session</span><span class="hl-2">.</span><span class="hl-9">transfer</span><span class="hl-2">(</span><span class="hl-8">&#39;TARGET_NUMBER&#39;</span><span class="hl-2">).</span><span class="hl-9">then</span><span class="hl-2">(...);</span>
+</code></pre>
+
+<a href="#warm-transfer" id="warm-transfer" style="color: inherit; text-decoration: none;">
+  <h3>Warm Transfer</h3>
+</a>
+<p>If an agent has an active call with a customer and needs to transfer this call to a supervisor, then agent puts existing
+call on hold, makes a call to a supervisor and when ready performs a warm transfer. Customer will be connected to
+supervisor and the call between customer and agent will be disconnected.</p>
+<p>Warm transfer puts current line on hold (if not done yet) then takes an existing line from arguments and makes transfer.</p>
+<p>####Handle Warm Transfer senario (Attended Transfer usecase) :
+Steps:</p>
+<ol>
+<li>Put the current session on <code>Hold</code> as shown in the demo code</li>
+<li>Initiate a new session (Start new call)</li>
+<li>a. Once new call is answered , <code>Complete</code> the transfer , or terminate new session.
+b. If you want to switch to original call, switch the session context and <code>Unhold</code> the session</li>
+</ol>
+<pre><code class="language-javascript"><span class="hl-7">$modal</span><span class="hl-2">.</span><span class="hl-9">find</span><span class="hl-2">(</span><span class="hl-8">&#39;.transfer-form button.warm&#39;</span><span class="hl-2">).</span><span class="hl-9">on</span><span class="hl-2">(</span><span class="hl-8">&#39;click&#39;</span><span class="hl-2">, </span><span class="hl-6">function</span><span class="hl-2">(</span><span class="hl-7">e</span><span class="hl-2">) {</span><br/><span class="hl-2">   </span><span class="hl-7">session</span><span class="hl-2">.</span><span class="hl-9">hold</span><span class="hl-2">().</span><span class="hl-9">then</span><span class="hl-2">(</span><span class="hl-6">function</span><span class="hl-2">() {</span><br/><span class="hl-2">                </span><span class="hl-7">console</span><span class="hl-2">.</span><span class="hl-9">log</span><span class="hl-2">(</span><span class="hl-8">&#39;Placing the call on hold, initiating attended transfer&#39;</span><span class="hl-2">);</span><br/><span class="hl-2">                </span><span class="hl-6">var</span><span class="hl-2"> </span><span class="hl-7">newSession</span><span class="hl-2"> = </span><span class="hl-7">session</span><span class="hl-2">.</span><span class="hl-7">ua</span><span class="hl-2">.</span><span class="hl-9">invite</span><span class="hl-2">(</span><span class="hl-7">$transfer</span><span class="hl-2">.</span><span class="hl-9">val</span><span class="hl-2">().</span><span class="hl-9">trim</span><span class="hl-2">());</span><br/><span class="hl-2">                </span><span class="hl-7">newSession</span><span class="hl-2">.</span><span class="hl-9">once</span><span class="hl-2">(</span><span class="hl-8">&#39;accepted&#39;</span><span class="hl-2">, </span><span class="hl-6">function</span><span class="hl-2">() {</span><br/><span class="hl-2">                    </span><span class="hl-7">console</span><span class="hl-2">.</span><span class="hl-9">log</span><span class="hl-2">(</span><span class="hl-8">&#39;New call initated. Click Complete to complete the transfer&#39;</span><span class="hl-2">);</span><br/><span class="hl-2">                    </span><span class="hl-7">$modal</span><span class="hl-2">.</span><span class="hl-9">find</span><span class="hl-2">(</span><span class="hl-8">&#39;.transfer-form button.complete&#39;</span><span class="hl-2">).</span><span class="hl-9">on</span><span class="hl-2">(</span><span class="hl-8">&#39;click&#39;</span><span class="hl-2">, </span><span class="hl-6">function</span><span class="hl-2">(</span><span class="hl-7">e</span><span class="hl-2">) {</span><br/><span class="hl-2">                        </span><span class="hl-7">session</span><br/><span class="hl-2">                            .</span><span class="hl-9">warmTransfer</span><span class="hl-2">(</span><span class="hl-7">newSession</span><span class="hl-2">)</span><br/><span class="hl-2">                            .</span><span class="hl-9">then</span><span class="hl-2">(</span><span class="hl-6">function</span><span class="hl-2">() {</span><br/><span class="hl-2">                                </span><span class="hl-7">console</span><span class="hl-2">.</span><span class="hl-9">log</span><span class="hl-2">(</span><span class="hl-8">&#39;Warm transfer completed&#39;</span><span class="hl-2">);</span><br/><span class="hl-2">                            })</span><br/><span class="hl-2">                            .</span><span class="hl-9">catch</span><span class="hl-2">(</span><span class="hl-6">function</span><span class="hl-2">(</span><span class="hl-7">e</span><span class="hl-2">) {</span><br/><span class="hl-2">                                </span><span class="hl-7">console</span><span class="hl-2">.</span><span class="hl-9">error</span><span class="hl-2">(</span><span class="hl-8">&#39;Transfer failed&#39;</span><span class="hl-2">, </span><span class="hl-7">e</span><span class="hl-2">.</span><span class="hl-7">stack</span><span class="hl-2"> || </span><span class="hl-7">e</span><span class="hl-2">);</span><br/><span class="hl-2">                            });</span><br/><span class="hl-2">                    });</span><br/><span class="hl-2">                });</span><br/><span class="hl-2">            });</span><br/><span class="hl-2">});</span>
+</code></pre>
+
+<a href="#forward" id="forward" style="color: inherit; text-decoration: none;">
+  <h3>Forward</h3>
+</a>
+<pre><code class="language-js"><span class="hl-7">session</span><span class="hl-2">.</span><span class="hl-9">forward</span><span class="hl-2">(</span><span class="hl-8">&#39;TARGET_NUMBER&#39;</span><span class="hl-2">).</span><span class="hl-9">then</span><span class="hl-2">(...);</span>
+</code></pre>
+
+<a href="#startstop-recording" id="startstop-recording" style="color: inherit; text-decoration: none;">
+  <h3>Start/Stop Recording</h3>
+</a>
+<pre><code class="language-js"><span class="hl-7">session</span><span class="hl-2">.</span><span class="hl-9">startRecord</span><span class="hl-2">().</span><span class="hl-9">then</span><span class="hl-2">(...);</span><br/><span class="hl-7">session</span><span class="hl-2">.</span><span class="hl-9">stopRecord</span><span class="hl-2">().</span><span class="hl-9">then</span><span class="hl-2">(...);</span>
+</code></pre>
+
+<a href="#bargewhisper" id="bargewhisper" style="color: inherit; text-decoration: none;">
+  <h3>Barge/Whisper</h3>
+</a>
+<p>Not yet implemented. Could be done by dialing *83. The account should be enabled for barge/whisper access through system admin.</p>
+
+<a href="#upgrade-procedure-from-v04x-to-089" id="upgrade-procedure-from-v04x-to-089" style="color: inherit; text-decoration: none;">
+  <h2>Upgrade Procedure from v0.4.X to 0.8.9</h2>
+</a>
+<ul>
+<li><p>SDK now only supports only Unified SDP plan. You can find more information about this here:  <a href="https://chromestatus.com/feature/5723303167655936">https://chromestatus.com/feature/5723303167655936</a></p>
+</li>
+<li><p>SDK now only supports &quot;require&quot; as rtcp-mux policy. We no more support &quot;negotiate&quot;. You can find more information about this here: <a href="https://www.juandebravo.com/2017/02/15/rtcp-mux-in-webrtc/">https://www.juandebravo.com/2017/02/15/rtcp-mux-in-webrtc/</a></p>
+</li>
+<li><p>SDK now handles SIP Re-Invites, which helps in handling one-way audio issues / reconnecting media due to network reconnections.</p>
+</li>
+<li><p>SDK constructor now allows to add custom UA Configuration parameters like <code>sessionDescriptionHandlerFactory</code> , <code>sessionDescriptionHandlerFactoryOptions</code></p>
+</li>
+<li><p>SDK now handles rendering HTML Media Elements. Pass remoteVideo and localVideo elements via SDK constructor</p>
+</li>
+<li><p>SDK also offers to addTrack() to handle remoteVideo and localVideo elements outside the constructor too</p>
+</li>
+<li><p>For FireFox browser support</p>
+<ul>
+<li>Client application needs to detect if the browser is firefox.</li>
+<li>Client application needs to set custom UA configuration option &#39;options.enableMidLinesInSDP&#39; to <code>true</code> for browser &gt;= FF v63 for hold functionality to work</li>
+<li>QoS feature is not supported on FireFox due to browser related bugs. Please set the custom UA configuration option <code>options.enableQos</code> to <code>false</code></li>
+</ul>
+</li>
+<li><p>SDK can now detect AudioInputLevel if the microphone device is not present or the input volume is set to 0. Added event listner <code>no-input-volume</code> for the same</p>
+</li>
+<li><p>SDK can now detect AudioOutputLevel if the headset/speaker device is not configured correctly or the output volume is set to 0. Added event listner <code>no-output-volume</code> for the same</p>
+</li>
+<li><p>You can now enable logging for AudioInputLevel, AudioOutputLevel and Media Reports by setting the custom UA configuration option <code>options.enableMediaReportLogging</code> to true. This will help in providing more information on one-way audio issues if there are any</p>
+</li>
+</ul>
+
+<a href="#initialization" id="initialization" style="color: inherit; text-decoration: none;">
+  <h3>Initialization</h3>
+</a>
+<p>Before:</p>
+<pre><code class="language-javascript"><span class="hl-7">webPhone</span><span class="hl-2"> = </span><span class="hl-6">new</span><span class="hl-2"> </span><span class="hl-7">RingCentral</span><span class="hl-2">.</span><span class="hl-9">WebPhone</span><span class="hl-2">(</span><span class="hl-7">data</span><span class="hl-2">, {</span><br/><span class="hl-2">            </span><span class="hl-7">appKey:</span><span class="hl-2"> </span><span class="hl-7">localStorage</span><span class="hl-2">.</span><span class="hl-9">getItem</span><span class="hl-2">(</span><span class="hl-8">&#39;webPhoneAppKey&#39;</span><span class="hl-2">),</span><br/><span class="hl-2">            </span><span class="hl-7">audioHelper:</span><span class="hl-2"> {</span><br/><span class="hl-2">                </span><span class="hl-7">enabled:</span><span class="hl-2"> </span><span class="hl-6">true</span><br/><span class="hl-2">            },</span><br/><span class="hl-2">            </span><span class="hl-7">logLevel:</span><span class="hl-2"> </span><span class="hl-9">parseInt</span><span class="hl-2">(</span><span class="hl-7">logLevel</span><span class="hl-2">, </span><span class="hl-13">10</span><span class="hl-2">),</span><br/><span class="hl-2">            </span><span class="hl-7">appName:</span><span class="hl-2"> </span><span class="hl-8">&#39;WebPhoneDemo&#39;</span><span class="hl-2">,</span><br/><span class="hl-2">            </span><span class="hl-7">appVersion:</span><span class="hl-2"> </span><span class="hl-8">&#39;1.0.0&#39;</span><span class="hl-2">,</span><br/><span class="hl-2">        });</span>
+</code></pre>
+<p>After:</p>
+<pre><code class="language-javascript"><br/><span class="hl-6">var</span><span class="hl-2"> </span><span class="hl-7">remoteVideoElement</span><span class="hl-2"> =  </span><span class="hl-7">document</span><span class="hl-2">.</span><span class="hl-9">getElementById</span><span class="hl-2">(</span><span class="hl-8">&#39;remoteVideo&#39;</span><span class="hl-2">);</span><br/><span class="hl-6">var</span><span class="hl-2"> </span><span class="hl-7">localVideoElement</span><span class="hl-2">  = </span><span class="hl-7">document</span><span class="hl-2">.</span><span class="hl-9">getElementById</span><span class="hl-2">(</span><span class="hl-8">&#39;localVideo&#39;</span><span class="hl-2">);</span><br/><span class="hl-7">webPhone</span><span class="hl-2"> = </span><span class="hl-6">new</span><span class="hl-2"> </span><span class="hl-7">RingCentral</span><span class="hl-2">.</span><span class="hl-9">WebPhone</span><span class="hl-2">(</span><span class="hl-7">data</span><span class="hl-2">, {</span><br/><span class="hl-2">    </span><span class="hl-7">appKey:</span><span class="hl-2"> </span><span class="hl-7">localStorage</span><span class="hl-2">.</span><span class="hl-9">getItem</span><span class="hl-2">(</span><span class="hl-8">&#39;webPhoneAppKey&#39;</span><span class="hl-2">),</span><br/><span class="hl-2">    </span><span class="hl-7">audioHelper:</span><span class="hl-2"> {</span><br/><span class="hl-2">        </span><span class="hl-7">enabled:</span><span class="hl-2"> </span><span class="hl-6">true</span><br/><span class="hl-2">    },</span><br/><span class="hl-2">    </span><span class="hl-7">logLevel:</span><span class="hl-2"> </span><span class="hl-9">parseInt</span><span class="hl-2">(</span><span class="hl-7">logLevel</span><span class="hl-2">, </span><span class="hl-13">10</span><span class="hl-2">),</span><br/><span class="hl-2">    </span><span class="hl-7">appName:</span><span class="hl-2"> </span><span class="hl-8">&#39;WebPhoneDemo&#39;</span><span class="hl-2">,</span><br/><span class="hl-2">    </span><span class="hl-7">appVersion:</span><span class="hl-2"> </span><span class="hl-8">&#39;1.0.0&#39;</span><span class="hl-2">,</span><br/><span class="hl-2">    </span><span class="hl-7">media:</span><span class="hl-2"> {</span><br/><span class="hl-2">        </span><span class="hl-7">remote:</span><span class="hl-2"> </span><span class="hl-7">remoteVideoElement</span><span class="hl-2">,</span><br/><span class="hl-2">        </span><span class="hl-7">local:</span><span class="hl-2"> </span><span class="hl-7">localVideoElement</span><br/><span class="hl-2">    },</span><br/><span class="hl-2">    </span><span class="hl-11">//to enable QoS Analytics Feature</span><br/><span class="hl-2">    </span><span class="hl-7">enableQos:</span><span class="hl-6">true</span><span class="hl-2">,</span><br/><span class="hl-2">    </span><span class="hl-11">//to enable media stats logging</span><br/><span class="hl-2">    </span><span class="hl-7">enableMediaReportLogging :</span><span class="hl-2"> </span><span class="hl-6">true</span><br/><span class="hl-2">});</span>
+</code></pre>
+
+<a href="#accept-invites" id="accept-invites" style="color: inherit; text-decoration: none;">
+  <h3>Accept Invites:</h3>
+</a>
+<p>Before:</p>
+<pre><code class="language-javascript"><span class="hl-6">var</span><span class="hl-2"> </span><span class="hl-7">acceptOptions</span><span class="hl-2"> = {</span><br/><span class="hl-2">            </span><span class="hl-7">media:</span><span class="hl-2"> {</span><br/><span class="hl-2">                </span><span class="hl-7">render:</span><span class="hl-2"> {</span><br/><span class="hl-2">                    </span><span class="hl-7">remote:</span><span class="hl-2"> </span><span class="hl-7">document</span><span class="hl-2">.</span><span class="hl-9">getElementById</span><span class="hl-2">(</span><span class="hl-8">&#39;remoteVideo&#39;</span><span class="hl-2">),</span><br/><span class="hl-2">                    </span><span class="hl-7">local:</span><span class="hl-2"> </span><span class="hl-7">document</span><span class="hl-2">.</span><span class="hl-9">getElementById</span><span class="hl-2">(</span><span class="hl-8">&#39;localVideo&#39;</span><span class="hl-2">)</span><br/><span class="hl-2">                }</span><br/><span class="hl-2">            }</span><br/><span class="hl-2">      };</span><br/><span class="hl-2">...</span><br/><span class="hl-2">...</span><br/><span class="hl-7">session</span><span class="hl-2">.</span><span class="hl-9">accept</span><span class="hl-2">(</span><span class="hl-7">acceptOptions</span><span class="hl-2">).</span><span class="hl-9">then</span><span class="hl-2">(</span><span class="hl-6">function</span><span class="hl-2">() {</span><br/><span class="hl-2">...</span><br/><span class="hl-2">});;</span>
+</code></pre>
+<p>After:</p>
+<pre><code class="language-javascript"><span class="hl-7">session</span><span class="hl-2">.</span><span class="hl-9">accept</span><span class="hl-2">().</span><span class="hl-9">then</span><span class="hl-2">(</span><span class="hl-6">function</span><span class="hl-2">() {</span><br/><span class="hl-2">...</span><br/><span class="hl-2">})</span>
+</code></pre>
+
+<a href="#send-invite" id="send-invite" style="color: inherit; text-decoration: none;">
+  <h3>Send Invite:</h3>
+</a>
+<p>Before:</p>
+<pre><code class="language-javascript"><span class="hl-6">var</span><span class="hl-2"> </span><span class="hl-7">session</span><span class="hl-2"> = </span><span class="hl-7">webPhone</span><span class="hl-2">.</span><span class="hl-7">userAgent</span><span class="hl-2">.</span><span class="hl-9">invite</span><span class="hl-2">(</span><span class="hl-7">number</span><span class="hl-2">, {</span><br/><span class="hl-2">    </span><span class="hl-7">media:</span><span class="hl-2"> {</span><br/><span class="hl-2">        </span><span class="hl-7">render:</span><span class="hl-2"> {</span><br/><span class="hl-2">            </span><span class="hl-7">remote:</span><span class="hl-2"> </span><span class="hl-7">document</span><span class="hl-2">.</span><span class="hl-9">getElementById</span><span class="hl-2">(</span><span class="hl-8">&#39;remoteVideo&#39;</span><span class="hl-2">),</span><br/><span class="hl-2">            </span><span class="hl-7">local:</span><span class="hl-2"> </span><span class="hl-7">document</span><span class="hl-2">.</span><span class="hl-9">getElementById</span><span class="hl-2">(</span><span class="hl-8">&#39;localVideo&#39;</span><span class="hl-2">)</span><br/><span class="hl-2">        }</span><br/><span class="hl-2">    },</span><br/><span class="hl-2">    </span><span class="hl-7">fromNumber:</span><span class="hl-2"> </span><span class="hl-7">username</span><span class="hl-2">,</span><br/><span class="hl-2">    </span><span class="hl-7">homeCountryId:</span><span class="hl-2"> </span><span class="hl-7">homeCountryId</span><br/><span class="hl-2">});</span>
+</code></pre>
+<p>After:</p>
+<pre><code class="language-javascript"><span class="hl-6">var</span><span class="hl-2"> </span><span class="hl-7">session</span><span class="hl-2"> = </span><span class="hl-7">webPhone</span><span class="hl-2">.</span><span class="hl-7">userAgent</span><span class="hl-2">.</span><span class="hl-9">invite</span><span class="hl-2">(</span><span class="hl-7">number</span><span class="hl-2">, {</span><br/><span class="hl-2">    </span><span class="hl-7">fromNumber:</span><span class="hl-2"> </span><span class="hl-7">username</span><span class="hl-2">,</span><br/><span class="hl-2">    </span><span class="hl-7">homeCountryId:</span><span class="hl-2"> </span><span class="hl-7">homeCountryId</span><br/><span class="hl-2">});</span>
+</code></pre>
+
+<a href="#auto-answer-incoming-calls-if-invites-containing-alert-info-auto-answer-header-field" id="auto-answer-incoming-calls-if-invites-containing-alert-info-auto-answer-header-field" style="color: inherit; text-decoration: none;">
+  <h3>Auto Answer incoming calls if Invites containing <code>Alert-Info: Auto Answer</code> header field:</h3>
+</a>
+<pre><code class="language-javascript"><br/><span class="hl-7">For</span><span class="hl-2"> </span><span class="hl-7">incoming</span><span class="hl-2"> </span><span class="hl-7">calls</span><br/><span class="hl-6">function</span><span class="hl-2"> </span><span class="hl-9">onInvite</span><span class="hl-2">(</span><span class="hl-7">session</span><span class="hl-2">) {</span><br/><span class="hl-2">    </span><span class="hl-12">if</span><span class="hl-2"> (</span><span class="hl-7">session</span><span class="hl-2">.</span><span class="hl-7">request</span><span class="hl-2">.</span><span class="hl-7">headers</span><span class="hl-2">[</span><span class="hl-8">&#39;Alert-Info&#39;</span><span class="hl-2">][</span><span class="hl-13">0</span><span class="hl-2">].</span><span class="hl-7">raw</span><span class="hl-2"> === </span><span class="hl-8">&#39;Auto Answer&#39;</span><span class="hl-2">) {</span><br/><span class="hl-2">            </span><span class="hl-7">session</span><br/><span class="hl-2">                .</span><span class="hl-9">accept</span><span class="hl-2">()</span><br/><span class="hl-2">                .</span><span class="hl-9">then</span><span class="hl-2">(</span><span class="hl-6">function</span><span class="hl-2">() {</span><br/><span class="hl-2">                    </span><span class="hl-9">onAccepted</span><span class="hl-2">(</span><span class="hl-7">session</span><span class="hl-2">);</span><br/><span class="hl-2">                })</span><br/><span class="hl-2">                .</span><span class="hl-9">catch</span><span class="hl-2">(</span><span class="hl-6">function</span><span class="hl-2">(</span><span class="hl-7">e</span><span class="hl-2">) {</span><br/><span class="hl-2">                    </span><span class="hl-7">console</span><span class="hl-2">.</span><span class="hl-9">error</span><span class="hl-2">(</span><span class="hl-8">&#39;Accept failed&#39;</span><span class="hl-2">, </span><span class="hl-7">e</span><span class="hl-2">.</span><span class="hl-7">stack</span><span class="hl-2"> || </span><span class="hl-7">e</span><span class="hl-2">);</span><br/><span class="hl-2">                });</span><br/><span class="hl-2">    }</span><br/><span class="hl-2">...</span><br/><span class="hl-2">...</span><br/><span class="hl-2">}</span>
+</code></pre>
+
+<a href="#compatibility-matrix" id="compatibility-matrix" style="color: inherit; text-decoration: none;">
+  <h2>Compatibility Matrix</h2>
+</a>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>SDK</th>
+<th>SIPJS</th>
+<th>Chrome</th>
+<th>Firefox</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Feb 2016</td>
+<td>0.2.0</td>
+<td>0.6.4</td>
+<td>not known may be v50-70</td>
+<td>:warning: NA</td>
+</tr>
+<tr>
+<td>Apr 2016</td>
+<td>0.3.0</td>
+<td>0.7.3</td>
+<td>not known may be v50-70</td>
+<td>:warning: NA</td>
+</tr>
+<tr>
+<td>Jun 2016</td>
+<td>0.3.1</td>
+<td>0.7.4</td>
+<td>not known may be v50-70</td>
+<td>:warning: NA</td>
+</tr>
+<tr>
+<td>Aug 2016</td>
+<td>0.3.2</td>
+<td>0.7.5</td>
+<td>54 to 56</td>
+<td>:warning: NA</td>
+</tr>
+<tr>
+<td>Sep 2016</td>
+<td>0.4.0-RC1</td>
+<td>0.7.5</td>
+<td>54 to 56</td>
+<td>:warning: NA</td>
+</tr>
+<tr>
+<td>Jan 2017</td>
+<td>0.4.0</td>
+<td>0.7.5</td>
+<td>54 to 56</td>
+<td>:warning: NA</td>
+</tr>
+<tr>
+<td>Mar 2017</td>
+<td><strong>0.4.1</strong></td>
+<td>0.7.7</td>
+<td>54 to 70, rtcp mux support, media API changes</td>
+<td>:warning: Issues with Audio, SBC</td>
+</tr>
+<tr>
+<td>Aug 2017</td>
+<td>0.4.2</td>
+<td>0.7.7</td>
+<td>61 to 70</td>
+<td>:warning: Issues with Audio, SBC</td>
+</tr>
+<tr>
+<td>Aug 2017</td>
+<td>0.4.3</td>
+<td>0.7.8</td>
+<td>61 to 70</td>
+<td>:warning: Not Tested</td>
+</tr>
+<tr>
+<td>Sep 2017</td>
+<td>0.4.4</td>
+<td>0.7.8</td>
+<td>62 to 70</td>
+<td>:warning: Issues with DTMF</td>
+</tr>
+<tr>
+<td>Nov 2017</td>
+<td>0.4.5</td>
+<td>0.7.8</td>
+<td>64 to 70</td>
+<td>:warning: Issues with DTMF</td>
+</tr>
+<tr>
+<td>Jul 2018</td>
+<td>0.5.0</td>
+<td>0.10.0</td>
+<td>68 to 70</td>
+<td>:warning: Issues with DTMF</td>
+</tr>
+<tr>
+<td>Nov 2018</td>
+<td>0.6.0</td>
+<td>0.11.3</td>
+<td>68 to 70</td>
+<td>Regression tested for 62, 63 supported with custom modifiers</td>
+</tr>
+<tr>
+<td>Nov 2018</td>
+<td><strong>0.6.1</strong></td>
+<td>0.11.6</td>
+<td>71+, explicit <code>plan b</code> SDP support</td>
+<td>62 to 64</td>
+</tr>
+<tr>
+<td>Dec 2018</td>
+<td>0.6.2</td>
+<td>0.11.6</td>
+<td>71+</td>
+<td>62 to 65</td>
+</tr>
+<tr>
+<td>Feb 2019</td>
+<td>0.6.3</td>
+<td>0.11.6</td>
+<td>71+</td>
+<td>62 to 65 , :warning: QoS feature not supported</td>
+</tr>
+<tr>
+<td>Apr 2019</td>
+<td>0.7.0</td>
+<td>0.13.5</td>
+<td>71+</td>
+<td>62 to 65 , :warning: QoS feature not supported</td>
+</tr>
+<tr>
+<td>May 2019</td>
+<td>0.7.1</td>
+<td>0.13.5</td>
+<td>71+</td>
+<td>62 to 65 , :warning: QoS feature not supported</td>
+</tr>
+<tr>
+<td>Jun 2019</td>
+<td>0.7.2</td>
+<td>0.13.5</td>
+<td>71+</td>
+<td>62 to 65 , :warning: QoS feature not supported</td>
+</tr>
+<tr>
+<td>Nov 2019</td>
+<td>0.7.3</td>
+<td>0.13.5</td>
+<td>71+</td>
+<td>62 to 65 , :warning: QoS feature not supported</td>
+</tr>
+<tr>
+<td>Nov 2019</td>
+<td>0.7.5</td>
+<td>0.13.5</td>
+<td>71+</td>
+<td>62 to 65 , :warning: QoS feature not supported</td>
+</tr>
+<tr>
+<td>Jan 2020</td>
+<td>0.7.6</td>
+<td>0.13.5</td>
+<td>71+</td>
+<td>62 to 65 , :warning: QoS feature not supported</td>
+</tr>
+<tr>
+<td>Jan 2020</td>
+<td>0.7.7</td>
+<td>0.13.5</td>
+<td>71+</td>
+<td>62 to 65 , :warning: QoS feature not supported</td>
+</tr>
+<tr>
+<td>Feb 2020</td>
+<td>0.7.8</td>
+<td>0.13.5</td>
+<td>71+</td>
+<td>62 to 65 , :warning: QoS feature not supported</td>
+</tr>
+<tr>
+<td>Mar 2020</td>
+<td>0.8.0</td>
+<td>0.13.5</td>
+<td>71+</td>
+<td>62 to 65 , :warning: QoS feature not supported</td>
+</tr>
+<tr>
+<td>May 2020</td>
+<td>0.8.1</td>
+<td>0.13.5</td>
+<td>71+</td>
+<td>62 to 65 , :warning: QoS feature not supported</td>
+</tr>
+<tr>
+<td>Jul 2020</td>
+<td>0.8.2</td>
+<td>0.13.5</td>
+<td>71+</td>
+<td>62 to 65 , :warning: QoS feature not supported</td>
+</tr>
+<tr>
+<td>Oct 2020</td>
+<td>0.8.3</td>
+<td>0.13.5</td>
+<td>71+</td>
+<td>62 to 65 , :warning: QoS feature not supported</td>
+</tr>
+<tr>
+<td>Dec 2020</td>
+<td>0.8.4</td>
+<td>0.13.5</td>
+<td>71+</td>
+<td>62 to 65 , :warning: QoS feature not supported</td>
+</tr>
+<tr>
+<td>Feb 2021</td>
+<td>0.8.5</td>
+<td>0.13.5</td>
+<td>71+</td>
+<td>62 to 65 , :warning: QoS feature not supported</td>
+</tr>
+</tbody></table>
+</div></div><div class="col-4 col-menu menu-sticky-wrap menu-highlight"><nav class="tsd-navigation primary"><ul><li class="current"><a href="modules.html">Exports</a></li></ul></nav><nav class="tsd-navigation secondary menu-sticky"><ul><li class="tsd-kind-interface"><a href="interfaces/WebPhoneRegistrationData.html" class="tsd-kind-icon">Web<wbr/>Phone<wbr/>Registration<wbr/>Data</a></li><li class="tsd-kind-interface"><a href="interfaces/SipInfo.html" class="tsd-kind-icon">Sip<wbr/>Info</a></li><li class="tsd-kind-interface"><a href="interfaces/WebPhoneOptions.html" class="tsd-kind-icon">Web<wbr/>Phone<wbr/>Options</a></li><li class="tsd-kind-class"><a href="classes/WebPhone.html" class="tsd-kind-icon">Web<wbr/>Phone</a></li><li class="tsd-kind-interface"><a href="interfaces/RCHeaders.html" class="tsd-kind-icon">RCHeaders</a></li><li class="tsd-kind-interface"><a href="interfaces/RTCPeerConnectionLegacy.html" class="tsd-kind-icon">RTCPeer<wbr/>Connection<wbr/>Legacy</a></li><li class="tsd-kind-type-alias"><a href="modules.html#WebPhoneSession" class="tsd-kind-icon">Web<wbr/>Phone<wbr/>Session</a></li><li class="tsd-kind-interface"><a href="interfaces/WebPhoneInvitation.html" class="tsd-kind-icon">Web<wbr/>Phone<wbr/>Invitation</a></li><li class="tsd-kind-interface"><a href="interfaces/WebPhoneInviter.html" class="tsd-kind-icon">Web<wbr/>Phone<wbr/>Inviter</a></li><li class="tsd-kind-interface"><a href="interfaces/WebPhoneTransport.html" class="tsd-kind-icon">Web<wbr/>Phone<wbr/>Transport</a></li><li class="tsd-kind-interface"><a href="interfaces/ActiveCallInfo.html" class="tsd-kind-icon">Active<wbr/>Call<wbr/>Info</a></li><li class="tsd-kind-interface"><a href="interfaces/WebPhoneUserAgent.html" class="tsd-kind-icon">Web<wbr/>Phone<wbr/>User<wbr/>Agent</a></li><li class="tsd-kind-interface"><a href="interfaces/InviteOptions.html" class="tsd-kind-icon">Invite<wbr/>Options</a></li></ul></nav></div></div></div><footer class="with-border-bottom"><div class="container"><h2>Legend</h2><div class="tsd-legend-group"><ul class="tsd-legend"><li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li><li class="tsd-kind-method tsd-parent-kind-interface"><span class="tsd-kind-icon">Method</span></li></ul><ul class="tsd-legend"><li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li><li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li></ul><ul class="tsd-legend"><li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li></ul></div><h2>Settings</h2><p>Theme <select id="theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></p></div></footer><div class="container tsd-generator"><p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></div><div class="overlay"></div><script src="assets/main.js"></script></body></html>

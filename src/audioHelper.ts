@@ -3,8 +3,11 @@ export interface DomAudio extends HTMLAudioElement {
 }
 
 export interface AudioHelperOptions {
+    /** Enable audio feedback for incoming and outgoing calls */
     enabled?: boolean;
+    /** Path to audio file for incoming call */
     incoming?: string;
+    /** Path to audio file for outgoing call */
     outgoing?: string;
 }
 
@@ -14,6 +17,7 @@ export class AudioHelper {
     private _outgoing: string;
     private _audio: { [key: string]: DomAudio };
 
+    /** Current volume */
     public volume: number;
 
     public constructor(options: AudioHelperOptions = {}) {
@@ -49,12 +53,14 @@ export class AudioHelper {
         return this;
     }
 
-    public loadAudio(options): void {
+    /** Load incoming and outgoing audio files for feedback */
+    public loadAudio(options: AudioHelperOptions): void {
         this._incoming = options.incoming;
         this._outgoing = options.outgoing;
         this._audio = {};
     }
 
+    /** Set volume for icoming and outgoing feedback */
     public setVolume(volume): void {
         if (volume < 0) {
             volume = 0;
@@ -70,10 +76,12 @@ export class AudioHelper {
         }
     }
 
+    /** Play incoming feedback */
     public playIncoming(val): AudioHelper {
         return this._playSound(this._incoming, val, this.volume || 0.5);
     }
 
+    /** Play outgoing feedback */
     public playOutgoing(val): AudioHelper {
         return this._playSound(this._outgoing, val, this.volume || 1);
     }

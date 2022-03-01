@@ -25,18 +25,20 @@ import {
 } from './session';
 import { patchUserAgentCore } from './userAgentCore';
 
+/** RingCentral Active call info */
 export interface ActiveCallInfo {
     id: string;
     from: string;
     to: string;
     direction: string;
-    1;
     sipData: {
         toTag: string;
         fromTag: string;
     };
 }
-
+/**
+ * WebPhoneUserAgent that makes SIP calls on behalf of the user
+ */
 export interface WebPhoneUserAgent extends UserAgent {
     audioHelper?: AudioHelper;
     constraints?: object;
@@ -45,7 +47,7 @@ export interface WebPhoneUserAgent extends UserAgent {
     enableMediaReportLogging?: boolean;
     enableQos?: boolean;
     instanceId?: string;
-    media?: any;
+    media?: { local?: HTMLMediaElement; remote?: HTMLMediaElement };
     modifiers?: SessionDescriptionHandlerModifier[];
     qosCollectInterval?: number;
     regId?: number;
@@ -73,6 +75,7 @@ export interface InviteOptions {
     RTCConstraints?: any;
 }
 
+/** @ignore */
 export function createWebPhoneUserAgent(
     configuration: UserAgentOptions,
     sipInfo: any,
@@ -257,9 +260,9 @@ function invite(this: WebPhoneUserAgent, number: string, options: InviteOptions 
         ...(options.homeCountryId ? [`P-rc-country-id: ${options.homeCountryId}`] : [])
     ];
 
-    options.RTCConstraints = options.RTCConstraints || {
-        optional: [{ DtlsSrtpKeyAgreement: 'true' }]
-    };
+    // FIXME: Need to check this
+    options.RTCConstraints =
+        options.RTCConstraints || Object.assign({}, this.constraints, { optional: [{ DtlsSrtpKeyAgreement: 'true' }] });
     inviterOptions.sessionDescriptionHandlerModifiers = this.modifiers;
     inviterOptions.sessionDescriptionHandlerOptions = { constraints: options.RTCConstraints };
     inviterOptions.earlyMedia = this.earlyMedia;
@@ -296,7 +299,7 @@ function switchFrom(this: WebPhoneUserAgent, activeCall: ActiveCallInfo, options
     options.fromNumber = options.fromNumber || fromNumber;
     const inviterOptions: InviterOptions = {
         extraHeaders: options.extraHeaders,
-        sessionDescriptionHandlerOptions: { constraints: options.RTCConstraints }
+        sessionDescriptionHandlerOptions: { constraints: options.RTCConstraints || this.constraints }
     };
     return this.invite(toNumber, inviterOptions);
 }

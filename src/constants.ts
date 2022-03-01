@@ -27,3 +27,7 @@ export const defaultMediaConstraints = {
     audio: true,
     video: false
 };
+
+export const defaultStunServers = ['stun.l.google.com:19302'];
+export const defaultSipErrorCodes = ['408', '502', '503', '504'];
+export const defaultLogLevel = 'debug';

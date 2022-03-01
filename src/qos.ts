@@ -21,13 +21,13 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
 
     getStats(
         (session.sessionDescriptionHandler as SessionDescriptionHandler).peerConnection,
-        function(getStatsResult) {
+        function (getStatsResult) {
             previousGetStatsResult = getStatsResult;
             qosStatsObj.status = true;
             const network = getNetworkType(previousGetStatsResult.connectionType);
             qosStatsObj.localAddr = previousGetStatsResult.connectionType.local.ipAddress[0];
             qosStatsObj.remoteAddr = previousGetStatsResult.connectionType.remote.ipAddress[0];
-            previousGetStatsResult.results.forEach(function(item) {
+            previousGetStatsResult.results.forEach(function (item) {
                 if (item.type === 'localcandidate') {
                     qosStatsObj.localcandidate = item;
                 }
@@ -64,8 +64,9 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
         session.userAgent.qosCollectInterval
     );
 
-    session.on('terminated', function() {
+    session.on('terminated', function () {
         previousGetStatsResult && previousGetStatsResult.nomore();
+        // FIXME: This is handeled in session.ts. Remove release from here after testing
         (session as any).logger.log('Release media streams');
         session.mediaStreams && session.mediaStreams.release();
         publishQosStats(session, qosStatsObj);

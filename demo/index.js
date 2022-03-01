@@ -144,7 +144,9 @@ $(function () {
         webPhone = new WebPhone(data, {
             appKey: localStorage.getItem('webPhoneAppKey'),
             audioHelper: {
-                enabled: true
+                enabled: true,
+                incoming: 'audio/incoming.ogg',
+                outgoing: 'audio/outgoing.ogg'
             },
             logLevel: parseInt(logLevel, 10),
             appName: 'WebPhoneDemo',
@@ -159,11 +161,6 @@ $(function () {
             // turnServers: [{urls:'turn:192.168.0.1', username : 'turn' , credential: 'turn'}],
             // iceTransportPolicy: "all" or "relay",
             // iceCheckingTimeout:500
-        });
-
-        webPhone.userAgent.audioHelper.loadAudio({
-            incoming: 'audio/incoming.ogg',
-            outgoing: 'audio/outgoing.ogg'
         });
 
         webPhone.userAgent.audioHelper.setVolume(0.3);

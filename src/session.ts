@@ -7,7 +7,8 @@ import {
     SessionInviteOptions,
     SessionReferOptions,
     UserAgent,
-    URI
+    URI,
+    Session
 } from 'sip.js';
 import {
     fromBodyLegacy,
@@ -69,68 +70,114 @@ export interface RTCPeerConnectionLegacy extends RTCPeerConnection {
     getLocalStreams: () => MediaStream[];
 }
 
-type CommonSession = {
+class CommonSession {
     // DOCUMENT: This has been removed
     // sendRequest?: typeof sendRequest
     // onLocalHold?: typeof onLocalHold
     // receiveRequest?: typeof receiveRequest;
+    /** @ignore */
     __isRecording?: boolean;
+    /** @ignore */
     __patched?: boolean;
+    /** @ignore */
     __userAgentCoreEventsSetup?: boolean;
-    eventEmitter?: EventEmitter;
+    /** Flag to check if the call is on hold or not */
     held?: boolean;
-    media?: any;
+    media?: { local?: HTMLMediaElement; remote?: HTMLMediaElement };
+    /** Flag to indicate if media stats are being collected */
     mediaStatsStarted?: boolean;
     mediaStreams?: MediaStreams;
+    /** Flag to check if the call is muted or not */
     muted?: boolean;
     noAudioReportCount?: number;
+    /** JOSN representation of RC headers received for an incoming call */
     rcHeaders?: RCHeaders;
     reinviteForNoAudioSent?: boolean;
-    userAgent: WebPhoneUserAgent;
+    /** @ignore */
     __accept?: typeof Invitation.prototype.accept;
-    accept?: typeof Invitation.prototype.accept;
+    /** @ignore */
+    __dispose?: typeof Session.prototype.dispose;
+    /** Method to attach event listener for session specific events */
     addListener?: typeof EventEmitter.prototype.addListener;
+    /** Add track to media source */
     addTrack?: typeof addTrack;
+    /** RingCentral barge implementation */
     barge?: typeof barge;
+    /** RingCentral blind transfer implementation */
     blindTransfer?: typeof blindTransfer;
     canUseRCMCallControl?: typeof canUseRCMCallControl;
     createSessionMessage?: typeof createSessionMessage;
+    /** Sends a DTMF over the call */
     dtmf?: typeof dtmf;
+    /** Emit session specific events which will trigger all the event listeners attached */
     emit?: typeof EventEmitter.prototype.emit;
+    /** RingCentral flip implementation */
     flip?: typeof flip;
+    /** RingCentral flip implementation */
     forward?: typeof forward;
+    /** Put the call on hold */
     hold?: typeof hold;
+    /** Ignore incoming call */
     ignore?: typeof ignore;
+    /** Mute the call */
     mute?: typeof mute;
+    /** Remove event listener */
     off?: typeof EventEmitter.prototype.off;
+    /** Add event listener. Same as addListener */
     on?: typeof EventEmitter.prototype.on;
+    /** RingCentral park implementation */
     park?: typeof park;
+    /** Send a session reinvite */
     reinvite?: typeof reinvite;
+    /** Remove event listener */
     removeListener?: typeof EventEmitter.prototype.removeListener;
+    /** RingCentral reply with message implementation */
     replyWithMessage?: typeof replyWithMessage;
     sendInfoAndRecieveResponse?: typeof sendInfoAndRecieveResponse;
     sendMoveResponse?: typeof sendMoveResponse;
     sendReceiveConfirm?: typeof sendReceiveConfirm;
     sendSessionMessage?: typeof sendSessionMessage;
+    /** Start recording the call */
     startRecord?: typeof startRecord;
     stopMediaStats?: typeof stopMediaStats;
+    /** Stop recording the call */
     stopRecord?: typeof stopRecord;
+    /** Send incoming call to voicemail */
     toVoicemail?: typeof toVoicemail;
+    /** Transfer current call */
     transfer?: typeof transfer;
+    /** Put the call on unhold */
     unhold?: typeof unhold;
+    /** Unmute the call */
     unmute?: typeof unmute;
+    /** RingCentral warm transfer implementation */
     warmTransfer?: typeof warmTransfer;
+    /** RingCentral whisper implementation */
     whisper?: typeof whisper;
-};
+}
 
 export type WebPhoneSession = WebPhoneInvitation | WebPhoneInviter;
 
-export type WebPhoneInvitation = Invitation & CommonSession;
+/** This is an extension of the Invitation class of SIP.js
+ *
+ * [Reference](https://github.com/onsip/SIP.js/blob/master/docs/api/sip.js.invitation.md)
+ */
+export interface WebPhoneInvitation extends Invitation, CommonSession {
+    accept: typeof Invitation.prototype.accept;
+    userAgent: WebPhoneUserAgent;
+}
 
-export type WebPhoneInviter = Inviter & CommonSession;
+/** This is an extension of the Inviter class of SIP.js
+ *
+ * [Reference](https://github.com/onsip/SIP.js/blob/master/docs/api/sip.js.inviter.md)
+ */
+export interface WebPhoneInviter extends Inviter, CommonSession {
+    userAgent: WebPhoneUserAgent;
+}
 
 const mediaCheckTimer = 2000;
 
+/** @ignore */
 export function patchWebphoneSession(session: WebPhoneSession): WebPhoneSession {
     if (session.__patched) {
         return session;
@@ -139,8 +186,9 @@ export function patchWebphoneSession(session: WebPhoneSession): WebPhoneSession 
     session.held = false;
     session.muted = false;
     session.media = session.userAgent.media;
+    session.__dispose = session.dispose.bind(session);
+    session.dispose = dispose.bind(session);
     const eventEmitter = new EventEmitter();
-    session.eventEmitter = eventEmitter;
     session.on = eventEmitter.on.bind(eventEmitter);
     session.off = eventEmitter.off.bind(eventEmitter);
     session.addListener = eventEmitter.addListener.bind(eventEmitter);
@@ -171,18 +219,19 @@ export function patchWebphoneSession(session: WebPhoneSession): WebPhoneSession 
         switch (newState) {
             case SessionState.Establishing: {
                 session.emit(Events.Session.Establishing);
+                (session.sessionDescriptionHandler as SessionDescriptionHandler).peerConnectionDelegate = {
+                    ontrack: session.addTrack.bind(session)
+                };
                 break;
             }
             case SessionState.Established: {
                 stopPlaying(session);
-                (session.sessionDescriptionHandler as SessionDescriptionHandler).peerConnectionDelegate = {
-                    ontrack: session.addTrack.bind(session)
-                };
                 session.emit(Events.Session.Established);
                 break;
             }
             case SessionState.Terminating: {
                 stopPlaying(session);
+                stopMediaStreamStats(session);
                 session.emit(Events.Session.Terminating);
                 break;
             }
@@ -206,6 +255,7 @@ export function patchWebphoneSession(session: WebPhoneSession): WebPhoneSession 
     return session;
 }
 
+/** @ignore */
 export function patchIncomingWebphoneSession(session: WebPhoneSession): void {
     try {
         parseRcHeader(session);
@@ -220,7 +270,7 @@ export function patchIncomingWebphoneSession(session: WebPhoneSession): void {
     session.sendSessionMessage = sendSessionMessage.bind(session);
     session.toVoicemail = toVoicemail.bind(session);
     session.__accept = (session as Invitation).accept.bind(session);
-    session.accept = accept.bind(session);
+    (session as WebPhoneInvitation).accept = accept.bind(session);
     setupUserAgentCoreEvent(session);
 }
 
@@ -268,10 +318,14 @@ async function sendInfoAndRecieveResponse(this: WebPhoneSession, command: Comman
             onAccept: (response: IncomingResponse): void => {
                 let timeout = null;
                 const {
-                    message: { statusCode, cseq }
+                    message: { statusCode, callId }
                 } = response;
                 if (statusCode === 200) {
                     const onInfo = (message: IncomingRequestMessage): void => {
+                        // FIXME: I think we need this check here
+                        if (message.callId !== callId) {
+                            return;
+                        }
                         const body = (message && message.body) || '{}';
                         let obj;
 
@@ -429,8 +483,8 @@ function unmute(this: WebPhoneSession, silent?: boolean): void {
 function addTrack(this: WebPhoneSession, remoteAudioEle?, localAudioEle?): void {
     const sessionDescriptionHandler = this.sessionDescriptionHandler as SessionDescriptionHandler;
     const peerConnection = sessionDescriptionHandler.peerConnection;
-    let remoteAudio;
-    let localAudio;
+    let remoteAudio: HTMLMediaElement;
+    let localAudio: HTMLMediaElement;
 
     if (remoteAudioEle && localAudioEle) {
         remoteAudio = remoteAudioEle;
@@ -470,7 +524,6 @@ function addTrack(this: WebPhoneSession, remoteAudioEle?, localAudioEle?): void 
             }
         });
     } else {
-        // FIXME: Check code change
         localStream = sessionDescriptionHandler.localMediaStream;
         (this as any).logger.log('Local track added');
     }
@@ -478,6 +531,7 @@ function addTrack(this: WebPhoneSession, remoteAudioEle?, localAudioEle?): void 
     localAudio.play().catch(() => {
         (this as any).logger.error('Local play was rejected');
     });
+
     if (localStream && remoteStream && !this.mediaStatsStarted) {
         this.mediaStreams = new MediaStreams(this);
         (this as any).logger.log('Start gathering media report');
@@ -556,13 +610,23 @@ async function transfer(
 // option type has changed
 // FIXME: Test this
 function reinvite(this: WebPhoneSession, options: SessionInviteOptions = {}): Promise<OutgoingInviteRequest> {
-    options.sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions || {};
-    const originalOnAccept = options.requestDelegate.onAccept;
-    options.requestDelegate.onAccept = (...args): void => {
-        originalOnAccept(...args);
-        patchIncomingWebphoneSession(this);
-    };
-    return this.invite(options);
+    // options.sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions || {};
+    // options.requestDelegate = options.requestDelegate || {};
+    // const originalOnAccept = options.requestDelegate.onAccept.bind(options.requestDelegate);
+    // options.requestDelegate.onAccept = (...args): void => {
+    //     patchIncomingWebphoneSession(this);
+    //     originalOnAccept && originalOnAccept(...args);
+    // };
+    return this.invite({
+        requestDelegate: {
+            onAccept: () => {
+                console.log('Accepted');
+            },
+            onReject: (e) => {
+                console.log('rejected');
+            }
+        }
+    });
 }
 
 async function hold(this: WebPhoneSession): Promise<void> {
@@ -610,9 +674,9 @@ function accept(this: WebPhoneSession, options: InvitationAcceptOptions = {}): P
     options = options || {};
     options.extraHeaders = (options.extraHeaders || []).concat(this.userAgent.defaultHeaders);
     options.sessionDescriptionHandlerOptions = Object.assign({}, options.sessionDescriptionHandlerOptions);
-    options.sessionDescriptionHandlerOptions.constraints = options.sessionDescriptionHandlerOptions.constraints || {
-        optional: [{ DtlsSrtpKeyAgreement: 'true' }]
-    };
+    options.sessionDescriptionHandlerOptions.constraints =
+        options.sessionDescriptionHandlerOptions.constraints ||
+        Object.assign({}, this.userAgent.constraints, { optional: [{ DtlsSrtpKeyAgreement: 'true' }] });
 
     return new Promise((resolve, reject) => {
         try {
@@ -630,13 +694,18 @@ async function forward(
     acceptOptions: InvitationAcceptOptions,
     transferOptions: SessionReferOptions
 ): Promise<OutgoingReferRequest> {
-    await this.accept(acceptOptions);
+    await (this as WebPhoneInvitation).accept(acceptOptions);
     return new Promise((resolve) => {
         this.mute();
         setTimeout(() => {
             resolve(this.transfer(target, transferOptions));
         }, 700);
     });
+}
+
+async function dispose(this: WebPhoneSession) {
+    stopMediaStreamStats(this);
+    this.__dispose();
 }
 
 /* ---------------------------------------------------------- HELPER FUNCTIONS ---------------------------------------------------------- */
@@ -794,7 +863,11 @@ function stopPlaying(session: WebPhoneSession): void {
     session.userAgent.audioHelper.playIncoming(false);
 }
 
+/** @ignore */
 export function onSessionDescriptionHandlerCreated(session: WebPhoneSession): void {
+    if (!session.userAgent.enableQos) {
+        return;
+    }
     (session as any).logger.log('SessionDescriptionHandler created');
     // startQosStatsCollection(session);
     navigator.mediaDevices.enumerateDevices().then(function (devices) {
@@ -814,4 +887,11 @@ function setupUserAgentCoreEvent(session: WebPhoneSession) {
     // RC_SIP_INFO event is for internal use
     userAgentCore.on('RC_SIP_INFO', (payload) => session.emit('RC_SIP_INFO', payload));
     session.__userAgentCoreEventsSetup = true;
+}
+
+function stopMediaStreamStats(session: WebPhoneSession) {
+    if (session.mediaStreams) {
+        (session as any).logger.log('Releasing media streams');
+        session.mediaStreams.release();
+    }
 }

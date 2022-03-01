@@ -44,6 +44,7 @@ export interface WebPhoneTransport extends Transport {
     removeListener?: typeof EventEmitter.prototype.removeListener;
 }
 
+/** @ignore */
 export function createWebPhoneTransport(transport: WebPhoneTransport, options: WebPhoneOptions): WebPhoneTransport {
     transport.reconnectionAttempts = 0;
     transport.servers = options.transportServers;

@@ -14,6 +14,7 @@ export type WehPhoneUserAgentCore = UserAgentCore & {
     removeListener?: typeof EventEmitter.prototype.removeListener;
 };
 
+/** @ignore */
 export function patchUserAgentCore(userAgent: WebPhoneUserAgent) {
     const userAgentCore: WehPhoneUserAgentCore = userAgent.userAgentCore;
     const eventEmitter = new EventEmitter();
