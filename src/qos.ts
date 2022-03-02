@@ -1,6 +1,7 @@
 import getStats from 'getstats';
-import { WebPhoneSession } from './session';
+import { SessionState, Publisher, UserAgent } from 'sip.js';
 
+import { WebPhoneSession } from './session';
 import { SessionDescriptionHandler } from 'sip.js/lib/platform/web';
 
 const formatFloat = (input: any): string => parseFloat(input.toString()).toFixed(2);
@@ -64,38 +65,36 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
         session.userAgent.qosCollectInterval
     );
 
-    session.on('terminated', function () {
-        previousGetStatsResult && previousGetStatsResult.nomore();
-        // FIXME: This is handeled in session.ts. Remove release from here after testing
-        (session as any).logger.log('Release media streams');
-        session.mediaStreams && session.mediaStreams.release();
-        publishQosStats(session, qosStatsObj);
+    session.stateChange.addListener((newState) => {
+        if (newState === SessionState.Terminated) {
+            previousGetStatsResult && previousGetStatsResult.nomore();
+            publishQosStats(session, qosStatsObj);
+        }
     });
 };
 
-const publishQosStats = (session: WebPhoneSession, qosStatsObj: QosStats, options: any = {}): void => {
+const publishQosStats = async (session: WebPhoneSession, qosStatsObj: QosStats, options: any = {}): Promise<void> => {
     options = options || {};
 
-    //FIXME: check
     const effectiveType = (navigator['connection'] as any).effectiveType || '';
     const networkType = calculateNetworkUsage(qosStatsObj) || '';
-    const targetUrl = options.targetUrl || 'rtcpxr@rtcpxr.ringcentral.com:5060';
+    const targetUrl = options.targetUrl || 'sip:rtcpxr@rtcpxr.ringcentral.com:5060';
     const event = options.event || 'vq-rtcpxr';
     options.expires = 60;
     options.contentType = 'application/vq-rtcpxr';
     options.extraHeaders = (options.extraHeaders || []).concat(session.userAgent.defaultHeaders);
     options.extraHeaders.push(
-        'p-rc-client-info:' + 'cpuRC=0:0;cpuOS=0:0;netType=' + networkType + ';ram=0:0;effectiveType=' + effectiveType
+        `p-rc-client-info: cpuRC=0:0;cpuOS=0:0;netType=${networkType};ram=0:0;effectiveType=${effectiveType}`
     );
 
     const calculatedStatsObj = calculateStats(qosStatsObj);
     const body = createPublishBody(calculatedStatsObj);
-    // const pub = session.userAgent.publish(targetUrl, event, body, options);
+    const publisher = new Publisher(session.userAgent, UserAgent.makeURI(targetUrl), event, options);
+    await publisher.publish(body);
     (session as any).logger.log('Local Candidate: ' + JSON.stringify(qosStatsObj.localcandidate));
     (session as any).logger.log('Remote Candidate: ' + JSON.stringify(qosStatsObj.remotecandidate));
-
     qosStatsObj.status = false;
-    // pub.close();
+    await publisher.dispose();
     session.emit('qos-published', body);
 };
 

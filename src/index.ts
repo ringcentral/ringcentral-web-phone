@@ -22,6 +22,7 @@ import {
 } from './constants';
 import packageJson from '../package.json';
 import { WebPhoneSession } from './session';
+import { defaultSessionDescriptionFactory } from './sessionDescriptionHandler';
 
 /** @ignore */
 export interface TransportServer {
@@ -358,7 +359,8 @@ export default class WebPhone {
             options.earlyMedia = true;
         }
 
-        const sessionDescriptionHandlerFactory = options.sessionDescriptionHandlerFactory || undefined;
+        const sessionDescriptionHandlerFactory =
+            options.sessionDescriptionHandlerFactory || defaultSessionDescriptionFactory;
 
         const sipErrorCodes =
             registrationData.sipErrorCodes && registrationData.sipErrorCodes.length

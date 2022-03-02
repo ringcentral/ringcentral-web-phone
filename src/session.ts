@@ -32,7 +32,7 @@ import { RTPReport, isNoAudio } from './rtpReport';
 import { WebPhoneUserAgent } from './userAgent';
 import { Events } from './events';
 import { WehPhoneUserAgentCore } from './userAgentCore';
-// import { startQosStatsCollection } from "./qos";
+import { startQosStatsCollection } from './qos';
 
 export interface RCHeaders {
     body?: string;
@@ -869,7 +869,7 @@ export function onSessionDescriptionHandlerCreated(session: WebPhoneSession): vo
         return;
     }
     (session as any).logger.log('SessionDescriptionHandler created');
-    // startQosStatsCollection(session);
+    startQosStatsCollection(session);
     navigator.mediaDevices.enumerateDevices().then(function (devices) {
         devices.forEach((device) =>
             (session as any).logger.log(`${device.kind} = ${device.label} ${JSON.stringify(device)}`)
