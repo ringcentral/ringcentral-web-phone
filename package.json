@@ -18,7 +18,6 @@
     "docs": "typedoc --options ./typedoc.json"
   },
   "dependencies": {
-    "getstats": "1.2.0",
     "sip.js": "0.20.0"
   },
   "devDependencies": {

@@ -1,4 +1,3 @@
-import getStats from 'getstats';
 import { SessionState, Publisher, UserAgent } from 'sip.js';
 
 import { WebPhoneSession } from './session';
@@ -18,55 +17,45 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
 
     let previousGetStatsResult;
 
-    if (!getStats) throw new Error('getStats module was not provided!');
-
-    getStats(
-        (session.sessionDescriptionHandler as SessionDescriptionHandler).peerConnection,
-        function (getStatsResult) {
-            previousGetStatsResult = getStatsResult;
-            qosStatsObj.status = true;
-            const network = getNetworkType(previousGetStatsResult.connectionType);
-            qosStatsObj.localAddr = previousGetStatsResult.connectionType.local.ipAddress[0];
-            qosStatsObj.remoteAddr = previousGetStatsResult.connectionType.remote.ipAddress[0];
-            previousGetStatsResult.results.forEach(function (item) {
-                if (item.type === 'localcandidate') {
-                    qosStatsObj.localcandidate = item;
-                }
-                if (item.type === 'remotecandidate') {
-                    qosStatsObj.remotecandidate = item;
-                }
-                if (item.type === 'ssrc' && item.id.includes('send') && session.userAgent.enableMediaReportLogging) {
-                    if (parseInt(item.audioInputLevel, 10) === 0) {
-                        (session as any).logger.log(
-                            'AudioInputLevel is 0. The local track might be muted or could have potential one-way audio issue. Check Microphone Volume settings.'
-                        );
-                        session.emit('no-input-volume');
+    const refreshIntervalId = setInterval(async () => {
+        const sessionDescriptionHandler = session.sessionDescriptionHandler as SessionDescriptionHandler;
+        const getStatsResult = await sessionDescriptionHandler.peerConnection.getStats();
+        (session as any).logger.log(`getStatsResult ${JSON.stringify(getStatsResult)}`);
+        qosStatsObj.status = true;
+        var network = '';
+        getStatsResult.forEach(function (item: any) {
+            switch (item.type) {
+                case 'local-candidate':
+                    if (item.candidateType === 'srflx') {
+                        network = getNetworkType(item.networkType);
+                        qosStatsObj.localAddr = item.ip + ':' + item.port;
+                        qosStatsObj.localcandidate = item;
                     }
-                }
-                if (item.type === 'ssrc' && item.id.includes('recv')) {
-                    qosStatsObj.jitterBufferDiscardRate = item.googSecondaryDiscardedRate || 0;
+                    break;
+                case 'remote-candidate':
+                    if (item.candidateType === 'host') {
+                        qosStatsObj.remoteAddr = item.ip + ':' + item.port;
+                        qosStatsObj.remotecandidate = item;
+                    }
+                    break;
+                case 'inbound-rtp':
+                    qosStatsObj.jitterBufferDiscardRate = 0;
                     qosStatsObj.packetLost = item.packetsLost;
-                    qosStatsObj.packetsReceived = item.packetsReceived;
-                    qosStatsObj.totalSumJitter += parseFloat(item.googJitterBufferMs);
+                    qosStatsObj.packetsReceived = item.packetsReceived; //packetsReceived
+                    qosStatsObj.totalSumJitter += parseFloat(item.jitterBufferDelay);
                     qosStatsObj.totalIntervalCount += 1;
-                    qosStatsObj.JBM = Math.max(qosStatsObj.JBM, parseFloat(item.googJitterBufferMs));
+                    qosStatsObj.JBM = Math.max(qosStatsObj.JBM, parseFloat(item.jitterBufferDelay));
                     qosStatsObj.netType = addToMap(qosStatsObj.netType, network);
-                    if (session.userAgent.enableMediaReportLogging) {
-                        if (parseInt(item.audioOutputLevel, 10) <= 1) {
-                            (session as any).logger.log(
-                                'Remote audioOutput level is 1. The remote track might be muted or could have potential one-way audio issue'
-                            );
-                            session.emit('no-output-volume');
-                        }
-                    }
-                }
-            });
-        },
-        session.userAgent.qosCollectInterval
-    );
+                    break;
+                default:
+                    break;
+            }
+        });
+    }, session.userAgent.qosCollectInterval);
 
     session.stateChange.addListener((newState) => {
         if (newState === SessionState.Terminated) {
+            refreshIntervalId && clearInterval(refreshIntervalId);
             previousGetStatsResult && previousGetStatsResult.nomore();
             publishQosStats(session, qosStatsObj);
         }
@@ -211,10 +200,10 @@ enum networkTypeMap {
 }
 
 //TODO: find relaible way to find network type , use navigator.connection.type?
-const getNetworkType = (connectionType): networkTypeMap => {
+const getNetworkType = (connectionType: any): networkTypeMap => {
     const sysNetwork = connectionType.systemNetworkType || 'unknown';
-    const localNetwork = connectionType.local.networkType || ['unknown'];
-    const networkType = !sysNetwork || sysNetwork === 'unknown' ? localNetwork[0] : sysNetwork;
+    const localNetwork = connectionType || 'unknown';
+    const networkType = !sysNetwork || sysNetwork === 'unknown' ? localNetwork : sysNetwork;
     return networkType in networkTypeMap ? networkTypeMap[networkType] : networkType;
 };
 
