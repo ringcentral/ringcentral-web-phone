@@ -14,6 +14,14 @@ import { SessionDescriptionHandlerFactoryOptions } from 'sip.js/lib/platform/web
 type ResolveFunction = () => void;
 type RejectFunction = (reason: Error) => void;
 
+export interface WebPhoneSessionDescriptionHandlerConfiguration extends SessionDescriptionHandlerConfiguration {
+    enableDscp?: boolean;
+}
+
+export interface WebPhoneSessionDescriptionHandlerFactoryOptions extends SessionDescriptionHandlerFactoryOptions {
+    enableDscp?: boolean;
+}
+
 /**
  * A base class implementing a WebRTC session description handler for sip.js.
  * @remarks
@@ -28,7 +36,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     /** Media stream factory. */
     protected mediaStreamFactory: MediaStreamFactory;
     /** Configuration options. */
-    protected sessionDescriptionHandlerConfiguration?: SessionDescriptionHandlerConfiguration;
+    protected sessionDescriptionHandlerConfiguration?: WebPhoneSessionDescriptionHandlerConfiguration;
 
     /** The local media stream. */
     protected _localMediaStream: MediaStream;
@@ -57,7 +65,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     constructor(
         logger: Logger,
         mediaStreamFactory: MediaStreamFactory,
-        sessionDescriptionHandlerConfiguration?: SessionDescriptionHandlerConfiguration
+        sessionDescriptionHandlerConfiguration?: WebPhoneSessionDescriptionHandlerConfiguration
     ) {
         logger.debug('SessionDescriptionHandler.constructor');
         this.logger = logger;
@@ -203,6 +211,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
                 : options?.iceGatheringTimeout;
 
         return this.getLocalMediaStream(options)
+            .then(() => this.enableSenderDscp())
             .then(() => this.updateDirection(options))
             .then(() => this.createDataChannel(options))
             .then(() => this.createLocalOfferOrAnswer(options))
@@ -431,6 +440,34 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     }
 
     /**
+     * Sets the encoding priorty to high for sender track.
+     *
+     */
+    protected enableSenderDscp(): Promise<void> {
+        if (!this.sessionDescriptionHandlerConfiguration.enableDscp) {
+            return Promise.resolve();
+        }
+        if (!this._peerConnection) {
+            throw new Error('Peer connection undefined.');
+        }
+        const pc = this._peerConnection;
+        pc.getSenders()
+            .filter((sender) => sender.track)
+            .forEach((sender) => {
+                const parameters = sender.getParameters();
+                console.info('getsender params =', parameters);
+                (parameters as any).priority = 'high';
+                sender.setParameters(parameters).catch((error) => {
+                    console.error(
+                        `Error while setting encodings parameters for ${sender.track.kind} Track ${sender.track.id}: ${
+                            error.message || error.name
+                        }`
+                    );
+                });
+            });
+    }
+
+    /**
      * Sets the peer connection's sender tracks and local media stream tracks.
      *
      * @remarks
@@ -456,6 +493,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
             if (kind !== 'audio' && kind !== 'video') {
                 throw new Error(`Unknown new track kind ${kind}.`);
             }
+            const s = pc.getSenders();
             const sender = pc.getSenders().find((sender) => sender.track && sender.track.kind === kind);
             if (sender) {
                 trackUpdates.push(
@@ -987,7 +1025,7 @@ function defaultMediaStreamFactory(): MediaStreamFactory {
 
 export const defaultSessionDescriptionFactory = (
     session: WebPhoneSession,
-    options?: SessionDescriptionHandlerFactoryOptions
+    options?: WebPhoneSessionDescriptionHandlerFactoryOptions
 ) => {
     const mediaStreamFactory = defaultMediaStreamFactory();
 
@@ -995,8 +1033,9 @@ export const defaultSessionDescriptionFactory = (
     const iceGatheringTimeout = options?.iceGatheringTimeout !== undefined ? options?.iceGatheringTimeout : 5000;
 
     // merge passed factory options into default session description configuration
-    const sessionDescriptionHandlerConfiguration: SessionDescriptionHandlerConfiguration = {
+    const sessionDescriptionHandlerConfiguration: WebPhoneSessionDescriptionHandlerConfiguration = {
         iceGatheringTimeout,
+        enableDscp: options.enableDscp,
         peerConnectionConfiguration: {
             ...defaultPeerConnectionConfiguration(),
             ...options?.peerConnectionConfiguration

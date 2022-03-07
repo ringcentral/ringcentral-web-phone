@@ -22,7 +22,10 @@ import {
 } from './constants';
 import packageJson from '../package.json';
 import { WebPhoneSession } from './session';
-import { defaultSessionDescriptionFactory } from './sessionDescriptionHandler';
+import {
+    defaultSessionDescriptionFactory,
+    WebPhoneSessionDescriptionHandlerFactoryOptions
+} from './sessionDescriptionHandler';
 
 /** @ignore */
 export interface TransportServer {
@@ -102,6 +105,11 @@ export interface WebPhoneOptions {
      * default value `true`
      */
     enableDefaultModifiers?: boolean;
+    /** If `true`, dscp is enabled for senders track in peer connection
+     *
+     * default value `false`
+     */
+    enableDscp?: boolean;
     /** If `true`, media report is logged using logger */
     enableMediaReportLogging?: boolean;
     /** is `true`, `addMidLines` modifiers will be enabled in SessionDescriptionHandler */
@@ -209,9 +217,11 @@ export interface WebPhoneOptions {
     sessionDescriptionHandlerFactory?: SessionDescriptionHandlerFactory;
     /** Options for SessionDescriptionHandler
      *
+     * If a value is passed, options like enableDscp, iceCheckingTimeout, turnServers, stunServers, iceTransportPolicynd enablePlanBre ignored
+     *
      * [Reference](https://github.com/onsip/SIP.js/blob/master/docs/api/sip.js.sessiondescriptionhandleroptions.md)
      */
-    sessionDescriptionHandlerFactoryOptions?: SessionDescriptionHandlerFactoryOptions;
+    sessionDescriptionHandlerFactoryOptions?: WebPhoneSessionDescriptionHandlerFactoryOptions;
     /** Sip error codes. This value is picked from registrationData
      *
      * default value `['408', '502', '503', '504']` if registrationData does not have `sipErrorCodes`
@@ -251,6 +261,7 @@ const defaultWebPhoneOptions: WebPhoneOptions = {
     builtinEnabled: true,
     earlyMedia: false,
     enableDefaultModifiers: true,
+    enableDscp: false,
     iceTransportPolicy: 'all',
     maxReconnectionAttemptsNoBackup: 15,
     maxReconnectionAttemptsWithBackup: 10,
@@ -343,12 +354,15 @@ export default class WebPhone {
 
         const sessionDescriptionHandlerFactoryOptions = options.sessionDescriptionHandlerFactoryOptions || {
             iceGatheringTimeout: options.iceCheckingTimeout || 500,
+            enableDscp: options.enableDscp,
             peerConnectionConfiguration: {
                 iceServers,
                 iceTransportPolicy,
                 sdpSemantics
             }
         };
+
+        sessionDescriptionHandlerFactoryOptions.enableDscp = !!options.enableDscp;
 
         options.modifiers = modifiers;
 

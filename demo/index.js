@@ -1,9 +1,7 @@
 const SIP = require('sip.js');
-const getStats = require('getstats');
 const $ = require('jquery');
 
 window.jQuery = $;
-window.getStats = getStats;
 window.SIP = SIP;
 
 $(function () {
@@ -142,6 +140,7 @@ $(function () {
         sipInfo = data.sipInfo[0] || data.sipInfo;
 
         webPhone = new WebPhone(data, {
+            enableDscp: true,
             appKey: localStorage.getItem('webPhoneAppKey'),
             audioHelper: {
                 enabled: true,
