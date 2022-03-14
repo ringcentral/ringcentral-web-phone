@@ -1,5 +1,6 @@
 import {
     BodyAndContentType,
+    Session,
     SessionDescriptionHandler as SessionDescriptionHandlerDefinition,
     SessionDescriptionHandlerModifier
 } from 'sip.js';
@@ -8,7 +9,6 @@ import { MediaStreamFactory } from 'sip.js/lib/platform/web/session-description-
 import { SessionDescriptionHandlerConfiguration } from 'sip.js/lib/platform/web/session-description-handler/session-description-handler-configuration';
 import { SessionDescriptionHandlerOptions } from 'sip.js/lib/platform/web/session-description-handler/session-description-handler-options';
 import { PeerConnectionDelegate } from 'sip.js/lib/platform/web/session-description-handler/peer-connection-delegate';
-import { WebPhoneSession } from './session';
 import { SessionDescriptionHandlerFactoryOptions } from 'sip.js/lib/platform/web';
 
 type ResolveFunction = () => void;
@@ -1024,7 +1024,7 @@ function defaultMediaStreamFactory(): MediaStreamFactory {
 }
 
 export const defaultSessionDescriptionFactory = (
-    session: WebPhoneSession,
+    session: Session,
     options?: WebPhoneSessionDescriptionHandlerFactoryOptions
 ) => {
     const mediaStreamFactory = defaultMediaStreamFactory();

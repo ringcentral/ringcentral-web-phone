@@ -496,6 +496,7 @@ function addTrack(this: WebPhoneSession, remoteAudioEle?, localAudioEle?): void 
         throw new Error('HTML Media Element not Defined');
     }
 
+    // TODO: peerConnecton.remoteMediaStream already has reciver track added thanks to default session description handler. Can we remove this code?
     let remoteStream = new MediaStream();
     if (peerConnection.getReceivers) {
         peerConnection.getReceivers().forEach((receiver) => {
@@ -514,6 +515,7 @@ function addTrack(this: WebPhoneSession, remoteAudioEle?, localAudioEle?): void 
         (this as any).logger.error('Remote play was rejected');
     });
 
+    // TODO: peerConnecton.localMediaStream already has sender track added thanks to default session description handler. Can we remove this code?
     let localStream = new MediaStream();
     if (peerConnection.getSenders) {
         peerConnection.getSenders().forEach((sender) => {
@@ -609,24 +611,28 @@ async function transfer(
 // DOCUMENT: Return type has changed
 // option type has changed
 // FIXME: Test this
+/**
+ *
+ * @param this WebPhoneSessionSessionInviteOptions
+ * @param options
+ * @returns Promise<OutgoingInviteRequest>
+ *
+ * Sends a reinvite. Also makes sure to regenrate a new SDP by passing offerToReceiveAudio: true, offerToReceiveVideo: false  and iceRestart: true
+ * Once the SDP is ready, the local description is set and the SDP is sent to the remote peer along with an INVITE request
+ */
 function reinvite(this: WebPhoneSession, options: SessionInviteOptions = {}): Promise<OutgoingInviteRequest> {
-    // options.sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions || {};
-    // options.requestDelegate = options.requestDelegate || {};
-    // const originalOnAccept = options.requestDelegate.onAccept.bind(options.requestDelegate);
-    // options.requestDelegate.onAccept = (...args): void => {
-    //     patchIncomingWebphoneSession(this);
-    //     originalOnAccept && originalOnAccept(...args);
-    // };
-    return this.invite({
-        requestDelegate: {
-            onAccept: () => {
-                console.log('Accepted');
-            },
-            onReject: (e) => {
-                console.log('rejected');
-            }
-        }
+    options.sessionDescriptionHandlerOptions = Object.assign({}, options.sessionDescriptionHandlerOptions, {
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: false,
+        iceRestart: true
     });
+    options.requestDelegate = options.requestDelegate || {};
+    const originalOnAccept = options.requestDelegate.onAccept?.bind(options.requestDelegate);
+    options.requestDelegate.onAccept = (...args): void => {
+        patchIncomingWebphoneSession(this);
+        originalOnAccept && originalOnAccept(...args);
+    };
+    return this.invite(options);
 }
 
 async function hold(this: WebPhoneSession): Promise<void> {

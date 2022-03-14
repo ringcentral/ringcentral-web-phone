@@ -122,15 +122,6 @@ export class MediaStreamsImplementation {
         return 'unknown';
     }
 
-    private onIceCandidate = (event: any) => {
-        if (event.candidate === null) {
-            (this.session as any).logger.debug(`${this.tag}: Ice candidate completed for reconnect media`);
-            const sessionDescriptionHandler = this.session.sessionDescriptionHandler as SessionDescriptionHandler;
-            sessionDescriptionHandler.peerConnection.removeEventListener('icecandidate', this.onIceCandidate);
-            this.session.reinvite();
-        }
-    };
-
     public mediaStatsTimerCallback() {
         const sessionDescriptionHandler = this.session.sessionDescriptionHandler as SessionDescriptionHandler;
         const peerConnection = sessionDescriptionHandler.peerConnection;
@@ -345,28 +336,12 @@ export class MediaStreamsImplementation {
         }
     }
 
-    public reconnectMedia(options?: RTCOfferOptions): Promise<void> {
-        return new Promise(async (resolve, reject) => {
-            const defaultRTCOptions: RTCOfferOptions = {
-                offerToReceiveAudio: true,
-                offerToReceiveVideo: false,
-                iceRestart: true
-            };
-            const offerOptions = options || defaultRTCOptions;
-            const sessionDescriptionHandler = this.session.sessionDescriptionHandler as SessionDescriptionHandler;
-            const peerConnection = sessionDescriptionHandler.peerConnection;
-            let offer: any;
-            try {
-                (this.session as any).logger.debug(`${this.tag}: Reconnecting media`);
-                sessionDescriptionHandler.peerConnection.addEventListener('icecandidate', this.onIceCandidate);
-                offer = await peerConnection.createOffer(offerOptions);
-                await peerConnection.setLocalDescription(offer);
-                (this.session as any).logger.debug(`${this.tag}: Reconnecting media initiated`);
-                resolve();
-            } catch (e) {
-                (this.session as any).logger.error(`${this.ktag}: Unable to reconnect media ${e.message}`);
-                reject();
-            }
+    public reconnectMedia(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.session
+                .reinvite()
+                .then(() => resolve())
+                .catch(reject);
         });
     }
 
