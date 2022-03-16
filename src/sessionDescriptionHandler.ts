@@ -903,7 +903,9 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     private initPeerConnectionEventHandlers(): void {
         this.logger.debug('SessionDescriptionHandler.initPeerConnectionEventHandlers');
 
-        if (!this._peerConnection) throw new Error('Peer connection undefined.');
+        if (!this._peerConnection) {
+            throw new Error('Peer connection undefined.');
+        }
         const peerConnection = this._peerConnection;
 
         peerConnection.onconnectionstatechange = (event): void => {

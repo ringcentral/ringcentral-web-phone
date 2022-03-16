@@ -247,7 +247,9 @@ export function patchWebphoneSession(session: WebPhoneSession): WebPhoneSession 
     // NEEDED - inviter.ts L191
     // session.on("replaced", patchWebphoneSession);
 
-    if (session.userAgent.onSession) session.userAgent.onSession(session);
+    if (session.userAgent.onSession) {
+        session.userAgent.onSession(session);
+    }
     session.mediaStatsStarted = false;
     session.noAudioReportCount = 0;
     session.reinviteForNoAudioSent = false;
@@ -334,15 +336,13 @@ async function sendInfoAndRecieveResponse(this: WebPhoneSession, command: Comman
                         } catch (e) {
                             obj = {};
                         }
-                        if (obj.response && obj.response.command === command.command) {
-                            if (obj.response.result) {
-                                timeout && clearTimeout(timeout);
-                                this.off('RC_SIP_INFO', onInfo);
-                                if (obj.response.result.code.toString() === '0') {
-                                    return resolve(obj.response.result);
-                                }
-                                return reject(obj.response.result);
+                        if (obj.response && obj.response.command === command.command && obj.response.result) {
+                            timeout && clearTimeout(timeout);
+                            this.off('RC_SIP_INFO', onInfo);
+                            if (obj.response.result.code.toString() === '0') {
+                                return resolve(obj.response.result);
                             }
+                            return reject(obj.response.result);
                         }
                     };
                     timeout = setTimeout(() => {
@@ -754,10 +754,8 @@ function parseRcHeader(session: WebPhoneSession): void {
         }
     }
     if (prcCallInfo) {
-        if (prcCallInfo) {
-            const parsed = parseRcHeaderString(prcCallInfo);
-            extend(session.rcHeaders, parsed);
-        }
+        const parsed = parseRcHeaderString(prcCallInfo);
+        extend(session.rcHeaders, parsed);
     }
 }
 

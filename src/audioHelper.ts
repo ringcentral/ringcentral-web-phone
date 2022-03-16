@@ -26,7 +26,9 @@ export class AudioHelper {
     }
 
     private _playSound(url, val, volume): AudioHelper {
-        if (!this._enabled || !url) return this;
+        if (!this._enabled || !url) {
+            return this;
+        }
 
         if (!this._audio[url]) {
             if (val) {

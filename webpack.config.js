@@ -1,5 +1,6 @@
 const path = require('path');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+const webpack = require('webpack');
+const TerserPlugin = require('terser-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 
@@ -18,12 +19,12 @@ const libConfig = {
         libraryTarget: 'umd',
         libraryExport: 'default'
     },
+    cache: true,
     module: {
         rules: [
             {
                 test: /\.tsx?$/,
                 use: [
-                    'cache-loader',
                     {
                         loader: 'ts-loader',
                         options: {
@@ -32,6 +33,12 @@ const libConfig = {
                     }
                 ],
                 include: path.resolve('src')
+            },
+            {
+                test: /\.m?js?$/,
+                resolve: {
+                    fullySpecified: false
+                }
             }
         ]
     },
@@ -53,10 +60,14 @@ const libConfig = {
         }
     },
     devServer: {
-        contentBase: __dirname,
         port: 8080,
-        overlay: true,
-        publicPath: '/'
+        client: {
+            overlay: true
+        },
+        static: {
+            directory: __dirname,
+            publicPath: '/'
+        }
     }
 };
 
@@ -69,12 +80,8 @@ if (isProduction) {
         [`${key}.min`]: src
     };
     libConfig.optimization = {
-        minimize: true
-        // minimizer: [
-        //     new UglifyJsPlugin({
-        //         include: /\.min\.js$/
-        //     })
-        // ]
+        minimize: true,
+        minimizer: [new TerserPlugin()]
     };
 }
 
@@ -100,7 +107,25 @@ module.exports = [
                 root: ['RingCentral', 'WebPhone']
             }
         },
+        resolve: {
+            fallback: {
+                querystring: require.resolve('querystring-es3')
+            }
+        },
+        module: {
+            rules: [
+                {
+                    test: /\.m?js?$/,
+                    resolve: {
+                        fullySpecified: false
+                    }
+                }
+            ]
+        },
         plugins: [
+            new webpack.ProvidePlugin({
+                process: 'process/browser'
+            }),
             new HtmlWebpackPlugin({
                 template: './demo/index.html',
                 inject: false,
@@ -111,12 +136,13 @@ module.exports = [
                 filename: 'callback.html',
                 chunks: ['demoCallback', 'demoVendor']
             }),
-            //FIXME Replace with file loader
-            new CopyPlugin([
-                { from: 'node_modules/bootstrap', to: 'bootstrap' },
-                { from: 'audio', to: 'audio' },
-                { from: 'demo/img', to: 'img' }
-            ])
+            new CopyPlugin({
+                patterns: [
+                    { from: 'node_modules/bootstrap', to: 'bootstrap' },
+                    { from: 'audio', to: 'audio' },
+                    { from: 'demo/img', to: 'img' }
+                ]
+            })
         ],
         optimization: {
             minimize: true,
