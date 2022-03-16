@@ -610,7 +610,6 @@ async function transfer(
 
 // DOCUMENT: Return type has changed
 // option type has changed
-// FIXME: Test this
 /**
  *
  * @param this WebPhoneSessionSessionInviteOptions

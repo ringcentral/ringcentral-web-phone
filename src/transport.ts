@@ -267,7 +267,7 @@ function noAvailableServers(this: WebPhoneTransport): boolean {
     return this.servers.every(({ isError }) => isError);
 }
 
-// FIXME: This has changed. Verify
+// FIXME: Need a way to test this
 function isSipErrorCode(this: WebPhoneTransport, statusCode: number | undefined): boolean {
     if (!statusCode) {
         return false;
@@ -283,6 +283,5 @@ async function onSipErrorCode(this: WebPhoneTransport): Promise<void> {
     this.__setServerIsError(this.server);
     this.emit(Events.Transport.ConnectionFailure);
     this.reconnectionAttempts = 0;
-    // FIXME: reconnect handles disconnecting if already connected and gets the next server
     return this.reconnect();
 }

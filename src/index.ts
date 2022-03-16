@@ -1,6 +1,5 @@
 import { Levels as LogLevels } from 'sip.js/lib/core/log/levels';
 import { LogLevel } from 'sip.js/lib/api/user-agent-options';
-import { SessionDescriptionHandlerFactoryOptions } from 'sip.js/lib/platform/web';
 import {
     UserAgent,
     Web,
@@ -11,7 +10,7 @@ import {
 } from 'sip.js';
 
 import { createWebPhoneUserAgent, WebPhoneUserAgent } from './userAgent';
-import { default as MediaStreams, MediaStreamsImplementation } from './mediaStreams';
+import { default as MediaStreams, MediaStreamsImpl } from './mediaStreams';
 import { uuid, delay, extend } from './utils';
 import {
     uuidKey,
@@ -290,7 +289,7 @@ export default class WebPhone {
     /** Utility function to extend object */
     public static extend = extend;
     public static MediaStreams = MediaStreams;
-    public static MediaStreamsImplementation = MediaStreamsImplementation;
+    public static MediaStreamsImpl = MediaStreamsImpl;
 
     /** Sip Info recieved from the registeration endpoint */
     public sipInfo: SipInfo;
@@ -305,6 +304,13 @@ export default class WebPhone {
 
     // TODO: include 'WebPhone' for all apps other than Chrome and Glip
     // TODO: parse wsservers from new api spec
+    /**
+     *
+     * @param registrationData
+     * @param options
+     *
+     * Creates a new instance of WebPhoneSession that can be used to make and recieve WebRTC calls
+     */
     public constructor(registrationData: WebPhoneRegistrationData = {}, options: WebPhoneOptions = {}) {
         options = Object.assign({}, defaultWebPhoneOptions, options);
 

@@ -53,7 +53,7 @@ export class RTPReport {
 
 /** Media Streams class to monitor media stats */
 export default class MediaStreams {
-    public mediaStreamsImplementation: MediaStreamsImplementation;
+    public mediaStreamsImpl: MediaStreamsImpl;
     /** Remove iceconnectionstatechange event listeners and stop collecting stats */
     public release: any;
     /** Reconnect media */
@@ -64,28 +64,28 @@ export default class MediaStreams {
     public stopMediaStats: any;
 
     public constructor(session: WebPhoneSession) {
-        this.mediaStreamsImplementation = new MediaStreamsImplementation(session);
-        this.release = this.mediaStreamsImplementation.release.bind(this.mediaStreamsImplementation);
-        this.reconnectMedia = this.mediaStreamsImplementation.reconnectMedia.bind(this.mediaStreamsImplementation);
-        this.getMediaStats = this.mediaStreamsImplementation.getMediaStats.bind(this.mediaStreamsImplementation);
-        this.stopMediaStats = this.mediaStreamsImplementation.stopMediaStats.bind(this.mediaStreamsImplementation);
+        this.mediaStreamsImpl = new MediaStreamsImpl(session);
+        this.release = this.mediaStreamsImpl.release.bind(this.mediaStreamsImpl);
+        this.reconnectMedia = this.mediaStreamsImpl.reconnectMedia.bind(this.mediaStreamsImpl);
+        this.getMediaStats = this.mediaStreamsImpl.getMediaStats.bind(this.mediaStreamsImpl);
+        this.stopMediaStats = this.mediaStreamsImpl.stopMediaStats.bind(this.mediaStreamsImpl);
     }
 
     /** Set callback function to be called when media stats are generated */
     public set onRTPStat(callback: (stats: RTPReport, session: WebPhoneSession) => any) {
-        this.mediaStreamsImplementation.onRTPStat = callback;
+        this.mediaStreamsImpl.onRTPStat = callback;
     }
 
     /** Set callback function to be called when media state changes */
     public set onMediaConnectionStateChange(callback: (state: string, session: WebPhoneSession) => any) {
-        this.mediaStreamsImplementation.onMediaConnectionStateChange = callback;
+        this.mediaStreamsImpl.onMediaConnectionStateChange = callback;
     }
 }
 
 /**
  * MediaStreams Implementation
  */
-export class MediaStreamsImplementation {
+export class MediaStreamsImpl {
     public preRTT: any;
     private ktag = 'MediaStreams';
     private session: WebPhoneSession;
