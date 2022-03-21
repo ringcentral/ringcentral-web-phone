@@ -323,7 +323,7 @@ $(function () {
 
         var interval = setInterval(function () {
             var status = session.state;
-            $info.text(`Session stats ${status}\n`);
+            $info.text(`Session state: ${status}\n`);
         }, 1000);
 
         function close() {

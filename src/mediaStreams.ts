@@ -6,6 +6,8 @@
 
 import { SessionDescriptionHandler } from 'sip.js/lib/platform/web';
 import { WebPhoneSession } from './session';
+import { RTPReport } from './rtpReport';
+import { Events } from './events';
 
 enum ConnectionState {
     new = 'mediaConnectionStateNew',
@@ -17,7 +19,6 @@ enum ConnectionState {
     closed = 'mediaConnectionStateClosed'
 }
 
-/** @ignore */
 export enum Browsers {
     MSIE = 'IE',
     Chrome = 'Chrome',
@@ -26,29 +27,13 @@ export enum Browsers {
     Opera = 'Opera'
 }
 
-/** Params to create new peer connection offer */
-interface RTCOfferOptions {
-    iceRestart?: boolean;
-    offerToReceiveAudio?: boolean;
-    offerToReceiveVideo?: boolean;
-}
-
-export class RTPReport {
-    public outboundRtpReport: any;
-    public inboundRtpReport: any;
-    public rttMS: any;
-    public localCandidates: any[];
-    public remoteCandidates: any[];
-    public transport: any;
-
-    public constructor() {
-        this.outboundRtpReport = {};
-        this.inboundRtpReport = {};
-        this.rttMS = {};
-        this.localCandidates = [];
-        this.remoteCandidates = [];
-        this.transport = {};
-    }
+export class WebPhoneRTPReport implements RTPReport {
+    outboundRtpReport = {};
+    inboundRtpReport = {};
+    rttMs = {};
+    localCandidates = [];
+    remoteCandidates = [];
+    transport = {};
 }
 
 /** Media Streams class to monitor media stats */
@@ -59,9 +44,9 @@ export default class MediaStreams {
     /** Reconnect media */
     public reconnectMedia: any;
     /** Get media stream stats */
-    public getMediaStats: any;
+    public getMediaStats: (callback: (report: RTPReport) => any, interval: number) => void;
     /** Stop collecting stats */
-    public stopMediaStats: any;
+    public stopMediaStats: () => void;
 
     public constructor(session: WebPhoneSession) {
         this.mediaStreamsImpl = new MediaStreamsImpl(session);
@@ -134,7 +119,7 @@ export class MediaStreamsImpl {
             this.preRTT.currentRoundTripTime = 0;
             return;
         }
-        this.getRTPReport(new RTPReport());
+        this.getRTPReport(new WebPhoneRTPReport());
     }
 
     public onPeerConnectionStateChange() {
@@ -153,12 +138,12 @@ export class MediaStreamsImpl {
         (this.session as any).logger.debug(`${this.tag}: peerConnection State: ${state}`);
     }
 
-    public async getRTPReport(report) {
+    public async getRTPReport(report: RTPReport) {
         const sessionDescriptionHandler = this.session.sessionDescriptionHandler as SessionDescriptionHandler;
         const peerConnection = sessionDescriptionHandler.peerConnection;
         try {
             const stats = await peerConnection.getStats();
-            stats.forEach((stat) => {
+            stats.forEach((stat: { [key: string]: any }) => {
                 switch (stat.type) {
                     case 'inbound-rtp':
                         Object.keys(stat).forEach((statName) => {
@@ -169,10 +154,10 @@ export class MediaStreamsImpl {
                                 case 'packetsLost':
                                 case 'fractionLost':
                                 case 'mediaType':
-                                    report.inboundRtpReport[statName] = stat[statName];
+                                    (report.inboundRtpReport as any)[statName] = stat[statName];
                                     break;
                                 case 'roundTripTime':
-                                    report.rttMS[statName] = stat[statName];
+                                    report.rttMs[statName] = stat[statName];
                                     break;
                             }
                         });
@@ -183,7 +168,7 @@ export class MediaStreamsImpl {
                                 case 'bytesSent':
                                 case 'packetsSent':
                                 case 'mediaType':
-                                    report.outboundRtpReport[statName] = stat[statName];
+                                    (report.outboundRtpReport as any)[statName] = stat[statName];
                                     break;
                             }
                         });
@@ -192,7 +177,7 @@ export class MediaStreamsImpl {
                         Object.keys(stat).forEach((statName) => {
                             switch (statName) {
                                 case 'currentRoundTripTime':
-                                    report.rttMS[statName] = stat[statName];
+                                    report.rttMs[statName] = stat[statName];
                                     break;
                             }
                         });
@@ -257,23 +242,22 @@ export class MediaStreamsImpl {
                 }
             });
 
-            if (!report.rttMS.hasOwnProperty('currentRoundTripTime')) {
-                if (!report.rttMS.hasOwnProperty('roundTripTime')) {
-                    report.rttMS.currentRoundTripTime = this.preRTT.currentRoundTripTime;
+            if (!report.rttMs.hasOwnProperty('currentRoundTripTime')) {
+                if (!report.rttMs.hasOwnProperty('roundTripTime')) {
+                    report.rttMs.currentRoundTripTime = this.preRTT.currentRoundTripTime;
                 } else {
-                    report.rttMS.currentRoundTripTime = report.rttMS.roundTripTime; // for Firefox
-                    delete report.rttMS.roundTripTime;
+                    report.rttMs.currentRoundTripTime = report.rttMs.roundTripTime; // for Firefox
+                    delete report.rttMs.roundTripTime;
                 }
             } else {
-                report.rttMS.currentRoundTripTime = Math.round(report.rttMS.currentRoundTripTime * 1000);
+                report.rttMs.currentRoundTripTime = Math.round(report.rttMs.currentRoundTripTime * 1000);
             }
 
-            if (report.rttMS.hasOwnProperty('currentRoundTripTime')) {
-                this.preRTT.currentRoundTripTime = report.rttMS.currentRoundTripTime;
+            if (report.rttMs.hasOwnProperty('currentRoundTripTime')) {
+                this.preRTT.currentRoundTripTime = report.rttMs.currentRoundTripTime;
             }
-
             this.onRTPStat(report, this.session);
-            this.session.emit('rtpStat', report);
+            this.session.emit(Events.Session.RTPStat, report);
         } catch (e) {
             (this.session as any).logger.error(`${this.tag}: Unable to get media stats: ${e.message}`);
         }
@@ -282,10 +266,7 @@ export class MediaStreamsImpl {
     public constructor(session) {
         this.ktag = 'MediaStreams';
         if (!session) {
-            (this.session as any).logger.error(
-                `${this.ktag}: Cannot initial media stream monitoring. The session cannot be null`
-            );
-            return;
+            throw new Error(`${this.ktag}: Cannot initial media stream monitoring. Session is not passed`);
         }
         this.session = session;
         this.onMediaConnectionStateChange = null;

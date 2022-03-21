@@ -2,6 +2,7 @@ import { SessionState, Publisher, UserAgent } from 'sip.js';
 
 import { WebPhoneSession } from './session';
 import { SessionDescriptionHandler } from 'sip.js/lib/platform/web';
+import { Events } from './events';
 
 const formatFloat = (input: any): string => parseFloat(input.toString()).toFixed(2);
 
@@ -84,7 +85,7 @@ const publishQosStats = async (session: WebPhoneSession, qosStatsObj: QosStats, 
     (session as any).logger.log('Remote Candidate: ' + JSON.stringify(qosStatsObj.remotecandidate));
     qosStatsObj.status = false;
     await publisher.dispose();
-    session.emit('qos-published', body);
+    session.emit(Events.Session.QOSPublished, body);
 };
 
 const calculateNetworkUsage = (qosStatsObj: QosStats): string => {

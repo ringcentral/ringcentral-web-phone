@@ -26,14 +26,13 @@ import {
     WebPhoneSessionDescriptionHandlerFactoryOptions
 } from './sessionDescriptionHandler';
 
-/** @ignore */
 export interface TransportServer {
     uri: string;
     isError?: boolean;
 }
 
 export interface WebPhoneRegistrationData {
-    /** Sip Info recieved from the registeration endpoint */
+    /** Sip Info recieved after registering device with RingCentral */
     sipInfo?: Array<SipInfo> | SipInfo;
     /** Sip error codes */
     sipErrorCodes?: string[];

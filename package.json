@@ -15,12 +15,15 @@
     "lint": "eslint --cache --cache-location node_modules/.cache/eslint --fix",
     "lint:all": "npm run lint \"src/**/*.ts\" \"demo/**/*.js\"",
     "lint:staged": "lint-staged",
-    "docs": "typedoc --options ./typedoc.json"
+    "docs:webphone": "typedoc --options ./webphone-typedoc.json",
+    "docs:sipjs": "typedoc --options ./sipjs-typedoc.json",
+    "docs": "npm run docs:webphone && npm run docs:sipjs"
   },
   "dependencies": {
     "sip.js": "0.20.0"
   },
   "devDependencies": {
+    "@faker-js/faker": "6.0.0",
     "@types/expect-puppeteer": "3.3.1",
     "@types/jest": "24.0.15",
     "@types/jest-environment-puppeteer": "4.0.0",

@@ -57,7 +57,7 @@ export interface RCHeaders {
     displayInfoSub?: string;
 }
 
-interface ReplyOptions {
+export interface ReplyOptions {
     replyType: number; //FIXME: Use enum
     replyText: string;
     timeValue: string;
@@ -70,7 +70,7 @@ export interface RTCPeerConnectionLegacy extends RTCPeerConnection {
     getLocalStreams: () => MediaStream[];
 }
 
-class CommonSession {
+export class CommonSession {
     // DOCUMENT: This has been removed
     // sendRequest?: typeof sendRequest
     // onLocalHold?: typeof onLocalHold
@@ -177,7 +177,6 @@ export interface WebPhoneInviter extends Inviter, CommonSession {
 
 const mediaCheckTimer = 2000;
 
-/** @ignore */
 export function patchWebphoneSession(session: WebPhoneSession): WebPhoneSession {
     if (session.__patched) {
         return session;
@@ -257,7 +256,6 @@ export function patchWebphoneSession(session: WebPhoneSession): WebPhoneSession 
     return session;
 }
 
-/** @ignore */
 export function patchIncomingWebphoneSession(session: WebPhoneSession): void {
     try {
         parseRcHeader(session);
@@ -866,7 +864,6 @@ function stopPlaying(session: WebPhoneSession): void {
     session.userAgent.audioHelper.playIncoming(false);
 }
 
-/** @ignore */
 export function onSessionDescriptionHandlerCreated(session: WebPhoneSession): void {
     if (!session.userAgent.enableQos) {
         return;
