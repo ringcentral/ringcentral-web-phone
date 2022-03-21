@@ -1,4 +1,5 @@
 export interface DomAudio extends HTMLAudioElement {
+    /** @ignore */
     playPromise?: Promise<any>;
 }
 
@@ -78,13 +79,21 @@ export class AudioHelper {
         }
     }
 
-    /** Play incoming feedback */
-    public playIncoming(val): AudioHelper {
-        return this._playSound(this._incoming, val, this.volume || 0.5);
+    /**
+     * Play or pause incoming feedback
+     * @param value `true` to play audio and `false` to pause
+     * @returns
+     */
+    public playIncoming(value): AudioHelper {
+        return this._playSound(this._incoming, value, this.volume || 0.5);
     }
 
-    /** Play outgoing feedback */
-    public playOutgoing(val): AudioHelper {
-        return this._playSound(this._outgoing, val, this.volume || 1);
+    /**
+     * Play or pause outgoing feedback
+     * @param value `true` to play audio and `false` to pause
+     * @returns
+     */
+    public playOutgoing(value): AudioHelper {
+        return this._playSound(this._outgoing, value, this.volume || 1);
     }
 }

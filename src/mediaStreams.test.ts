@@ -419,7 +419,7 @@ describe('MediaStreams', () => {
         const mediaStreams = new MediaStreams(mockSession as any);
         mediaStreams.mediaStreamsImpl['mediaStatsTimer'] = 123;
         const mockRemoveEventListener = (event, fn) => {
-            expect(fn).toBe(mediaStreams.mediaStreamsImpl.onPeerConnectionStateChange);
+            expect(fn).toBe(mediaStreams.mediaStreamsImpl['onPeerConnectionStateChange']);
             expect(mediaStreams.mediaStreamsImpl['mediaStatsTimer']).toBe(null);
             done();
         };

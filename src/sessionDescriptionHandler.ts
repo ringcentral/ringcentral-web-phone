@@ -14,11 +14,19 @@ import { SessionDescriptionHandlerFactoryOptions } from 'sip.js/lib/platform/web
 type ResolveFunction = () => void;
 type RejectFunction = (reason: Error) => void;
 
+/**
+ * Extension of SessionDescriptionHandlerConfiguration with additional options
+ */
 export interface WebPhoneSessionDescriptionHandlerConfiguration extends SessionDescriptionHandlerConfiguration {
+    /** Enable DSCP by setting packet priority in SDP */
     enableDscp?: boolean;
 }
 
+/**
+ * Extension of SessionDescriptionHandlerFactoryOptions with additional options
+ */
 export interface WebPhoneSessionDescriptionHandlerFactoryOptions extends SessionDescriptionHandlerFactoryOptions {
+    /** Enable DSCP by setting packet priority in SDP */
     enableDscp?: boolean;
 }
 

@@ -38,12 +38,25 @@ export class WebPhoneRTPReport implements RTPReport {
 
 /** Media Streams class to monitor media stats */
 export default class MediaStreams {
+    /**
+     * Reference to MediaStreamsImpl object. This Object has all the functions to handle media streams
+     *
+     * MediaStreams class is a wrapper around MediaStreamsImpl
+     */
     public mediaStreamsImpl: MediaStreamsImpl;
     /** Remove iceconnectionstatechange event listeners and stop collecting stats */
     public release: any;
-    /** Reconnect media */
+    /**
+     * Reconnect media and send reinvite on the existing session.
+     *
+     * This will also recreate SDP and send it over with the reinvite message
+     */
     public reconnectMedia: any;
-    /** Get media stream stats */
+    /**
+     * @param callback function which will be called every time media stats are generated. Will override callback passed to `onRTPStat`
+     * @param interval interval for the recurring call to the callback function
+     * @returns
+     */
     public getMediaStats: (callback: (report: RTPReport) => any, interval: number) => void;
     /** Stop collecting stats */
     public stopMediaStats: () => void;
@@ -56,12 +69,18 @@ export default class MediaStreams {
         this.stopMediaStats = this.mediaStreamsImpl.stopMediaStats.bind(this.mediaStreamsImpl);
     }
 
-    /** Set callback function to be called when media stats are generated */
+    /**
+     * Set a function to be called when media stats are generated
+     * @param callback optionally, you can set a function on MediaStreams object. This will be treated as a default callback when media stats are generated if a callback function is not passed with `getMediaStats` function
+     */
     public set onRTPStat(callback: (stats: RTPReport, session: WebPhoneSession) => any) {
         this.mediaStreamsImpl.onRTPStat = callback;
     }
 
-    /** Set callback function to be called when media state changes */
+    /**
+     * Set a function to be called when `peerConnetion` iceconnectionstatechange changes
+     * @param callback function to be called when `peerConnetion` iceconnectionstatechange changes
+     */
     public set onMediaConnectionStateChange(callback: (state: string, session: WebPhoneSession) => any) {
         this.mediaStreamsImpl.onMediaConnectionStateChange = callback;
     }
@@ -71,27 +90,34 @@ export default class MediaStreams {
  * MediaStreams Implementation
  */
 export class MediaStreamsImpl {
-    public preRTT: any;
     private ktag = 'MediaStreams';
     private session: WebPhoneSession;
     private isChrome: boolean;
     private isFirefox: boolean;
     private isSafari: boolean;
     private mediaStatsTimer: any;
-    public on;
-    public localStream;
-    public remoteStream;
-    public validateSDP;
-    /** Callback to be triggered when media state changes */
+    public preRTT: any;
     // DOCUMENT: order of params has changed
+    /**
+     * Set a function to be called when `peerConnetion` iceconnectionstatechange changes
+     *
+     * @param callback function to be called when `peerConnetion` iceconnectionstatechange changes
+     */
     public onMediaConnectionStateChange: (state: string, session: WebPhoneSession) => any;
-    /** Callback to be triggered when starts are generated */
+    /**
+     * Set a function to be called when media stats are generated
+     * @param callback optionally, you can set a function on MediaStreams object. This will be treated as a default callback when media stats are generated if a callback function is not passed with `getMediaStats` function
+     */
     public onRTPStat: (stats: RTPReport, session: WebPhoneSession) => any;
 
     private get tag() {
         return this.ktag;
     }
 
+    /**
+     * Function to find what browser is being used depending on the `navigator.userAgent` value
+     * @returns Browsers enum value to denote what browser if being used
+     */
     public browser() {
         if (navigator.userAgent.search('MSIE') >= 0) {
             return Browsers.MSIE;
@@ -107,7 +133,7 @@ export class MediaStreamsImpl {
         return 'unknown';
     }
 
-    public mediaStatsTimerCallback() {
+    private mediaStatsTimerCallback() {
         const sessionDescriptionHandler = this.session.sessionDescriptionHandler as SessionDescriptionHandler;
         const peerConnection = sessionDescriptionHandler.peerConnection;
         if (!peerConnection) {
@@ -122,7 +148,7 @@ export class MediaStreamsImpl {
         this.getRTPReport(new WebPhoneRTPReport());
     }
 
-    public onPeerConnectionStateChange() {
+    private onPeerConnectionStateChange() {
         let eventName = 'unknown';
         const sessionDescriptionHandler = this.session.sessionDescriptionHandler as SessionDescriptionHandler;
         const state = sessionDescriptionHandler.peerConnection.iceConnectionState;
@@ -138,7 +164,7 @@ export class MediaStreamsImpl {
         (this.session as any).logger.debug(`${this.tag}: peerConnection State: ${state}`);
     }
 
-    public async getRTPReport(report: RTPReport) {
+    private async getRTPReport(report: RTPReport) {
         const sessionDescriptionHandler = this.session.sessionDescriptionHandler as SessionDescriptionHandler;
         const peerConnection = sessionDescriptionHandler.peerConnection;
         try {
@@ -291,6 +317,11 @@ export class MediaStreamsImpl {
         }
     }
 
+    /**
+     * @param callback function which will be called every time media stats are generated. Will override callback passed to `onRTPStat`
+     * @param interval interval for the recurring call to the callback function
+     * @returns
+     */
     public getMediaStats(callback = null, interval = 1000) {
         if (!this.onRTPStat && !callback) {
             (this.session as any).logger.debug(
@@ -310,6 +341,9 @@ export class MediaStreamsImpl {
         }, interval);
     }
 
+    /**
+     * Stop collecting stats. This will stop calling the registered function (either that was registered using `onRTPstat` or using `getMediaStats`)
+     */
     public stopMediaStats() {
         if (this.mediaStatsTimer) {
             clearTimeout(this.mediaStatsTimer);
@@ -317,6 +351,11 @@ export class MediaStreamsImpl {
         }
     }
 
+    /**
+     * Reconnect media and send reinvite on the existing session.
+     *
+     * This will also recreate SDP and send it over with the reinvite message
+     */
     public reconnectMedia(): Promise<void> {
         return new Promise((resolve, reject) => {
             this.session
@@ -326,6 +365,9 @@ export class MediaStreamsImpl {
         });
     }
 
+    /**
+     * Remove iceconnectionstatechange event listeners and stop collecting stats
+     */
     public release() {
         if (this.mediaStatsTimer) {
             clearTimeout(this.mediaStatsTimer);

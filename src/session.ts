@@ -34,6 +34,9 @@ import { Events } from './events';
 import { WehPhoneUserAgentCore } from './userAgentCore';
 import { startQosStatsCollection } from './qos';
 
+/**
+ * Object representing all the headers used by RingCentral backend
+ */
 export interface RCHeaders {
     body?: string;
     reqid?: string;
@@ -83,15 +86,19 @@ export class CommonSession {
     __userAgentCoreEventsSetup?: boolean;
     /** Flag to check if the call is on hold or not */
     held?: boolean;
+    /** Options to represent dom elements where media stream should be loaded */
     media?: { local?: HTMLMediaElement; remote?: HTMLMediaElement };
     /** Flag to indicate if media stats are being collected */
     mediaStatsStarted?: boolean;
+    /** MediaStreams class instance which has the logic to collect media stream stats */
     mediaStreams?: MediaStreams;
     /** Flag to check if the call is muted or not */
     muted?: boolean;
+    /** Counter to represent how many media stats report were missed becuase of no audio */
     noAudioReportCount?: number;
     /** JOSN representation of RC headers received for an incoming call */
     rcHeaders?: RCHeaders;
+    /** Flag to represent if reinvite request was sent because there was no audio reported */
     reinviteForNoAudioSent?: boolean;
     /** @ignore */
     __accept?: typeof Invitation.prototype.accept;
@@ -105,7 +112,15 @@ export class CommonSession {
     barge?: typeof barge;
     /** RingCentral blind transfer implementation */
     blindTransfer?: typeof blindTransfer;
+    /**
+     * @internal
+     * Helper function which represents if call control features can be used or not
+     */
     canUseRCMCallControl?: typeof canUseRCMCallControl;
+    /**
+     * @internal
+     * Create session message which would be sent to the RingCentral backend
+     */
     createSessionMessage?: typeof createSessionMessage;
     /** Sends a DTMF over the call */
     dtmf?: typeof dtmf;
@@ -133,12 +148,23 @@ export class CommonSession {
     removeListener?: typeof EventEmitter.prototype.removeListener;
     /** RingCentral reply with message implementation */
     replyWithMessage?: typeof replyWithMessage;
+    /**
+     * @internal
+     * Helper method that sends an INFO request to other user agent and then waits for an INFO request from the other user agent
+     */
     sendInfoAndRecieveResponse?: typeof sendInfoAndRecieveResponse;
+    /**
+     * @internal
+     * Helper function to send INFO request with `move` instruction to RingCentral backend
+     */
     sendMoveResponse?: typeof sendMoveResponse;
+    /** Send `receiveConfirm` command to backend */
     sendReceiveConfirm?: typeof sendReceiveConfirm;
+    /** Helper function to send session message to backend using UserAgent */
     sendSessionMessage?: typeof sendSessionMessage;
     /** Start recording the call */
     startRecord?: typeof startRecord;
+    /** Function to stop collecting media stats */
     stopMediaStats?: typeof stopMediaStats;
     /** Stop recording the call */
     stopRecord?: typeof stopRecord;
@@ -163,7 +189,23 @@ export type WebPhoneSession = WebPhoneInvitation | WebPhoneInviter;
  * [Reference](https://github.com/onsip/SIP.js/blob/master/docs/api/sip.js.invitation.md)
  */
 export interface WebPhoneInvitation extends Invitation, CommonSession {
+    /**
+     * Accept the invitation.
+     *
+     * @remarks
+     * Accept the incoming INVITE request to start a Session.
+     * Replies to the INVITE request with a 200 Ok response.
+     * Resolves once the response sent, otherwise rejects.
+     *
+     * This method may reject for a variety of reasons including
+     * the receipt of a CANCEL request before `accept` is able
+     * to construct a response.
+     * @param options - Options bucket.
+     */
     accept: typeof Invitation.prototype.accept;
+    /**
+     * User Agent instance
+     */
     userAgent: WebPhoneUserAgent;
 }
 
@@ -172,6 +214,9 @@ export interface WebPhoneInvitation extends Invitation, CommonSession {
  * [Reference](https://github.com/onsip/SIP.js/blob/master/docs/api/sip.js.inviter.md)
  */
 export interface WebPhoneInviter extends Inviter, CommonSession {
+    /**
+     * User Agent instance
+     */
     userAgent: WebPhoneUserAgent;
 }
 

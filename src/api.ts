@@ -4,14 +4,15 @@ export { WebPhoneEvents } from './events';
 export { SipInfo, WebPhoneOptions, WebPhoneRegistrationData } from './index';
 export { WebPhone };
 export { MediaStreams, MediaStreamsImpl, Browsers } from './mediaStreams';
-export { InboundRtpReport, RTPReport, OutboundRtpReport, RttReport, isNoAudio } from './rtpReport';
+export { InboundRtpReport, RTPReport, OutboundRtpReport, RttReport } from './rtpReport';
 export {
     RCHeaders,
     WebPhoneInvitation,
     WebPhoneSession,
     ReplyOptions,
     RTCPeerConnectionLegacy,
-    WebPhoneInviter
+    WebPhoneInviter,
+    CommonSession
 } from './session';
 export {
     WebPhoneSessionDescriptionHandlerConfiguration,
