@@ -1,61 +1,65 @@
-import {Page} from 'puppeteer';
-import {delay, login, screenshot} from './utils';
+import puppeteer, { Browser, Page } from 'puppeteer';
+import { delay, login, screenshot } from './utils';
 
-let receiverPage: Page = page;
 let callerPage: Page;
+let receiverPage: Page;
+let browser: Browser;
 
 jest.setTimeout(120000);
 
-let loginPromise = Promise.resolve();
-
 const ensureLoggedIn = async () => {
+    browser = await puppeteer.launch();
     callerPage = await browser.newPage();
-    await login(receiverPage, 'RECEIVER', {
+    receiverPage = await browser.newPage();
+    await login(receiverPage, 'Receiver', {
         server: process.env.RC_WP_RECEIVER_SERVER,
         appKey: process.env.RC_WP_RECEIVER_APPKEY,
         appSecret: process.env.RC_WP_RECEIVER_APPSECRET,
         login: process.env.RC_WP_RECEIVER_USERNAME,
         password: process.env.RC_WP_RECEIVER_PASSWORD
     });
-    await login(callerPage, 'CALLER', {
+    await login(callerPage, 'Caller', {
         server: process.env.RC_WP_CALLER_SERVER,
         appKey: process.env.RC_WP_CALLER_APPKEY,
         appSecret: process.env.RC_WP_CALLER_APPSECRET,
         login: process.env.RC_WP_CALLER_USERNAME,
         password: process.env.RC_WP_CALLER_PASSWORD
     });
-    await expect(receiverPage).toMatch('WebPhone Receiver', {timeout: 30000});
-    await expect(callerPage).toMatch('WebPhone Caller', {timeout: 30000});
-    await screenshot(receiverPage, 'init');
-    await screenshot(callerPage, 'init');
-    await delay(3000);
 };
 
 describe('Basic integration', () => {
     beforeAll(async () => {
-        loginPromise = ensureLoggedIn();
-        await loginPromise;
+        await ensureLoggedIn();
+    });
+
+    afterAll(() => {
+        browser.close();
+    });
+
+    it('check if page is rendered', async () => {
+        await expect(await receiverPage.title()).toMatch('WebPhone Receiver', { timeout: 30000 });
+        await expect(await callerPage.title()).toMatch('WebPhone Caller', { timeout: 30000 });
+        await screenshot(receiverPage, 'init');
+        await screenshot(callerPage, 'init');
+        await delay(5000);
+        await screenshot(receiverPage, 'logged-in');
+        await screenshot(callerPage, 'logged-in');
     });
 
     it('makes the call', async () => {
-        await loginPromise;
-
-        console.log('call test');
-
         // call
         await expect(callerPage).toFillForm('form[name="call"]', {
             number: process.env.RC_WP_RECEIVER_USERNAME
         });
-        await expect(callerPage).toClick('button', {text: 'Call'});
+        await expect(callerPage).toClick('button', { text: 'Call' });
+        await delay(3000);
         await screenshot(callerPage, 'calling');
         await screenshot(receiverPage, 'waiting');
-
         // answer
-        await expect(receiverPage).toClick('button', {text: 'Answer', timeout: 30000});
+        await expect(receiverPage).toClick('button', { text: 'Answer', timeout: 30000 });
         await screenshot(receiverPage, 'answered');
-
-        // // hang up
-        await expect(receiverPage).toClick('button', {text: 'Hang Up', timeout: 30000});
+        // hang up
+        await expect(receiverPage).toClick('button', { text: 'Hang Up', timeout: 30000 });
         await screenshot(receiverPage, 'hangup');
     });
 });

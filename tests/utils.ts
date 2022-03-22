@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import {Page, Response, ScreenshotOptions} from 'puppeteer';
+import { HTTPResponse, Page, ScreenshotOptions } from 'puppeteer';
 import config from '../jest-puppeteer.config';
 
-export const openPage = async (page: Page, url = '/'): Promise<Response> =>
+export const openPage = async (page: Page, url = '/'): Promise<HTTPResponse> =>
     page.goto(`http://localhost:${config.server.port}${url}`);
 
 const screenshotPath = path.resolve(process.cwd(), '.screenshots');
@@ -30,13 +30,13 @@ export const screenshot = async (page: Page, name: string, options: ScreenshotOp
     });
 };
 
-export const delay = async (ms: number): Promise<any> => new Promise(resolve => setTimeout(resolve, ms));
+export const delay = async (ms: number): Promise<any> => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const login = async (page: Page, name, credentials: any): Promise<void> => {
     await openPage(page, '/');
-    await page.evaluate(`document.title = '${name}'`);
+    await page.evaluate(`document.title = "WebPhone ${name}"`);
     await page.waitForSelector('a.accordion-toggle');
-    await page.click('a.accordion-toggle'); //FIXME TS does not recognize toClick
+    await page.click('a.accordion-toggle');
 
     await expect(page).toFillForm('form[name="authorize-code"]', {
         server: credentials.server,
@@ -50,8 +50,9 @@ export const login = async (page: Page, name, credentials: any): Promise<void> =
         password: credentials.password
     });
 
-    await expect(page).toClick('button', {text: 'Login'});
+    await expect(page).toClick('button', { text: 'Login' });
 };
 
-if (!fs.existsSync(screenshotPath)) fs.mkdirSync(screenshotPath);
-console.log('Screenshot path: ', screenshotPath);
+if (!fs.existsSync(screenshotPath)) {
+    fs.mkdirSync(screenshotPath);
+}

@@ -1,5 +1,5 @@
 import EventEmitter from 'events';
-import { faker } from '@faker-js/faker';
+import { faker } from '@faker-js/faker'; // eslint-disable-line import/no-unresolved
 
 import { default as MediaStreams, MediaStreamsImpl, Browsers, WebPhoneRTPReport } from '../src/mediaStreams';
 import { Events } from './events';
@@ -403,15 +403,13 @@ describe('MediaStreams', () => {
         jest.useRealTimers();
     });
 
-    test('should send reinvite when reconnecting media', async (done) => {
+    test('should send reinvite when reconnecting media', async () => {
         const mockSession = new MockSession();
         const mediaStreams = new MediaStreamsImpl(mockSession as any);
-        const mockReinvite = () => {
-            // reinvite is called to call done to end test case
-            return Promise.resolve(done());
-        };
+        const mockReinvite = jest.fn().mockReturnValue(Promise.resolve(null));
         mockSession.reinvite = mockReinvite;
         await mediaStreams.reconnectMedia();
+        expect(mockReinvite).toBeCalled();
     });
 
     test('should clenup on release', (done) => {

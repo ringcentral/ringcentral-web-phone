@@ -3,7 +3,6 @@ module.exports = {
         dumpio: true,
         headless: process.env.CI,
         args: [
-            // '--single-process',
             '--use-fake-ui-for-media-stream',
             '--use-fake-device-for-media-stream',
             '--allow-http-screen-capture',
