@@ -1,0 +1,15 @@
+{
+  "tsconfig": "./tsconfig.json",
+  "out": "docs/api",
+  "entryPoints": ["./src/api.ts"],
+  "entryPointStrategy": "expand",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "pretty": true,
+  "name": "RingCentral Webphone SDK",
+  "includeVersion": true,
+  "plugin": ["typedoc-plugin-rename-defaults", "typedoc-plugin-merge-modules", "typedoc-plugin-markdown"],
+  "sort": "source-order",
+  "cleanOutputDir": true,
+  "categorizeByGroup": true
+}

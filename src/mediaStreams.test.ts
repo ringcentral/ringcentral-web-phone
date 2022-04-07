@@ -195,7 +195,7 @@ class MockRTPStats {
 
 // #endregion
 
-global['navigator'] = new MockNavigator();
+global.navigator = new MockNavigator() as any;
 
 function generateMockStatAndReport() {
     const inboundRTP: any = new MockRTPStats('inbound-rtp');

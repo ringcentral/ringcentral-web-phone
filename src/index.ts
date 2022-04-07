@@ -19,12 +19,13 @@ import {
     defaultSipErrorCodes,
     defaultStunServers
 } from './constants';
-import packageJson from '../package.json';
 import { WebPhoneSession } from './session';
 import {
     defaultSessionDescriptionFactory,
     WebPhoneSessionDescriptionHandlerFactoryOptions
 } from './sessionDescriptionHandler';
+
+const { version } = require('../package.json');
 
 export interface TransportServer {
     uri: string;
@@ -280,7 +281,7 @@ const defaultWebPhoneOptions: WebPhoneOptions = {
  */
 export default class WebPhone {
     /** WebPhone version */
-    private static version = packageJson.version;
+    private static version = version;
     /** Utility function to generate uuid */
     public static uuid = uuid;
     /** Utility function to generate delay */
