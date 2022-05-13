@@ -610,7 +610,8 @@ async function sendReinvite(this: WebPhoneSession, options: any = {}): Promise<a
                 body: description,
                 receiveResponse: (response: IncomingResponse) => {
                     if (response.statusCode === 200) resolve(response);
-                }
+                },
+                extraHeaders: ["Contact: " + this.contact]
             });
         });
         await this.receiveReinviteResponse(result);
