@@ -41,7 +41,7 @@ class Navigator {
     }
 }
 
-global['navigator'] = new Navigator();
+global.navigator = new Navigator() as any;
 
 class FadeSessionDescriptionHandler {
     public label;
@@ -242,7 +242,7 @@ class FadePeerConnection {
         return new Promise((resolve, reject) => {
             if (global['navigator'].userAgent === 'Chrome') {
                 resolve(this.chromeStats);
-            } else if (global['navigator'].userAgent === global['navigator'].firefox) {
+            } else if (global['navigator'].userAgent === (global.navigator as any).firefox) {
                 resolve(this.firefoxStats);
             } else {
                 reject('unknown browser');
@@ -720,7 +720,7 @@ test('test getMediaStats in MediaStreamsImpl - mediaStatsTimerCallback -  if (!p
 });
 
 test('test getRTPReport in MediaStreamsImpl -- session.mediaStreams.onRTPStat', async () => {
-    global['navigator'].userAgent = global['navigator'].chrome;
+    (global.navigator as any).userAgent = (global.navigator as any).chrome;
     const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
     const pc = fadeSession.sessionDescriptionHandler.peerConnection;
@@ -732,7 +732,7 @@ test('test getRTPReport in MediaStreamsImpl -- session.mediaStreams.onRTPStat', 
 });
 
 test('test getRTPReport in MediaStreamsImpl-- session.onRTPStat', async () => {
-    global['navigator'].userAgent = global['navigator'].chrome;
+    (global.navigator as any).userAgent = (global.navigator as any).chrome;
     const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
     const pc = fadeSession.sessionDescriptionHandler.peerConnection;
@@ -744,7 +744,7 @@ test('test getRTPReport in MediaStreamsImpl-- session.onRTPStat', async () => {
 });
 
 test('test getRTPReport  in MediaStreamsImpl-- session.on("rtpStat")', async () => {
-    global['navigator'].userAgent = global['navigator'].chrome;
+    (global.navigator as any).userAgent = (global.navigator as any).chrome;
     const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
     const pc = fadeSession.sessionDescriptionHandler.peerConnection;
@@ -759,7 +759,7 @@ test('test getRTPReport  in MediaStreamsImpl-- session.on("rtpStat")', async () 
 });
 
 test('test getRTPReport in MediaStreamsImpl -- verify chrome and safari', async () => {
-    global['navigator'].userAgent = global['navigator'].chrome;
+    (global.navigator as any).userAgent = (global.navigator as any).chrome;
     const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
     const pc = fadeSession.sessionDescriptionHandler.peerConnection;
@@ -784,7 +784,7 @@ test('test getRTPReport in MediaStreamsImpl -- verify chrome and safari', async 
 });
 
 test('test getRTPReport in MediaStreamsImpl -- verify firefox', async () => {
-    global['navigator'].userAgent = global['navigator'].firefox;
+    (global.navigator as any).userAgent = (global.navigator as any).firefox;
     const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
     const pc = fadeSession.sessionDescriptionHandler.peerConnection;
@@ -809,7 +809,7 @@ test('test getRTPReport in MediaStreamsImpl -- verify firefox', async () => {
 });
 
 test('test getRTPReport in MediaStreamsImpl -- unknow browser and fail to get the statistics', async () => {
-    global['navigator'].userAgent = 'unknow';
+    (global.navigator as any).userAgent = 'unknow';
     const fadeSession = new FadeSession();
     var mediaStreams = new MediaStreamsImpl(fadeSession);
     const pc = fadeSession.sessionDescriptionHandler.peerConnection;
@@ -827,7 +827,7 @@ test('test getRTPReport in MediaStreamsImpl -- test web browser() type', async (
     const fadeSession = new FadeSession();
     const mediaStreams = new MediaStreamsImpl(fadeSession);
     for (const i in Browsers) {
-        global['navigator'].userAgent = i;
+        (global.navigator as any).userAgent = i;
         expect(mediaStreams.browser()).toEqual(Browsers[i]);
     }
     mediaStreams.release();
@@ -862,7 +862,7 @@ test('test MediaStreamsImpl and getMediaStats -- release with stopMediaStat', as
 });
 
 test('test MediaStreamsImpl and getMediaStats -- opera', async () => {
-    global['navigator'].userAgent = global['navigator'].opera;
+    (global.navigator as any).userAgent = (global.navigator as any).opera;
     const fadeSession = new FadeSession();
     const mediaStreams = new MediaStreamsImpl(fadeSession);
     expect(RTPReport).not.toBeNull();
