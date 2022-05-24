@@ -19,7 +19,7 @@ export interface WebPhoneUserAgent extends UA {
     __unregister: typeof UA.prototype.unregister;
     __transportConstructor: any;
     __onTransportConnected: () => void; // It is a private method
-    invite: (number: string, options: InviteOptions ) => WebPhoneSession;
+    invite: (number: string, options: InviteOptions) => WebPhoneSession;
     switchFrom: (activeCall: ActiveCallInfo, options: InviteOptions) => WebPhoneSession;
     onTransportConnected: typeof onTransportConnected;
     configuration: typeof UA.prototype.configuration;
@@ -215,7 +215,7 @@ export interface ActiveCallInfo {
     sipData: {
         toTag: string;
         fromTag: string;
-    }
+    };
 }
 
 /**
@@ -226,7 +226,7 @@ export interface ActiveCallInfo {
 function switchFrom(this: WebPhoneUserAgent, activeCall: ActiveCallInfo, options: InviteOptions = {}): WebPhoneSession {
     const replaceHeaders = [];
     replaceHeaders.push(
-      `Replaces: ${activeCall.id};to-tag=${activeCall.sipData.fromTag};from-tag=${activeCall.sipData.toTag}`,
+        `Replaces: ${activeCall.id};to-tag=${activeCall.sipData.fromTag};from-tag=${activeCall.sipData.toTag}`
     );
     replaceHeaders.push('RC-call-type: replace');
     const toNumber = activeCall.direction === 'Outbound' ? activeCall.to : activeCall.from;

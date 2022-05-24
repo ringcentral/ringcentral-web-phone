@@ -1,6 +1,10 @@
+
 {
-  "*.js": [
-    "npm run lint --",
-    "git add"
-  ]
+  "linters": {
+    "*.js": [
+      "npm run lint --",
+      "git add"
+    ]
+  },
+  "ignore": ["dist/**", "lib/**"]
 }

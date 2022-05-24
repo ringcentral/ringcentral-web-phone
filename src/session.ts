@@ -44,6 +44,7 @@ export interface RTCPeerConnectionLegacy extends RTCPeerConnection {
 
 export type WebPhoneSession = InviteClientContext &
     InviteServerContext & {
+        __shouldSendReinviteOnReconnect: boolean;
         __sendRequest: typeof InviteServerContext.prototype.sendRequest;
         __receiveRequest: typeof InviteServerContext.prototype.receiveRequest;
         __accept: typeof InviteServerContext.prototype.accept;
@@ -217,6 +218,23 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.mediaStatsStarted = false;
     session.noAudioReportCount = 0;
     session.reinviteForNoAudioSent = false;
+    session.__shouldSendReinviteOnReconnect = false;
+
+    session.ua.transport.on('disconnected', () => {
+        session.logger.log('Websocket disconnected. Setting __shouldSendReinviteOnReconnect to true');
+        session.__shouldSendReinviteOnReconnect = true;
+    });
+
+    session.ua.on('registered', async () => {
+        if(session.__shouldSendReinviteOnReconnect) {
+            session.logger.log('Sending reinvite after successful registration')
+            await session.reinvite();
+            session.logger.log('Reinvite sent')
+            session.__shouldSendReinviteOnReconnect = false;
+
+        }
+    });
+
 
     return session;
 };
