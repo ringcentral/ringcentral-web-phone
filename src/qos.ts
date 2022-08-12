@@ -1,4 +1,4 @@
-import getStats from 'getstats';
+import {QosMachineStats} from '.';
 import {WebPhoneSession} from './session';
 
 const formatFloat = (input: any): string => parseFloat(input.toString()).toFixed(2);
@@ -15,75 +15,79 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
 
     let previousGetStatsResult;
 
-    if (!getStats) throw new Error('getStats module was not provided!');
-
-    getStats(
-        session.sessionDescriptionHandler.peerConnection,
-        function(getStatsResult) {
-            previousGetStatsResult = getStatsResult;
-            qosStatsObj.status = true;
-            var network = getNetworkType(previousGetStatsResult.connectionType);
-            qosStatsObj.localAddr = previousGetStatsResult.connectionType.local.ipAddress[0];
-            qosStatsObj.remoteAddr = previousGetStatsResult.connectionType.remote.ipAddress[0];
-            previousGetStatsResult.results.forEach(function(item) {
-                if (item.type === 'localcandidate') {
-                    qosStatsObj.localcandidate = item;
-                }
-                if (item.type === 'remotecandidate') {
-                    qosStatsObj.remotecandidate = item;
-                }
-                if (item.type === 'ssrc' && item.id.includes('send') && session.ua.enableMediaReportLogging) {
-                    if (parseInt(item.audioInputLevel, 10) === 0) {
-                        session.logger.log(
-                            'AudioInputLevel is 0. The local track might be muted or could have potential one-way audio issue. Check Microphone Volume settings.'
-                        );
-                        session.emit('no-input-volume');
+    const refreshIntervalId = setInterval(async () => {
+        const sessionDescriptionHandler = session.sessionDescriptionHandler;
+        const getStatsResult = await sessionDescriptionHandler.peerConnection.getStats();
+        qosStatsObj.status = true;
+        var network = '';
+        getStatsResult.forEach(function(item: any) {
+            switch (item.type) {
+                case 'local-candidate':
+                    if (item.candidateType === 'srflx') {
+                        network = getNetworkType(item.networkType);
+                        qosStatsObj.localAddr = item.ip + ':' + item.port;
+                        qosStatsObj.localcandidate = item;
                     }
-                }
-                if (item.type === 'ssrc' && item.id.includes('recv')) {
-                    qosStatsObj.jitterBufferDiscardRate = item.googSecondaryDiscardedRate || 0;
+                    break;
+                case 'remote-candidate':
+                    if (item.candidateType === 'host') {
+                        qosStatsObj.remoteAddr = item.ip + ':' + item.port;
+                        qosStatsObj.remotecandidate = item;
+                    }
+                    break;
+                case 'inbound-rtp':
+                    qosStatsObj.jitterBufferDiscardRate = 0;
                     qosStatsObj.packetLost = item.packetsLost;
-                    qosStatsObj.packetsReceived = item.packetsReceived;
-                    qosStatsObj.totalSumJitter += parseFloat(item.googJitterBufferMs);
+                    qosStatsObj.packetsReceived = item.packetsReceived; //packetsReceived
+                    qosStatsObj.totalSumJitter += parseFloat(item.jitterBufferDelay);
                     qosStatsObj.totalIntervalCount += 1;
-                    qosStatsObj.JBM = Math.max(qosStatsObj.JBM, parseFloat(item.googJitterBufferMs));
+                    qosStatsObj.NLR = formatFloat((item.packetsLost / (item.packetsLost + item.packetsReceived)) * 100);
+                    qosStatsObj.JBM = Math.max(qosStatsObj.JBM, parseFloat(item.jitterBufferDelay));
                     qosStatsObj.netType = addToMap(qosStatsObj.netType, network);
-                    if (session.ua.enableMediaReportLogging) {
-                        if (parseInt(item.audioOutputLevel, 10) <= 1) {
-                            session.logger.log(
-                                'Remote audioOutput level is 1. The remote track might be muted or could have potential one-way audio issue'
-                            );
-                            session.emit('no-output-volume');
-                        }
-                    }
-                }
-            });
-        },
-        session.ua.qosCollectInterval
-    );
+                    break;
+                case 'candidate-pair':
+                    qosStatsObj.RTD = Math.round((item.currentRoundTripTime / 2) * 1000);
+                    break;
+                default:
+                    break;
+            }
+        });
+    }, session.ua.qosCollectInterval);
 
     session.on('terminated', function() {
         previousGetStatsResult && previousGetStatsResult.nomore();
         session.logger.log('Release media streams');
         session.mediaStreams && session.mediaStreams.release();
         publishQosStats(session, qosStatsObj);
+        refreshIntervalId && clearInterval(refreshIntervalId);
     });
 };
 
 const publishQosStats = (session: WebPhoneSession, qosStatsObj: QosStats, options: any = {}): void => {
     options = options || {};
 
-    const effectiveType = navigator['connection'].effectiveType || '';
-    const networkType = calculateNetworkUsage(qosStatsObj) || '';
     const targetUrl = options.targetUrl || 'rtcpxr@rtcpxr.ringcentral.com:5060';
     const event = options.event || 'vq-rtcpxr';
     options.expires = 60;
     options.contentType = 'application/vq-rtcpxr';
     options.extraHeaders = (options.extraHeaders || []).concat(session.ua.defaultHeaders);
+    const qosStatsCallback = session.ua.qosStatsCallback ? session.ua.qosStatsCallback : () => ({});
+    let machineStats = {} as QosMachineStats;
+    try {
+        machineStats = qosStatsCallback();
+    } catch (e) {
+        session.logger.debug(`qosStatsCallback threw exception ${e.message}`);
+        session.logger.debug('Using default values for cpu, ram and networkType');
+    }
+    const cpuOS = machineStats.cpuOS || '0:0';
+    const cpuRC = machineStats.cpuRC || '0:0';
+    const ram = machineStats.ram || '0:0';
+    const networkType = machineStats.netType || calculateNetworkUsage(qosStatsObj) || '';
+    const effectiveType = machineStats.effectiveType || navigator['connection'].effectiveType || '';
     options.extraHeaders.push(
-        'p-rc-client-info:' + 'cpuRC=0:0;cpuOS=0:0;netType=' + networkType + ';ram=0:0;effectiveType=' + effectiveType
+        `p-rc-client-info:cpuRC=${cpuRC};cpuOS=${cpuOS};netType=${networkType};ram=${ram};effectiveType=${effectiveType}`
     );
-
+    (session as any).logger.log(`QOS stats ${JSON.stringify(qosStatsObj)}`);
     const calculatedStatsObj = calculateStats(qosStatsObj);
     const body = createPublishBody(calculatedStatsObj);
     const pub = session.ua.publish(targetUrl, event, body, options);
@@ -122,6 +126,7 @@ const createPublishBody = (calculatedStatsObj: QosStats): string => {
     const JBN = calculatedStatsObj.JBN || 0;
     const JDR = calculatedStatsObj.JDR || 0;
     const MOSLQ = calculatedStatsObj.MOSLQ || 0;
+    const RTD = calculatedStatsObj.RTD || 0;
 
     const callID = calculatedStatsObj.callID || '';
     const fromTag = calculatedStatsObj.fromTag || '';
@@ -146,7 +151,7 @@ const createPublishBody = (calculatedStatsObj: QosStats): string => {
         `JitterBuffer: JBA=0 JBR=0 JBN=${JBN} JBM=${JBM} JBX=0\r\n` +
         `PacketLoss: NLR=${NLR} JDR=${JDR}\r\n` +
         `BurstGapLoss: BLD=0 BD=0 GLD=0 GD=0 GMIN=0\r\n` +
-        `Delay: RTD=0 ESD=0 SOWD=0 IAJ=0\r\n` +
+        `Delay: RTD=${RTD} ESD=0 SOWD=0 IAJ=0\r\n` +
         `QualityEst: MOSLQ=${MOSLQ} MOSCQ=0.0\r\n` +
         `DialogID: ${callID};to-tag=${toTag};from-tag=${fromTag}`
     );
@@ -184,6 +189,7 @@ const getQoSStatsTemplate = (): QosStats => ({
     JBN: '',
     JDR: '',
     MOSLQ: 0,
+    RTD: 0,
 
     status: false,
     localcandidate: {},
@@ -247,6 +253,7 @@ export interface QosStats {
     JBN: string;
     JDR: string;
     MOSLQ: number;
+    RTD: number;
 
     status: boolean;
 

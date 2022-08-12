@@ -17,7 +17,6 @@
     "lint:staged": "lint-staged"
   },
   "dependencies": {
-    "getstats": "1.2.0",
     "sip.js": "0.13.5"
   },
   "devDependencies": {

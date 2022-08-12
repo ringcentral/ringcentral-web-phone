@@ -39,12 +39,6 @@ const libConfig = {
         extensions: ['.tsx', '.ts', '.js']
     },
     externals: {
-        getstats: {
-            commonjs: 'getstats',
-            commonjs2: 'getstats',
-            amd: 'getstats',
-            root: 'getStats'
-        },
         'sip.js': {
             commonjs: 'sip.js',
             commonjs2: 'sip.js',

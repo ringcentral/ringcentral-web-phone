@@ -1,4 +1,5 @@
 import {ClientContext, UA} from 'sip.js';
+import {QosMachineStats} from './index';
 import {AudioHelper} from './audioHelper';
 import {patchSession, patchIncomingSession, WebPhoneSession} from './session';
 import {TransportConstructorWrapper, WebPhoneSIPTransport} from './sipTransportConstructor';
@@ -19,11 +20,12 @@ export interface WebPhoneUserAgent extends UA {
     __unregister: typeof UA.prototype.unregister;
     __transportConstructor: any;
     __onTransportConnected: () => void; // It is a private method
-    invite: (number: string, options: InviteOptions ) => WebPhoneSession;
+    invite: (number: string, options: InviteOptions) => WebPhoneSession;
     switchFrom: (activeCall: ActiveCallInfo, options: InviteOptions) => WebPhoneSession;
     onTransportConnected: typeof onTransportConnected;
     configuration: typeof UA.prototype.configuration;
     transport: WebPhoneSIPTransport;
+    qosStatsCallback: () => QosMachineStats;
 }
 
 export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, id): WebPhoneUserAgent => {
@@ -53,6 +55,8 @@ export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, i
     userAgent.unregister = unregister.bind(userAgent);
 
     userAgent.switchFrom = switchFrom.bind(userAgent);
+
+    userAgent.qosStatsCallback = options.qosStatsCallback;
 
     userAgent.audioHelper = new AudioHelper(options.audioHelper);
 
@@ -215,7 +219,7 @@ export interface ActiveCallInfo {
     sipData: {
         toTag: string;
         fromTag: string;
-    }
+    };
 }
 
 /**
@@ -226,7 +230,7 @@ export interface ActiveCallInfo {
 function switchFrom(this: WebPhoneUserAgent, activeCall: ActiveCallInfo, options: InviteOptions = {}): WebPhoneSession {
     const replaceHeaders = [];
     replaceHeaders.push(
-      `Replaces: ${activeCall.id};to-tag=${activeCall.sipData.fromTag};from-tag=${activeCall.sipData.toTag}`,
+        `Replaces: ${activeCall.id};to-tag=${activeCall.sipData.fromTag};from-tag=${activeCall.sipData.toTag}`
     );
     replaceHeaders.push('RC-call-type: replace');
     const toNumber = activeCall.direction === 'Outbound' ? activeCall.to : activeCall.from;
