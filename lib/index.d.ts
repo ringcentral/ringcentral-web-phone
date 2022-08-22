@@ -3,13 +3,6 @@ import { SessionDescriptionHandlerModifiers } from 'sip.js';
 import { WebPhoneSession } from './session';
 import { AudioHelperOptions } from './audioHelper';
 import { default as MediaStreams, MediaStreamsImpl } from './mediaStreams';
-export declare type QosMachineStats = {
-    cpuRC?: string;
-    cpuOS?: string;
-    ram?: string;
-    netType?: string;
-    effectiveType?: string;
-};
 export interface WebPhoneRegData {
     sipInfo?: any;
     sipFlags?: any;
@@ -55,7 +48,6 @@ export interface WebPhoneOptions {
     iceCheckingTimeout?: number;
     iceTransportPolicy?: string;
     autoStop?: boolean;
-    qosStatsCallback?: () => QosMachineStats;
 }
 export default class WebPhone {
     static version: string;

@@ -21,6 +21,12 @@ export interface RCHeaders {
     displayInfo?: string;
     displayInfoSub?: string;
 }
+export declare type QosStats = {
+    cpuRC?: string;
+    cpuOS?: string;
+    ram?: string;
+    netType?: string;
+};
 export interface RTCPeerConnectionLegacy extends RTCPeerConnection {
     getRemoteStreams: () => MediaStream[];
     getLocalStreams: () => MediaStream[];
@@ -53,6 +59,7 @@ export declare type WebPhoneSession = InviteClientContext & InviteServerContext 
     hasAnswer: boolean;
     media: any;
     rcHeaders: RCHeaders;
+    __qosStats: QosStats;
     warmTransfer: typeof warmTransfer;
     blindTransfer: typeof blindTransfer;
     transfer: typeof transfer;
@@ -88,6 +95,7 @@ export declare type WebPhoneSession = InviteClientContext & InviteServerContext 
     getIncomingInfoContent: typeof getIncomingInfoContent;
     sendMoveResponse: typeof sendMoveResponse;
     sendReceive: typeof sendReceive;
+    setQosStats: typeof setQosStats;
 };
 export declare const patchSession: (session: WebPhoneSession) => WebPhoneSession;
 export declare const patchIncomingSession: (session: WebPhoneSession) => void;
@@ -130,5 +138,6 @@ declare function mute(this: WebPhoneSession, silent?: boolean): void;
 declare function unmute(this: WebPhoneSession, silent?: boolean): void;
 declare function onLocalHold(this: WebPhoneSession): boolean;
 declare function addTrack(this: WebPhoneSession, remoteAudioEle: any, localAudioEle: any): void;
+declare function setQosStats(this: WebPhoneSession, stats: QosStats): void;
 declare function stopMediaStats(this: WebPhoneSession): void;
 export {};

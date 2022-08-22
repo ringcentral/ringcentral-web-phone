@@ -1,5 +1,4 @@
 import {ClientContext, UA} from 'sip.js';
-import {QosMachineStats} from './index';
 import {AudioHelper} from './audioHelper';
 import {patchSession, patchIncomingSession, WebPhoneSession} from './session';
 import {TransportConstructorWrapper, WebPhoneSIPTransport} from './sipTransportConstructor';
@@ -25,7 +24,6 @@ export interface WebPhoneUserAgent extends UA {
     onTransportConnected: typeof onTransportConnected;
     configuration: typeof UA.prototype.configuration;
     transport: WebPhoneSIPTransport;
-    qosStatsCallback: () => QosMachineStats;
 }
 
 export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, id): WebPhoneUserAgent => {
@@ -55,8 +53,6 @@ export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, i
     userAgent.unregister = unregister.bind(userAgent);
 
     userAgent.switchFrom = switchFrom.bind(userAgent);
-
-    userAgent.qosStatsCallback = options.qosStatsCallback;
 
     userAgent.audioHelper = new AudioHelper(options.audioHelper);
 

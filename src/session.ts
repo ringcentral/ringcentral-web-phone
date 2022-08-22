@@ -14,7 +14,7 @@ import {startQosStatsCollection} from './qos';
 import {WebPhoneUserAgent} from './userAgent';
 import {delay, extend} from './utils';
 import {MediaStreams} from './mediaStreams';
-import {RTPReport, InboundRtpReport, OutboundRtpReport, RttReport, isNoAudio} from './rtpReport';
+import {RTPReport, isNoAudio} from './rtpReport';
 
 export interface RCHeaders {
     sid?: string;
@@ -36,6 +36,13 @@ export interface RCHeaders {
     displayInfo?: string;
     displayInfoSub?: string;
 }
+
+export type QosStats = {
+    cpuRC?: string;
+    cpuOS?: string;
+    ram?: string;
+    netType?: string;
+};
 
 export interface RTCPeerConnectionLegacy extends RTCPeerConnection {
     getRemoteStreams: () => MediaStream[];
@@ -72,6 +79,7 @@ export type WebPhoneSession = InviteClientContext &
         hasAnswer: boolean;
         media: any;
         rcHeaders: RCHeaders;
+        __qosStats: QosStats;
         warmTransfer: typeof warmTransfer;
         blindTransfer: typeof blindTransfer;
         transfer: typeof transfer;
@@ -107,6 +115,7 @@ export type WebPhoneSession = InviteClientContext &
         getIncomingInfoContent: typeof getIncomingInfoContent;
         sendMoveResponse: typeof sendMoveResponse;
         sendReceive: typeof sendReceive;
+        setQosStats: typeof setQosStats;
     };
 
 export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
@@ -144,6 +153,9 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.mute = mute.bind(session);
     session.unmute = unmute.bind(session);
     session.onLocalHold = onLocalHold.bind(session);
+
+    session.__qosStats = {};
+    session.setQosStats = setQosStats.bind(session);
 
     session.media = session.ua.media; //TODO Remove
     session.addTrack = addTrack.bind(session);
@@ -880,6 +892,13 @@ function addTrack(this: WebPhoneSession, remoteAudioEle, localAudioEle): void {
             }
         }, mediaCheckTimer);
     }
+}
+
+function setQosStats(this: WebPhoneSession, stats: QosStats) {
+    this.__qosStats.cpuOS = stats.cpuOS || '0:0:0';
+    this.__qosStats.cpuRC = stats.cpuRC || '0:0:0';
+    this.__qosStats.ram = stats.ram || '0:0:0';
+    this.__qosStats.netType = stats.netType || null;
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/

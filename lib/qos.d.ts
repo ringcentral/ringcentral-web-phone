@@ -14,8 +14,10 @@ export interface QosStats {
         stop: string;
     };
     netType: any;
-    packetLost: number;
-    packetsReceived: number;
+    inboundPacketsLost: number;
+    inboundPacketsReceived: number;
+    outboundPacketsLost: number;
+    outboundPacketsSent: number;
     jitterBufferNominal: number;
     jitterBufferMax: number;
     jitterBufferDiscardRate: number;
@@ -26,6 +28,7 @@ export interface QosStats {
     JBN: string;
     JDR: string;
     MOSLQ: number;
+    MOSCQ: number;
     RTD: number;
     status: boolean;
     localcandidate: any;

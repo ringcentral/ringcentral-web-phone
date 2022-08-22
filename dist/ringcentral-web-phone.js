@@ -905,7 +905,6 @@ exports.patchUserAgent = function (userAgent, sipInfo, options, id) {
     userAgent.__unregister = userAgent.unregister;
     userAgent.unregister = unregister.bind(userAgent);
     userAgent.switchFrom = switchFrom.bind(userAgent);
-    userAgent.qosStatsCallback = options.qosStatsCallback;
     userAgent.audioHelper = new audioHelper_1.AudioHelper(options.audioHelper);
     userAgent.__transportConstructor = userAgent.configuration.transportConstructor;
     userAgent.configuration.transportConstructor = sipTransportConstructor_1.TransportConstructorWrapper(userAgent.__transportConstructor, options);
@@ -1195,6 +1194,8 @@ exports.patchSession = function (session) {
     session.mute = mute.bind(session);
     session.unmute = unmute.bind(session);
     session.onLocalHold = onLocalHold.bind(session);
+    session.__qosStats = {};
+    session.setQosStats = setQosStats.bind(session);
     session.media = session.ua.media; //TODO Remove
     session.addTrack = addTrack.bind(session);
     session.stopMediaStats = stopMediaStats.bind(session);
@@ -1961,6 +1962,12 @@ function addTrack(remoteAudioEle, localAudioEle) {
         }, mediaCheckTimer);
     }
 }
+function setQosStats(stats) {
+    this.__qosStats.cpuOS = stats.cpuOS || '0:0:0';
+    this.__qosStats.cpuRC = stats.cpuRC || '0:0:0';
+    this.__qosStats.ram = stats.ram || '0:0:0';
+    this.__qosStats.netType = stats.netType || null;
+}
 /*--------------------------------------------------------------------------------------------------------------------*/
 function stopMediaStats() {
     this.logger.log('Stopping media stats collection');
@@ -2065,9 +2072,9 @@ exports.startQosStatsCollection = function (session) {
                                 }
                                 break;
                             case 'inbound-rtp':
-                                qosStatsObj.jitterBufferDiscardRate = 0;
-                                qosStatsObj.packetLost = item.packetsLost;
-                                qosStatsObj.packetsReceived = item.packetsReceived; //packetsReceived
+                                qosStatsObj.jitterBufferDiscardRate = item.packetsDiscarded / item.packetsReceived;
+                                qosStatsObj.inboundPacketsLost = item.packetsLost;
+                                qosStatsObj.inboundPacketsReceived = item.packetsReceived; //packetsReceived
                                 qosStatsObj.totalSumJitter += parseFloat(item.jitterBufferDelay);
                                 qosStatsObj.totalIntervalCount += 1;
                                 qosStatsObj.NLR = formatFloat((item.packetsLost / (item.packetsLost + item.packetsReceived)) * 100);
@@ -2076,6 +2083,12 @@ exports.startQosStatsCollection = function (session) {
                                 break;
                             case 'candidate-pair':
                                 qosStatsObj.RTD = Math.round((item.currentRoundTripTime / 2) * 1000);
+                                break;
+                            case 'outbound-rtp':
+                                qosStatsObj.outboundPacketsSent = item.packetsSent;
+                                break;
+                            case 'remote-inbound-rtp':
+                                qosStatsObj.outboundPacketsLost = item.packetsLost;
                                 break;
                             default:
                                 break;
@@ -2101,20 +2114,11 @@ var publishQosStats = function (session, qosStatsObj, options) {
     options.expires = 60;
     options.contentType = 'application/vq-rtcpxr';
     options.extraHeaders = (options.extraHeaders || []).concat(session.ua.defaultHeaders);
-    var qosStatsCallback = session.ua.qosStatsCallback ? session.ua.qosStatsCallback : function () { return ({}); };
-    var machineStats = {};
-    try {
-        machineStats = qosStatsCallback();
-    }
-    catch (e) {
-        session.logger.debug("qosStatsCallback threw exception " + e.message);
-        session.logger.debug('Using default values for cpu, ram and networkType');
-    }
-    var cpuOS = machineStats.cpuOS || '0:0';
-    var cpuRC = machineStats.cpuRC || '0:0';
-    var ram = machineStats.ram || '0:0';
-    var networkType = machineStats.netType || calculateNetworkUsage(qosStatsObj) || '';
-    var effectiveType = machineStats.effectiveType || navigator['connection'].effectiveType || '';
+    var cpuOS = session.__qosStats.cpuOS;
+    var cpuRC = session.__qosStats.cpuRC;
+    var ram = session.__qosStats.ram;
+    var networkType = session.__qosStats.netType || calculateNetworkUsage(qosStatsObj) || '';
+    var effectiveType = navigator['connection'].effectiveType || '';
     options.extraHeaders.push("p-rc-client-info:cpuRC=" + cpuRC + ";cpuOS=" + cpuOS + ";netType=" + networkType + ";ram=" + ram + ";effectiveType=" + effectiveType);
     session.logger.log("QOS stats " + JSON.stringify(qosStatsObj));
     var calculatedStatsObj = calculateStats(qosStatsObj);
@@ -2135,10 +2139,10 @@ var calculateNetworkUsage = function (qosStatsObj) {
     return networkType.join();
 };
 var calculateStats = function (qosStatsObj) {
-    var rawNLR = (qosStatsObj.packetLost * 100) / (qosStatsObj.packetsReceived + qosStatsObj.packetLost) || 0;
+    var rawNLR = (qosStatsObj.inboundPacketsLost * 100) /
+        (qosStatsObj.inboundPacketsReceived + qosStatsObj.inboundPacketsLost) || 0;
     var rawJBN = qosStatsObj.totalIntervalCount > 0 ? qosStatsObj.totalSumJitter / qosStatsObj.totalIntervalCount : 0;
-    return __assign(__assign({}, qosStatsObj), { NLR: formatFloat(rawNLR), JBN: formatFloat(rawJBN), JDR: formatFloat(qosStatsObj.jitterBufferDiscardRate), MOSLQ: 0 //MOS Score
-     });
+    return __assign(__assign({}, qosStatsObj), { NLR: formatFloat(rawNLR), JBN: formatFloat(rawJBN), JDR: formatFloat(qosStatsObj.jitterBufferDiscardRate), MOSLQ: calculateMos(qosStatsObj.inboundPacketsLost / (qosStatsObj.inboundPacketsLost + qosStatsObj.inboundPacketsReceived)), MOSCQ: calculateMos(qosStatsObj.outboundPacketsLost / (qosStatsObj.outboundPacketsLost + qosStatsObj.outboundPacketsSent)) });
 };
 var createPublishBody = function (calculatedStatsObj) {
     var NLR = calculatedStatsObj.NLR || 0;
@@ -2146,6 +2150,7 @@ var createPublishBody = function (calculatedStatsObj) {
     var JBN = calculatedStatsObj.JBN || 0;
     var JDR = calculatedStatsObj.JDR || 0;
     var MOSLQ = calculatedStatsObj.MOSLQ || 0;
+    var MOSCQ = calculatedStatsObj.MOSCQ || 0;
     var RTD = calculatedStatsObj.RTD || 0;
     var callID = calculatedStatsObj.callID || '';
     var fromTag = calculatedStatsObj.fromTag || '';
@@ -2168,7 +2173,7 @@ var createPublishBody = function (calculatedStatsObj) {
         ("PacketLoss: NLR=" + NLR + " JDR=" + JDR + "\r\n") +
         "BurstGapLoss: BLD=0 BD=0 GLD=0 GD=0 GMIN=0\r\n" +
         ("Delay: RTD=" + RTD + " ESD=0 SOWD=0 IAJ=0\r\n") +
-        ("QualityEst: MOSLQ=" + MOSLQ + " MOSCQ=0.0\r\n") +
+        ("QualityEst: MOSLQ=" + MOSLQ + " MOSCQ=" + MOSCQ + "\r\n") +
         ("DialogID: " + callID + ";to-tag=" + toTag + ";from-tag=" + fromTag));
 };
 var getQoSStatsTemplate = function () { return ({
@@ -2185,8 +2190,10 @@ var getQoSStatsTemplate = function () { return ({
         stop: ''
     },
     netType: {},
-    packetLost: 0,
-    packetsReceived: 0,
+    inboundPacketsLost: 0,
+    inboundPacketsReceived: 0,
+    outboundPacketsLost: 0,
+    outboundPacketsSent: 0,
     jitterBufferNominal: 0,
     jitterBufferMax: 0,
     jitterBufferDiscardRate: 0,
@@ -2197,6 +2204,7 @@ var getQoSStatsTemplate = function () { return ({
     JBN: '',
     JDR: '',
     MOSLQ: 0,
+    MOSCQ: 0,
     RTD: 0,
     status: false,
     localcandidate: {},
@@ -2226,6 +2234,45 @@ var getNetworkType = function (connectionType) {
     var networkType = !sysNetwork || sysNetwork === 'unknown' ? localNetwork[0] : sysNetwork;
     return networkType in networkTypeMap ? networkTypeMap[networkType] : networkType;
 };
+function calculateMos(packetLoss) {
+    if (packetLoss <= 0.008) {
+        return 4.5;
+    }
+    if (packetLoss > 0.45) {
+        return 1.0;
+    }
+    var bpl = 17.2647;
+    var r = 93.2062077233 - 95.0 * ((packetLoss * 100) / (packetLoss * 100 + bpl)) + 4;
+    var mos = 2.06405 + 0.031738 * r - 0.000356641 * r * r + 2.93143 * Math.pow(10, -6) * r * r * r;
+    if (mos < 1) {
+        return 1.0;
+    }
+    if (mos > 4.5) {
+        return 4.5;
+    }
+    if (packetLoss >= 0.35 && mos > 2.7) {
+        mos = 2.7;
+    }
+    else if (packetLoss >= 0.3 && mos > 3.0) {
+        mos = 3.0;
+    }
+    else if (packetLoss >= 0.2 && mos > 3.6) {
+        mos = 3.6;
+    }
+    else if (packetLoss >= 0.15 && mos > 3.7) {
+        mos = 3.7;
+    }
+    else if (packetLoss >= 0.1 && mos > 3.9) {
+        mos = 4.1;
+    }
+    else if (packetLoss >= 0.05 && mos > 4.1) {
+        mos = 4.3;
+    }
+    else if (packetLoss >= 0.03 && mos > 4.1) {
+        mos = 4.4;
+    }
+    return mos;
+}
 
 
 /***/ }),
