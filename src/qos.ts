@@ -38,10 +38,14 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
                     qosStatsObj.jitterBufferDiscardRate = item.packetsDiscarded / item.packetsReceived;
                     qosStatsObj.inboundPacketsLost = item.packetsLost;
                     qosStatsObj.inboundPacketsReceived = item.packetsReceived; //packetsReceived
-                    qosStatsObj.totalSumJitter += parseFloat(item.jitterBufferDelay);
+                    const jitterBufferMs: number =
+                        parseFloat(item.jitterBufferEmittedCount) > 0
+                            ? (parseFloat(item.jitterBufferDelay) / parseFloat(item.jitterBufferEmittedCount)) * 1000
+                            : 0;
+                    qosStatsObj.totalSumJitter += jitterBufferMs;
                     qosStatsObj.totalIntervalCount += 1;
                     qosStatsObj.NLR = formatFloat((item.packetsLost / (item.packetsLost + item.packetsReceived)) * 100);
-                    qosStatsObj.JBM = Math.max(qosStatsObj.JBM, parseFloat(item.jitterBufferDelay));
+                    qosStatsObj.JBM = Math.max(qosStatsObj.JBM, jitterBufferMs);
                     qosStatsObj.netType = addToMap(qosStatsObj.netType, network);
                     break;
                 case 'candidate-pair':
@@ -153,11 +157,11 @@ const createPublishBody = (calculatedStatsObj: QosStats): string => {
         `LocalMetrics:\r\n` +
         `Timestamps: START=0 STOP=0\r\n` +
         `SessionDesc: PT=0 PD=opus SR=0 FD=0 FPP=0 PPS=0 PLC=0 SSUP=on\r\n` +
-        `JitterBuffer: JBA=0 JBR=0 JBN=${JBN} JBM=${JBM} JBX=0\r\n` +
+        `JitterBuffer: JBA=0 JBR=0 JBN=${JBN} JBM=${formatFloat(JBM)} JBX=0\r\n` +
         `PacketLoss: NLR=${NLR} JDR=${JDR}\r\n` +
         `BurstGapLoss: BLD=0 BD=0 GLD=0 GD=0 GMIN=0\r\n` +
         `Delay: RTD=${RTD} ESD=0 SOWD=0 IAJ=0\r\n` +
-        `QualityEst: MOSLQ=${MOSLQ} MOSCQ=${MOSCQ}\r\n` +
+        `QualityEst: MOSLQ=${formatFloat(MOSLQ)} MOSCQ=${formatFloat(MOSCQ)}\r\n` +
         `DialogID: ${callID};to-tag=${toTag};from-tag=${fromTag}`
     );
 };
