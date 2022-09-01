@@ -1,9 +1,7 @@
 const SIP = require('sip.js');
-const getStats = require('getstats');
 const $ = require('jquery');
 
 window.jQuery = $;
-window.getStats = getStats;
 window.SIP = SIP;
 
 $(function() {

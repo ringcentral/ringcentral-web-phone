@@ -1,6 +1,6 @@
 {
   "name": "ringcentral-web-phone",
-  "version": "0.8.10",
+  "version": "0.8.11",
   "scripts": {
     "test": "npm run test:ut && npm run test:e2e",
     "test:coverage": "cat .coverage/lcov.info | coveralls -v",
@@ -17,7 +17,6 @@
     "lint:staged": "lint-staged"
   },
   "dependencies": {
-    "getstats": "1.2.0",
     "sip.js": "0.13.5"
   },
   "devDependencies": {

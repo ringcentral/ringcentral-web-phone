@@ -57,7 +57,7 @@ export interface WebPhoneOptions {
 }
 
 export default class WebPhone {
-    public static version = '0.8.9';
+    public static version = '0.8.11';
     public static uuid = uuid;
     public static delay = delay;
     public static extend = extend;
@@ -129,7 +129,11 @@ export default class WebPhone {
         });
         const sessionDescriptionHandlerFactoryOptions = options.sessionDescriptionHandlerFactoryOptions || {
             peerConnectionOptions: {
-                iceCheckingTimeout: options.iceCheckingTimeout || this.sipInfo.iceCheckingTimeout || this.sipInfo.iceGatheringTimeout || 500,
+                iceCheckingTimeout:
+                    options.iceCheckingTimeout ||
+                    this.sipInfo.iceCheckingTimeout ||
+                    this.sipInfo.iceGatheringTimeout ||
+                    500,
                 rtcConfiguration: {
                     sdpSemantics,
                     iceServers,
