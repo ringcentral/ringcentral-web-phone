@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebPhone</title>
+    <link rel="stylesheet" href="bootstrap/dist/css/bootstrap.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="bootstrap/dist/css/bootstrap-theme.css" crossorigin="anonymous">
+    <link rel="apple-touch-icon" sizes="57x57" href="img/apple-touch-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="img/apple-touch-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="img/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="img/apple-touch-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="img/apple-touch-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="img/apple-touch-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="img/apple-touch-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="img/apple-touch-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon-180x180.png">
+    <link rel="icon" type="image/png" href="img/favicon-32x32.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="img/android-chrome-192x192.png" sizes="192x192">
+    <link rel="icon" type="image/png" href="img/favicon-96x96.png" sizes="96x96">
+    <link rel="icon" type="image/png" href="img/favicon-16x16.png" sizes="16x16">
+    <link rel="manifest" href="img/manifest.json">
+    <link rel="mask-icon" href="img/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="img/favicon.ico">
+    <meta name="apple-mobile-web-app-title" content="RingCentral">
+    <meta name="application-name" content="RingCentral">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="msapplication-TileImage" content="img/mstile-144x144.png">
+    <meta name="msapplication-config" content="img/browserconfig.xml">
+    <meta name="theme-color" content="#ffffff">
+</head>
+<body>
+
+<div class="container">
+    <h1>RingCentral WebPhone Demo</h1>
+    <div id="app"></div>
+</div>
+
+<video id="remoteVideo" hidden="hidden"></video>
+<video id="localVideo" hidden="hidden" muted="muted"></video>
+
+<script type="text/html" id="template-incoming">
+
+    <div class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Incoming Call</h4>
+                </div>
+                <div class="modal-body">
+                    <form class="form-inline forward-form">
+                        <div class="form-group">
+                            <label>Forward To:</label>
+                            <input type="text" class="form-control" name="forward" placeholder="">
+                        </div>
+                        <button class="btn btn-primary" type="submit">Forward</button>
+                    </form>
+                    <form class="form-inline reply-form">
+                        <div class="form-group">
+                            <label>Reply:</label>
+                            <input type="text" class="form-control" name="reply" placeholder="" value="On my way">
+                        </div>
+                        <button class="btn btn-primary" type="submit">Reply</button>
+                    </form>
+                </div>
+                <div class="modal-footer before-answer">
+                    <button class="btn btn-success answer">Answer</button>
+                    <button class="btn btn-danger decline">Decline</button>
+                    <button class="btn btn-warning toVoicemail">To Voicemail</button>
+                </div>
+                <div class="modal-footer answered" style="display: none">Connecting...</div>
+            </div>
+        </div>
+    </div>
+
+</script>
+
+<script type="text/html" id="template-call">
+
+    <form class="panel panel-default" name="call">
+        <div class="panel-heading"><h3 class="panel-title">Make A Call</h3></div>
+        <div class="panel-body">
+            <div class="username"></div>
+            <div class="form-group">
+                <label>Phone Number:</label>
+                <input type="text" class="form-control" name="number" placeholder="2345678901">
+            </div>
+            <div class="form-group">
+                <label>Home Country:</label>
+                <input type="text" class="form-control" name="homeCountry" value="1">
+            </div>
+        </div>
+        <div class="panel-footer text-center">
+            <button class="btn btn-primary" type="submit">Call</button>
+            <button class="btn btn-primary switch" type="button">Switch Active Call</button>
+            <button class="btn btn-danger logout" type="button">Logout</button>
+        </div>
+    </form>
+
+</script>
+
+<script type="text/html" id="template-auth-flow">
+
+    <form class="panel panel-default" name="authorize-code">
+        <div class="panel-heading"><h3 class="panel-title">Application Key</h3></div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label>Server:</label>
+                <input type="text" class="form-control" name="server">
+            </div>
+            <div class="form-group">
+                <label>Client ID:</label>
+                <input type="text" class="form-control" name="appKey">
+            </div>
+            <div class="form-group">
+                <label>Client Secret:</label>
+                <input type="text" class="form-control" name="appSecret">
+            </div>
+            <div class="form-group">
+                <label>LogLevel:</label>
+                <select class="form-control" name="logLevel">
+                    <option value="0">0 - Error</option>
+                    <option value="1">1 - Warning</option>
+                    <option value="2">2 - Log</option>
+                    <option value="3">3 - Debug</option>
+                </select>
+            </div>
+        </div>
+        <div class="panel-footer text-center">
+            <button class="btn btn-primary" type="submit">Authorization Code</button>
+        </div>
+    </form>
+</script>
+
+<script type="text/html" id="template-login">
+    <form name="login-form">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 class="panel-title">
+                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">
+                        Simple Login
+                    </a>
+                    <i class="indicator glyphicon glyphicon-chevron-down pull-right"></i>
+                </h4>
+            </div>
+            <div id="collapseTwo" class="panel-collapse collapse">
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label>Login:</label>
+                        <input type="text" class="form-control" name="login" placeholder="18881234567">
+                    </div>
+                    <div class="form-group">
+                        <label>Extension:</label>
+                        <input type="text" class="form-control" name="extension" placeholder="101">
+                    </div>
+                    <div class="form-group">
+                        <label>Password:</label>
+                        <input type="password" class="form-control" name="password">
+                    </div>
+                </div>
+                <div class="panel-footer text-center">
+                    <button class="btn btn-primary" type="submit">Login</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</script>
+
+<script type="text/html" id="template-accepted">
+
+    <div class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Call In Progress
+                        <button class="btn btn-primary increase-volume">+ ring volume</button>
+                        <button class="btn btn-primary decrease-volume">- ring volume</button>
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div class="btn-toolbar">
+                       <span class="btn-group">
+                           <button class="btn btn-default mute">Mute</button>
+                           <button class="btn btn-default unmute">UnMute</button>
+                       </span>
+                        <span class="btn-group">
+                            <button class="btn btn-default hold">Hold</button>
+                            <button class="btn btn-default unhold">UnHold</button>
+                       </span>
+                        <span class="btn-group">
+                            <button class="btn btn-default startRecord">Start Recording</button>
+                            <button class="btn btn-default stopRecord">Stop Recording</button>
+                       </span>
+                        <span class="btn-group">
+                            <button class="btn btn-default park">Park</button>
+                       </span>
+                    </div>
+                    <hr/>
+                    <form class="form-inline flip-form">
+                        <div class="form-group">
+                            <label>Flip:</label>
+                            <input type="text" class="form-control" name="flip" placeholder="+1 234 567-8900">
+                        </div>
+                        <button class="btn btn-primary" type="submit">Flip</button>
+                    </form>
+                    <hr/>
+                    <form class="form-inline transfer-form">
+                        <div class="form-group">
+                            <label>Transfer:</label>
+                            <input type="text" class="form-control" name="transfer" placeholder="+1 234 567-8900">
+                        </div>
+                        <button class="btn btn-primary" type="submit">Transfer</button>
+                        <button class="btn btn-primary warm" type="button">Warm</button>
+                        <button class="btn btn-primary complete" type="button" >Complete Transfer</button>
+                        <div className="text-muted">
+                            <small>* Please not that warm transfer in this demo will automatically call completeTransfer
+                                   w/o user interaction
+                            </small>
+                        </div>
+                    </form>
+                    <hr/>
+                    <form class="form-inline dtmf-form">
+                        <div class="form-group">
+                            <label>DTMF:</label>
+                            <input type="text" class="form-control" name="dtmf" placeholder="">
+                        </div>
+                        <button class="btn btn-primary" type="submit">Send</button>
+                    </form>
+                    <hr/>
+                    <button class="btn btn-primary startConf" type="button">Start Conference</button>
+                    <hr/>
+                    <pre class="info"></pre>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-danger hangup">Hang Up</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</script>
+
+
+<script type="text/javascript" src="demoVendor.js"></script>
+
+<script type="text/javascript" src="demo.js"></script>
+
+<script type="text/javascript" src="ringcentral-web-phone.js"></script>
+
+</body>
+</html>
