@@ -16,6 +16,11 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
 
     const refreshIntervalId = setInterval(async () => {
         const sessionDescriptionHandler = session.sessionDescriptionHandler;
+        if (!sessionDescriptionHandler || !sessionDescriptionHandler.peerConnection) {
+            session.logger.error('There is no PeerConnection, can not getStats');
+            return;
+        }
+
         const getStatsResult = await sessionDescriptionHandler.peerConnection.getStats();
         qosStatsObj.status = true;
         var network = '';
@@ -23,7 +28,8 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
             switch (item.type) {
                 case 'local-candidate':
                     if (item.candidateType === 'srflx') {
-                        network = getNetworkType(item.networkType);
+                        network =
+                            typeof item.networkType === 'string' ? item.networkType : getNetworkType(item.networkType);
                         qosStatsObj.localAddr = item.ip + ':' + item.port;
                         qosStatsObj.localcandidate = item;
                     }
