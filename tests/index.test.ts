@@ -1,5 +1,6 @@
 import { Page } from 'puppeteer';
 import { delay, login, screenshot } from './utils';
+import { SDK } from '@ringcentral/sdk';
 
 let receiverPage: Page = page;
 let callerPage: Page;
@@ -9,23 +10,50 @@ jest.setTimeout(120000);
 let loginPromise = Promise.resolve();
 
 const ensureLoggedIn = async () => {
+    const sdk1 = new SDK({
+        server: process.env.RC_WP_RECEIVER_SERVER,
+        clientId: process.env.RC_WP_RECEIVER_CLIENT_ID,
+        clientSecret: process.env.RC_WP_RECEIVER_CLIENT_SECRET
+    });
+    await sdk1.platform().login({
+        username: process.env.RC_WP_RECEIVER_USERNAME,
+        extension: process.env.RC_WP_RECEIVER_EXTENSION,
+        password: process.env.RC_WP_RECEIVER_PASSWORD
+    });
+    const extInfo1 = await (await sdk1.platform().get('/restapi/v1.0/account/~/extension/~')).json();
+    const receiverName = extInfo1.name;
+    const sdk2 = new SDK({
+        server: process.env.RC_WP_CALLER_SERVER,
+        clientId: process.env.RC_WP_CALLER_CLIENT_ID,
+        clientSecret: process.env.RC_WP_CALLER_CLIENT_SECRET
+    });
+    await sdk2.platform().login({
+        username: process.env.RC_WP_CALLER_USERNAME,
+        extension: process.env.RC_WP_CALLER_EXTENSION,
+        password: process.env.RC_WP_CALLER_PASSWORD
+    });
+    const extInfo2 = await (await sdk2.platform().get('/restapi/v1.0/account/~/extension/~')).json();
+    const callerName = extInfo2.name;
+
     callerPage = await browser.newPage();
     await login(receiverPage, 'RECEIVER', {
         server: process.env.RC_WP_RECEIVER_SERVER,
         clientId: process.env.RC_WP_RECEIVER_CLIENT_ID,
         clientSecret: process.env.RC_WP_RECEIVER_CLIENT_SECRET,
-        login: process.env.RC_WP_RECEIVER_USERNAME,
+        username: process.env.RC_WP_RECEIVER_USERNAME,
+        extension: process.env.RC_WP_RECEIVER_EXTENSION,
         password: process.env.RC_WP_RECEIVER_PASSWORD
     });
     await login(callerPage, 'CALLER', {
         server: process.env.RC_WP_CALLER_SERVER,
         clientId: process.env.RC_WP_CALLER_CLIENT_ID,
         clientSecret: process.env.RC_WP_CALLER_CLIENT_SECRET,
-        login: process.env.RC_WP_CALLER_USERNAME,
+        username: process.env.RC_WP_CALLER_USERNAME,
+        extension: process.env.RC_WP_CALLER_EXTENSION,
         password: process.env.RC_WP_CALLER_PASSWORD
     });
-    await expect(receiverPage).toMatch('WebPhone Receiver', { timeout: 30000 });
-    await expect(callerPage).toMatch('WebPhone Caller', { timeout: 30000 });
+    await expect(receiverPage).toMatch(receiverName, { timeout: 30000 });
+    await expect(callerPage).toMatch(callerName, { timeout: 30000 });
     await screenshot(receiverPage, 'init');
     await screenshot(callerPage, 'init');
     await delay(3000);
@@ -43,8 +71,12 @@ describe('Basic integration', () => {
         console.log('call test');
 
         // call
+        let receiverPhoneNumber = process.env.RC_WP_RECEIVER_USERNAME;
+        if (process.env.RC_WP_RECEIVER_EXTENSION !== undefined && process.env.RC_WP_RECEIVER_EXTENSION.length > 0) {
+            receiverPhoneNumber += '*' + process.env.RC_WP_RECEIVER_EXTENSION;
+        }
         await expect(callerPage).toFillForm('form[name="call"]', {
-            number: process.env.RC_WP_RECEIVER_USERNAME
+            number: receiverPhoneNumber
         });
         await expect(callerPage).toClick('button', { text: 'Call' });
         await screenshot(callerPage, 'calling');

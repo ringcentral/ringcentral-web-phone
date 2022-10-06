@@ -41,7 +41,7 @@ $(function() {
         return $($tpl.html());
     }
 
-    function login(server, clientId, clientSecret, login, ext, password, ll) {
+    function login(server, clientId, clientSecret, username, extension, password, ll) {
         sdk = new SDK({
             clientId,
             clientSecret,
@@ -51,19 +51,19 @@ $(function() {
         platform = sdk.platform();
 
         // TODO: Improve later to support international phone number country codes better
-        if (login) {
-            login = login.match(/^[+1]/) ? login : '1' + login;
-            login = login.replace(/\W/g, '');
+        if (username) {
+            username = username.match(/^[+1]/) ? username : '1' + username;
+            username = username.replace(/\W/g, '');
         }
 
         platform
             .login({
-                username: login,
-                extension: ext || null,
+                username,
+                extension: extension || null,
                 password
             })
             .then(function() {
-                return postLogin(server, clientId, clientSecret, login, ext, password, ll);
+                return postLogin(server, clientId, clientSecret, username, extension, password, ll);
             })
             .catch(function(e) {
                 console.error(e.stack || e);
@@ -98,14 +98,13 @@ $(function() {
             });
     }
 
-    function postLogin(server, clientId, clientSecret, login, ext, password, ll) {
+    function postLogin(server, clientId, clientSecret, username, ext, password, ll) {
         logLevel = ll;
-        username = login;
 
         localStorage.setItem('webPhoneServer', server || '');
         localStorage.setItem('webPhoneclientId', clientId || '');
         localStorage.setItem('webPhoneclientSecret', clientSecret || '');
-        localStorage.setItem('webPhoneLogin', login || '');
+        localStorage.setItem('webPhoneLogin', username || '');
         localStorage.setItem('webPhoneExtension', ext || '');
         localStorage.setItem('webPhonePassword', password || '');
         localStorage.setItem('webPhoneLogLevel', logLevel || 0);
@@ -663,7 +662,7 @@ $(function() {
         var $server = $authForm.find('input[name=server]').eq(0);
         var $clientId = $authForm.find('input[name=clientId]').eq(0);
         var $clientSecret = $authForm.find('input[name=clientSecret]').eq(0);
-        var $login = $form.find('input[name=login]').eq(0);
+        var $username = $form.find('input[name=username]').eq(0);
         var $ext = $form.find('input[name=extension]').eq(0);
         var $password = $form.find('input[name=password]').eq(0);
         var $logLevel = $authForm.find('select[name=logLevel]').eq(0);
@@ -671,7 +670,7 @@ $(function() {
         $server.val(localStorage.getItem('webPhoneServer') || SDK.server.sandbox);
         $clientId.val(localStorage.getItem('webPhoneclientId') || '');
         $clientSecret.val(localStorage.getItem('webPhoneclientSecret') || '');
-        $login.val(localStorage.getItem('webPhoneLogin') || '');
+        $username.val(localStorage.getItem('webPhoneLogin') || '');
         $ext.val(localStorage.getItem('webPhoneExtension') || '');
         $password.val(localStorage.getItem('webPhonePassword') || '');
         $logLevel.val(localStorage.getItem('webPhoneLogLevel') || logLevel);
@@ -686,7 +685,7 @@ $(function() {
                 $server.val(),
                 $clientId.val(),
                 $clientSecret.val(),
-                $login.val(),
+                $username.val(),
                 $ext.val(),
                 $password.val(),
                 $logLevel.val()

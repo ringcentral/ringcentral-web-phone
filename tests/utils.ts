@@ -46,7 +46,8 @@ export const login = async (page: Page, name, credentials: any): Promise<void> =
     });
 
     await expect(page).toFillForm('form[name="login-form"]', {
-        login: credentials.login,
+        username: credentials.username,
+        extension: credentials.extension,
         password: credentials.password
     });
 

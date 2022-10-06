@@ -7,6 +7,8 @@
 - Replace all appKey/appSecret with clientId/clientSecret
 - Replace npm with yarn
 - Replace ringcentral with @ringcentral/sdk
+- Let e2e test support extension. (previously only username & password)
+- Rename "login" to "username" in demo web form
 
 
 ## Phone number format
@@ -19,10 +21,10 @@ Otherwise outbound call doesn't work.
 
 ```
 yarn install
-yarn build
+yarn start
 ```
 
-host the website in `dist/` folder, it should be a fully working version.
+Visit http://localhost:8080 to test.
 
 
 ## Issue 1
