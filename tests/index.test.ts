@@ -1,8 +1,9 @@
 import { Page } from 'puppeteer';
 import { delay, login, screenshot } from './utils';
 import { SDK } from '@ringcentral/sdk';
+import waitFor from 'wait-for-async';
 
-let receiverPage: Page = page;
+let receiverPage: Page;
 let callerPage: Page;
 
 jest.setTimeout(120000);
@@ -36,6 +37,7 @@ const ensureLoggedIn = async () => {
     const callerName = extInfo2.name;
 
     callerPage = await browser.newPage();
+    receiverPage = await browser.newPage();
     await login(receiverPage, 'RECEIVER', {
         server: process.env.RC_WP_RECEIVER_SERVER,
         clientId: process.env.RC_WP_RECEIVER_CLIENT_ID,
@@ -79,15 +81,19 @@ describe('Basic integration', () => {
             number: receiverPhoneNumber
         });
         await expect(callerPage).toClick('button', { text: 'Call' });
+        await waitFor({ interval: 1000 });
         await screenshot(callerPage, 'calling');
+        await waitFor({ interval: 1000 });
         await screenshot(receiverPage, 'waiting');
 
         // answer
         await expect(receiverPage).toClick('button', { text: 'Answer', timeout: 30000 });
+        await waitFor({ interval: 1000 });
         await screenshot(receiverPage, 'answered');
 
         // // hang up
         await expect(receiverPage).toClick('button', { text: 'Hang Up', timeout: 30000 });
+        await waitFor({ interval: 1000 });
         await screenshot(receiverPage, 'hangup');
     });
 });

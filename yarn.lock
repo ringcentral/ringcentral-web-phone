@@ -8391,6 +8391,11 @@ w3c-hr-time@^1.0.1:
   dependencies:
     browser-process-hrtime "^1.0.0"
 
+wait-for-async@0.6.0:
+  version "0.6.0"
+  resolved "https://registry.yarnpkg.com/wait-for-async/-/wait-for-async-0.6.0.tgz#b3a50eaef3dcbc18cbc52987d7ac82e515023781"
+  integrity sha512-jf5TFOroKPeRq/LZ1PQRFsN3xLw8H002UAikKLjv/km0YZ1okTbLw4gxmFt6etu2jfzsBuzVJjvSuM92/THqFg==
+
 wait-on@^3.3.0:
   version "3.3.0"
   resolved "https://registry.yarnpkg.com/wait-on/-/wait-on-3.3.0.tgz#9940981d047a72a9544a97b8b5fca45b2170a082"
