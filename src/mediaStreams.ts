@@ -119,7 +119,6 @@ export class MediaStreamsImpl {
     public on;
     public localStream;
     public remoteStream;
-    public validateSDP;
     public preRTT: any;
 
     private ktag = 'MediaStreams';

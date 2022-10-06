@@ -54,7 +54,8 @@
     "uglifyjs-webpack-plugin": "2.2.0",
     "webpack": "5.74.0",
     "webpack-cli": "4.10.0",
-    "webpack-dev-server": "4.11.1"
+    "webpack-dev-server": "4.11.1",
+    "yarn-upgrade-all": "0.7.1"
   },
   "preferGlobal": false,
   "private": false,
