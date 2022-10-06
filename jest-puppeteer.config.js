@@ -12,7 +12,7 @@ module.exports = {
         ]
     },
     server: {
-        command: 'npm start -- --port 8888',
+        command: 'yarn start -- --port 8888',
         debug: false,
         port: 8888,
         launchTimeout: 30000

@@ -85,7 +85,6 @@ class FadeSession {
         this.ua = {};
         this.ua.defaultHeaders = {};
         this.logger = new (class Logger {
-            public constructor() {}
             public log(msg) {
                 console.log(msg);
             }

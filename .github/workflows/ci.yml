@@ -18,25 +18,25 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           registry-url: 'https://registry.npmjs.org'
-      - run: npm install
-      - run: DEBUG=eslint:cli-engine npm run lint:all
-      - run: npm run build
-      - run: npm run test:ut
+      - run: yarn install
+      - run: DEBUG=eslint:cli-engine yarn run lint:all
+      - run: yarn run build
+      - run: yarn run test:ut
       - name: E2E test
         env:
-          RC_WP_CALLER_APPKEY: ${{ secrets.RC_WP_CALLER_APPKEY }}
-          RC_WP_CALLER_APPSECRET: ${{ secrets.RC_WP_CALLER_APPSECRET }}
+          RC_WP_CALLER_CLIENT_ID: ${{ secrets.RC_WP_CALLER_CLIENT_ID }}
+          RC_WP_CALLER_CLIENT_SECRET: ${{ secrets.RC_WP_CALLER_CLIENT_SECRET }}
           RC_WP_CALLER_SERVER: ${{ secrets.RC_WP_CALLER_SERVER }}
-          RC_WP_RECEIVER_APPKEY: ${{ secrets.RC_WP_RECEIVER_APPKEY }}
-          RC_WP_RECEIVER_APPSECRET: ${{ secrets.RC_WP_RECEIVER_APPSECRET }}
+          RC_WP_RECEIVER_CLIENT_ID: ${{ secrets.RC_WP_RECEIVER_CLIENT_ID }}
+          RC_WP_RECEIVER_CLIENT_SECRET: ${{ secrets.RC_WP_RECEIVER_CLIENT_SECRET }}
           RC_WP_RECEIVER_SERVER: ${{ secrets.RC_WP_RECEIVER_SERVER }}
           RC_WP_CALLER_USERNAME: ${{ secrets.RC_WP_CALLER_USERNAME }}
           RC_WP_CALLER_PASSWORD: ${{ secrets.RC_WP_CALLER_PASSWORD }}
           RC_WP_RECEIVER_USERNAME: ${{ secrets.RC_WP_RECEIVER_USERNAME }}
           RC_WP_RECEIVER_PASSWORD: ${{ secrets.RC_WP_RECEIVER_PASSWORD }}
-        if: ${{ env.RC_WP_CALLER_APPKEY != '' && env.RC_WP_RECEIVER_PASSWORD != '' &&  env.RC_WP_CALLER_PASSWORD != '' }}
+        if: ${{ env.RC_WP_CALLER_CLIENT_ID != '' && env.RC_WP_RECEIVER_PASSWORD != '' &&  env.RC_WP_CALLER_PASSWORD != '' }}
         run: |
-          npm run test:e2e
+          yarn run test:e2e
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:

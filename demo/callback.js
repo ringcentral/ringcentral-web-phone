@@ -1,1 +1,1 @@
-require('ringcentral').handleLoginRedirect();
+require('@ringcentral/sdk').SDK.handleLoginRedirect();

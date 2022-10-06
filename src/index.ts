@@ -17,7 +17,7 @@ export interface WebPhoneRegData {
 export interface WebPhoneOptions {
     uuid?: string;
     uuidKey?: string;
-    appKey?: string;
+    clientId?: string;
     appName?: string;
     appVersion?: string;
     enableUnifiedSDP?: boolean;
@@ -67,7 +67,7 @@ export default class WebPhone {
     public sipInfo: any;
     public sipFlags: any;
     public uuidKey: string;
-    public appKey: string;
+    public clientId: string;
     public appName: string;
     public appVersion: string;
     public userAgent: WebPhoneUserAgent;
@@ -85,7 +85,7 @@ export default class WebPhone {
         const id = options.uuid || localStorage.getItem(this.uuidKey) || uuid(); //TODO Make configurable
         localStorage.setItem(this.uuidKey, id);
 
-        this.appKey = options.appKey;
+        this.clientId = options.clientId;
         this.appName = options.appName;
         this.appVersion = options.appVersion;
 

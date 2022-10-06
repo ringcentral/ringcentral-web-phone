@@ -1,5 +1,5 @@
-import {Page} from 'puppeteer';
-import {delay, login, screenshot} from './utils';
+import { Page } from 'puppeteer';
+import { delay, login, screenshot } from './utils';
 
 let receiverPage: Page = page;
 let callerPage: Page;
@@ -12,20 +12,20 @@ const ensureLoggedIn = async () => {
     callerPage = await browser.newPage();
     await login(receiverPage, 'RECEIVER', {
         server: process.env.RC_WP_RECEIVER_SERVER,
-        appKey: process.env.RC_WP_RECEIVER_APPKEY,
-        appSecret: process.env.RC_WP_RECEIVER_APPSECRET,
+        clientId: process.env.RC_WP_RECEIVER_CLIENT_ID,
+        clientSecret: process.env.RC_WP_RECEIVER_CLIENT_SECRET,
         login: process.env.RC_WP_RECEIVER_USERNAME,
         password: process.env.RC_WP_RECEIVER_PASSWORD
     });
     await login(callerPage, 'CALLER', {
         server: process.env.RC_WP_CALLER_SERVER,
-        appKey: process.env.RC_WP_CALLER_APPKEY,
-        appSecret: process.env.RC_WP_CALLER_APPSECRET,
+        clientId: process.env.RC_WP_CALLER_CLIENT_ID,
+        clientSecret: process.env.RC_WP_CALLER_CLIENT_SECRET,
         login: process.env.RC_WP_CALLER_USERNAME,
         password: process.env.RC_WP_CALLER_PASSWORD
     });
-    await expect(receiverPage).toMatch('WebPhone Receiver', {timeout: 30000});
-    await expect(callerPage).toMatch('WebPhone Caller', {timeout: 30000});
+    await expect(receiverPage).toMatch('WebPhone Receiver', { timeout: 30000 });
+    await expect(callerPage).toMatch('WebPhone Caller', { timeout: 30000 });
     await screenshot(receiverPage, 'init');
     await screenshot(callerPage, 'init');
     await delay(3000);
@@ -46,16 +46,16 @@ describe('Basic integration', () => {
         await expect(callerPage).toFillForm('form[name="call"]', {
             number: process.env.RC_WP_RECEIVER_USERNAME
         });
-        await expect(callerPage).toClick('button', {text: 'Call'});
+        await expect(callerPage).toClick('button', { text: 'Call' });
         await screenshot(callerPage, 'calling');
         await screenshot(receiverPage, 'waiting');
 
         // answer
-        await expect(receiverPage).toClick('button', {text: 'Answer', timeout: 30000});
+        await expect(receiverPage).toClick('button', { text: 'Answer', timeout: 30000 });
         await screenshot(receiverPage, 'answered');
 
         // // hang up
-        await expect(receiverPage).toClick('button', {text: 'Hang Up', timeout: 30000});
+        await expect(receiverPage).toClick('button', { text: 'Hang Up', timeout: 30000 });
         await screenshot(receiverPage, 'hangup');
     });
 });

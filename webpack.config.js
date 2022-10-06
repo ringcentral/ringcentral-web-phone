@@ -36,7 +36,13 @@ const libConfig = {
         ]
     },
     resolve: {
-        extensions: ['.tsx', '.ts', '.js']
+        extensions: ['.tsx', '.ts', '.js'],
+        fallback: {
+            querystring: require.resolve('querystring-es3'),
+            crypto: require.resolve('crypto-browserify'),
+            buffer: require.resolve('buffer/'),
+            stream: require.resolve('stream-browserify')
+        }
     },
     externals: {
         'sip.js': {
@@ -106,11 +112,13 @@ module.exports = [
                 chunks: ['demoCallback', 'demoVendor']
             }),
             //FIXME Replace with file loader
-            new CopyPlugin([
-                {from: 'node_modules/bootstrap', to: 'bootstrap'},
-                {from: 'audio', to: 'audio'},
-                {from: 'demo/img', to: 'img'}
-            ])
+            new CopyPlugin({
+                patterns: [
+                    {from: 'node_modules/bootstrap', to: 'bootstrap'},
+                    {from: 'audio', to: 'audio'},
+                    {from: 'demo/img', to: 'img'}
+                ]
+            })
         ],
         optimization: {
             minimize: true,
@@ -122,6 +130,15 @@ module.exports = [
                         chunks: 'all'
                     }
                 }
+            }
+        },
+        resolve: {
+            extensions: ['.tsx', '.ts', '.js'],
+            fallback: {
+                querystring: require.resolve('querystring-es3'),
+                crypto: require.resolve('crypto-browserify'),
+                buffer: require.resolve('buffer/'),
+                stream: require.resolve('stream-browserify')
             }
         }
     }

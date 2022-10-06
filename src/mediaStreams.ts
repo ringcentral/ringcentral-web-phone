@@ -230,7 +230,7 @@ export class MediaStreamsImpl {
 
     public reconnectMedia(options?: any) {
         const self = this;
-        return new Promise(async function(resolve, reject) {
+        return new Promise(function(resolve, reject) {
             if (self.session) {
                 const RTCOptions = {
                     offerToReceiveAudio: 1,
@@ -261,7 +261,7 @@ export class MediaStreamsImpl {
                     reject(e);
                 }
             } else {
-                reject(new Error('The session cannot be empty'))
+                reject(new Error('The session cannot be empty'));
             }
         });
     }
@@ -319,8 +319,8 @@ export class MediaStreamsImpl {
                             });
                             break;
                         case 'local-candidate':
-                            let local_candidate = {};
-                            Object.keys(report).forEach(function (statName) {
+                            const local_candidate = {};
+                            Object.keys(report).forEach(function(statName) {
                                 switch (statName) {
                                     case 'id':
                                     case 'isRemote':
@@ -336,8 +336,8 @@ export class MediaStreamsImpl {
                             reports.localCandidates.push(local_candidate);
                             break;
                         case 'remote-candidate':
-                            let remote_candidate = {};
-                            Object.keys(report).forEach(function (statName) {
+                            const remote_candidate = {};
+                            Object.keys(report).forEach(function(statName) {
                                 switch (statName) {
                                     case 'id':
                                     case 'isRemote':
@@ -361,7 +361,7 @@ export class MediaStreamsImpl {
                             reports.inboundRtpReport['rtpRemoteAudioLevel'] = report.audioLevel ? report.audioLevel : 0;
                             break;
                         case 'transport':
-                            Object.keys(report).forEach(function (statName) {
+                            Object.keys(report).forEach(function(statName) {
                                 switch (statName) {
                                     case 'dtlsState':
                                     case 'packetsSent':

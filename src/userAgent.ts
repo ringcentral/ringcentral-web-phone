@@ -27,7 +27,7 @@ export interface WebPhoneUserAgent extends UA {
 }
 
 export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, id): WebPhoneUserAgent => {
-    userAgent.defaultHeaders = ['P-rc-endpoint-id: ' + id, 'Client-id:' + options.appKey];
+    userAgent.defaultHeaders = ['P-rc-endpoint-id: ' + id, 'Client-id:' + options.clientId];
 
     userAgent.media = {};
 
@@ -36,7 +36,7 @@ export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, i
 
     userAgent.qosCollectInterval = options.qosCollectInterval || 5000;
 
-    if (options.media && (options.media.remote && options.media.local)) {
+    if (options.media && options.media.remote && options.media.local) {
         userAgent.media.remote = options.media.remote;
         userAgent.media.local = options.media.local;
     } else userAgent.media = null;

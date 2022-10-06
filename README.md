@@ -49,7 +49,7 @@ Please visit Network Requirement links below
 ## Installation
 
 ```ssh
-npm install ringcentral-web-phone
+yarn add ringcentral-web-phone
 // or
 bower install ringcentral-web-phone
 ```
@@ -100,14 +100,14 @@ For this example you will also need to have [RingCentral JS SDK installed](https
 Configure the web-phone
 
 ```js
-var appKey = '...';
-var appSecret = '...';
+var clientId = '...';
+var clientSecret = '...';
 var appName = '...';
 var appVersion = '...';
 
 var sdk = new RingCentral.SDK({
-    appKey: appKey,
-    appSecret: appSecret,
+    clientId: clientId,
+    clientSecret: clientSecret,
     appName: appName,
     appVersion: appVersion,
     server: RingCentral.SDK.server.production // or .sandbox
@@ -132,7 +132,7 @@ platform
             .then(function(res) { // Doing nested then because we need loginResponse in a simple way
 
                 return new RingCentral.WebPhone(res.json(), { // optional
-                    appKey: appKey,
+                    clientId: clientId,
                     appName: appName,
                     appVersion: appVersion,
                     uuid: loginResponse.json().endpoint_id,
@@ -170,8 +170,8 @@ platform
 ```sh
 $ git clone https://github.com/ringcentral/ringcentral-web-phone.git
 $ cd ringcentral-web-phone
-$ npm install
-$ npm start
+$ yarn install
+$ yarn start
 ```
 
 1. Open `http://localhost:8080/demo/` in the browser (port may change if `8080` will be already used by other app)
@@ -208,7 +208,7 @@ var webPhone = new RingCentral.WebPhone(provisionData, options);
 
 - Provision Data &mdash; the JSON returned from `/client-info/sip-provision` API endpoint
 - Options &mdash; object with various configuration options that adjust WebPhone behavior
-    - `appKey` &mdash; your application key
+    - `clientId` &mdash; your application key
     - `appName` &mdash; your application short code name
     - `appVersion` &mdash; your application version
     - `uuid` &mdash; manually provide the unique identifier of WebPhone instance (should persist between page reloads)
@@ -379,7 +379,7 @@ Not yet implemented. Could be done by dialing \*83. The account should be enable
 Before:
 ```javascript
 webPhone = new RingCentral.WebPhone(data, {
-            appKey: localStorage.getItem('webPhoneAppKey'),
+            clientId: localStorage.getItem('webPhoneClientId'),
             audioHelper: {
                 enabled: true
             },
@@ -396,7 +396,7 @@ After:
 var remoteVideoElement =  document.getElementById('remoteVideo');
 var localVideoElement  = document.getElementById('localVideo');
 webPhone = new RingCentral.WebPhone(data, {
-    appKey: localStorage.getItem('webPhoneAppKey'),
+    clientId: localStorage.getItem('webPhoneClientId'),
     audioHelper: {
         enabled: true
     },

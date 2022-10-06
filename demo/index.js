@@ -6,7 +6,7 @@ window.SIP = SIP;
 
 $(function() {
     const bootstrap = require('bootstrap');
-    const SDK = require('ringcentral');
+    const SDK = require('@ringcentral/sdk').SDK;
     const WebPhone = require('ringcentral-web-phone') || window.RingCentral.WebPhone;
 
     /** @type {SDK} */
@@ -41,10 +41,10 @@ $(function() {
         return $($tpl.html());
     }
 
-    function login(server, appKey, appSecret, login, ext, password, ll) {
+    function login(server, clientId, clientSecret, login, ext, password, ll) {
         sdk = new SDK({
-            appKey,
-            appSecret,
+            clientId,
+            clientSecret,
             server
         });
 
@@ -63,7 +63,7 @@ $(function() {
                 password
             })
             .then(function() {
-                return postLogin(server, appKey, appSecret, login, ext, password, ll);
+                return postLogin(server, clientId, clientSecret, login, ext, password, ll);
             })
             .catch(function(e) {
                 console.error(e.stack || e);
@@ -71,14 +71,14 @@ $(function() {
     }
 
     // Redirect function
-    function show3LeggedLogin(server, appKey, appSecret, ll) {
+    function show3LeggedLogin(server, clientId, clientSecret, ll) {
         var $redirectUri = decodeURIComponent(window.location.href.split('login', 1) + 'callback.html');
 
         console.log('The redirect uri value :', $redirectUri);
 
         sdk = new SDK({
-            appKey,
-            appSecret,
+            clientId,
+            clientSecret,
             server,
             redirectUri: $redirectUri
         });
@@ -91,20 +91,20 @@ $(function() {
             .loginWindow({url: loginUrl}) // this method also allows to supply more options to control window position
             .then(platform.login.bind(platform))
             .then(function() {
-                return postLogin(server, appKey, appSecret, '', '', '', ll);
+                return postLogin(server, clientId, clientSecret, '', '', '', ll);
             })
             .catch(function(e) {
                 console.error(e.stack || e);
             });
     }
 
-    function postLogin(server, appKey, appSecret, login, ext, password, ll) {
+    function postLogin(server, clientId, clientSecret, login, ext, password, ll) {
         logLevel = ll;
         username = login;
 
         localStorage.setItem('webPhoneServer', server || '');
-        localStorage.setItem('webPhoneAppKey', appKey || '');
-        localStorage.setItem('webPhoneAppSecret', appSecret || '');
+        localStorage.setItem('webPhoneclientId', clientId || '');
+        localStorage.setItem('webPhoneclientSecret', clientSecret || '');
         localStorage.setItem('webPhoneLogin', login || '');
         localStorage.setItem('webPhoneExtension', ext || '');
         localStorage.setItem('webPhonePassword', password || '');
@@ -112,12 +112,12 @@ $(function() {
 
         return platform
             .get('/restapi/v1.0/account/~/extension/~')
+            .then(res => res.json())
             .then(function(res) {
-                extension = res.json();
-
+                extension = res;
                 console.log('Extension info', extension);
 
-                return platform.post('/client-info/sip-provision', {
+                return platform.post('/restapi/v1.0/client-info/sip-provision', {
                     sipInfo: [
                         {
                             transport: 'WSS'
@@ -125,9 +125,7 @@ $(function() {
                     ]
                 });
             })
-            .then(function(res) {
-                return res.json();
-            })
+            .then(res => res.json())
             .then(register)
             .then(makeCallForm)
             .catch(function(e) {
@@ -140,7 +138,7 @@ $(function() {
         sipInfo = data.sipInfo[0] || data.sipInfo;
 
         webPhone = new WebPhone(data, {
-            appKey: localStorage.getItem('webPhoneAppKey'),
+            clientId: localStorage.getItem('webPhoneclientId'),
             audioHelper: {
                 enabled: true
             },
@@ -328,7 +326,7 @@ $(function() {
         var interval = setInterval(function() {
             var time = session.startTime ? Math.round((Date.now() - session.startTime) / 1000) + 's' : 'Ringing';
 
-            $info.text('time: ' + time + '\n' + 'startTime: ' + JSON.stringify(session.startTime, null, 2) + '\n');
+            $info.text('time: ' + time + '\nstartTime: ' + JSON.stringify(session.startTime, null, 2) + '\n');
         }, 1000);
 
         function close() {
@@ -556,15 +554,16 @@ $(function() {
 
     function initConference() {
         if (!onConference) {
-            getPresenceActiveCalls().then(res => {
-                var response = res.json();
-                var pId = response.activeCalls[0].partyId;
-                var tId = response.activeCalls[0].telephonySessionId;
-                getConfVoiceToken(pId, tId).then(voiceToken => {
-                    startConferenceCall(voiceToken, pId, tId);
-                    onConference = true;
+            getPresenceActiveCalls()
+                .then(res => res.json())
+                .then(response => {
+                    var pId = response.activeCalls[0].partyId;
+                    var tId = response.activeCalls[0].telephonySessionId;
+                    getConfVoiceToken(pId, tId).then(voiceToken => {
+                        startConferenceCall(voiceToken, pId, tId);
+                        onConference = true;
+                    });
                 });
-            });
         }
     }
 
@@ -573,10 +572,13 @@ $(function() {
     }
 
     function getConfVoiceToken(pId, tId) {
-        return platform.post('/restapi/v1.0/account/~/telephony/conference', {}).then(res => {
-            confSessionId = res.json().session.id;
-            return res.json().session.voiceCallToken;
-        });
+        return platform
+            .post('/restapi/v1.0/account/~/telephony/conference', {})
+            .then(res => res.json())
+            .then(res => {
+                confSessionId = res.session.id;
+                return res.session.voiceCallToken;
+            });
     }
 
     function startConferenceCall(number, pId, tId) {
@@ -587,8 +589,9 @@ $(function() {
             onAccepted(session);
             console.log('Conference call started');
             bringIn(tId, pId)
+                .then(res => res.json())
                 .then(response => {
-                    console.log('Adding call to conference succesful', response.json());
+                    console.log('Adding call to conference succesful', response);
                 })
                 .catch(function(e) {
                     console.error('Conference call failed', e.stack || e);
@@ -658,16 +661,16 @@ $(function() {
         var $authForm = cloneTemplate($authFlowTemplate);
 
         var $server = $authForm.find('input[name=server]').eq(0);
-        var $appKey = $authForm.find('input[name=appKey]').eq(0);
-        var $appSecret = $authForm.find('input[name=appSecret]').eq(0);
+        var $clientId = $authForm.find('input[name=clientId]').eq(0);
+        var $clientSecret = $authForm.find('input[name=clientSecret]').eq(0);
         var $login = $form.find('input[name=login]').eq(0);
         var $ext = $form.find('input[name=extension]').eq(0);
         var $password = $form.find('input[name=password]').eq(0);
         var $logLevel = $authForm.find('select[name=logLevel]').eq(0);
 
         $server.val(localStorage.getItem('webPhoneServer') || SDK.server.sandbox);
-        $appKey.val(localStorage.getItem('webPhoneAppKey') || '');
-        $appSecret.val(localStorage.getItem('webPhoneAppSecret') || '');
+        $clientId.val(localStorage.getItem('webPhoneclientId') || '');
+        $clientSecret.val(localStorage.getItem('webPhoneclientSecret') || '');
         $login.val(localStorage.getItem('webPhoneLogin') || '');
         $ext.val(localStorage.getItem('webPhoneExtension') || '');
         $password.val(localStorage.getItem('webPhonePassword') || '');
@@ -681,8 +684,8 @@ $(function() {
 
             login(
                 $server.val(),
-                $appKey.val(),
-                $appSecret.val(),
+                $clientId.val(),
+                $clientSecret.val(),
                 $login.val(),
                 $ext.val(),
                 $password.val(),
@@ -696,7 +699,7 @@ $(function() {
             e.preventDefault();
             e.stopPropagation();
 
-            show3LeggedLogin($server.val(), $appKey.val(), $appSecret.val(), $logLevel.val());
+            show3LeggedLogin($server.val(), $clientId.val(), $clientSecret.val(), $logLevel.val());
         });
 
         $app.empty()

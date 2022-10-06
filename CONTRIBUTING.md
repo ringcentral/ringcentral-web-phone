@@ -2,7 +2,7 @@
 
 ```sh
 $ git clone https://github.com/ringcentral/ringcentral-web-phone.git
-$ npm install
+$ yarn install
 ```
 
 # Tests
@@ -14,13 +14,13 @@ You need to have a file `.env` with at least two accounts and apps:
 ```
 RC_WP_CALLER_USERNAME=+12223334455
 RC_WP_CALLER_PASSWORD=xxx
-RC_WP_CALLER_APPKEY=xxx
-RC_WP_CALLER_APPSECRET=xxx
+RC_WP_CALLER_CLIENT_ID=xxx
+RC_WP_CALLER_CLIENT_SECRET=xxx
 RC_WP_CALLER_SERVER=https://platform.devtest.ringcentral.com
 RC_WP_RECEIVER_USERNAME=+12223334455
 RC_WP_RECEIVER_PASSWORD=xxx
-RC_WP_RECEIVER_APPKEY=xxx
-RC_WP_RECEIVER_APPSECRET=xxx
+RC_WP_RECEIVER_CLIENT_ID=xxx
+RC_WP_RECEIVER_CLIENT_SECRET=xxx
 RC_WP_RECEIVER_SERVER=https://platform.devtest.ringcentral.com
 ```
 
@@ -33,13 +33,13 @@ You may call from one environment to another.
 Single test run:
 
 ```sh
-$ npm test
+$ yarn test
 ```
 
 Keep the browser open to manually refresh tests when needed (useful for debug):
 
 ```sh
-$ npm run test:watch
+$ yarn run test:watch
 ```
 
 # Releasing

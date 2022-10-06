@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import {Page, Response, ScreenshotOptions} from 'puppeteer';
+import { Page, Response, ScreenshotOptions } from 'puppeteer';
 import config from '../jest-puppeteer.config';
 
 export const openPage = async (page: Page, url = '/'): Promise<Response> =>
@@ -40,8 +40,8 @@ export const login = async (page: Page, name, credentials: any): Promise<void> =
 
     await expect(page).toFillForm('form[name="authorize-code"]', {
         server: credentials.server,
-        appKey: credentials.appKey,
-        appSecret: credentials.appSecret,
+        clientId: credentials.clientId,
+        clientSecret: credentials.clientSecret,
         logLevel: '1'
     });
 
@@ -50,7 +50,7 @@ export const login = async (page: Page, name, credentials: any): Promise<void> =
         password: credentials.password
     });
 
-    await expect(page).toClick('button', {text: 'Login'});
+    await expect(page).toClick('button', { text: 'Login' });
 };
 
 if (!fs.existsSync(screenshotPath)) fs.mkdirSync(screenshotPath);

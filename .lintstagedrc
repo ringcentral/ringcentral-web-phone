@@ -1,6 +1,6 @@
 {
   "*.js": [
-    "npm run lint --",
+    "yarn run lint --",
     "git add"
   ]
 }

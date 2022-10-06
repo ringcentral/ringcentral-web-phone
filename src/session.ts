@@ -9,7 +9,7 @@ import {
     ReferClientContext,
     Session
 } from 'sip.js';
-import {responseTimeout, messages } from './constants';
+import {responseTimeout, messages} from './constants';
 import {startQosStatsCollection} from './qos';
 import {WebPhoneUserAgent} from './userAgent';
 import {delay, extend} from './utils';
@@ -208,7 +208,6 @@ export const patchSession = (session: WebPhoneSession): WebPhoneSession => {
     session.on('cancel', stopPlaying);
     session.on('failed', stopPlaying);
     session.on('replaced', stopPlaying);
-
 
     session.on('reinviteAccepted', patchIncomingSession);
 
@@ -428,15 +427,13 @@ async function sendReceive(session: WebPhoneSession, command: any, options?: any
                         } catch (e) {
                             obj = {};
                         }
-                        if (obj.response && obj.response.command === command.command) {
-                            if (obj.response.result) {
-                                timeout && clearTimeout(timeout);
-                                session.removeListener('RC_SIP_INFO', onInfo);
-                                if (obj.response.result.code.toString() === '0') {
-                                    return resolve(obj.response.result);
-                                }
-                                return reject(obj.response.result);
+                        if (obj.response && obj.response.command === command.command && obj.response.result) {
+                            timeout && clearTimeout(timeout);
+                            session.removeListener('RC_SIP_INFO', onInfo);
+                            if (obj.response.result.code.toString() === '0') {
+                                return resolve(obj.response.result);
                             }
+                            return reject(obj.response.result);
                         }
                     };
                     timeout = setTimeout(() => {
@@ -495,22 +492,20 @@ function getIncomingInfoContent(this: WebPhoneSession, request): any {
     try {
         ret = JSON.parse(request.body);
     } catch (e) {
-        return {}
+        return {};
     }
     return ret;
 }
 
-function sendMoveResponse(this: WebPhoneSession,
-                          reqId: number,
-                          code: number,
-                          description: string,
-                          options: any = {}) {
-    const extraHeaders = [...(options.extraHeaders || []),
-                          ...this.ua.defaultHeaders,
-                          'Content-Type: application/json;charset=utf-8'];
+function sendMoveResponse(this: WebPhoneSession, reqId: number, code: number, description: string, options: any = {}) {
+    const extraHeaders = [
+        ...(options.extraHeaders || []),
+        ...this.ua.defaultHeaders,
+        'Content-Type: application/json;charset=utf-8'
+    ];
     this.sendRequest(C.INFO, {
-        body: JSON.stringify(
-            {response: {
+        body: JSON.stringify({
+            response: {
                 reqId,
                 command: 'move',
                 result: {
@@ -519,7 +514,8 @@ function sendMoveResponse(this: WebPhoneSession,
                 }
             }
         }),
-        extraHeaders});
+        extraHeaders
+    });
 }
 
 function receiveRequest(this: WebPhoneSession, request): any {
@@ -532,12 +528,10 @@ function receiveRequest(this: WebPhoneSession, request): any {
         case C.INFO:
             // For the Move2RCV request from server
             const content = this.getIncomingInfoContent(request);
-            if (content?.request?.reqId
-                && content?.request?.command === 'move'
-                && content?.request?.target === 'rcv') {
-                    request.reply(200);
-                    this.emit('moveToRcv', content.request);
-                    return this;
+            if (content?.request?.reqId && content?.request?.command === 'move' && content?.request?.target === 'rcv') {
+                request.reply(200);
+                this.emit('moveToRcv', content.request);
+                return this;
             }
             // For other SIP INFO from server
             this.emit('RC_SIP_INFO', request);
@@ -623,7 +617,7 @@ async function sendReinvite(this: WebPhoneSession, options: any = {}): Promise<a
                 receiveResponse: (response: IncomingResponse) => {
                     if (response.statusCode === 200) resolve(response);
                 },
-                extraHeaders: ["Contact: " + this.contact]
+                extraHeaders: ['Contact: ' + this.contact]
             });
         });
         await this.receiveReinviteResponse(result);
@@ -651,7 +645,7 @@ async function hold(this: WebPhoneSession): Promise<any> {
     try {
         this.logger.log('Hold Initiated');
         var response = await this._sendReinvite(options);
-        this.localHold = (response.statusCode === 200 && (this.sessionDescriptionHandler.getDirection() === 'sendonly'));
+        this.localHold = response.statusCode === 200 && this.sessionDescriptionHandler.getDirection() === 'sendonly';
         this.logger.log('Hold completed, localhold is set to ' + this.localHold);
     } catch (e) {
         throw new Error('Hold could not be completed');
