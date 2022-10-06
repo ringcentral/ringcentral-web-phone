@@ -29,10 +29,26 @@ host the website in `dist/` folder, it should be a fully working version.
 
 node_modules/sip.js/types/index.d.ts:50:14 - error TS2304: Cannot find name 'Transport'.
 
-Add:
+Workaround, add:
 
 ```ts
 import { Transport } from "./transport";
 ```
 
 to node_modules/sip.js/types/index.d.ts
+
+Not sure why, but `yarn start` just works now.
+
+
+## Issue 2
+
+According to https://developer.mozilla.org/en-US/docs/Web/API/Navigator/mediaDevices
+
+`Navigator.mediaDevices` is available only in secure contexts (HTTPS).
+
+You cannot run the demo in local http.
+
+So I published a demo app to https://chuntaoliu.com/rc-web-phone-demo/
+Source code is https://github.com/tylerlong/rc-web-phone-demo
+
+Not sure why, but `yarn start` just works now.

@@ -53,10 +53,7 @@ const libConfig = {
         }
     },
     devServer: {
-        contentBase: __dirname,
-        port: 8080,
-        overlay: true,
-        publicPath: '/'
+        port: 8080
     }
 };
 
