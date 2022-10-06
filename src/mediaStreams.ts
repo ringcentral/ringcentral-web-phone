@@ -152,7 +152,7 @@ export class MediaStreamsImpl {
         this.isFirefox = this.browser() === Browsers['Firefox'];
         this.isSafari = this.browser() === Browsers['Safari'];
 
-        this.preRTT = {currentRoundTripTime: 0};
+        this.preRTT = { currentRoundTripTime: 0 };
 
         if (!this.isChrome && !this.isFirefox && !this.isSafari) {
             this.rcWPLoge(
@@ -230,7 +230,7 @@ export class MediaStreamsImpl {
 
     public reconnectMedia(options?: any) {
         const self = this;
-        return new Promise(function(resolve, reject) {
+        return new Promise(async function (resolve, reject) {
             if (self.session) {
                 const RTCOptions = {
                     offerToReceiveAudio: 1,
@@ -320,7 +320,7 @@ export class MediaStreamsImpl {
                             break;
                         case 'local-candidate':
                             const local_candidate = {};
-                            Object.keys(report).forEach(function(statName) {
+                            Object.keys(report).forEach(function (statName) {
                                 switch (statName) {
                                     case 'id':
                                     case 'isRemote':
@@ -337,7 +337,7 @@ export class MediaStreamsImpl {
                             break;
                         case 'remote-candidate':
                             const remote_candidate = {};
-                            Object.keys(report).forEach(function(statName) {
+                            Object.keys(report).forEach(function (statName) {
                                 switch (statName) {
                                     case 'id':
                                     case 'isRemote':
@@ -361,7 +361,7 @@ export class MediaStreamsImpl {
                             reports.inboundRtpReport['rtpRemoteAudioLevel'] = report.audioLevel ? report.audioLevel : 0;
                             break;
                         case 'transport':
-                            Object.keys(report).forEach(function(statName) {
+                            Object.keys(report).forEach(function (statName) {
                                 switch (statName) {
                                     case 'dtlsState':
                                     case 'packetsSent':
@@ -452,4 +452,4 @@ export class MediaStreamsImpl {
     }
 }
 
-export {MediaStreams};
+export { MediaStreams };
