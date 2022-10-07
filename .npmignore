@@ -8,7 +8,6 @@
 /.prettierrc
 /.huskyrc
 /.lintstagedrc
-/.travis.yml
 /bower.json
 /demo
 /dist/*.html

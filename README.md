@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/ringcentral/ringcentral-web-phone.svg?branch=master)](https://travis-ci.org/ringcentral/ringcentral-web-phone)
+[![Build Status](https://github.com/ringcentral/ringcentral-web-phone/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/ringcentral/ringcentral-web-phone/actions/workflows/ci.yml)
 [![Coverage Status](https://coveralls.io/repos/github/ringcentral/ringcentral-web-phone/badge.svg?branch=master)](https://coveralls.io/github/ringcentral/ringcentral-web-phone?branch=master)
 
 # RingCentral WebPhone Library
