@@ -34,6 +34,14 @@ import { Events } from './events';
 import { WehPhoneUserAgentCore } from './userAgentCore';
 import { startQosStatsCollection } from './qos';
 
+
+export type QosStats = {
+    cpuRC?: string;
+    cpuOS?: string;
+    ram?: string;
+    netType?: string;
+};
+
 /**
  * Object representing all the headers used by RingCentral backend
  */
@@ -96,6 +104,7 @@ export class CommonSession {
     noAudioReportCount?: number;
     /** JOSN representation of RC headers received for an incoming call */
     rcHeaders?: RCHeaders;
+    __qosStats?: QosStats;
     /** Flag to represent if reinvite request was sent because there was no audio reported */
     reinviteForNoAudioSent?: boolean;
     /** Time when session was started */
@@ -186,6 +195,7 @@ export class CommonSession {
     warmTransfer?: typeof warmTransfer;
     /** RingCentral whisper implementation */
     whisper?: typeof whisper;
+    setQosStats?: typeof setQosStats;
 }
 
 export type WebPhoneSession = WebPhoneInvitation | WebPhoneInviter;
@@ -266,6 +276,8 @@ export function patchWebphoneSession(session: WebPhoneSession): WebPhoneSession 
     session.dtmf = dtmf.bind(session);
     session.reinvite = reinvite.bind(session);
     session.forward = forward.bind(session); // FIXME: Not needed?
+    session.__qosStats = {};
+    session.setQosStats = setQosStats.bind(session);
     setupUserAgentCoreEvent(session);
     session.stateChange.addListener((newState) => {
         switch (newState) {
@@ -946,4 +958,11 @@ function stopMediaStreamStats(session: WebPhoneSession) {
 
 function onLocalHold(this: WebPhoneSession): boolean {
     return this.__localHold;
+}
+
+function setQosStats(this: WebPhoneSession, stats: QosStats) {
+    this.__qosStats.cpuOS = stats.cpuOS || '0:0:0';
+    this.__qosStats.cpuRC = stats.cpuRC || '0:0:0';
+    this.__qosStats.ram = stats.ram || '0:0:0';
+    this.__qosStats.netType = stats.netType || null;
 }

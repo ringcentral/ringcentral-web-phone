@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest # Firefox in it
     strategy:
       matrix:
-        node-version: [14.x]
+        node-version: [18.x]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
