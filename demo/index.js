@@ -5,7 +5,6 @@ window.jQuery = $;
 window.SIP = SIP;
 
 $(function() {
-    const bootstrap = require('bootstrap');
     const SDK = require('@ringcentral/sdk').SDK;
     const WebPhone = require('ringcentral-web-phone') || window.RingCentral.WebPhone;
 

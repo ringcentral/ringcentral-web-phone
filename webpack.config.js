@@ -111,7 +111,6 @@ module.exports = [
             //FIXME Replace with file loader
             new CopyPlugin({
                 patterns: [
-                    {from: 'node_modules/bootstrap', to: 'bootstrap'},
                     {from: 'audio', to: 'audio'},
                     {from: 'demo/img', to: 'img'}
                 ]
