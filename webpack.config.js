@@ -32,6 +32,12 @@ const libConfig = {
                     }
                 ],
                 include: path.resolve('src')
+            },
+            {
+                test: /\.m?js?$/,
+                resolve: {
+                    fullySpecified: false
+                }
             }
         ]
     },
@@ -96,6 +102,16 @@ module.exports = [
                 amd: 'ringcentral-web-phone',
                 root: ['RingCentral', 'WebPhone']
             }
+        },
+        module: {
+            rules: [
+                {
+                    test: /\.m?js?$/,
+                    resolve: {
+                        fullySpecified: false
+                    }
+                }
+            ]
         },
         plugins: [
             new HtmlWebpackPlugin({

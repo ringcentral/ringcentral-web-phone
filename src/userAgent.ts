@@ -1,126 +1,246 @@
-import {ClientContext, UA} from 'sip.js';
-import {AudioHelper} from './audioHelper';
-import {patchSession, patchIncomingSession, WebPhoneSession} from './session';
-import {TransportConstructorWrapper, WebPhoneSIPTransport} from './sipTransportConstructor';
+import { EventEmitter } from 'events';
+import {
+    UserAgent,
+    UserAgentOptions,
+    UserAgentState,
+    Registerer,
+    RegistererState,
+    Inviter,
+    InviterOptions,
+    SessionDescriptionHandlerModifier,
+    Messager
+} from 'sip.js';
+import { IncomingResponse } from 'sip.js/lib/core';
+import { WebPhoneTransport, createWebPhoneTransport } from './transport';
 
-export interface WebPhoneUserAgent extends UA {
-    media: any;
-    defaultHeaders: any;
-    enableQos: boolean;
-    enableMediaReportLogging: boolean;
-    qosCollectInterval: number;
-    sipInfo: any;
-    audioHelper: AudioHelper;
-    onSession: (session: WebPhoneSession) => any;
-    createRcMessage: typeof createRcMessage;
-    sendMessage: typeof sendMessage;
-    __invite: typeof UA.prototype.invite;
-    __register: typeof UA.prototype.register;
-    __unregister: typeof UA.prototype.unregister;
-    __transportConstructor: any;
-    __onTransportConnected: () => void; // It is a private method
-    invite: (number: string, options: InviteOptions) => WebPhoneSession;
-    switchFrom: (activeCall: ActiveCallInfo, options: InviteOptions) => WebPhoneSession;
-    onTransportConnected: typeof onTransportConnected;
-    configuration: typeof UA.prototype.configuration;
-    transport: WebPhoneSIPTransport;
+import { SipInfo, WebPhoneOptions } from './index';
+import { AudioHelper } from './audioHelper';
+import { Events } from './events';
+import {
+    onSessionDescriptionHandlerCreated,
+    patchIncomingWebphoneSession,
+    patchWebphoneSession,
+    RCHeaders,
+    WebPhoneInvitation,
+    WebPhoneSession
+} from './session';
+import { patchUserAgentCore } from './userAgentCore';
+
+/** RingCentral Active call info */
+export interface ActiveCallInfo {
+    id: string;
+    from: string;
+    to: string;
+    direction: string;
+    sipData: {
+        toTag: string;
+        fromTag: string;
+    };
+}
+/**
+ * WebPhoneUserAgent that makes SIP calls on behalf of the user
+ */
+export interface WebPhoneUserAgent extends UserAgent {
+    /** Utility class to help play incoming and outgoing cues for calls */
+    audioHelper?: AudioHelper;
+    /** RTC constraints to be passed to browser when requesting for media stream */
+    constraints?: object;
+    /**
+     * @internal
+     * Contains list of default headers needed to be sent to RingCentral SIP server
+     */
+    defaultHeaders?: string[];
+    /**
+     * If `true`, the first answer to the local offer is immediately utilized for media.
+     * Requires that the INVITE request MUST NOT fork.
+     * Has no effect if `inviteWithoutSdp` is true.
+     */
+    earlyMedia?: boolean;
+    /** If `true`, logs media stats when an connection is established */
+    enableMediaReportLogging?: boolean;
+    /** If `true`, Qality of service of the call is generated and published to RingCentral server once the call ends */
+    enableQos?: boolean;
+    /** instanceId used while registering to the backend SIP server */
+    instanceId?: string;
+    /** HTML media elements where local and remote audio and video streams should be sent */
+    media?: { local?: HTMLMediaElement; remote?: HTMLMediaElement };
+    /** SDP modifieres to be used when generating local offer or creating answer */
+    modifiers?: SessionDescriptionHandlerModifier[];
+    /** Time interval in ms on how often should the quality of service data be collected */
+    qosCollectInterval?: number;
+    /** regId used while registering to the backend SIP server */
+    regId?: number;
+    /**
+     * @internal
+     * Instance of Registerer which will be used to register the device
+     */
+    registerer?: Registerer;
+    /** sip info recieved by RingCentral backend server when provisioning a device */
+    sipInfo?: SipInfo;
+    /** Transport class over which communication would take place */
+    transport: WebPhoneTransport;
+    /** To add event listeneres to be triggered whenever an event on UserAgent is emitted */
+    addListener?: typeof EventEmitter.prototype.addListener;
+    /**
+     * @internal
+     * Helper function to create RingCentral message
+     */
+    createRcMessage?: (options: RCHeaders) => string;
+    /** Emit event along with data which will trigger all listerenes attached to that event */
+    emit?: typeof EventEmitter.prototype.emit;
+    /** Send call invitation */
+    invite?: (number: string, options: InviteOptions) => WebPhoneSession;
+    /** Remove event listener from list of listeners for that event */
+    off?: typeof EventEmitter.prototype.off;
+    /** To add event listeneres to be triggered whenever an event on UserAgent is emitted */
+    on?: typeof EventEmitter.prototype.on;
+    /** Add once event listener from list of listeners for that event */
+    once?: typeof EventEmitter.prototype.once;
+    /**
+     * @internal
+     * Function which will be called when session is created. It's value is picked using options.onSession when instantiating userAgent object
+     */
+    onSession?: (session: WebPhoneSession) => void;
+    /** Register devide with the registrar */
+    register?: () => Promise<void>;
+    /** Remove event listener from list of listeners for that event */
+    removeListener?: typeof EventEmitter.prototype.removeListener;
+    /** Remove all event listener from list of listeners for that event */
+    removeAllListeners?: typeof EventEmitter.prototype.removeAllListeners;
+    /**
+     * @internal
+     * Utility function used to send message to backend server
+     */
+    sendMessage?: (to: string, messageData: string) => Promise<IncomingResponse>;
+    /** To switch from another device to this device */
+    switchFrom?: (activeCall: ActiveCallInfo, options: InviteOptions) => WebPhoneSession;
+    /** Unregister device from the registrar */
+    unregister?: () => Promise<void>;
 }
 
-export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, id): WebPhoneUserAgent => {
-    userAgent.defaultHeaders = ['P-rc-endpoint-id: ' + id, 'Client-id:' + options.clientId];
+export interface InviteOptions {
+    fromNumber?: string;
+    homeCountryId?: string;
+    extraHeaders?: string[];
+    RTCConstraints?: any;
+}
 
+/** @ignore */
+export function createWebPhoneUserAgent(
+    configuration: UserAgentOptions,
+    sipInfo: SipInfo,
+    options: WebPhoneOptions,
+    id: string
+): WebPhoneUserAgent {
+    const extraConfiguration: UserAgentOptions = {
+        delegate: {
+            onConnect: (): Promise<void> => userAgent.register(),
+            onInvite: (invitation: WebPhoneInvitation): void => {
+                userAgent.audioHelper.playIncoming(true);
+                invitation.delegate = {};
+                invitation.delegate.onSessionDescriptionHandler = () => onSessionDescriptionHandlerCreated(invitation);
+                patchWebphoneSession(invitation);
+                patchIncomingWebphoneSession(invitation);
+                (invitation as any).logger.log('UA recieved incoming call invite');
+                invitation.sendReceiveConfirm();
+                userAgent.emit(Events.UserAgent.Invite, invitation);
+            },
+            onNotify: (notification): void => {
+                const event = notification.request.getHeader('Event');
+                if (event === '') {
+                    userAgent.emit(Events.UserAgent.ProvisionUpdate);
+                }
+                (userAgent as any).logger.log('UA recieved notify');
+                notification.accept();
+            }
+        }
+    };
+    const extendedConfiguration = Object.assign({}, extraConfiguration, configuration);
+    const userAgent: WebPhoneUserAgent = new UserAgent(extendedConfiguration) as WebPhoneUserAgent;
+    const eventEmitter = new EventEmitter();
+    userAgent.on = eventEmitter.on.bind(eventEmitter);
+    userAgent.off = eventEmitter.off.bind(eventEmitter);
+    userAgent.once = eventEmitter.once.bind(eventEmitter);
+    userAgent.addListener = eventEmitter.addListener.bind(eventEmitter);
+    userAgent.removeListener = eventEmitter.removeListener.bind(eventEmitter);
+    userAgent.removeAllListeners = eventEmitter.removeAllListeners.bind(eventEmitter);
+    userAgent.defaultHeaders = [`P-rc-endpoint-id: ${id}`, `Client-id: ${options.clientId}`];
+    userAgent.regId = options.regId;
+    userAgent.instanceId = options.instanceId;
     userAgent.media = {};
-
     userAgent.enableQos = options.enableQos;
     userAgent.enableMediaReportLogging = options.enableMediaReportLogging;
-
-    userAgent.qosCollectInterval = options.qosCollectInterval || 5000;
-
+    userAgent.qosCollectInterval = options.qosCollectInterval;
     if (options.media && options.media.remote && options.media.local) {
         userAgent.media.remote = options.media.remote;
         userAgent.media.local = options.media.local;
-    } else userAgent.media = null;
-
+    } else {
+        userAgent.media = null;
+    }
+    userAgent.registerer = new Registerer(userAgent, {
+        regId: userAgent.regId,
+        instanceId: userAgent.instanceId,
+        extraHeaders: userAgent.defaultHeaders
+    });
     userAgent.sipInfo = sipInfo;
-
-    userAgent.__invite = userAgent.invite;
-    userAgent.invite = invite.bind(userAgent);
-
-    userAgent.__register = userAgent.register;
-    userAgent.register = register.bind(userAgent);
-
-    userAgent.__unregister = userAgent.unregister;
-    userAgent.unregister = unregister.bind(userAgent);
-
-    userAgent.switchFrom = switchFrom.bind(userAgent);
-
+    userAgent.modifiers = options.modifiers;
+    userAgent.constraints = options.mediaConstraints;
+    userAgent.earlyMedia = options.earlyMedia;
     userAgent.audioHelper = new AudioHelper(options.audioHelper);
-
-    userAgent.__transportConstructor = userAgent.configuration.transportConstructor;
-    userAgent.configuration.transportConstructor = TransportConstructorWrapper(
-        userAgent.__transportConstructor,
-        options
-    );
-
-    userAgent.onSession = options.onSession || null;
-    userAgent.createRcMessage = createRcMessage;
-    userAgent.sendMessage = sendMessage;
-
-    userAgent.__onTransportConnected = userAgent.onTransportConnected;
-    userAgent.onTransportConnected = onTransportConnected.bind(userAgent);
-
-    userAgent.on('invite', (session: WebPhoneSession) => {
-        userAgent.audioHelper.playIncoming(true);
-        patchSession(session);
-        patchIncomingSession(session);
-        session.logger.log('UA recieved incoming call invite');
-        session._sendReceiveConfirmPromise = session
-            .sendReceiveConfirm()
-            .then(() => {
-                session.logger.log('sendReceiveConfirm success');
-            })
-            .catch(error => {
-                session.logger.error('failed to send receive confirmation via SIP MESSAGE due to ' + error);
-            });
-    });
-
-    userAgent.on('registrationFailed', (e: any) => {
-        // Check the status of message is in sipErrorCodes and disconnecting from server if it so;
-        if (!e) {
-            return;
-        }
-
-        const message = e.data || e;
-        if (message && typeof message === 'string' && userAgent.transport.isSipErrorCode(message)) {
-            userAgent.transport.onSipErrorCode();
-        }
-        userAgent.logger.warn('UA Registration Failed');
-    });
-
-    userAgent.on('notify', ({request}: any) => {
-        const event = request && request.headers && request.headers.Event && request.headers.Event[0];
-
-        if (event && event.raw === 'check-sync') {
-            userAgent.emit('provisionUpdate');
-        }
-        userAgent.logger.log('UA recieved notify');
-    });
-
+    userAgent.onSession = options.onSession;
+    (userAgent as any)._transport = createWebPhoneTransport(userAgent.transport, options);
+    (userAgent as any).onTransportDisconnect = onTransportDisconnect.bind(userAgent);
+    userAgent.emit = eventEmitter.emit.bind(eventEmitter);
+    userAgent.register = register.bind(userAgent);
+    userAgent.unregister = unregister.bind(userAgent);
+    userAgent.invite = invite.bind(userAgent);
+    userAgent.sendMessage = sendMessage.bind(userAgent);
+    userAgent.createRcMessage = createRcMessage.bind(userAgent);
+    userAgent.switchFrom = switchFrom.bind(userAgent);
+    patchUserAgentCore(userAgent);
     userAgent.start();
+    userAgent.stateChange.addListener((newState) => {
+        switch (newState) {
+            case UserAgentState.Started: {
+                userAgent.emit(Events.UserAgent.Started);
+                break;
+            }
+            case UserAgentState.Stopped: {
+                userAgent.emit(Events.UserAgent.Stopped);
+                break;
+            }
+        }
+    });
+    userAgent.registerer.stateChange.addListener((newState) => {
+        switch (newState) {
+            case RegistererState.Registered: {
+                userAgent.emit(Events.UserAgent.Registered);
+                break;
+            }
+            case RegistererState.Unregistered: {
+                userAgent.emit(Events.UserAgent.Unregistered);
+                break;
+            }
+        }
+    });
 
     return userAgent;
-};
+}
 
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-function onTransportConnected(this: WebPhoneUserAgent): any {
-    if (this.configuration.register) {
-        return this.register();
+function onTransportDisconnect(this: WebPhoneUserAgent, error?: Error): void {
+    // Patch it so that reconnection is managed by WebPhoneTransport
+    if (this.state === UserAgentState.Stopped) {
+        return;
+    }
+    if (this.delegate && this.delegate.onDisconnect) {
+        this.delegate.onDisconnect(error);
+    }
+    if (error) {
+        this.transport.reconnect();
     }
 }
 
-/*--------------------------------------------------------------------------------------------------------------------*/
-function createRcMessage(this: WebPhoneUserAgent, options: any): string {
+function createRcMessage(this: WebPhoneUserAgent, options: RCHeaders): string {
     options.body = options.body || '';
     return (
         '<Msg>' +
@@ -144,78 +264,93 @@ function createRcMessage(this: WebPhoneUserAgent, options: any): string {
     );
 }
 
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-function sendMessage(this: WebPhoneUserAgent, to: string, messageData: string): Promise<ClientContext> {
-    const userAgent: WebPhoneUserAgent = this;
-    const sipOptions: any = {};
-    sipOptions.contentType = 'x-rc/agent';
-    sipOptions.extraHeaders = [];
-    sipOptions.extraHeaders.push('P-rc-ws: ' + this.contact);
+function sendMessage(this: WebPhoneUserAgent, to: string, messageData: string): Promise<IncomingResponse> {
+    const extraHeaders = [`P-rc-ws: ${this.contact}`];
+    // For some reason, UserAgent.makeURI is unable to parse username starting with #
+    // Fix in later release if this is fixed by SIP.js
+    const [user] = to.split('@');
+    to = to.startsWith('#') ? `sip:${to.substring(1)}` : `sip:${to}`;
+    const uri = UserAgent.makeURI(to);
+    uri.user = user;
+    const messager = new Messager(this, uri, messageData, 'x-rc/agent', { extraHeaders });
 
     return new Promise((resolve, reject) => {
-        var message = userAgent.message(to, messageData, sipOptions);
-        message.once('accepted', (response, cause) => resolve(response));
-        message.once('failed', (response, cause) => reject(new Error(cause)));
+        messager.message({
+            requestDelegate: {
+                onAccept: resolve,
+                onReject: reject
+            }
+        });
     });
 }
 
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-function register(this: WebPhoneUserAgent, options: any = {}): WebPhoneUserAgent {
-    return this.__register.call(this, {
-        ...options,
-        extraHeaders: [...(options.extraHeaders || []), ...this.defaultHeaders]
+async function register(this: WebPhoneUserAgent): Promise<void> {
+    await this.registerer.register({
+        requestDelegate: {
+            onReject: (response): void => {
+                if (!response) {
+                    return;
+                }
+                if (this.transport.isSipErrorCode(response.message.statusCode)) {
+                    this.transport.onSipErrorCode();
+                }
+                this.emit(Events.UserAgent.RegistrationFailed, response);
+                (this as any).logger.warn('UA Registration Failed');
+            }
+        }
     });
 }
 
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-function unregister(this: WebPhoneUserAgent, options: any = {}): WebPhoneUserAgent {
-    return this.__unregister.call(this, {
-        ...options,
-        extraHeaders: [...(options.extraHeaders || []), ...this.defaultHeaders]
-    });
-}
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-
-export interface InviteOptions {
-    fromNumber?: string;
-    homeCountryId?: string;
-    extraHeaders?: any;
-    RTCConstraints?: any;
+async function unregister(this: WebPhoneUserAgent): Promise<void> {
+    await this.registerer.unregister();
 }
 
 function invite(this: WebPhoneUserAgent, number: string, options: InviteOptions = {}): WebPhoneSession {
-    options.extraHeaders = (options.extraHeaders || []).concat(this.defaultHeaders);
-    options.extraHeaders.push(
-        'P-Asserted-Identity: sip:' + (options.fromNumber || this.sipInfo.username) + '@' + this.sipInfo.domain //FIXME Phone Number
-    );
+    const inviterOptions: InviterOptions = {};
+    inviterOptions.extraHeaders = [
+        ...(options.extraHeaders || []),
+        ...this.defaultHeaders,
+        `P-Asserted-Identity: sip: ${(options.fromNumber || this.sipInfo.username) + '@' + this.sipInfo.domain}`,
+        ...(options.homeCountryId ? [`P-rc-country-id: ${options.homeCountryId}`] : [])
+    ];
 
-    //FIXME Backend should know it already
-    if (options.homeCountryId) {
-        options.extraHeaders.push('P-rc-country-id: ' + options.homeCountryId);
-    }
-
-    options.RTCConstraints = options.RTCConstraints || {
-        optional: [{DtlsSrtpKeyAgreement: 'true'}]
+    options.RTCConstraints =
+        options.RTCConstraints || Object.assign({}, this.constraints, { optional: [{ DtlsSrtpKeyAgreement: 'true' }] });
+    inviterOptions.sessionDescriptionHandlerModifiers = this.modifiers;
+    inviterOptions.sessionDescriptionHandlerOptions = { constraints: options.RTCConstraints };
+    inviterOptions.earlyMedia = this.earlyMedia;
+    inviterOptions.delegate = {
+        onSessionDescriptionHandler: (): void => onSessionDescriptionHandlerCreated(inviter),
+        onNotify: (notification) => notification.accept()
     };
-
     this.audioHelper.playOutgoing(true);
-    this.logger.log('Invite to ' + number + ' created with playOutgoing set to true');
-    return patchSession(this.__invite(number, options) as any);
-}
-
-export interface ActiveCallInfo {
-    id: string;
-    from: string;
-    to: string;
-    direction: string;
-    sipData: {
-        toTag: string;
-        fromTag: string;
-    };
+    (this as any).logger.log(`Invite to ${number} created with playOutgoing set to true`);
+    const inviter: WebPhoneSession = new Inviter(
+        this,
+        UserAgent.makeURI(`sip:${number}@${this.sipInfo.domain}`),
+        inviterOptions
+    );
+    inviter
+        .invite({
+            requestDelegate: {
+                onAccept: (inviteResponse) => {
+                    inviter.startTime = new Date();
+                    inviter.emit(Events.Session.Accepted, inviteResponse.message);
+                },
+                onProgress: (inviteResponse) => {
+                    inviter.emit(Events.Session.Progress, inviteResponse.message);
+                }
+            }
+        })
+        .then(() => this.emit(Events.UserAgent.InviteSent, inviter))
+        .catch((e) => {
+            if (e.message.indexOf('Permission denied') > -1) {
+                inviter.emit(Events.Session.UserMediaFailed);
+            }
+            throw e;
+        });
+    patchWebphoneSession(inviter);
+    return inviter;
 }
 
 /**
@@ -223,15 +358,19 @@ export interface ActiveCallInfo {
  * need active call information from details presence API for switching
  * https://developers.ringcentral.com/api-reference/Detailed-Extension-Presence-with-SIP-Event
  */
+
 function switchFrom(this: WebPhoneUserAgent, activeCall: ActiveCallInfo, options: InviteOptions = {}): WebPhoneSession {
-    const replaceHeaders = [];
-    replaceHeaders.push(
-        `Replaces: ${activeCall.id};to-tag=${activeCall.sipData.fromTag};from-tag=${activeCall.sipData.toTag}`
-    );
-    replaceHeaders.push('RC-call-type: replace');
-    const toNumber = activeCall.direction === 'Outbound' ? activeCall.to : activeCall.from;
-    const fromNumber = activeCall.direction === 'Outbound' ? activeCall.from : activeCall.to;
+    const replaceHeaders = [
+        `Replaces: ${activeCall.id};to-tag=${activeCall.sipData.fromTag};from-tag=${activeCall.sipData.toTag}`,
+        'RC-call-type: replace'
+    ];
+    const [toNumber, fromNumber] =
+        activeCall.direction === 'Outbound' ? [activeCall.to, activeCall.from] : [activeCall.from, activeCall.to];
     options.extraHeaders = (options.extraHeaders || []).concat(replaceHeaders);
     options.fromNumber = options.fromNumber || fromNumber;
-    return this.invite(toNumber, options);
+    const inviterOptions: InviterOptions = {
+        extraHeaders: options.extraHeaders,
+        sessionDescriptionHandlerOptions: { constraints: options.RTCConstraints || this.constraints }
+    };
+    return this.invite(toNumber, inviterOptions);
 }

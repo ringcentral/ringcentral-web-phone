@@ -54,5 +54,7 @@ export const login = async (page: Page, name, credentials: any): Promise<void> =
     await expect(page).toClick('button', { text: 'Login' });
 };
 
-if (!fs.existsSync(screenshotPath)) fs.mkdirSync(screenshotPath);
+if (!fs.existsSync(screenshotPath)) {
+    fs.mkdirSync(screenshotPath);
+}
 console.log('Screenshot path: ', screenshotPath);

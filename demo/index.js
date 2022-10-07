@@ -136,9 +136,12 @@ $(function() {
         sipInfo = data.sipInfo[0] || data.sipInfo;
 
         webPhone = new WebPhone(data, {
+            enableDscp: true,
             clientId: localStorage.getItem('webPhoneclientId'),
             audioHelper: {
-                enabled: true
+                enabled: true,
+                incoming: 'audio/incoming.ogg',
+                outgoing: 'audio/outgoing.ogg'
             },
             logLevel: parseInt(logLevel, 10),
             appName: 'WebPhoneDemo',
@@ -153,11 +156,6 @@ $(function() {
             // turnServers: [{urls:'turn:192.168.0.1', username : 'turn' , credential: 'turn'}],
             // iceTransportPolicy: "all" or "relay",
             // iceCheckingTimeout:500
-        });
-
-        webPhone.userAgent.audioHelper.loadAudio({
-            incoming: 'audio/incoming.ogg',
-            outgoing: 'audio/outgoing.ogg'
         });
 
         webPhone.userAgent.audioHelper.setVolume(0.3);
@@ -235,10 +233,12 @@ $(function() {
 
             $modal.find('.decline').on('click', function() {
                 session.reject();
+                $modal.modal('hide');
             });
 
             $modal.find('.toVoicemail').on('click', function() {
                 session.toVoicemail();
+                $modal.modal('hide');
             });
 
             $modal.find('.forward-form').on('submit', function(e) {
@@ -301,8 +301,8 @@ $(function() {
         activeCallInfo.to = session.request.to.uri.user;
         activeCallInfo.direction = direction;
         activeCallInfo.id = session.dialog.id.callId;
-        activeCallInfo.sipData.fromTag = session.dialog.id.remoteTag;
-        activeCallInfo.sipData.toTag = session.dialog.id.localTag;
+        activeCallInfo.sipData.fromTag = session.dialog.remoteTag;
+        activeCallInfo.sipData.toTag = session.dialog.localTag;
         if (!localStorage.getItem('activeCallInfo')) {
             localStorage.setItem('activeCallInfo', JSON.stringify(activeCallInfo));
         }
@@ -323,7 +323,6 @@ $(function() {
 
         var interval = setInterval(function() {
             var time = session.startTime ? Math.round((Date.now() - session.startTime) / 1000) + 's' : 'Ringing';
-
             $info.text('time: ' + time + '\nstartTime: ' + JSON.stringify(session.startTime, null, 2) + '\n');
         }, 1000);
 
@@ -333,14 +332,14 @@ $(function() {
         }
 
         $modal.find('.increase-volume').on('click', function() {
-            session.ua.audioHelper.setVolume(
-                (session.ua.audioHelper.volume !== null ? session.ua.audioHelper.volume : 0.5) + 0.1
+            session.userAgent.audioHelper.setVolume(
+                (session.userAgent.audioHelper.volume !== null ? session.userAgent.audioHelper.volume : 0.5) + 0.1
             );
         });
 
         $modal.find('.decrease-volume').on('click', function() {
-            session.ua.audioHelper.setVolume(
-                (session.ua.audioHelper.volume !== null ? session.ua.audioHelper.volume : 0.5) - 0.1
+            session.userAgent.audioHelper.setVolume(
+                (session.userAgent.audioHelper.volume !== null ? session.userAgent.audioHelper.volume : 0.5) - 0.1
             );
         });
 
@@ -413,6 +412,7 @@ $(function() {
                 .transfer($transfer.val().trim())
                 .then(function() {
                     console.log('Transferred');
+                    $modal.modal('hide');
                 })
                 .catch(function(e) {
                     console.error('Transfer failed', e.stack || e);
@@ -424,8 +424,8 @@ $(function() {
             e.stopPropagation();
             session.hold().then(function() {
                 console.log('Placing the call on hold, initiating attended transfer');
-                var newSession = session.ua.invite($transfer.val().trim());
-                newSession.once('accepted', function() {
+                var newSession = session.userAgent.invite($transfer.val().trim());
+                newSession.once('established', function() {
                     console.log('New call initated. Click Complete to complete the transfer');
                     $modal.find('.transfer-form button.complete').on('click', function(e) {
                         session
@@ -469,11 +469,11 @@ $(function() {
         });
 
         $modal.find('.hangup').on('click', function() {
-            session.terminate();
+            session.dispose();
         });
 
-        session.on('accepted', function() {
-            console.log('Event: Accepted');
+        session.on('established', function() {
+            console.log('Event: Established');
             captureActiveCallInfo(session);
         });
         session.on('progress', function() {
@@ -583,7 +583,7 @@ $(function() {
         var session = webPhone.userAgent.invite(number, {
             fromNumber: username
         });
-        session.on('accepted', function() {
+        session.on('established', function() {
             onAccepted(session);
             console.log('Conference call started');
             bringIn(tId, pId)

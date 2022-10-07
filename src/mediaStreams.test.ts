@@ -1,886 +1,496 @@
-/*
- * @Author: Elias Sun(elias.sun@ringcentral.com)
- * @Date: Dec. 15, 2018
- * Copyright © RingCentral. All rights reserved.
- */
-
-import { default as MediaStreams, MediaStreamsImpl, RTPReport, Browsers } from '../src/mediaStreams';
 import EventEmitter from 'events';
+import { faker } from '@faker-js/faker'; // eslint-disable-line import/no-unresolved
 
-const globalEmitter = new EventEmitter();
+import { default as MediaStreams, MediaStreamsImpl, Browsers, WebPhoneRTPReport } from '../src/mediaStreams';
+import { Events } from './events';
 
-globalEmitter.setMaxListeners(0);
-
-class Navigator {
-    public userAgent: string;
-    public constructor() {
-        this.userAgent = 'Chrome';
+// #region Mocks
+class MockNavigator {
+    private _userAgent: string;
+    constructor() {
+        this._userAgent = 'Chrome/5.0 (Windows; U; Win98; en-US; rv:0.9.2) Gecko/20010725';
     }
-    public get defaultUserAgent() {
-        return 'Chrome';
-    }
-    public get chrome() {
-        return this.defaultUserAgent;
-    }
-    public set chrome(name) {
-        this.userAgent = name;
-    }
-    public get firefox() {
-        return 'Firefox';
-    }
-    public set firefox(name) {
-        this.userAgent = name;
-    }
-
-    public set opera(name) {
-        this.userAgent = name;
-    }
-
-    public get opera() {
-        return 'Opera';
+    get userAgent() {
+        return this._userAgent;
     }
 }
 
-global.navigator = new Navigator() as any;
-
-class FadeSessionDescriptionHandler {
-    public label;
-    public peerConnection = new FadePeerConnection();
-
-    public constructor(label) {
-        this.label = label;
-    }
-
-    public testEvent(event) {
-        globalEmitter.emit(event, this);
-    }
-
-    public onPeerConnectionStateChange(event) {
-        console.log(event);
-    }
-
-    public on(event, func) {
-        globalEmitter.on(event, func);
-    }
-
-    public removeListener(event, func) {
-        globalEmitter.removeListener(event, func);
-    }
-
-    public listeners(event) {
-        return globalEmitter.listeners(event);
+class MockLogger {
+    public log: (messge) => any;
+    public debug: (messge) => any;
+    public error: (messge) => any;
+    public info: (messge) => any;
+    constructor() {
+        this.log = () => null;
+        this.debug = () => null;
+        this.error = () => null;
+        this.info = () => null;
     }
 }
 
-class FadeSession {
-    public sessionDescriptionHandler;
-    public onMediaConnectionStateChange;
-    public ua;
-    public logger;
-    public testState;
-    public sessionOptions_;
-    public onRTPStat;
+class MockSessionDescriptionHandler {
+    public peerConnection: MockPeerConnection;
+    constructor() {
+        this.peerConnection = new MockPeerConnection();
+    }
+}
+
+class MockUserAgent {
+    public logger: MockLogger;
+    public defaultHeaders: Object;
+    constructor() {
+        this.logger = new MockLogger();
+        this.defaultHeaders = {};
+    }
+}
+
+class MockSession {
+    public sessionDescriptionHandler: MockSessionDescriptionHandler;
+    public userAgent: MockUserAgent;
+    public logger: MockLogger;
+    private eventEmitter = new EventEmitter();
     public constructor() {
-        this.sessionDescriptionHandler = new FadeSessionDescriptionHandler('sdp1');
-        this.ua = {};
-        this.ua.defaultHeaders = {};
-        this.logger = new (class Logger {
-            public log(msg) {
-                console.log(msg);
-            }
-            public error(msg) {
-                console.log(msg);
-            }
-        })();
+        this.sessionDescriptionHandler = new MockSessionDescriptionHandler();
+        this.userAgent = new MockUserAgent();
+        this.logger = new MockLogger();
     }
-
-    public set sessionOptions(options) {
-        this.sessionOptions_ = options;
-    }
-
-    public get sessionOptions() {
-        return this.sessionOptions_;
-    }
-
     public emit(event, parameter) {
-        globalEmitter.emit(event, parameter);
+        this.eventEmitter.emit(event, parameter);
     }
-
-    public on(event, parameter) {
-        globalEmitter.on(event, parameter);
+    public on(event, callback) {
+        this.eventEmitter.on(event, callback);
     }
-
-    public reinvite(options) {
-        this.sessionOptions = options;
-    }
-
-    public listeners(event) {
-        return globalEmitter.listeners(event);
-    }
+    public reinvite() { }
 }
 
-class FadeStream {
-    public label;
-    public constructor(label) {
-        this.label = label;
-    }
-}
-
-class FadePeerConnection {
-    public connectionState;
-    public iceConnectionStates;
-    public localDescription;
-    public chromeStats;
-    public firefoxStats;
-    public localOffer_;
-    public constructor() {
-        this.connectionState = 'new';
-        this.iceConnectionStates = {
-            new: 'mediaConnectionStateNew',
-            checking: 'mediaConnectionStateChecking',
-            connected: 'mediaConnectionStateConnected',
-            completed: 'mediaConnectionStateCompleted',
-            failed: 'mediaConnectionStateFailed',
-            disconnected: 'mediaConnectionStateDisconnected',
-            closed: 'mediaConnectionStateClosed'
-        };
-        this.localDescription = {
-            sdp: 'c=IN IP4 50.237.72.154\r\na=rtcp:61349 IN IP4 50.237.72.154\r\n',
-            type: 'offer'
-        };
-        this.chromeStats = [
-            {
-                type: 'inbound-rtp',
-                bytesReceived: 100,
-                packetsReceived: 200,
-                jitter: 300,
-                packetsLost: 400,
-                fractionLost: 500,
-                mediaType: 'audio'
-            },
-            {
-                type: 'outbound-rtp',
-                bytesSent: 100,
-                packetsSent: 200,
-                mediaType: 'audio'
-            },
-            {
-                type: 'candidate-pair',
-                currentRoundTripTime: 1.05
-            }
-        ];
-        this.firefoxStats = [
-            {
-                type: 'inbound-rtp',
-                bytesReceived: 100,
-                packetsReceived: 200,
-                jitter: 300,
-                packetsLost: 400,
-                roundTripTime: 1000,
-                mediaType: 'audio'
-            },
-            {
-                type: 'outbound-rtp',
-                bytesSent: 100,
-                packetsSent: 200,
-                mediaType: 'audio'
-            },
-            {
-                type: 'candidate-pair',
-                whatever: 1.05
-            }
-        ];
-    }
+class MockPeerConnection {
+    static iceConnectionStates = {
+        new: 'mediaConnectionStateNew',
+        checking: 'mediaConnectionStateChecking',
+        connected: 'mediaConnectionStateConnected',
+        completed: 'mediaConnectionStateCompleted',
+        failed: 'mediaConnectionStateFailed',
+        disconnected: 'mediaConnectionStateDisconnected',
+        closed: 'mediaConnectionStateClosed'
+    };
+    static defaultStats = [
+        {
+            type: 'inbound-rtp',
+            bytesReceived: 100,
+            packetsReceived: 200,
+            jitter: 300,
+            packetsLost: 400,
+            fractionLost: 500,
+            mediaType: 'audio'
+        },
+        {
+            type: 'outbound-rtp',
+            bytesSent: 100,
+            packetsSent: 200,
+            mediaType: 'audio'
+        },
+        {
+            type: 'candidate-pair',
+            currentRoundTripTime: 1.05
+        }
+    ];
+    private eventEmitter = new EventEmitter();
+    public connectionState = 'new';
     public set iceConnectionState(state) {
         this.connectionState = state;
     }
     public get iceConnectionState() {
         return this.connectionState;
     }
-
-    public set localOffer(offer) {
-        this.localOffer_ = offer;
-    }
-
-    public get localOffer() {
-        return this.localOffer_;
-    }
-
-    public createOffer(options) {
-        var offer = {};
-        if (!options.hasOwnProperty('ok')) {
-            options.ok = true;
-        }
-
-        return new Promise(function (resolve, reject) {
-            if (options.ok === true) {
-                resolve(options); //offer = options
-            } else {
-                reject(options); //error = options
-            }
-        });
-    }
-
-    public setLocalDescription(offer) {
-        if (!offer.hasOwnProperty('offerok')) {
-            offer.offerok = true;
-        }
-        this.localOffer = offer;
-        var self = this;
-        return new Promise(function (resolve, reject) {
-            if (offer.offerok === true) {
-                resolve('true');
-            } else {
-                self.localOffer.reject = 'yes';
-                reject('false');
-            }
-        });
-    }
-
-    public getStats() {
+    public getStats(): Promise<any> {
         return new Promise((resolve, reject) => {
-            if (global['navigator'].userAgent === 'Chrome') {
-                resolve(this.chromeStats);
-            } else if (global['navigator'].userAgent === (global.navigator as any).firefox) {
-                resolve(this.firefoxStats);
-            } else {
-                reject('unknown browser');
-            }
+            resolve(MockPeerConnection.defaultStats);
         });
+    }
+    public addEventListener(eventName, listener) {
+        this.eventEmitter.addListener(eventName, listener);
+    }
+    public removeEventListener(eventName, listener) {
+        this.eventEmitter.removeListener(eventName, listener);
+    }
+    public emit(eventName, data) {
+        this.eventEmitter.emit(eventName, data);
     }
 }
 
-test('input wrong parameters in MediaStreamsImpl constructor', () => {
-    let mediaStreams = null;
-    try {
-        mediaStreams = new MediaStreamsImpl(null);
-    } catch (e) {
-        expect(e.message).toBe('Fail to create the media session. session is null or undefined!');
-        expect(mediaStreams).toBe(null);
-    }
-});
-
-test('test media connection - event received in session', async () => {
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-
-    mediaStreams.on = function (event, func) {
-        globalEmitter.on(event, func);
-    };
-    fadeSession.on('mediaConnectionStateNew', function (parameter) {
-        fadeSession.testState = 'new';
-    });
-    fadeSession.sessionDescriptionHandler.testEvent('iceConnection');
-
-    await expect(
-        new Promise(function (resolve, reject) {
-            setTimeout(() => {
-                resolve(fadeSession.testState);
-            }, 500);
-        })
-    ).resolves.toEqual('new');
-    const f = mediaStreams.onPeerConnectionStateChange.bind(mediaStreams);
-    const r = f === mediaStreams.onPeerConnectionStateChange.bind(mediaStreams);
-    mediaStreams.release();
-});
-
-test('test media connection - callback in MediaStreamsImpl class', async () => {
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-
-    mediaStreams.onMediaConnectionStateChange = function (session, eventState) {
-        fadeSession.testState = 'new';
-    };
-    mediaStreams.on = function (event, func) {
-        globalEmitter.on(event, func);
-    };
-    fadeSession.sessionDescriptionHandler.testEvent('iceConnection');
-
-    await expect(
-        new Promise(function (resolve, reject) {
-            setTimeout(() => {
-                resolve(fadeSession.testState);
-            }, 500);
-        })
-    ).resolves.toEqual('new');
-    mediaStreams.release();
-});
-
-test('test media connection - callback in session', async () => {
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-
-    fadeSession.onMediaConnectionStateChange = function (session, eventState) {
-        fadeSession.testState = 'new';
-    };
-    mediaStreams.on = function (event, func) {
-        globalEmitter.on(event, func);
-    };
-    fadeSession.sessionDescriptionHandler.testEvent('iceConnection');
-
-    await expect(
-        new Promise(function (resolve, reject) {
-            setTimeout(() => {
-                resolve(fadeSession.testState);
-            }, 500);
-        })
-    ).resolves.toEqual('new');
-    mediaStreams.release();
-});
-
-test('test media connection - event - checking ', async () => {
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-
-    mediaStreams.on = function (event, func) {
-        globalEmitter.on(event, func);
-    };
-    fadeSession.on('mediaConnectionStateChecking', function (parameter) {
-        fadeSession.testState = 'checking';
-    });
-    fadeSession.sessionDescriptionHandler.peerConnection.iceConnectionState = 'checking';
-
-    fadeSession.sessionDescriptionHandler.testEvent('iceConnectionChecking');
-
-    await expect(
-        new Promise(function (resolve, reject) {
-            setTimeout(() => {
-                resolve(fadeSession.testState);
-            }, 500);
-        })
-    ).resolves.toEqual('checking');
-    mediaStreams.release();
-});
-
-test('test media connection - event - connected ', async () => {
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-
-    mediaStreams.on = function (event, func) {
-        globalEmitter.on(event, func);
-    };
-    fadeSession.on('mediaConnectionStateConnected', function (parameter) {
-        fadeSession.testState = 'connected';
-    });
-    fadeSession.sessionDescriptionHandler.peerConnection.iceConnectionState = 'connected';
-
-    fadeSession.sessionDescriptionHandler.testEvent('iceConnectionConnected');
-
-    await expect(
-        new Promise(function (resolve, reject) {
-            setTimeout(() => {
-                resolve(fadeSession.testState);
-            }, 500);
-        })
-    ).resolves.toEqual('connected');
-    mediaStreams.release();
-});
-
-test('test media connection - event - completed ', async () => {
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-
-    mediaStreams.on = function (event, func) {
-        globalEmitter.on(event, func);
-    };
-    fadeSession.on('mediaConnectionStateCompleted', function (parameter) {
-        fadeSession.testState = 'completed';
-    });
-    fadeSession.sessionDescriptionHandler.peerConnection.iceConnectionState = 'completed';
-
-    fadeSession.sessionDescriptionHandler.testEvent('iceConnectionCompleted');
-
-    await expect(
-        new Promise(function (resolve, reject) {
-            setTimeout(() => {
-                resolve(fadeSession.testState);
-            }, 500);
-        })
-    ).resolves.toEqual('completed');
-    mediaStreams.release();
-});
-
-test('test media connection - event - failed ', async () => {
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-
-    mediaStreams.on = function (event, func) {
-        globalEmitter.on(event, func);
-    };
-    fadeSession.on('mediaConnectionStateFailed', function (parameter) {
-        fadeSession.testState = 'failed';
-    });
-    fadeSession.sessionDescriptionHandler.peerConnection.iceConnectionState = 'failed';
-
-    fadeSession.sessionDescriptionHandler.testEvent('iceConnectionFailed');
-
-    await expect(
-        new Promise(function (resolve, reject) {
-            setTimeout(() => {
-                resolve(fadeSession.testState);
-            }, 500);
-        })
-    ).resolves.toEqual('failed');
-    mediaStreams.release();
-});
-
-test('test media connection - event - disconnected ', async () => {
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-
-    mediaStreams.on = function (event, func) {
-        globalEmitter.on(event, func);
-    };
-    fadeSession.on('mediaConnectionStateDisconnected', function (parameter) {
-        fadeSession.testState = 'disconnected';
-    });
-    fadeSession.sessionDescriptionHandler.peerConnection.iceConnectionState = 'disconnected';
-
-    fadeSession.sessionDescriptionHandler.testEvent('iceConnectionDisconnected');
-
-    await expect(
-        new Promise(function (resolve, reject) {
-            setTimeout(() => {
-                resolve(fadeSession.testState);
-            }, 500);
-        })
-    ).resolves.toEqual('disconnected');
-    mediaStreams.release();
-});
-
-test('test media connection - event - closed ', async () => {
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-
-    mediaStreams.on = function (event, func) {
-        globalEmitter.on(event, func);
-    };
-    fadeSession.on('mediaConnectionStateClosed', function (parameter) {
-        fadeSession.testState = 'closed';
-    });
-    fadeSession.sessionDescriptionHandler.peerConnection.iceConnectionState = 'closed';
-
-    fadeSession.sessionDescriptionHandler.testEvent('iceConnectionClosed');
-
-    await expect(
-        new Promise(function (resolve, reject) {
-            setTimeout(() => {
-                resolve(fadeSession.testState);
-            }, 500);
-        })
-    ).resolves.toEqual('closed');
-    mediaStreams.release();
-});
-
-test('test change media stream', () => {
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-    mediaStreams.localStream = new FadeStream('lStream2');
-    mediaStreams.remoteStream = new FadeStream('rStream2');
-    expect(mediaStreams.localStream.label).toEqual('lStream2');
-    expect(mediaStreams.remoteStream.label).toEqual('rStream2');
-    mediaStreams.release();
-});
-
-test('test media reconnect with invalid parameters', async () => {
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-
-    mediaStreams.reconnectMedia();
-    var pc = fadeSession.sessionDescriptionHandler.peerConnection;
-
-    await expect(
-        new Promise(function (resolve, reject) {
-            setTimeout(() => {
-                resolve(pc.localOffer);
-            }, 500);
-        })
-    ).resolves.toBeDefined();
-    var offer = pc.localOffer;
-    expect(offer.ok).toBe(true);
-    mediaStreams.release();
-});
-
-test('test media reconnect with the correct customized settings', async () => {
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-
-    var options: any = {};
-    options.RTCOptions = {
-        audio: 10,
-        video: 100,
-        restart: 15,
-        ok: true
-    };
-
-    mediaStreams.reconnectMedia(options);
-    var pc = fadeSession.sessionDescriptionHandler.peerConnection;
-
-    await expect(
-        new Promise(function (resolve, reject) {
-            setTimeout(() => {
-                resolve(pc.localOffer);
-            }, 500);
-        })
-    ).resolves.toBeDefined();
-    var offer = pc.localOffer;
-    expect(offer.audio).toBe(10);
-    expect(offer.video).toBe(100);
-    expect(offer.restart).toBe(15);
-    expect(offer.ok).toBe(true);
-    mediaStreams.release();
-});
-
-test('test media reconnect - fail to set local offer', async () => {
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-
-    var options: any = {};
-    options.RTCOptions = {
-        audio: 100,
-        video: 1001,
-        restart: 151,
-        ok: true,
-        offerok: true
-    };
-
-    await mediaStreams.reconnectMedia(options);
-    var pc = fadeSession.sessionDescriptionHandler.peerConnection;
-
-    expect(pc.localOffer).toBeDefined();
-
-    options.RTCOptions = {
-        audio: 200,
-        video: 2001,
-        restart: 251,
-        ok: true,
-        offerok: false
-    };
-
-    await expect(mediaStreams.reconnectMedia(options)).rejects.toBeDefined();
-    expect(pc.localOffer.reject).toEqual('yes');
-    mediaStreams.release();
-});
-
-test('test getMediaStats in MediaStreamsImpl- getMediaStats(func, interval)', async () => {
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
-    pc.iceConnectionState = 'connected';
-    jest.useFakeTimers();
-    mediaStreams.getMediaStats(function (report, session) {
-        console.log('test');
-    }, 1000);
-    expect(setInterval).toHaveBeenCalledTimes(1);
-    mediaStreams.release();
-});
-
-test('test getMediaStats in MediaStreamsImpl - getMediaStats(func)', async () => {
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
-    pc.iceConnectionState = 'connected';
-    jest.useFakeTimers();
-    mediaStreams.getMediaStats(function (report, session) {
-        console.log('test');
-    });
-    expect(setInterval).toHaveBeenCalledTimes(1);
-    mediaStreams.release();
-});
-
-test('test getMediaStats in MediaStreamsImpl - getMediaStats()', async () => {
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
-    pc.iceConnectionState = 'connected';
-    jest.useFakeTimers();
-    mediaStreams.getMediaStats();
-    expect(setInterval).toHaveBeenCalledTimes(1);
-    mediaStreams.release();
-});
-
-test('test getMediaStats in MediaStreamsImpl- mediaStatsTimerCallback - no callback', async () => {
-    global.console = {
-        warn: jest.fn(),
-        log: jest.fn()
-    } as any;
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
-    pc.iceConnectionState = 'new';
-    mediaStreams.mediaStatsTimerCallback();
-    expect(mediaStreams.preRTT['currentRoundTripTime']).toEqual(0);
-    pc.iceConnectionState = 'connected';
-    mediaStreams.mediaStatsTimerCallback();
-    (function () {
-        var prefix = [new Date(), 'WebPhone'];
-        var label = '';
-        if (label) {
-            prefix.push(label);
+class MockRTPStats {
+    constructor(type, properties = {}) {
+        let result;
+        switch (type) {
+            case 'inbound-rtp':
+                result = {
+                    type,
+                    bytesReceived: faker.datatype.number(),
+                    packetsReceived: faker.datatype.number(),
+                    jitter: faker.datatype.number(),
+                    packetsLost: faker.datatype.number(),
+                    fractionLost: faker.datatype.number(),
+                    mediaType: faker.random.word(),
+                    roundTripTime: faker.datatype.number()
+                };
+                break;
+            case 'outbound-rtp':
+                result = {
+                    type,
+                    bytesSent: faker.datatype.number(),
+                    packetsSent: faker.datatype.number(),
+                    mediaType: faker.random.word()
+                };
+                break;
+            case 'candidate-pair':
+                result = {
+                    type,
+                    currentRoundTripTime: faker.datatype.number()
+                };
+                break;
+            case 'local-candidate':
+                result = {
+                    type,
+                    id: faker.datatype.number(),
+                    isRemote: faker.datatype.boolean(),
+                    ip: faker.internet.ip(),
+                    candidateType: faker.random.word(),
+                    networkType: faker.random.word(),
+                    priority: faker.datatype.number(),
+                    port: faker.internet.port()
+                };
+                break;
+            case 'remote-candidate':
+                result = {
+                    type,
+                    id: faker.datatype.number(),
+                    isRemote: faker.datatype.boolean(),
+                    ip: faker.internet.ip(),
+                    candidateType: faker.random.word(),
+                    priority: faker.datatype.number(),
+                    port: faker.internet.port()
+                };
+                break;
+            case 'media-source':
+            case 'track':
+                result = {
+                    type,
+                    audioLevel: faker.datatype.number({ min: 0, max: 100 })
+                };
+                break;
+            case 'transport':
+                result = {
+                    type,
+                    dtlsState: faker.random.word(),
+                    packetsSent: faker.datatype.number(),
+                    packetsReceived: faker.datatype.number(),
+                    selectedCandidatePairChanges: faker.datatype.boolean(),
+                    selectedCandidatePairId: faker.datatype.number()
+                };
+                break;
         }
-        var content =
-            'MediaStreams No callback to accept receive media report. usage: session.on("rtpStat") = function(report) or session.onRTPStat = function(report) or set a mediaCallback as a paramter';
-        //content = prefix.concat(content).join(' | ');
-        expect(global.console.log).toHaveBeenCalledWith(content);
-    })();
-    mediaStreams.release();
-});
-
-test('test getMediaStats in MediaStreamsImpl - mediaStatsTimerCallback - listen on the event', () => {
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
-    pc.iceConnectionState = 'new';
-    mediaStreams.mediaStatsTimerCallback();
-    pc.iceConnectionState = 'connected';
-    const mockCallback = jest.fn(report => { });
-    mediaStreams.getRTPReport = jest.fn(reports => { });
-    fadeSession.on('rtpStat', mockCallback);
-    mediaStreams.mediaStatsTimerCallback();
-    expect(mediaStreams.getRTPReport['mock'].calls.length).toBe(1);
-    mediaStreams.release();
-});
-
-test('test getMediaStats in MediaStreamsImpl - mediaStatsTimerCallback - session.onRTPStat ', () => {
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
-    pc.iceConnectionState = 'new';
-    mediaStreams.mediaStatsTimerCallback();
-    pc.iceConnectionState = 'connected';
-    mediaStreams.getRTPReport = jest.fn(reports => { });
-    fadeSession.onRTPStat = function (report, session) { };
-    mediaStreams.mediaStatsTimerCallback();
-    expect(mediaStreams.getRTPReport['mock'].calls.length).toBe(1);
-    mediaStreams.release();
-});
-
-test('test getMediaStats in MediaStreamsImpl - mediaStatsTimerCallback - session.mediaStreams.onRTPStat ', () => {
-    global.console = {
-        warn: jest.fn(),
-        log: jest.fn()
-    } as any;
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
-    pc.iceConnectionState = 'new';
-    mediaStreams.mediaStatsTimerCallback();
-    pc.iceConnectionState = 'connected';
-    mediaStreams.getRTPReport = jest.fn(reports => { });
-    mediaStreams.onRTPStat = function (report, session) { };
-    mediaStreams.mediaStatsTimerCallback();
-    expect(mediaStreams.getRTPReport['mock'].calls.length).toBe(1);
-    mediaStreams.release();
-});
-
-test('test getMediaStats  in MediaStreamsImpl- mediaStatsTimerCallback -  if (connectionState !== "connected" && connectionState !== "completed") ', () => {
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
-    pc.iceConnectionState = 'new';
-    mediaStreams.mediaStatsTimerCallback();
-    pc.iceConnectionState = 'new';
-    mediaStreams.getRTPReport = jest.fn(reports => { });
-    mediaStreams.onRTPStat = function (report, session) { };
-    mediaStreams.mediaStatsTimerCallback();
-    expect(mediaStreams.getRTPReport['mock'].calls.length).toBe(0);
-    mediaStreams.release();
-});
-
-test('test getMediaStats in MediaStreamsImpl - mediaStatsTimerCallback -  if (!pc)) ', () => {
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-    let pc = fadeSession.sessionDescriptionHandler.peerConnection;
-    pc.iceConnectionState = 'new';
-    mediaStreams.mediaStatsTimerCallback();
-    pc.iceConnectionState = 'new';
-    mediaStreams.getRTPReport = jest.fn(reports => { });
-    mediaStreams.onRTPStat = function (report, session) { };
-    pc = null;
-    mediaStreams.mediaStatsTimerCallback();
-    expect(mediaStreams.getRTPReport['mock'].calls.length).toBe(0);
-    mediaStreams.release();
-});
-
-test('test getRTPReport in MediaStreamsImpl -- session.mediaStreams.onRTPStat', async () => {
-    (global.navigator as any).userAgent = (global.navigator as any).chrome;
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
-    pc.iceConnectionState = 'connected';
-    mediaStreams.onRTPStat = jest.fn((report, session) => { });
-    await mediaStreams.getRTPReport(new RTPReport());
-    expect(mediaStreams.onRTPStat.mock.calls.length).toBe(1);
-    mediaStreams.release();
-});
-
-test('test getRTPReport in MediaStreamsImpl-- session.onRTPStat', async () => {
-    (global.navigator as any).userAgent = (global.navigator as any).chrome;
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
-    pc.iceConnectionState = 'connected';
-    fadeSession.onRTPStat = jest.fn((report, session) => { });
-    await mediaStreams.getRTPReport(new RTPReport());
-    expect(fadeSession.onRTPStat.mock.calls.length).toBe(1);
-    mediaStreams.release();
-});
-
-test('test getRTPReport  in MediaStreamsImpl-- session.on("rtpStat")', async () => {
-    (global.navigator as any).userAgent = (global.navigator as any).chrome;
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
-    pc.iceConnectionState = 'connected';
-    const onRTPStat = jest.fn(function (report, session) { });
-    fadeSession.onRTPStat = null;
-    mediaStreams.onRTPStat = null;
-    fadeSession.on('rtpStat', onRTPStat);
-    await mediaStreams.getRTPReport(new RTPReport());
-    expect(onRTPStat.mock.calls.length).toBe(1);
-    mediaStreams.release();
-});
-
-test('test getRTPReport in MediaStreamsImpl -- verify chrome and safari', async () => {
-    (global.navigator as any).userAgent = (global.navigator as any).chrome;
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
-    pc.iceConnectionState = 'connected';
-    let reports: any = {};
-    fadeSession.onRTPStat = jest.fn((report, session) => {
-        reports = report;
-    });
-    await mediaStreams.getRTPReport(new RTPReport());
-    expect(fadeSession.onRTPStat.mock.calls.length).toBe(1);
-    expect(reports.inboundRtpReport['bytesReceived']).toEqual(100);
-    expect(reports.inboundRtpReport['packetsReceived']).toEqual(200);
-    expect(reports.inboundRtpReport['jitter']).toEqual(300);
-    expect(reports.inboundRtpReport['packetsLost']).toEqual(400);
-    expect(reports.inboundRtpReport['fractionLost']).toEqual(500);
-    expect(reports.inboundRtpReport['mediaType']).toEqual('audio');
-    expect(reports.outboundRtpReport['bytesSent']).toEqual(100);
-    expect(reports.outboundRtpReport['packetsSent']).toEqual(200);
-    expect(reports.outboundRtpReport['mediaType']).toEqual('audio');
-    expect(reports.rttMS['currentRoundTripTime']).toEqual(1.05 * 1000);
-    mediaStreams.release();
-});
-
-test('test getRTPReport in MediaStreamsImpl -- verify firefox', async () => {
-    (global.navigator as any).userAgent = (global.navigator as any).firefox;
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
-    pc.iceConnectionState = 'connected';
-    let reports: any = {};
-    fadeSession.onRTPStat = jest.fn((report, session) => {
-        reports = report;
-    });
-    await mediaStreams.getRTPReport(new RTPReport());
-    expect(fadeSession.onRTPStat.mock.calls.length).toBe(1);
-    expect(reports.inboundRtpReport['bytesReceived']).toEqual(100);
-    expect(reports.inboundRtpReport['packetsReceived']).toEqual(200);
-    expect(reports.inboundRtpReport['jitter']).toEqual(300);
-    expect(reports.inboundRtpReport['packetsLost']).toEqual(400);
-    expect(typeof reports.inboundRtpReport['fractionLost']).toEqual('undefined');
-    expect(reports.inboundRtpReport['mediaType']).toEqual('audio');
-    expect(reports.outboundRtpReport['bytesSent']).toEqual(100);
-    expect(reports.outboundRtpReport['packetsSent']).toEqual(200);
-    expect(reports.outboundRtpReport['mediaType']).toEqual('audio');
-    expect(reports.rttMS['currentRoundTripTime']).toEqual(1000);
-    mediaStreams.release();
-});
-
-test('test getRTPReport in MediaStreamsImpl -- unknow browser and fail to get the statistics', async () => {
-    (global.navigator as any).userAgent = 'unknow';
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreamsImpl(fadeSession);
-    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
-    pc.iceConnectionState = 'connected';
-    let reports = {};
-    fadeSession.onRTPStat = jest.fn((report, session) => {
-        reports = report;
-    });
-    await mediaStreams.getRTPReport(new RTPReport());
-    expect(fadeSession.onRTPStat.mock.calls.length).toBe(0);
-    mediaStreams.release();
-});
-
-test('test getRTPReport in MediaStreamsImpl -- test web browser() type', async () => {
-    const fadeSession = new FadeSession();
-    const mediaStreams = new MediaStreamsImpl(fadeSession);
-    for (const i in Browsers) {
-        (global.navigator as any).userAgent = i;
-        expect(mediaStreams.browser()).toEqual(Browsers[i]);
+        return Object.assign({}, result, properties);
     }
-    mediaStreams.release();
-});
+}
 
-test('test MediaStreamsImpl and getMediaStats -- release without timer', async () => {
-    const fadeSession = new FadeSession();
-    const mediaStreams = new MediaStreamsImpl(fadeSession);
-    const rtpStatInSession = fadeSession.sessionDescriptionHandler.listeners('iceConnection');
-    expect(rtpStatInSession.length).toEqual(1);
-    mediaStreams.release();
-    const rtpStatInSession2 = fadeSession.sessionDescriptionHandler.listeners('iceConnection');
-    expect(rtpStatInSession.length - rtpStatInSession2.length).toEqual(1);
-});
+// #endregion
 
-test('test MediaStreamsImpl and getMediaStats -- release with stopMediaStat', async () => {
-    const fadeSession = new FadeSession();
-    const mediaStreams = new MediaStreamsImpl(fadeSession);
-    const rtpStatInSession = fadeSession.sessionDescriptionHandler.listeners('iceConnection');
-    const pc = fadeSession.sessionDescriptionHandler.peerConnection;
-    let reports;
-    expect(rtpStatInSession.length).toEqual(1);
-    pc.iceConnectionState = 'connected';
-    fadeSession.onRTPStat = jest.fn((report, session) => {
-        reports = report;
+global.navigator = new MockNavigator() as any;
+
+function generateMockStatAndReport() {
+    const inboundRTP: any = new MockRTPStats('inbound-rtp');
+    const outboundRTP: any = new MockRTPStats('outbound-rtp');
+    const candidatePair: any = new MockRTPStats('candidate-pair');
+    const localCandidate: any = new MockRTPStats('local-candidate');
+    const remoteCandidate: any = new MockRTPStats('remote-candidate');
+    const mediaSource: any = new MockRTPStats('media-source');
+    const track: any = new MockRTPStats('track');
+    const transport: any = new MockRTPStats('transport');
+    const mockStat = [
+        inboundRTP,
+        outboundRTP,
+        candidatePair,
+        localCandidate,
+        remoteCandidate,
+        mediaSource,
+        track,
+        transport
+    ];
+    const mockReport = new WebPhoneRTPReport();
+    mockReport.outboundRtpReport = {
+        bytesSent: outboundRTP.bytesSent,
+        packetsSent: outboundRTP.packetsSent,
+        mediaType: outboundRTP.mediaType,
+        rtpLocalAudioLevel: mediaSource.audioLevel
+    };
+    mockReport.inboundRtpReport = {
+        bytesReceived: inboundRTP.bytesReceived,
+        packetsReceived: inboundRTP.packetsReceived,
+        jitter: inboundRTP.jitter,
+        packetsLost: inboundRTP.packetsLost,
+        fractionLost: inboundRTP.fractionLost,
+        mediaType: inboundRTP.mediaType
+    };
+    mockReport.rttMs = {
+        roundTripTime: inboundRTP.roundTripTime,
+        currentRoundTripTime: candidatePair.currentRoundTripTime * 1000
+    };
+    mockReport.localCandidates = [
+        {
+            id: localCandidate.id,
+            isRemote: localCandidate.isRemote,
+            ip: localCandidate.ip,
+            candidateType: localCandidate.candidateType,
+            networkType: localCandidate.networkType,
+            priority: localCandidate.priority,
+            port: localCandidate.port
+        }
+    ];
+    mockReport.remoteCandidates = [
+        {
+            id: remoteCandidate.id,
+            isRemote: remoteCandidate.isRemote,
+            ip: remoteCandidate.ip,
+            candidateType: remoteCandidate.candidateType,
+            priority: remoteCandidate.priority,
+            port: remoteCandidate.port
+        }
+    ];
+    mockReport.transport = {
+        dtlsState: transport.dtlsState,
+        packetsSent: transport.packetsSent,
+        packetsReceived: transport.packetsReceived,
+        selectedCandidatePairChanges: transport.selectedCandidatePairChanges,
+        selectedCandidatePairId: transport.selectedCandidatePairId
+    };
+    return { mockStat, mockReport };
+}
+
+describe('MediaStreamsImpl', () => {
+    afterEach(() => {
+        jest.restoreAllMocks();
     });
-    mediaStreams.getMediaStats(fadeSession.onRTPStat, 2000);
-    mediaStreams.release();
-    const rtpStatInSession2 = fadeSession.sessionDescriptionHandler.listeners('iceConnection');
-    expect(rtpStatInSession.length - rtpStatInSession2.length).toEqual(1);
-    expect(fadeSession.onRTPStat.mock.calls.length).toBe(0);
+
+    test('throw error if MediaStreamsImpl is instantiated with no session', () => {
+        expect(() => new MediaStreamsImpl(null)).toThrow();
+        expect(() => new MediaStreamsImpl(undefined)).toThrow();
+    });
+
+    test('browser function should check for correct browser type as per the useragent', () => {
+        const mockSession = new MockSession();
+        const mediaStreamsImpl = new MediaStreamsImpl(mockSession);
+        jest.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+            'Firefox/5.0 (Windows; U; Win98; en-US; rv:0.9.2) Gecko/20010725'
+        );
+        expect(mediaStreamsImpl.browser()).toBe(Browsers.Firefox);
+        jest.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+            'Safari/5.0 (Windows; U; Win98; en-US; rv:0.9.2) Gecko/20010725'
+        );
+        expect(mediaStreamsImpl.browser()).toBe(Browsers.Safari);
+        jest.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+            'Opera/5.0 (Windows; U; Win98; en-US; rv:0.9.2) Gecko/20010725'
+        );
+        expect(mediaStreamsImpl.browser()).toBe(Browsers.Opera);
+        jest.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+            'MSIE/5.0 (Windows; U; Win98; en-US; rv:0.9.2) Gecko/20010725'
+        );
+        expect(mediaStreamsImpl.browser()).toBe(Browsers.MSIE);
+    });
+
+    test('should emit event on session and trigger onMediaConnectionStateChange on iceconnectionstatechange', () => {
+        const mockSession = new MockSession();
+        const mediaStreamsImpl = new MediaStreamsImpl(mockSession);
+        const mockOnMediaConnectionStateChange = jest.fn();
+        mediaStreamsImpl.onMediaConnectionStateChange = mockOnMediaConnectionStateChange;
+        const mediaConnectionStateNew = jest.fn();
+        const mediaConnectionStateChecking = jest.fn();
+        const mediaConnectionStateConnected = jest.fn();
+        const mediaConnectionStateCompleted = jest.fn();
+        const mediaConnectionStateFailed = jest.fn();
+        const mediaConnectionStateDisconnected = jest.fn();
+        const mediaConnectionStateClosed = jest.fn();
+        mockSession.on('mediaConnectionStateNew', mediaConnectionStateNew);
+        mockSession.on('mediaConnectionStateChecking', mediaConnectionStateChecking);
+        mockSession.on('mediaConnectionStateConnected', mediaConnectionStateConnected);
+        mockSession.on('mediaConnectionStateCompleted', mediaConnectionStateCompleted);
+        mockSession.on('mediaConnectionStateFailed', mediaConnectionStateFailed);
+        mockSession.on('mediaConnectionStateDisconnected', mediaConnectionStateDisconnected);
+        mockSession.on('mediaConnectionStateClosed', mediaConnectionStateClosed);
+
+        jest.spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get').mockReturnValue(
+            'new'
+        );
+        mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
+        expect(mockOnMediaConnectionStateChange).toBeCalledWith('mediaConnectionStateNew', mockSession);
+        expect(mediaConnectionStateNew).toBeCalled();
+
+        jest.spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get').mockReturnValue(
+            'checking'
+        );
+        mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
+        expect(mockOnMediaConnectionStateChange).toBeCalledWith('mediaConnectionStateChecking', mockSession);
+        expect(mediaConnectionStateChecking).toBeCalled();
+
+        jest.spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get').mockReturnValue(
+            'connected'
+        );
+        mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
+        expect(mockOnMediaConnectionStateChange).toBeCalledWith('mediaConnectionStateConnected', mockSession);
+        expect(mediaConnectionStateConnected).toBeCalled();
+
+        jest.spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get').mockReturnValue(
+            'completed'
+        );
+        mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
+        expect(mockOnMediaConnectionStateChange).toBeCalledWith('mediaConnectionStateCompleted', mockSession);
+        expect(mediaConnectionStateCompleted).toBeCalled();
+
+        jest.spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get').mockReturnValue(
+            'failed'
+        );
+        mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
+        expect(mockOnMediaConnectionStateChange).toBeCalledWith('mediaConnectionStateFailed', mockSession);
+        expect(mediaConnectionStateFailed).toBeCalled();
+
+        jest.spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get').mockReturnValue(
+            'disconnected'
+        );
+        mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
+        expect(mockOnMediaConnectionStateChange).toBeCalledWith('mediaConnectionStateDisconnected', mockSession);
+        expect(mediaConnectionStateDisconnected).toBeCalled();
+
+        jest.spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get').mockReturnValue(
+            'closed'
+        );
+        mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
+        expect(mockOnMediaConnectionStateChange).toBeCalledWith('mediaConnectionStateClosed', mockSession);
+        expect(mediaConnectionStateClosed).toBeCalled();
+    });
+
+    test('should not emit event on session and trigger onMediaConnectionStateChange on iceconnectionstatechange for unknown events', () => {
+        const mockSession = new MockSession();
+        const mediaStreamsImpl = new MediaStreamsImpl(mockSession);
+        const mockOnMediaConnectionStateChange = jest.fn();
+        mediaStreamsImpl.onMediaConnectionStateChange = mockOnMediaConnectionStateChange;
+        const sessionEventListener = jest.fn();
+        mockSession.on('mediaConnectionStateNew', sessionEventListener);
+        mockSession.on('mediaConnectionStateChecking', sessionEventListener);
+        mockSession.on('mediaConnectionStateConnected', sessionEventListener);
+        mockSession.on('mediaConnectionStateCompleted', sessionEventListener);
+        mockSession.on('mediaConnectionStateFailed', sessionEventListener);
+        mockSession.on('mediaConnectionStateDisconnected', sessionEventListener);
+        mockSession.on('mediaConnectionStateClosed', sessionEventListener);
+
+        jest.spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get').mockReturnValue(
+            'randomEvent'
+        );
+        mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
+        expect(mockOnMediaConnectionStateChange).toBeCalledTimes(0);
+        expect(sessionEventListener).toBeCalledTimes(0);
+
+        jest.spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get').mockReturnValue(
+            'kylo-ren-event'
+        );
+        mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
+        expect(mockOnMediaConnectionStateChange).toBeCalledTimes(0);
+        expect(sessionEventListener).toBeCalledTimes(0);
+    });
 });
 
-test('test MediaStreamsImpl and getMediaStats -- opera', async () => {
-    (global.navigator as any).userAgent = (global.navigator as any).opera;
-    const fadeSession = new FadeSession();
-    const mediaStreams = new MediaStreamsImpl(fadeSession);
-    expect(RTPReport).not.toBeNull();
-});
+describe('MediaStreams', () => {
+    afterEach(() => {
+        jest.restoreAllMocks();
+        jest.useRealTimers();
+    });
 
-test('test property onRTPStat in MediaStreams', async () => {
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreams(fadeSession);
+    test('should send reinvite when reconnecting media', async () => {
+        const mockSession = new MockSession();
+        const mediaStreams = new MediaStreamsImpl(mockSession as any);
+        const mockReinvite = jest.fn().mockReturnValue(Promise.resolve(null));
+        mockSession.reinvite = mockReinvite;
+        await mediaStreams.reconnectMedia();
+        expect(mockReinvite).toBeCalled();
+    });
 
-    var options: any = {};
-    options.RTCOptions = {
-        audio: 10,
-        video: 100,
-        restart: 15,
-        ok: true
-    };
-    const onRTPStat = jest.fn((report, session) => { });
-    mediaStreams.onRTPStat = onRTPStat;
-    expect(onRTPStat).toEqual(mediaStreams.mediaStreamsImpl.onRTPStat);
-    mediaStreams.release();
-});
+    test('should clenup on release', (done) => {
+        const mockSession = new MockSession();
+        const mediaStreams = new MediaStreams(mockSession as any);
+        mediaStreams.mediaStreamsImpl['mediaStatsTimer'] = 123;
+        const mockRemoveEventListener = (event, fn) => {
+            expect(fn).toBe(mediaStreams.mediaStreamsImpl['onPeerConnectionStateChange']);
+            expect(mediaStreams.mediaStreamsImpl['mediaStatsTimer']).toBe(null);
+            done();
+        };
+        mockSession.sessionDescriptionHandler.peerConnection.removeEventListener = mockRemoveEventListener;
+        mediaStreams.release();
+    });
 
-test('test property onMediaConnectionStateChange in MediaStreams', async () => {
-    const fadeSession = new FadeSession();
-    var mediaStreams = new MediaStreams(fadeSession);
+    test('getMediaStats should be called and rtpStat event should be emitted continiously as per the interval', async () => {
+        jest.useFakeTimers();
+        const mockSession = new MockSession();
+        const mediaStreams = new MediaStreams(mockSession as any);
+        const getStatsCallback = jest.fn();
+        const rtpStatCallback = jest.fn();
+        jest.spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get').mockReturnValue(
+            'connected'
+        );
+        mockSession.on(Events.Session.RTPStat, rtpStatCallback);
+        mediaStreams.getMediaStats(getStatsCallback, 100);
+        jest.advanceTimersByTime(400);
+        // Added promise resolve since fake timer + promise work differently
+        await Promise.resolve();
+        expect(getStatsCallback).toBeCalledTimes(4);
+        expect(rtpStatCallback).toBeCalledTimes(4);
+        await mediaStreams.release();
+        getStatsCallback.mockClear();
+        rtpStatCallback.mockClear();
+        mediaStreams.getMediaStats(getStatsCallback, 50);
+        jest.advanceTimersByTime(400);
+        // Added promise resolve since fake timer + promise work differently
+        await Promise.resolve();
+        expect(getStatsCallback).toBeCalledTimes(8);
+        expect(rtpStatCallback).toBeCalledTimes(8);
+        mediaStreams.release();
+    });
 
-    var options: any = {};
-    options.RTCOptions = {
-        audio: 10,
-        video: 100,
-        restart: 15,
-        ok: true
-    };
-    const onMediaConnectionStateChange = jest.fn((state, session) => { });
-    mediaStreams.onMediaConnectionStateChange = onMediaConnectionStateChange;
-    expect(onMediaConnectionStateChange).toEqual(mediaStreams.mediaStreamsImpl.onMediaConnectionStateChange);
-    mediaStreams.release();
+    test('should stop sending stats when stopMediaStats is called', async () => {
+        jest.useFakeTimers();
+        const mockSession = new MockSession();
+        const mediaStreams = new MediaStreams(mockSession as any);
+        const getStatsCallback = jest.fn();
+        jest.spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get').mockReturnValue(
+            'connected'
+        );
+        mediaStreams.getMediaStats(getStatsCallback, 100);
+        jest.advanceTimersByTime(400);
+        // Added promise resolve since fake timer + promise work differently
+        await Promise.resolve();
+        jest.advanceTimersByTime(400);
+        mediaStreams.stopMediaStats();
+        jest.advanceTimersByTime(400);
+        expect(getStatsCallback).toBeCalledTimes(4);
+        await mediaStreams.release();
+    });
+
+    test('should send media stats', async () => {
+        jest.useFakeTimers();
+        const mockSession = new MockSession();
+        const mediaStreams = new MediaStreams(mockSession as any);
+        jest.spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get').mockReturnValue(
+            'connected'
+        );
+        const { mockStat: firstStat, mockReport: firstReport } = generateMockStatAndReport();
+        const { mockStat: secondStat, mockReport: secondReport } = generateMockStatAndReport();
+        jest.spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'getStats')
+            .mockReturnValueOnce(Promise.resolve(firstStat))
+            .mockReturnValueOnce(Promise.resolve(secondStat));
+        const getStatsCallback = jest.fn();
+        mediaStreams.getMediaStats(getStatsCallback, 100);
+        jest.advanceTimersByTime(200);
+        // Added promise resolve since fake timer + promise work differently
+        await Promise.resolve();
+        expect(getStatsCallback).toHaveBeenNthCalledWith(1, firstReport, mockSession);
+        expect(getStatsCallback).toHaveBeenNthCalledWith(2, secondReport, mockSession);
+        await mediaStreams.release();
+    });
 });

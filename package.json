@@ -1,6 +1,6 @@
 {
   "name": "ringcentral-web-phone",
-  "version": "0.8.12",
+  "version": "0.9.0-beta",
   "scripts": {
     "test": "yarn run test:ut && yarn run test:e2e",
     "test:coverage": "cat .coverage/lcov.info | coveralls -v",
@@ -17,9 +17,10 @@
     "lint:staged": "lint-staged"
   },
   "dependencies": {
-    "sip.js": "0.13.5"
+    "sip.js": "0.20.1"
   },
   "devDependencies": {
+    "@faker-js/faker": "7.5.0",
     "@ringcentral/sdk": "4.7.3",
     "@types/expect-puppeteer": "3.3.1",
     "@types/express-serve-static-core": "4.17.31",
@@ -74,6 +75,15 @@
     },
     {
       "name": "Vyshakh Babji"
+    },
+    {
+      "name": "Yatin Gera"
+    },
+    {
+      "name": "Tyler Liu"
+    },
+    {
+      "name": "Embbnux Ji"
     }
   ],
   "repository": {

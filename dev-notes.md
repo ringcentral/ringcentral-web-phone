@@ -54,3 +54,10 @@ So I published a demo app to https://chuntaoliu.com/rc-web-phone-demo/
 Source code is https://github.com/tylerlong/rc-web-phone-demo
 
 Not sure why, but `yarn start` just works now.
+
+
+## New changes in 0.9.0
+
+event 'accepted' renamed to 'established'
+
+session.ua.xxx renamed to session.userAgent.xxx
