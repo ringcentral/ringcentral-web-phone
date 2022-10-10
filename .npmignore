@@ -8,7 +8,6 @@
 /.prettierrc
 /.huskyrc
 /.lintstagedrc
-/bower.json
 /demo
 /dist/*.html
 /dist/demo*.js

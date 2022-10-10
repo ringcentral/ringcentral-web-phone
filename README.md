@@ -50,11 +50,9 @@ Please visit Network Requirement links below
 
 ```ssh
 yarn add ringcentral-web-phone
-// or
-bower install ringcentral-web-phone
 ```
 
-### If you are not using Bower or NPM:
+### If you are not using NPM:
 
 1. Download SIP.JS: [https://github.com/onsip/SIP.js/releases/tag/0.20.0](https://github.com/onsip/SIP.js/releases/tag/0.20.0)
 2. Download WebPhone SDK: [https://github.com/ringcentral/ringcentral-web-phone/releases/latest](https://github.com/ringcentral/ringcentral-web-phone/releases/latest)
