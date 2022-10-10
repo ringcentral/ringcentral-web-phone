@@ -1,16 +1,5 @@
 # Developer Notes (by Tyler Liu)
 
-
-## What I did
-
-- Update TypeScript and Webpack to latest version
-- Replace all appKey/appSecret with clientId/clientSecret
-- Replace npm with yarn
-- Replace ringcentral with @ringcentral/sdk
-- Let e2e test support extension. (previously only username & password)
-- Rename "login" to "username" in demo web form
-
-
 ## Phone number format
 
 When you use the demo application, make sure that you enter the phone number format as '6501234567', not '(650) 123-4567'.
@@ -28,21 +17,6 @@ Visit http://localhost:8080 to test.
 
 
 ## Issue 1
-
-node_modules/sip.js/types/index.d.ts:50:14 - error TS2304: Cannot find name 'Transport'.
-
-Workaround, add:
-
-```ts
-import { Transport } from "./transport";
-```
-
-to node_modules/sip.js/types/index.d.ts
-
-Not sure why, but `yarn start` just works now.
-
-
-## Issue 2
 
 According to https://developer.mozilla.org/en-US/docs/Web/API/Navigator/mediaDevices
 
