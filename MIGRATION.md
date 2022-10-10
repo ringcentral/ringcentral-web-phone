@@ -74,7 +74,7 @@ WebPhone SDK will still supports some basic events on `WebPhoneTransport`
 - `sendReinvite` has been removed since reinvite is handeled by `sip.js` now
 - `_sendReinvite` has been removed
 - `getIncomingInfoContent` has been moved to `userAgentCore.ts`
-- `sendReceive` method has been renamed to `sendInfoAndRecieveResponse`
+- `sendReceive` method has been renamed to `sendInfoAndReceiveResponse`
 - `sendRequest` has been removed by `sip.js`. Use methods like `session.info`, `session.message`, `session.invite` etc instead
 
 <br/>

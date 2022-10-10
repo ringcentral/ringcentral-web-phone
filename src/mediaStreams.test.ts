@@ -16,10 +16,10 @@ class MockNavigator {
 }
 
 class MockLogger {
-    public log: (messge) => any;
-    public debug: (messge) => any;
-    public error: (messge) => any;
-    public info: (messge) => any;
+    public log: (message) => any;
+    public debug: (message) => any;
+    public error: (message) => any;
+    public info: (message) => any;
     constructor() {
         this.log = () => null;
         this.debug = () => null;
@@ -412,7 +412,7 @@ describe('MediaStreams', () => {
         expect(mockReinvite).toBeCalled();
     });
 
-    test('should clenup on release', (done) => {
+    test('should cleanup on release', (done) => {
         const mockSession = new MockSession();
         const mediaStreams = new MediaStreams(mockSession as any);
         mediaStreams.mediaStreamsImpl['mediaStatsTimer'] = 123;
@@ -425,7 +425,7 @@ describe('MediaStreams', () => {
         mediaStreams.release();
     });
 
-    test('getMediaStats should be called and rtpStat event should be emitted continiously as per the interval', async () => {
+    test('getMediaStats should be called and rtpStat event should be emitted continuously as per the interval', async () => {
         jest.useFakeTimers();
         const mockSession = new MockSession();
         const mediaStreams = new MediaStreams(mockSession as any);

@@ -64,7 +64,7 @@ export interface WebPhoneUserAgent extends UserAgent {
     instanceId?: string;
     /** HTML media elements where local and remote audio and video streams should be sent */
     media?: { local?: HTMLMediaElement; remote?: HTMLMediaElement };
-    /** SDP modifieres to be used when generating local offer or creating answer */
+    /** SDP modifiers to be used when generating local offer or creating answer */
     modifiers?: SessionDescriptionHandlerModifier[];
     /** Time interval in ms on how often should the quality of service data be collected */
     qosCollectInterval?: number;
@@ -75,11 +75,11 @@ export interface WebPhoneUserAgent extends UserAgent {
      * Instance of Registerer which will be used to register the device
      */
     registerer?: Registerer;
-    /** sip info recieved by RingCentral backend server when provisioning a device */
+    /** sip info received by RingCentral backend server when provisioning a device */
     sipInfo?: SipInfo;
     /** Transport class over which communication would take place */
     transport: WebPhoneTransport;
-    /** To add event listeneres to be triggered whenever an event on UserAgent is emitted */
+    /** To add event listeners to be triggered whenever an event on UserAgent is emitted */
     addListener?: typeof EventEmitter.prototype.addListener;
     /**
      * @internal
@@ -92,7 +92,7 @@ export interface WebPhoneUserAgent extends UserAgent {
     invite?: (number: string, options: InviteOptions) => WebPhoneSession;
     /** Remove event listener from list of listeners for that event */
     off?: typeof EventEmitter.prototype.off;
-    /** To add event listeneres to be triggered whenever an event on UserAgent is emitted */
+    /** To add event listeners to be triggered whenever an event on UserAgent is emitted */
     on?: typeof EventEmitter.prototype.on;
     /** Add once event listener from list of listeners for that event */
     once?: typeof EventEmitter.prototype.once;
@@ -101,7 +101,7 @@ export interface WebPhoneUserAgent extends UserAgent {
      * Function which will be called when session is created. It's value is picked using options.onSession when instantiating userAgent object
      */
     onSession?: (session: WebPhoneSession) => void;
-    /** Register devide with the registrar */
+    /** Register device with the registrar */
     register?: () => Promise<void>;
     /** Remove event listener from list of listeners for that event */
     removeListener?: typeof EventEmitter.prototype.removeListener;
@@ -141,7 +141,7 @@ export function createWebPhoneUserAgent(
                 invitation.delegate.onSessionDescriptionHandler = () => onSessionDescriptionHandlerCreated(invitation);
                 patchWebphoneSession(invitation);
                 patchIncomingWebphoneSession(invitation);
-                (invitation as any).logger.log('UA recieved incoming call invite');
+                (invitation as any).logger.log('UA received incoming call invite');
                 invitation.sendReceiveConfirm();
                 userAgent.emit(Events.UserAgent.Invite, invitation);
             },
@@ -150,7 +150,7 @@ export function createWebPhoneUserAgent(
                 if (event === '') {
                     userAgent.emit(Events.UserAgent.ProvisionUpdate);
                 }
-                (userAgent as any).logger.log('UA recieved notify');
+                (userAgent as any).logger.log('UA received notify');
                 notification.accept();
             }
         }

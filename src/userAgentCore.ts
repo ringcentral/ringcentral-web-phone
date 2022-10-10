@@ -49,7 +49,7 @@ function receiveIncomingRequestFromTransport(this: WehPhoneUserAgentCore, messag
             }
             // For other SIP INFO from server
             this.emit('RC_SIP_INFO', message);
-            // SIP.js does not support application/json content type, so we monkey override its behaviour in this case
+            // SIP.js does not support application/json content type, so we monkey override its behavior in this case
             const contentType = message.getHeader('content-type');
             if (contentType.match(/^application\/json/i)) {
                 this.replyStateless(message, { statusCode: 200 });

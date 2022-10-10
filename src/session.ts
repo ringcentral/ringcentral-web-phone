@@ -100,7 +100,7 @@ export class CommonSession {
     mediaStreams?: MediaStreams;
     /** Flag to check if the call is muted or not */
     muted?: boolean;
-    /** Counter to represent how many media stats report were missed becuase of no audio */
+    /** Counter to represent how many media stats report were missed because of no audio */
     noAudioReportCount?: number;
     /** JOSN representation of RC headers received for an incoming call */
     rcHeaders?: RCHeaders;
@@ -167,7 +167,7 @@ export class CommonSession {
      * @internal
      * Helper method that sends an INFO request to other user agent and then waits for an INFO request from the other user agent
      */
-    sendInfoAndRecieveResponse?: typeof sendInfoAndRecieveResponse;
+    sendInfoAndReceiveResponse?: typeof sendInfoAndReceiveResponse;
     /**
      * @internal
      * Helper function to send INFO request with `move` instruction to RingCentral backend
@@ -256,7 +256,7 @@ export function patchWebphoneSession(session: WebPhoneSession): WebPhoneSession 
     session.removeListener = eventEmitter.removeListener.bind(eventEmitter);
     session.removeAllListeners = eventEmitter.removeAllListeners.bind(eventEmitter);
     session.emit = eventEmitter.emit.bind(eventEmitter);
-    session.sendInfoAndRecieveResponse = sendInfoAndRecieveResponse.bind(session);
+    session.sendInfoAndReceiveResponse = sendInfoAndReceiveResponse.bind(session);
     session.startRecord = startRecord.bind(session);
     session.stopRecord = stopRecord.bind(session);
     session.sendMoveResponse = sendMoveResponse.bind(session);
@@ -372,7 +372,7 @@ function sendSessionMessage(this: WebPhoneSession, options): Promise<IncomingRes
     return this.userAgent.sendMessage(this.rcHeaders.from, this.createSessionMessage(options));
 }
 
-async function sendInfoAndRecieveResponse(this: WebPhoneSession, command: Command, options?: any): Promise<any> {
+async function sendInfoAndReceiveResponse(this: WebPhoneSession, command: Command, options?: any): Promise<any> {
     options = options || {};
     extend(command, options);
     delete command.extraHeaders;
@@ -489,19 +489,19 @@ function replyWithMessage(this: WebPhoneSession, replyOptions: ReplyOptions): Pr
 }
 
 async function flip(this: WebPhoneSession, target): Promise<any> {
-    return this.sendInfoAndRecieveResponse(messages.flip, { target });
+    return this.sendInfoAndReceiveResponse(messages.flip, { target });
 }
 
 async function whisper(this: WebPhoneSession): Promise<any> {
-    return this.sendInfoAndRecieveResponse(messages.whisper);
+    return this.sendInfoAndReceiveResponse(messages.whisper);
 }
 
 async function barge(this: WebPhoneSession): Promise<any> {
-    return this.sendInfoAndRecieveResponse(messages.barge);
+    return this.sendInfoAndReceiveResponse(messages.barge);
 }
 
 function park(this: WebPhoneSession): Promise<any> {
-    return this.sendInfoAndRecieveResponse(messages.park);
+    return this.sendInfoAndReceiveResponse(messages.park);
 }
 
 function mute(this: WebPhoneSession, silent?: boolean): void {
@@ -666,7 +666,7 @@ async function transfer(
  * @param options
  * @returns Promise<OutgoingInviteRequest>
  *
- * Sends a reinvite. Also makes sure to regenrate a new SDP by passing offerToReceiveAudio: true, offerToReceiveVideo: false  and iceRestart: true
+ * Sends a reinvite. Also makes sure to regenerate a new SDP by passing offerToReceiveAudio: true, offerToReceiveVideo: false  and iceRestart: true
  * Once the SDP is ready, the local description is set and the SDP is sent to the remote peer along with an INVITE request
  */
 function reinvite(this: WebPhoneSession, options: SessionInviteOptions = {}): Promise<OutgoingInviteRequest> {
@@ -814,7 +814,7 @@ async function setRecord(session: WebPhoneSession, flag: boolean): Promise<any> 
     const message = flag ? messages.startRecord : messages.stopRecord;
 
     if ((session.__isRecording && !flag) || (!session.__isRecording && flag)) {
-        const data = await session.sendInfoAndRecieveResponse(message);
+        const data = await session.sendInfoAndReceiveResponse(message);
         session.__isRecording = !!flag;
         return data;
     }

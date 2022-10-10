@@ -236,7 +236,7 @@ enum networkTypeMap {
     '4g' = '4G'
 }
 
-//TODO: find relaible way to find network type , use navigator.connection.type?
+//TODO: find reliable way to find network type , use navigator.connection.type?
 const getNetworkType = (connectionType: any): networkTypeMap => {
     const sysNetwork = connectionType.systemNetworkType || 'unknown';
     const localNetwork = connectionType || 'unknown';

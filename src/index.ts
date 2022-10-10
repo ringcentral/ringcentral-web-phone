@@ -33,7 +33,7 @@ export interface TransportServer {
 }
 
 export interface WebPhoneRegistrationData {
-    /** Sip Info recieved after registering device with RingCentral */
+    /** Sip Info received after registering device with RingCentral */
     sipInfo?: Array<SipInfo> | SipInfo;
     /** Sip error codes */
     sipErrorCodes?: string[];
@@ -292,7 +292,7 @@ export default class WebPhone {
     public static MediaStreams = MediaStreams;
     public static MediaStreamsImpl = MediaStreamsImpl;
 
-    /** Sip Info recieved from the registeration endpoint */
+    /** Sip Info received from the registration endpoint */
     public sipInfo: SipInfo;
     /** Key that will be used to save uuid in localStorage */
     public uuidKey: string | undefined;

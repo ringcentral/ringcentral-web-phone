@@ -98,9 +98,9 @@ export class MediaStreamsImpl {
     private mediaStatsTimer: any;
     public preRTT: any;
     /**
-     * Set a function to be called when `peerConnetion` iceconnectionstatechange changes
+     * Set a function to be called when `peerConnection` iceconnectionstatechange changes
      *
-     * @param callback function to be called when `peerConnetion` iceconnectionstatechange changes
+     * @param callback function to be called when `peerConnection` iceconnectionstatechange changes
      */
     public onMediaConnectionStateChange: (state: string, session: WebPhoneSession) => any;
     /**

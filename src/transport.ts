@@ -34,7 +34,7 @@ export interface WebPhoneTransport extends Transport {
     servers?: TransportServer[];
     /** List of SIP error codes */
     sipErrorCodes?: string[];
-    /** Interal after which switch back to main proxy should be initiated */
+    /** Interval after which switch back to main proxy should be initiated */
     switchBackInterval?: number;
     /** @ignore */
     switchBackToMainProxyTimer?: any;

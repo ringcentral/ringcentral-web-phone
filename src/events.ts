@@ -9,7 +9,7 @@ export interface WebPhoneEvents {
         Disconnecting: string;
         /** Fired when Transport is disconnected. */
         Disconnected: string;
-        /** Fired everytime a transport connection attempt fails. */
+        /** Fired every time a transport connection attempt fails. */
         ConnectionAttemptFailure: string;
         /** Fired when maxReconnectionAttempts have exhausted trying to connect to one server or sip error is returned from the server. */
         ConnectionFailure: string;
@@ -18,7 +18,7 @@ export interface WebPhoneEvents {
         /** Fired when maxReconnectionAttempts have exhausted trying to connect to one server or sip error is returned from the server. */
         Closed: string;
     };
-    /**  All WebPhone events related to UserAgen */
+    /**  All WebPhone events related to UserAgent */
     UserAgent: {
         /** Fired when UserAgent is registered with the registerer. */
         Registered: string;
@@ -55,13 +55,13 @@ export interface WebPhoneEvents {
         Terminating: string;
         /** Fired when session is terminated */
         Terminated: string;
-        /** Fired when UPDATE request is recieved over socket */
+        /** Fired when UPDATE request is received over socket */
         UpdateReceived: string;
-        /** Fired when INFO request is recieved over socket with move to rcv instruction */
+        /** Fired when INFO request is received over socket with move to rcv instruction */
         MoveToRcv: string;
-        /** Fired when QOS is pulished to the backend server */
+        /** Fired when QOS is published to the backend server */
         QOSPublished: string;
-        /** Fired when RTP Stat Report is generted */
+        /** Fired when RTP Stat Report is generated */
         RTPStat: string;
         /** Fired when get user media failed */
         UserMediaFailed: string;
