@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/ringcentral/ringcentral-web-phone.svg?branch=master)](https://travis-ci.org/ringcentral/ringcentral-web-phone)
+[![Build Status](https://github.com/ringcentral/ringcentral-web-phone/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/ringcentral/ringcentral-web-phone/actions/workflows/ci.yml)
 [![Coverage Status](https://coveralls.io/repos/github/ringcentral/ringcentral-web-phone/badge.svg?branch=master)](https://coveralls.io/github/ringcentral/ringcentral-web-phone?branch=master)
 
 # RingCentral WebPhone Library
@@ -49,14 +49,12 @@ Please visit Network Requirement links below
 ## Installation
 
 ```ssh
-npm install ringcentral-web-phone
-// or
-bower install ringcentral-web-phone
+yarn add ringcentral-web-phone
 ```
 
-### If you are not using Bower or NPM:
+### If you are not using NPM:
 
-1. Download SIP.JS: [https://sipjs.com/download/sip-0.13.5.js](https://sipjs.com/download/sip-0.13.5.js)
+1. Download SIP.JS: [https://github.com/onsip/SIP.js/releases/tag/0.20.0](https://github.com/onsip/SIP.js/releases/tag/0.20.0)
 2. Download WebPhone SDK: [https://github.com/ringcentral/ringcentral-web-phone/releases/latest](https://github.com/ringcentral/ringcentral-web-phone/releases/latest)
 3. Download audio files:
     1. [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/incoming.ogg](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/incoming.ogg)
@@ -100,14 +98,14 @@ For this example you will also need to have [RingCentral JS SDK installed](https
 Configure the web-phone
 
 ```js
-var appKey = '...';
-var appSecret = '...';
+var clientId = '...';
+var clientSecret = '...';
 var appName = '...';
 var appVersion = '...';
 
 var sdk = new RingCentral.SDK({
-    appKey: appKey,
-    appSecret: appSecret,
+    clientId: clientId,
+    clientSecret: clientSecret,
     appName: appName,
     appVersion: appVersion,
     server: RingCentral.SDK.server.production // or .sandbox
@@ -132,7 +130,7 @@ platform
             .then(function(res) { // Doing nested then because we need loginResponse in a simple way
 
                 return new RingCentral.WebPhone(res.json(), { // optional
-                    appKey: appKey,
+                    clientId: clientId,
                     appName: appName,
                     appVersion: appVersion,
                     uuid: loginResponse.json().endpoint_id,
@@ -170,8 +168,8 @@ platform
 ```sh
 $ git clone https://github.com/ringcentral/ringcentral-web-phone.git
 $ cd ringcentral-web-phone
-$ npm install
-$ npm start
+$ yarn install
+$ yarn start
 ```
 
 1. Open `http://localhost:8080/demo/` in the browser (port may change if `8080` will be already used by other app)
@@ -195,10 +193,10 @@ Online demo is hosted at [https://ringcentral.github.io/ringcentral-web-phone](h
 
 ## API
 
-Except for some RingCentral-specific features the API is 100% the same as SIP.JS: http://sipjs.com/api/0.13.0: most of the time you will be working with RC-flavored [UserAgent](http://sipjs.com/api/0.13.0/ua) and [Session](http://sipjs.com/api/0.13.0/session) objects of SIP.JS.
+Except for some RingCentral-specific features the API is 100% the same as SIP.JS: https://github.com/onsip/SIP.js/releases/tag/0.20.0: most of the time you will be working with RC-flavored [UserAgent](https://github.com/onsip/SIP.js/blob/master/docs/api/sip.js.useragent.md) and [Session](https://github.com/onsip/SIP.js/blob/master/docs/api/sip.js.session.md) objects of SIP.JS.
 
-We encourage you to take a look at [Guides](http://sipjs.com/guides) section, especially
-[Make A Call](http://sipjs.com/guides/make-call) and [Receive A Call](http://sipjs.com/guides/receive-call/) articles.
+We encourage you to take a look at [Guides](https://sipjs.com/guides/) section, especially
+[Make A Call](https://sipjs.com/guides/make-call/) and [Receive A Call](https://sipjs.com/guides/receive-call/) articles.
 
 ### Constructor
 
@@ -208,7 +206,7 @@ var webPhone = new RingCentral.WebPhone(provisionData, options);
 
 - Provision Data &mdash; the JSON returned from `/client-info/sip-provision` API endpoint
 - Options &mdash; object with various configuration options that adjust WebPhone behavior
-    - `appKey` &mdash; your application key
+    - `clientId` &mdash; your application key
     - `appName` &mdash; your application short code name
     - `appVersion` &mdash; your application version
     - `uuid` &mdash; manually provide the unique identifier of WebPhone instance (should persist between page reloads)
@@ -301,7 +299,7 @@ supervisor and the call between customer and agent will be disconnected.
 
 Warm transfer puts current line on hold (if not done yet) then takes an existing line from arguments and makes transfer.
 
-####Handle Warm Transfer senario (Attended Transfer usecase) :
+#### Handle Warm Transfer scenario (Attended Transfer usecase) :
 Steps:
 1. Put the current session on ``Hold`` as shown in the demo code
 2. Initiate a new session (Start new call)
@@ -312,8 +310,8 @@ Steps:
 $modal.find('.transfer-form button.warm').on('click', function(e) {
    session.hold().then(function() {
                 console.log('Placing the call on hold, initiating attended transfer');
-                var newSession = session.ua.invite($transfer.val().trim());
-                newSession.once('accepted', function() {
+                var newSession = session.userAgent.invite($transfer.val().trim());
+                newSession.once('established', function() {
                     console.log('New call initated. Click Complete to complete the transfer');
                     $modal.find('.transfer-form button.complete').on('click', function(e) {
                         session
@@ -347,6 +345,12 @@ session.stopRecord().then(...);
 
 Not yet implemented. Could be done by dialing \*83. The account should be enabled for barge/whisper access through system admin.
 
+
+## Upgrade Procedure from 0.8.x to 0.9.0
+
+- [Migration Doc](MIGRATION.md)
+
+
 ## Upgrade Procedure from v0.4.X to 0.8.9
 
 - SDK now only supports only Unified SDP plan. You can find more information about this here:  [https://chromestatus.com/feature/5723303167655936](https://chromestatus.com/feature/5723303167655936)
@@ -379,7 +383,7 @@ Not yet implemented. Could be done by dialing \*83. The account should be enable
 Before:
 ```javascript
 webPhone = new RingCentral.WebPhone(data, {
-            appKey: localStorage.getItem('webPhoneAppKey'),
+            clientId: localStorage.getItem('webPhoneClientId'),
             audioHelper: {
                 enabled: true
             },
@@ -396,7 +400,7 @@ After:
 var remoteVideoElement =  document.getElementById('remoteVideo');
 var localVideoElement  = document.getElementById('localVideo');
 webPhone = new RingCentral.WebPhone(data, {
-    appKey: localStorage.getItem('webPhoneAppKey'),
+    clientId: localStorage.getItem('webPhoneClientId'),
     audioHelper: {
         enabled: true
     },

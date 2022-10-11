@@ -1,0 +1,4 @@
+--ignore-dir=dist
+--ignore-dir=lib
+--ignore-file=match:/^yarn\.lock$/
+--ignore-dir=.coverage

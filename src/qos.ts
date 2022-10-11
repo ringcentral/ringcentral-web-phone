@@ -1,4 +1,8 @@
-import {WebPhoneSession} from './session';
+import { SessionState, Publisher, UserAgent } from 'sip.js';
+
+import { WebPhoneSession } from './session';
+import { SessionDescriptionHandler } from 'sip.js/lib/platform/web';
+import { Events } from './events';
 
 const formatFloat = (input: any): string => parseFloat(input.toString()).toFixed(2);
 
@@ -8,28 +12,27 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
     qosStatsObj.callID = session.request.callId || '';
     qosStatsObj.fromTag = session.request.fromTag || '';
     qosStatsObj.toTag = session.request.toTag || '';
-    qosStatsObj.localID = session.request.headers.From[0].raw || session.request.headers.From[0];
-    qosStatsObj.remoteID = session.request.headers.To[0].raw || session.request.headers.To[0];
-    qosStatsObj.origID = session.request.headers.From[0].raw || session.request.headers.From[0];
+    qosStatsObj.localID = session.request.getHeader('From');
+    qosStatsObj.remoteID = session.request.getHeader('To');
+    qosStatsObj.origID = session.request.getHeader('From');
 
     let previousGetStatsResult;
 
     const refreshIntervalId = setInterval(async () => {
-        const sessionDescriptionHandler = session.sessionDescriptionHandler;
+        const sessionDescriptionHandler = session.sessionDescriptionHandler as SessionDescriptionHandler;
         if (!sessionDescriptionHandler || !sessionDescriptionHandler.peerConnection) {
-            session.logger.error('There is no PeerConnection, can not getStats');
+            (session as any).logger.error('There is no PeerConnection, can not getStats');
             return;
         }
-
         const getStatsResult = await sessionDescriptionHandler.peerConnection.getStats();
+        (session as any).logger.log(`getStatsResult ${JSON.stringify(getStatsResult)}`);
         qosStatsObj.status = true;
         var network = '';
-        getStatsResult.forEach(function(item: any) {
+        getStatsResult.forEach(function (item: any) {
             switch (item.type) {
                 case 'local-candidate':
                     if (item.candidateType === 'srflx') {
-                        network =
-                            typeof item.networkType === 'string' ? item.networkType : getNetworkType(item.networkType);
+                        network = typeof item.networkType === 'string' ? item.networkType : getNetworkType(item.networkType);
                         qosStatsObj.localAddr = item.ip + ':' + item.port;
                         qosStatsObj.localcandidate = item;
                     }
@@ -67,25 +70,27 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
                     break;
             }
         });
-    }, session.ua.qosCollectInterval);
+    }, session.userAgent.qosCollectInterval);
 
-    session.on('terminated', function() {
-        previousGetStatsResult && previousGetStatsResult.nomore();
-        session.logger.log('Release media streams');
-        session.mediaStreams && session.mediaStreams.release();
-        publishQosStats(session, qosStatsObj);
-        refreshIntervalId && clearInterval(refreshIntervalId);
+    session.stateChange.addListener(newState => {
+        if (newState === SessionState.Terminated) {
+            previousGetStatsResult && previousGetStatsResult.nomore();
+            (session as any).logger.log('Release media streams');
+            session.mediaStreams && session.mediaStreams.release();
+            publishQosStats(session, qosStatsObj);
+            refreshIntervalId && clearInterval(refreshIntervalId);
+        }
     });
 };
 
-const publishQosStats = (session: WebPhoneSession, qosStatsObj: QosStats, options: any = {}): void => {
+const publishQosStats = async (session: WebPhoneSession, qosStatsObj: QosStats, options: any = {}): Promise<void> => {
     options = options || {};
 
-    const targetUrl = options.targetUrl || 'rtcpxr@rtcpxr.ringcentral.com:5060';
+    const targetUrl = options.targetUrl || 'sip:rtcpxr@rtcpxr.ringcentral.com:5060';
     const event = options.event || 'vq-rtcpxr';
     options.expires = 60;
     options.contentType = 'application/vq-rtcpxr';
-    options.extraHeaders = (options.extraHeaders || []).concat(session.ua.defaultHeaders);
+    options.extraHeaders = (options.extraHeaders || []).concat(session.userAgent.defaultHeaders);
     const cpuOS = session.__qosStats.cpuOS;
     const cpuRC = session.__qosStats.cpuRC;
     const ram = session.__qosStats.ram;
@@ -97,13 +102,13 @@ const publishQosStats = (session: WebPhoneSession, qosStatsObj: QosStats, option
     (session as any).logger.log(`QOS stats ${JSON.stringify(qosStatsObj)}`);
     const calculatedStatsObj = calculateStats(qosStatsObj);
     const body = createPublishBody(calculatedStatsObj);
-    const pub = session.ua.publish(targetUrl, event, body, options);
-    session.logger.log('Local Candidate: ' + JSON.stringify(qosStatsObj.localcandidate));
-    session.logger.log('Remote Candidate: ' + JSON.stringify(qosStatsObj.remotecandidate));
-
+    const publisher = new Publisher(session.userAgent, UserAgent.makeURI(targetUrl), event, options);
+    await publisher.publish(body);
+    (session as any).logger.log('Local Candidate: ' + JSON.stringify(qosStatsObj.localcandidate));
+    (session as any).logger.log('Remote Candidate: ' + JSON.stringify(qosStatsObj.remotecandidate));
     qosStatsObj.status = false;
-    pub.close();
-    session.emit('qos-published', body);
+    await publisher.dispose();
+    session.emit(Events.Session.QOSPublished, body);
 };
 
 const calculateNetworkUsage = (qosStatsObj: QosStats): string => {
@@ -117,7 +122,7 @@ const calculateNetworkUsage = (qosStatsObj: QosStats): string => {
 const calculateStats = (qosStatsObj: QosStats): QosStats => {
     const rawNLR =
         (qosStatsObj.inboundPacketsLost * 100) /
-            (qosStatsObj.inboundPacketsReceived + qosStatsObj.inboundPacketsLost) || 0;
+        (qosStatsObj.inboundPacketsReceived + qosStatsObj.inboundPacketsLost) || 0;
     const rawJBN = qosStatsObj.totalIntervalCount > 0 ? qosStatsObj.totalSumJitter / qosStatsObj.totalIntervalCount : 0;
 
     return {
@@ -188,11 +193,6 @@ const getQoSStatsTemplate = (): QosStats => ({
 
     netType: {},
 
-    inboundPacketsLost: 0,
-    inboundPacketsReceived: 0,
-    outboundPacketsLost: 0,
-    outboundPacketsSent: 0,
-
     jitterBufferNominal: 0,
     jitterBufferMax: 0,
 
@@ -211,7 +211,12 @@ const getQoSStatsTemplate = (): QosStats => ({
 
     status: false,
     localcandidate: {},
-    remotecandidate: {}
+    remotecandidate: {},
+
+    inboundPacketsLost: 0,
+    inboundPacketsReceived: 0,
+    outboundPacketsLost: 0,
+    outboundPacketsSent: 0
 });
 
 const addToMap = (map: any = {}, key: string): any => ({
@@ -231,11 +236,11 @@ enum networkTypeMap {
     '4g' = '4G'
 }
 
-//TODO: find relaible way to find network type , use navigator.connection.type?
-const getNetworkType = (connectionType): networkTypeMap => {
+//TODO: find reliable way to find network type , use navigator.connection.type?
+const getNetworkType = (connectionType: any): networkTypeMap => {
     const sysNetwork = connectionType.systemNetworkType || 'unknown';
-    const localNetwork = connectionType.local.networkType || ['unknown'];
-    const networkType = !sysNetwork || sysNetwork === 'unknown' ? localNetwork[0] : sysNetwork;
+    const localNetwork = connectionType || 'unknown';
+    const networkType = !sysNetwork || sysNetwork === 'unknown' ? localNetwork : sysNetwork;
     return networkType in networkTypeMap ? networkTypeMap[networkType] : networkType;
 };
 
@@ -254,11 +259,6 @@ export interface QosStats {
     };
 
     netType: any;
-
-    inboundPacketsLost: number;
-    inboundPacketsReceived: number;
-    outboundPacketsLost: number;
-    outboundPacketsSent: number;
 
     jitterBufferNominal: number;
     jitterBufferMax: number;
@@ -280,6 +280,11 @@ export interface QosStats {
 
     localcandidate: any;
     remotecandidate: any;
+
+    inboundPacketsLost: number;
+    inboundPacketsReceived: number;
+    outboundPacketsLost: number;
+    outboundPacketsSent: number;
 }
 
 function calculateMos(packetLoss) {

@@ -8,10 +8,7 @@
 /.prettierrc
 /.huskyrc
 /.lintstagedrc
-/.travis.yml
-/bower.json
 /demo
-/demo/bootstrap
 /dist/*.html
 /dist/demo*.js
 /tests

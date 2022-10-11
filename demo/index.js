@@ -5,8 +5,7 @@ window.jQuery = $;
 window.SIP = SIP;
 
 $(function() {
-    const bootstrap = require('bootstrap');
-    const SDK = require('ringcentral');
+    const SDK = require('@ringcentral/sdk').SDK;
     const WebPhone = require('ringcentral-web-phone') || window.RingCentral.WebPhone;
 
     /** @type {SDK} */
@@ -41,29 +40,29 @@ $(function() {
         return $($tpl.html());
     }
 
-    function login(server, appKey, appSecret, login, ext, password, ll) {
+    function login(server, clientId, clientSecret, username, extension, password, ll) {
         sdk = new SDK({
-            appKey,
-            appSecret,
+            clientId,
+            clientSecret,
             server
         });
 
         platform = sdk.platform();
 
         // TODO: Improve later to support international phone number country codes better
-        if (login) {
-            login = login.match(/^[+1]/) ? login : '1' + login;
-            login = login.replace(/\W/g, '');
+        if (username) {
+            username = username.match(/^[+1]/) ? username : '1' + username;
+            username = username.replace(/\W/g, '');
         }
 
         platform
             .login({
-                username: login,
-                extension: ext || null,
+                username,
+                extension: extension || null,
                 password
             })
             .then(function() {
-                return postLogin(server, appKey, appSecret, login, ext, password, ll);
+                return postLogin(server, clientId, clientSecret, username, extension, password, ll);
             })
             .catch(function(e) {
                 console.error(e.stack || e);
@@ -71,14 +70,14 @@ $(function() {
     }
 
     // Redirect function
-    function show3LeggedLogin(server, appKey, appSecret, ll) {
+    function show3LeggedLogin(server, clientId, clientSecret, ll) {
         var $redirectUri = decodeURIComponent(window.location.href.split('login', 1) + 'callback.html');
 
         console.log('The redirect uri value :', $redirectUri);
 
         sdk = new SDK({
-            appKey,
-            appSecret,
+            clientId,
+            clientSecret,
             server,
             redirectUri: $redirectUri
         });
@@ -91,33 +90,32 @@ $(function() {
             .loginWindow({url: loginUrl}) // this method also allows to supply more options to control window position
             .then(platform.login.bind(platform))
             .then(function() {
-                return postLogin(server, appKey, appSecret, '', '', '', ll);
+                return postLogin(server, clientId, clientSecret, '', '', '', ll);
             })
             .catch(function(e) {
                 console.error(e.stack || e);
             });
     }
 
-    function postLogin(server, appKey, appSecret, login, ext, password, ll) {
+    function postLogin(server, clientId, clientSecret, username, ext, password, ll) {
         logLevel = ll;
-        username = login;
 
         localStorage.setItem('webPhoneServer', server || '');
-        localStorage.setItem('webPhoneAppKey', appKey || '');
-        localStorage.setItem('webPhoneAppSecret', appSecret || '');
-        localStorage.setItem('webPhoneLogin', login || '');
+        localStorage.setItem('webPhoneclientId', clientId || '');
+        localStorage.setItem('webPhoneclientSecret', clientSecret || '');
+        localStorage.setItem('webPhoneLogin', username || '');
         localStorage.setItem('webPhoneExtension', ext || '');
         localStorage.setItem('webPhonePassword', password || '');
         localStorage.setItem('webPhoneLogLevel', logLevel || 0);
 
         return platform
             .get('/restapi/v1.0/account/~/extension/~')
+            .then(res => res.json())
             .then(function(res) {
-                extension = res.json();
-
+                extension = res;
                 console.log('Extension info', extension);
 
-                return platform.post('/client-info/sip-provision', {
+                return platform.post('/restapi/v1.0/client-info/sip-provision', {
                     sipInfo: [
                         {
                             transport: 'WSS'
@@ -125,9 +123,7 @@ $(function() {
                     ]
                 });
             })
-            .then(function(res) {
-                return res.json();
-            })
+            .then(res => res.json())
             .then(register)
             .then(makeCallForm)
             .catch(function(e) {
@@ -140,9 +136,12 @@ $(function() {
         sipInfo = data.sipInfo[0] || data.sipInfo;
 
         webPhone = new WebPhone(data, {
-            appKey: localStorage.getItem('webPhoneAppKey'),
+            enableDscp: true,
+            clientId: localStorage.getItem('webPhoneclientId'),
             audioHelper: {
-                enabled: true
+                enabled: true,
+                incoming: 'audio/incoming.ogg',
+                outgoing: 'audio/outgoing.ogg'
             },
             logLevel: parseInt(logLevel, 10),
             appName: 'WebPhoneDemo',
@@ -157,11 +156,6 @@ $(function() {
             // turnServers: [{urls:'turn:192.168.0.1', username : 'turn' , credential: 'turn'}],
             // iceTransportPolicy: "all" or "relay",
             // iceCheckingTimeout:500
-        });
-
-        webPhone.userAgent.audioHelper.loadAudio({
-            incoming: 'audio/incoming.ogg',
-            outgoing: 'audio/outgoing.ogg'
         });
 
         webPhone.userAgent.audioHelper.setVolume(0.3);
@@ -239,10 +233,12 @@ $(function() {
 
             $modal.find('.decline').on('click', function() {
                 session.reject();
+                $modal.modal('hide');
             });
 
             $modal.find('.toVoicemail').on('click', function() {
                 session.toVoicemail();
+                $modal.modal('hide');
             });
 
             $modal.find('.forward-form').on('submit', function(e) {
@@ -305,8 +301,8 @@ $(function() {
         activeCallInfo.to = session.request.to.uri.user;
         activeCallInfo.direction = direction;
         activeCallInfo.id = session.dialog.id.callId;
-        activeCallInfo.sipData.fromTag = session.dialog.id.remoteTag;
-        activeCallInfo.sipData.toTag = session.dialog.id.localTag;
+        activeCallInfo.sipData.fromTag = session.dialog.remoteTag;
+        activeCallInfo.sipData.toTag = session.dialog.localTag;
         if (!localStorage.getItem('activeCallInfo')) {
             localStorage.setItem('activeCallInfo', JSON.stringify(activeCallInfo));
         }
@@ -327,8 +323,7 @@ $(function() {
 
         var interval = setInterval(function() {
             var time = session.startTime ? Math.round((Date.now() - session.startTime) / 1000) + 's' : 'Ringing';
-
-            $info.text('time: ' + time + '\n' + 'startTime: ' + JSON.stringify(session.startTime, null, 2) + '\n');
+            $info.text('time: ' + time + '\nstartTime: ' + JSON.stringify(session.startTime, null, 2) + '\n');
         }, 1000);
 
         function close() {
@@ -337,14 +332,14 @@ $(function() {
         }
 
         $modal.find('.increase-volume').on('click', function() {
-            session.ua.audioHelper.setVolume(
-                (session.ua.audioHelper.volume !== null ? session.ua.audioHelper.volume : 0.5) + 0.1
+            session.userAgent.audioHelper.setVolume(
+                (session.userAgent.audioHelper.volume !== null ? session.userAgent.audioHelper.volume : 0.5) + 0.1
             );
         });
 
         $modal.find('.decrease-volume').on('click', function() {
-            session.ua.audioHelper.setVolume(
-                (session.ua.audioHelper.volume !== null ? session.ua.audioHelper.volume : 0.5) - 0.1
+            session.userAgent.audioHelper.setVolume(
+                (session.userAgent.audioHelper.volume !== null ? session.userAgent.audioHelper.volume : 0.5) - 0.1
             );
         });
 
@@ -417,6 +412,7 @@ $(function() {
                 .transfer($transfer.val().trim())
                 .then(function() {
                     console.log('Transferred');
+                    $modal.modal('hide');
                 })
                 .catch(function(e) {
                     console.error('Transfer failed', e.stack || e);
@@ -428,8 +424,8 @@ $(function() {
             e.stopPropagation();
             session.hold().then(function() {
                 console.log('Placing the call on hold, initiating attended transfer');
-                var newSession = session.ua.invite($transfer.val().trim());
-                newSession.once('accepted', function() {
+                var newSession = session.userAgent.invite($transfer.val().trim());
+                newSession.once('established', function() {
                     console.log('New call initated. Click Complete to complete the transfer');
                     $modal.find('.transfer-form button.complete').on('click', function(e) {
                         session
@@ -473,11 +469,11 @@ $(function() {
         });
 
         $modal.find('.hangup').on('click', function() {
-            session.terminate();
+            session.dispose();
         });
 
-        session.on('accepted', function() {
-            console.log('Event: Accepted');
+        session.on('established', function() {
+            console.log('Event: Established');
             captureActiveCallInfo(session);
         });
         session.on('progress', function() {
@@ -556,15 +552,16 @@ $(function() {
 
     function initConference() {
         if (!onConference) {
-            getPresenceActiveCalls().then(res => {
-                var response = res.json();
-                var pId = response.activeCalls[0].partyId;
-                var tId = response.activeCalls[0].telephonySessionId;
-                getConfVoiceToken(pId, tId).then(voiceToken => {
-                    startConferenceCall(voiceToken, pId, tId);
-                    onConference = true;
+            getPresenceActiveCalls()
+                .then(res => res.json())
+                .then(response => {
+                    var pId = response.activeCalls[0].partyId;
+                    var tId = response.activeCalls[0].telephonySessionId;
+                    getConfVoiceToken(pId, tId).then(voiceToken => {
+                        startConferenceCall(voiceToken, pId, tId);
+                        onConference = true;
+                    });
                 });
-            });
         }
     }
 
@@ -573,22 +570,26 @@ $(function() {
     }
 
     function getConfVoiceToken(pId, tId) {
-        return platform.post('/restapi/v1.0/account/~/telephony/conference', {}).then(res => {
-            confSessionId = res.json().session.id;
-            return res.json().session.voiceCallToken;
-        });
+        return platform
+            .post('/restapi/v1.0/account/~/telephony/conference', {})
+            .then(res => res.json())
+            .then(res => {
+                confSessionId = res.session.id;
+                return res.session.voiceCallToken;
+            });
     }
 
     function startConferenceCall(number, pId, tId) {
         var session = webPhone.userAgent.invite(number, {
             fromNumber: username
         });
-        session.on('accepted', function() {
+        session.on('established', function() {
             onAccepted(session);
             console.log('Conference call started');
             bringIn(tId, pId)
+                .then(res => res.json())
                 .then(response => {
-                    console.log('Adding call to conference succesful', response.json());
+                    console.log('Adding call to conference succesful', response);
                 })
                 .catch(function(e) {
                     console.error('Conference call failed', e.stack || e);
@@ -658,17 +659,17 @@ $(function() {
         var $authForm = cloneTemplate($authFlowTemplate);
 
         var $server = $authForm.find('input[name=server]').eq(0);
-        var $appKey = $authForm.find('input[name=appKey]').eq(0);
-        var $appSecret = $authForm.find('input[name=appSecret]').eq(0);
-        var $login = $form.find('input[name=login]').eq(0);
+        var $clientId = $authForm.find('input[name=clientId]').eq(0);
+        var $clientSecret = $authForm.find('input[name=clientSecret]').eq(0);
+        var $username = $form.find('input[name=username]').eq(0);
         var $ext = $form.find('input[name=extension]').eq(0);
         var $password = $form.find('input[name=password]').eq(0);
         var $logLevel = $authForm.find('select[name=logLevel]').eq(0);
 
         $server.val(localStorage.getItem('webPhoneServer') || SDK.server.sandbox);
-        $appKey.val(localStorage.getItem('webPhoneAppKey') || '');
-        $appSecret.val(localStorage.getItem('webPhoneAppSecret') || '');
-        $login.val(localStorage.getItem('webPhoneLogin') || '');
+        $clientId.val(localStorage.getItem('webPhoneclientId') || '');
+        $clientSecret.val(localStorage.getItem('webPhoneclientSecret') || '');
+        $username.val(localStorage.getItem('webPhoneLogin') || '');
         $ext.val(localStorage.getItem('webPhoneExtension') || '');
         $password.val(localStorage.getItem('webPhonePassword') || '');
         $logLevel.val(localStorage.getItem('webPhoneLogLevel') || logLevel);
@@ -681,9 +682,9 @@ $(function() {
 
             login(
                 $server.val(),
-                $appKey.val(),
-                $appSecret.val(),
-                $login.val(),
+                $clientId.val(),
+                $clientSecret.val(),
+                $username.val(),
                 $ext.val(),
                 $password.val(),
                 $logLevel.val()
@@ -696,7 +697,7 @@ $(function() {
             e.preventDefault();
             e.stopPropagation();
 
-            show3LeggedLogin($server.val(), $appKey.val(), $appSecret.val(), $logLevel.val());
+            show3LeggedLogin($server.val(), $clientId.val(), $clientSecret.val(), $logLevel.val());
         });
 
         $app.empty()
