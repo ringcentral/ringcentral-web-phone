@@ -1,9 +1,9 @@
-import { EventEmitter } from 'events';
+import {EventEmitter} from 'events';
 
-import { UserAgentCore, C, IncomingRequestMessage } from 'sip.js/lib/core';
-import { Events } from './events';
+import {UserAgentCore, C, IncomingRequestMessage} from 'sip.js/lib/core';
+import {Events} from './events';
 
-import { WebPhoneUserAgent } from './userAgent';
+import {WebPhoneUserAgent} from './userAgent';
 
 export type WehPhoneUserAgentCore = UserAgentCore & {
     _receiveIncomingRequestFromTransport?: typeof UserAgentCore.prototype.receiveIncomingRequestFromTransport;
@@ -35,7 +35,7 @@ function receiveIncomingRequestFromTransport(this: WehPhoneUserAgentCore, messag
     switch (message.method) {
         case C.UPDATE: {
             (this as any).logger.log('Receive UPDATE request. Do nothing just return 200 OK');
-            this.replyStateless(message, { statusCode: 200 });
+            this.replyStateless(message, {statusCode: 200});
             this.emit(Events.Session.UpdateReceived, message);
             return;
         }
@@ -43,7 +43,7 @@ function receiveIncomingRequestFromTransport(this: WehPhoneUserAgentCore, messag
             // For the Move2RCV request from server
             const content = getIncomingInfoContent(message);
             if (content?.request?.reqId && content?.request?.command === 'move' && content?.request?.target === 'rcv') {
-                this.replyStateless(message, { statusCode: 200 });
+                this.replyStateless(message, {statusCode: 200});
                 this.emit(Events.Session.MoveToRcv, content.request);
                 return;
             }
@@ -52,7 +52,7 @@ function receiveIncomingRequestFromTransport(this: WehPhoneUserAgentCore, messag
             // SIP.js does not support application/json content type, so we monkey override its behavior in this case
             const contentType = message.getHeader('content-type');
             if (contentType.match(/^application\/json/i)) {
-                this.replyStateless(message, { statusCode: 200 });
+                this.replyStateless(message, {statusCode: 200});
                 return;
             }
             break;

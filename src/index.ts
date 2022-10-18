@@ -1,5 +1,5 @@
-import { Levels as LogLevels } from 'sip.js/lib/core/log/levels';
-import { LogLevel } from 'sip.js/lib/api/user-agent-options';
+import {Levels as LogLevels} from 'sip.js/lib/core/log/levels';
+import {LogLevel} from 'sip.js/lib/api/user-agent-options';
 import {
     UserAgent,
     Web,
@@ -9,23 +9,17 @@ import {
     SessionDescriptionHandlerFactory
 } from 'sip.js';
 
-import { createWebPhoneUserAgent, WebPhoneUserAgent } from './userAgent';
-import { default as MediaStreams, MediaStreamsImpl } from './mediaStreams';
-import { uuid, delay, extend } from './utils';
-import {
-    uuidKey,
-    defaultMediaConstraints,
-    defaultLogLevel,
-    defaultSipErrorCodes,
-    defaultStunServers
-} from './constants';
-import { WebPhoneSession } from './session';
+import {createWebPhoneUserAgent, WebPhoneUserAgent} from './userAgent';
+import {default as MediaStreams, MediaStreamsImpl} from './mediaStreams';
+import {uuid, delay, extend} from './utils';
+import {uuidKey, defaultMediaConstraints, defaultLogLevel, defaultSipErrorCodes, defaultStunServers} from './constants';
+import {WebPhoneSession} from './session';
 import {
     defaultSessionDescriptionFactory,
     WebPhoneSessionDescriptionHandlerFactoryOptions
 } from './sessionDescriptionHandler';
 
-const { version } = require('../package.json');
+const {version} = require('../package.json');
 
 export interface TransportServer {
     uri: string;
@@ -172,7 +166,7 @@ export interface WebPhoneOptions {
      */
     maxReconnectionAttemptsWithBackup?: number;
     /** local and remote reference to HTML media elements */
-    media?: { local?: HTMLMediaElement; remote?: HTMLMediaElement };
+    media?: {local?: HTMLMediaElement; remote?: HTMLMediaElement};
     /** Constraints used when creating peerConnection
      *
      * default value `{ audio: true, video: false }`
@@ -343,14 +337,14 @@ export default class WebPhone {
         const iceTransportPolicy = options.iceTransportPolicy;
         let iceServers: Array<RTCIceServer> = [];
         if (options.enableTurnServers) {
-            iceServers = options.turnServers.map((url) => ({ urls: url }));
+            iceServers = options.turnServers.map(url => ({urls: url}));
             options.iceCheckingTimeout = options.iceCheckingTimeout || 2000;
         }
         iceServers = [
             ...iceServers,
-            ...stunServers.map((_url) => {
+            ...stunServers.map(_url => {
                 const url = !/^(stun:)/.test(_url) ? `stun:${_url}` : _url;
-                return { urls: url };
+                return {urls: url};
             })
         ];
 
@@ -417,7 +411,7 @@ export default class WebPhone {
             reconnectionAttempts: 0,
             authorizationUsername: this.sipInfo.authorizationId,
             authorizationPassword: this.sipInfo.password,
-            logLevel: (LogLevels[options.logLevel] as unknown as LogLevel) || defaultLogLevel,
+            logLevel: ((LogLevels[options.logLevel] as unknown) as LogLevel) || defaultLogLevel,
             logBuiltinEnabled: options.builtinEnabled,
             logConnector: options.connector || null,
             autoStart: false,

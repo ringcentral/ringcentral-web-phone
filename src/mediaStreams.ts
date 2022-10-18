@@ -4,10 +4,10 @@
  * Copyright © RingCentral. All rights reserved.
  */
 
-import { SessionDescriptionHandler } from 'sip.js/lib/platform/web';
-import { WebPhoneSession } from './session';
-import { RTPReport } from './rtpReport';
-import { Events } from './events';
+import {SessionDescriptionHandler} from 'sip.js/lib/platform/web';
+import {WebPhoneSession} from './session';
+import {RTPReport} from './rtpReport';
+import {Events} from './events';
 
 enum ConnectionState {
     new = 'mediaConnectionStateNew',
@@ -168,10 +168,10 @@ export class MediaStreamsImpl {
         const peerConnection = sessionDescriptionHandler.peerConnection;
         try {
             const stats = await peerConnection.getStats();
-            stats.forEach((stat: { [key: string]: any }) => {
+            stats.forEach((stat: {[key: string]: any}) => {
                 switch (stat.type) {
                     case 'inbound-rtp':
-                        Object.keys(stat).forEach((statName) => {
+                        Object.keys(stat).forEach(statName => {
                             switch (statName) {
                                 case 'bytesReceived':
                                 case 'packetsReceived':
@@ -188,7 +188,7 @@ export class MediaStreamsImpl {
                         });
                         break;
                     case 'outbound-rtp':
-                        Object.keys(stat).forEach((statName) => {
+                        Object.keys(stat).forEach(statName => {
                             switch (statName) {
                                 case 'bytesSent':
                                 case 'packetsSent':
@@ -199,7 +199,7 @@ export class MediaStreamsImpl {
                         });
                         break;
                     case 'candidate-pair':
-                        Object.keys(stat).forEach((statName) => {
+                        Object.keys(stat).forEach(statName => {
                             switch (statName) {
                                 case 'currentRoundTripTime':
                                     report.rttMs[statName] = stat[statName];
@@ -209,7 +209,7 @@ export class MediaStreamsImpl {
                         break;
                     case 'local-candidate':
                         const local_candidate = {};
-                        Object.keys(stat).forEach((statName) => {
+                        Object.keys(stat).forEach(statName => {
                             switch (statName) {
                                 case 'id':
                                 case 'isRemote':
@@ -226,7 +226,7 @@ export class MediaStreamsImpl {
                         break;
                     case 'remote-candidate':
                         const remote_candidate = {};
-                        Object.keys(stat).forEach((statName) => {
+                        Object.keys(stat).forEach(statName => {
                             switch (statName) {
                                 case 'id':
                                 case 'isRemote':
@@ -250,7 +250,7 @@ export class MediaStreamsImpl {
                         report.inboundRtpReport.rtpRemoteAudioLevel = stat.audioLevel ? stat.audioLevel : 0;
                         break;
                     case 'transport':
-                        Object.keys(stat).forEach((statName) => {
+                        Object.keys(stat).forEach(statName => {
                             switch (statName) {
                                 case 'dtlsState':
                                 case 'packetsSent':
@@ -305,11 +305,12 @@ export class MediaStreamsImpl {
         this.isFirefox = this.browser() === Browsers.Firefox;
         this.isSafari = this.browser() === Browsers.Safari;
 
-        this.preRTT = { currentRoundTripTime: 0 };
+        this.preRTT = {currentRoundTripTime: 0};
 
         if (!this.isChrome && !this.isFirefox && !this.isSafari) {
             (this.session as any).logger.error(
-                `${this.ktag
+                `${
+                    this.ktag
                 } The web browser ${this.browser()} is not in the recommended list [Chrome, Safari, Firefox] !`
             );
         }
@@ -382,4 +383,4 @@ export class MediaStreamsImpl {
     }
 }
 
-export { MediaStreams };
+export {MediaStreams};

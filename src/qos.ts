@@ -1,8 +1,8 @@
-import { SessionState, Publisher, UserAgent } from 'sip.js';
+import {SessionState, Publisher, UserAgent} from 'sip.js';
 
-import { WebPhoneSession } from './session';
-import { SessionDescriptionHandler } from 'sip.js/lib/platform/web';
-import { Events } from './events';
+import {WebPhoneSession} from './session';
+import {SessionDescriptionHandler} from 'sip.js/lib/platform/web';
+import {Events} from './events';
 
 const formatFloat = (input: any): string => parseFloat(input.toString()).toFixed(2);
 
@@ -28,11 +28,12 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
         (session as any).logger.log(`getStatsResult ${JSON.stringify(getStatsResult)}`);
         qosStatsObj.status = true;
         var network = '';
-        getStatsResult.forEach(function (item: any) {
+        getStatsResult.forEach(function(item: any) {
             switch (item.type) {
                 case 'local-candidate':
                     if (item.candidateType === 'srflx') {
-                        network = typeof item.networkType === 'string' ? item.networkType : getNetworkType(item.networkType);
+                        network =
+                            typeof item.networkType === 'string' ? item.networkType : getNetworkType(item.networkType);
                         qosStatsObj.localAddr = item.ip + ':' + item.port;
                         qosStatsObj.localcandidate = item;
                     }
@@ -122,7 +123,7 @@ const calculateNetworkUsage = (qosStatsObj: QosStats): string => {
 const calculateStats = (qosStatsObj: QosStats): QosStats => {
     const rawNLR =
         (qosStatsObj.inboundPacketsLost * 100) /
-        (qosStatsObj.inboundPacketsReceived + qosStatsObj.inboundPacketsLost) || 0;
+            (qosStatsObj.inboundPacketsReceived + qosStatsObj.inboundPacketsLost) || 0;
     const rawJBN = qosStatsObj.totalIntervalCount > 0 ? qosStatsObj.totalSumJitter / qosStatsObj.totalIntervalCount : 0;
 
     return {

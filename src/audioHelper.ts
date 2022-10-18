@@ -15,7 +15,7 @@ export class AudioHelper {
     private readonly _enabled: boolean;
     private _incoming: string;
     private _outgoing: string;
-    private _audio: { [key: string]: DomAudio };
+    private _audio: {[key: string]: DomAudio};
 
     /** Current volume */
     public volume: number;
@@ -45,7 +45,7 @@ export class AudioHelper {
             } else {
                 var audio = this._audio[url];
                 if (audio.playPromise !== undefined) {
-                    audio.playPromise.then(function () {
+                    audio.playPromise.then(function() {
                         audio.pause();
                     });
                 }
