@@ -157,6 +157,7 @@ $(function() {
             // iceTransportPolicy: "all" or "relay",
             // iceCheckingTimeout:500
         });
+        window.webPhone = webPhone; // for debugging
 
         webPhone.userAgent.audioHelper.setVolume(0.3);
         webPhone.userAgent.on('invite', onInvite);
