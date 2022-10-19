@@ -17,7 +17,6 @@ $(function() {
     var logLevel = 0;
     var username = null;
     var extension = null;
-    var sipInfo = null;
     var $app = $('#app');
 
     var $loginTemplate = $('#template-login');
@@ -28,7 +27,6 @@ $(function() {
 
     var remoteVideoElement = document.getElementById('remoteVideo');
     var localVideoElement = document.getElementById('localVideo');
-    var activeCallInfo = '';
     var outboundCall = true;
     var confSessionId = '';
 
@@ -133,8 +131,6 @@ $(function() {
     }
 
     function register(data) {
-        sipInfo = data.sipInfo[0] || data.sipInfo;
-
         webPhone = new WebPhone(data, {
             enableDscp: true,
             clientId: localStorage.getItem('webPhoneclientId'),

@@ -8,3 +8,4 @@ dist
 lib
 *npm-debug*
 node_modules
+.secret
