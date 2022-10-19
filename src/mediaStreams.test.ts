@@ -1,8 +1,8 @@
 import EventEmitter from 'events';
-import { faker } from '@faker-js/faker'; // eslint-disable-line import/no-unresolved
+import {faker} from '@faker-js/faker'; // eslint-disable-line import/no-unresolved
 
-import { default as MediaStreams, MediaStreamsImpl, Browsers, WebPhoneRTPReport } from '../src/mediaStreams';
-import { Events } from './events';
+import {default as MediaStreams, MediaStreamsImpl, Browsers, WebPhoneRTPReport} from '../src/mediaStreams';
+import {Events} from './events';
 
 // #region Mocks
 class MockNavigator {
@@ -37,7 +37,7 @@ class MockSessionDescriptionHandler {
 
 class MockUserAgent {
     public logger: MockLogger;
-    public defaultHeaders: Object;
+    public defaultHeaders: Record<string, any>;
     constructor() {
         this.logger = new MockLogger();
         this.defaultHeaders = {};
@@ -60,7 +60,7 @@ class MockSession {
     public on(event, callback) {
         this.eventEmitter.on(event, callback);
     }
-    public reinvite() { }
+    public reinvite() {}
 }
 
 class MockPeerConnection {
@@ -175,7 +175,7 @@ class MockRTPStats {
             case 'track':
                 result = {
                     type,
-                    audioLevel: faker.datatype.number({ min: 0, max: 100 })
+                    audioLevel: faker.datatype.number({min: 0, max: 100})
                 };
                 break;
             case 'transport':
@@ -263,7 +263,7 @@ function generateMockStatAndReport() {
         selectedCandidatePairChanges: transport.selectedCandidatePairChanges,
         selectedCandidatePairId: transport.selectedCandidatePairId
     };
-    return { mockStat, mockReport };
+    return {mockStat, mockReport};
 }
 
 describe('MediaStreamsImpl', () => {
@@ -412,7 +412,7 @@ describe('MediaStreams', () => {
         expect(mockReinvite).toBeCalled();
     });
 
-    test('should cleanup on release', (done) => {
+    test('should cleanup on release', done => {
         const mockSession = new MockSession();
         const mediaStreams = new MediaStreams(mockSession as any);
         mediaStreams.mediaStreamsImpl['mediaStatsTimer'] = 123;
@@ -479,8 +479,8 @@ describe('MediaStreams', () => {
         jest.spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get').mockReturnValue(
             'connected'
         );
-        const { mockStat: firstStat, mockReport: firstReport } = generateMockStatAndReport();
-        const { mockStat: secondStat, mockReport: secondReport } = generateMockStatAndReport();
+        const {mockStat: firstStat, mockReport: firstReport} = generateMockStatAndReport();
+        const {mockStat: secondStat, mockReport: secondReport} = generateMockStatAndReport();
         jest.spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'getStats')
             .mockReturnValueOnce(Promise.resolve(firstStat))
             .mockReturnValueOnce(Promise.resolve(secondStat));

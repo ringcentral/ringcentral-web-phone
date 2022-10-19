@@ -1,12 +1,12 @@
-import { EventEmitter } from 'events';
-import { Exception, Logger } from 'sip.js/lib/core';
-import { Transport } from 'sip.js/lib/api/transport';
-import { Transport as WebTransport } from 'sip.js/lib/platform/web/transport';
-import { TransportOptions } from 'sip.js/lib/platform/web/transport/transport-options';
-import { TransportState } from 'sip.js';
+import {EventEmitter} from 'events';
+import {Exception, Logger} from 'sip.js/lib/core';
+import {Transport} from 'sip.js/lib/api/transport';
+import {Transport as WebTransport} from 'sip.js/lib/platform/web/transport';
+import {TransportOptions} from 'sip.js/lib/platform/web/transport/transport-options';
+import {TransportState} from 'sip.js';
 
-import { TransportServer, WebPhoneOptions } from './index';
-import { Events } from './events';
+import {TransportServer, WebPhoneOptions} from './index';
+import {Events} from './events';
 
 export interface WebPhoneTransport extends Transport {
     /** @ignore */
@@ -127,7 +127,7 @@ export function createWebPhoneTransport(transport: WebPhoneTransport, options: W
     transport.noAvailableServers = noAvailableServers.bind(transport);
     transport.onSipErrorCode = onSipErrorCode.bind(transport);
     transport.reconnect = reconnect.bind(transport);
-    transport.stateChange.addListener((newState) => {
+    transport.stateChange.addListener(newState => {
         switch (newState) {
             case TransportState.Connecting: {
                 transport.emit(Events.Transport.Connecting);
@@ -172,7 +172,7 @@ function __computeRandomTimeout(reconnectionAttempts = 1, randomMinInterval = 0,
 }
 
 function __setServerIsError(this: WebPhoneTransport, uri: string): void {
-    this.servers.forEach((server) => {
+    this.servers.forEach(server => {
         if (server.uri === uri && !server.isError) {
             server.isError = true;
         }
@@ -180,7 +180,7 @@ function __setServerIsError(this: WebPhoneTransport, uri: string): void {
 }
 
 function __resetServersErrorStatus(this: WebPhoneTransport): void {
-    this.servers.forEach((server) => {
+    this.servers.forEach(server => {
         server.isError = false;
     });
 }
@@ -311,12 +311,12 @@ function getNextWsServer(this: WebPhoneTransport, force = false): TransportServe
         this.logger.warn('attempted to get next ws server but there are no available ws servers left');
         return;
     }
-    const candidates = force ? this.servers : this.servers.filter(({ isError }) => !isError);
+    const candidates = force ? this.servers : this.servers.filter(({isError}) => !isError);
     return candidates[0];
 }
 
 function noAvailableServers(this: WebPhoneTransport): boolean {
-    return this.servers.every(({ isError }) => isError);
+    return this.servers.every(({isError}) => isError);
 }
 
 function isSipErrorCode(this: WebPhoneTransport, statusCode: number | undefined): boolean {

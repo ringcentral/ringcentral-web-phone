@@ -4,12 +4,12 @@ import {
     SessionDescriptionHandler as SessionDescriptionHandlerDefinition,
     SessionDescriptionHandlerModifier
 } from 'sip.js';
-import { Logger } from 'sip.js/lib/core';
-import { MediaStreamFactory } from 'sip.js/lib/platform/web/session-description-handler/media-stream-factory';
-import { SessionDescriptionHandlerConfiguration } from 'sip.js/lib/platform/web/session-description-handler/session-description-handler-configuration';
-import { SessionDescriptionHandlerOptions } from 'sip.js/lib/platform/web/session-description-handler/session-description-handler-options';
-import { PeerConnectionDelegate } from 'sip.js/lib/platform/web/session-description-handler/peer-connection-delegate';
-import { SessionDescriptionHandlerFactoryOptions } from 'sip.js/lib/platform/web';
+import {Logger} from 'sip.js/lib/core';
+import {MediaStreamFactory} from 'sip.js/lib/platform/web/session-description-handler/media-stream-factory';
+import {SessionDescriptionHandlerConfiguration} from 'sip.js/lib/platform/web/session-description-handler/session-description-handler-configuration';
+import {SessionDescriptionHandlerOptions} from 'sip.js/lib/platform/web/session-description-handler/session-description-handler-options';
+import {PeerConnectionDelegate} from 'sip.js/lib/platform/web/session-description-handler/peer-connection-delegate';
+import {SessionDescriptionHandlerFactoryOptions} from 'sip.js/lib/platform/web';
 
 type ResolveFunction = () => void;
 type RejectFunction = (reason: Error) => void;
@@ -164,12 +164,12 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     // The addtrack event does not get fired when JavaScript code explicitly adds tracks to the stream (by calling addTrack()).
     // https://developer.mozilla.org/en-US/docs/Web/API/MediaStream/onaddtrack
     private static dispatchAddTrackEvent(stream: MediaStream, track: MediaStreamTrack): void {
-        stream.dispatchEvent(new MediaStreamTrackEvent('addtrack', { track }));
+        stream.dispatchEvent(new MediaStreamTrackEvent('addtrack', {track}));
     }
     // The removetrack event does not get fired when JavaScript code explicitly removes tracks from the stream (by calling removeTrack()).
     // https://developer.mozilla.org/en-US/docs/Web/API/MediaStream/onremovetrack
     private static dispatchRemoveTrackEvent(stream: MediaStream, track: MediaStreamTrack): void {
-        stream.dispatchEvent(new MediaStreamTrackEvent('removetrack', { track }));
+        stream.dispatchEvent(new MediaStreamTrackEvent('removetrack', {track}));
     }
 
     /**
@@ -180,10 +180,10 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
         if (this._peerConnection === undefined) {
             return;
         }
-        this._peerConnection.getReceivers().forEach((receiver) => {
+        this._peerConnection.getReceivers().forEach(receiver => {
             receiver.track && receiver.track.stop();
         });
-        this._peerConnection.getSenders().forEach((sender) => {
+        this._peerConnection.getSenders().forEach(sender => {
             sender.track && sender.track.stop();
         });
         if (this._dataChannel) {
@@ -223,17 +223,17 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
             .then(() => this.updateDirection(options))
             .then(() => this.createDataChannel(options))
             .then(() => this.createLocalOfferOrAnswer(options))
-            .then((sessionDescription) => this.applyModifiers(sessionDescription, modifiers))
-            .then((sessionDescription) => this.setLocalSessionDescription(sessionDescription))
+            .then(sessionDescription => this.applyModifiers(sessionDescription, modifiers))
+            .then(sessionDescription => this.setLocalSessionDescription(sessionDescription))
             .then(() => this.waitForIceGatheringComplete(iceRestart, iceTimeout))
             .then(() => this.getLocalSessionDescription())
-            .then((sessionDescription) => {
+            .then(sessionDescription => {
                 return {
                     body: sessionDescription.sdp,
                     contentType: 'application/sdp'
                 };
             })
-            .catch((error) => {
+            .catch(error => {
                 this.logger.error('SessionDescriptionHandler.getDescription failed - ' + error);
                 throw error;
             });
@@ -254,7 +254,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
      * @param tones - A string containing DTMF digits.
      * @param options - Options object to be used by sendDtmf.
      */
-    public sendDtmf(tones: string, options?: { duration: number; interToneGap: number }): boolean {
+    public sendDtmf(tones: string, options?: {duration: number; interToneGap: number}): boolean {
         this.logger.debug('SessionDescriptionHandler.sendDtmf');
         if (this._peerConnection === undefined) {
             this.logger.error('SessionDescriptionHandler.sendDtmf failed - peer connection closed');
@@ -305,9 +305,9 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
         const type = this._peerConnection.signalingState === 'have-local-offer' ? 'answer' : 'offer';
 
         return this.getLocalMediaStream(options)
-            .then(() => this.applyModifiers({ sdp, type }, modifiers))
-            .then((sessionDescription) => this.setRemoteSessionDescription(sessionDescription))
-            .catch((error) => {
+            .then(() => this.applyModifiers({sdp, type}, modifiers))
+            .then(sessionDescription => this.setRemoteSessionDescription(sessionDescription))
+            .catch(error => {
                 this.logger.error('SessionDescriptionHandler.setDescription failed - ' + error);
                 throw error;
             });
@@ -328,12 +328,12 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
         }
         return modifiers
             .reduce((cur, next) => cur.then(next), Promise.resolve(sdp))
-            .then((modified) => {
+            .then(modified => {
                 this.logger.debug('SessionDescriptionHandler.applyModifiers - modified sdp');
                 if (!modified.sdp || !modified.type) {
                     throw new Error('Invalid SDP.');
                 }
-                return { sdp: modified.sdp, type: modified.type };
+                return {sdp: modified.sdp, type: modified.type};
             });
     }
 
@@ -419,7 +419,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
         if (this._peerConnection === undefined) {
             return Promise.reject(new Error('Peer connection closed.'));
         }
-        let constraints: MediaStreamConstraints = { ...options?.constraints };
+        let constraints: MediaStreamConstraints = {...options?.constraints};
 
         // if we already have a local media stream...
         if (this.localMediaStreamConstraints) {
@@ -437,12 +437,12 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
         } else {
             // if no constraints have been specified, default to audio for initial media stream
             if (constraints.audio === undefined && constraints.video === undefined) {
-                constraints = { audio: true };
+                constraints = {audio: true};
             }
         }
 
         this.localMediaStreamConstraints = constraints;
-        return this.mediaStreamFactory(constraints, this as any).then((mediaStream) =>
+        return this.mediaStreamFactory(constraints, this as any).then(mediaStream =>
             this.setLocalMediaStream(mediaStream)
         );
     }
@@ -460,15 +460,16 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
         }
         const pc = this._peerConnection;
         pc.getSenders()
-            .filter((sender) => sender.track)
-            .forEach((sender) => {
+            .filter(sender => sender.track)
+            .forEach(sender => {
                 const parameters = sender.getParameters();
                 console.info('getsender params =', parameters);
                 (parameters as any).priority = 'high';
-                sender.setParameters(parameters).catch((error) => {
+                sender.setParameters(parameters).catch(error => {
                     console.error(
-                        `Error while setting encodings parameters for ${sender.track.kind} Track ${sender.track.id}: ${error.message || error.name
-                        }`
+                        `Error while setting encodings parameters for ${sender.track.kind} Track ${
+                            sender.track.id
+                        }: ${error.message || error.name}`
                     );
                 });
             });
@@ -501,10 +502,10 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
                 throw new Error(`Unknown new track kind ${kind}.`);
             }
             const s = pc.getSenders();
-            const sender = pc.getSenders().find((sender) => sender.track && sender.track.kind === kind);
+            const sender = pc.getSenders().find(sender => sender.track && sender.track.kind === kind);
             if (sender) {
                 trackUpdates.push(
-                    new Promise<void>((resolve) => {
+                    new Promise<void>(resolve => {
                         this.logger.debug(
                             `SessionDescriptionHandler.setLocalMediaStream - replacing sender ${kind} track`
                         );
@@ -513,7 +514,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
                         sender
                             .replaceTrack(newTrack)
                             .then(() => {
-                                const oldTrack = localStream.getTracks().find((localTrack) => localTrack.kind === kind);
+                                const oldTrack = localStream.getTracks().find(localTrack => localTrack.kind === kind);
                                 if (oldTrack) {
                                     oldTrack.stop();
                                     localStream.removeTrack(oldTrack);
@@ -532,7 +533,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
                 );
             } else {
                 trackUpdates.push(
-                    new Promise<void>((resolve) => {
+                    new Promise<void>(resolve => {
                         this.logger.debug(
                             `SessionDescriptionHandler.setLocalMediaStream - adding sender ${kind} track`
                         );
@@ -628,7 +629,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
             this.logger.error('SessionDescriptionHandler.setRemoteSessionDescription failed - cannot set null sdp');
             return Promise.reject(new Error('SDP is undefined'));
         }
-        return this._peerConnection.setRemoteDescription({ sdp, type });
+        return this._peerConnection.setRemoteDescription({sdp, type});
     }
 
     /**
@@ -648,7 +649,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
             this.logger.debug(`SessionDescriptionHandler.setRemoteTrack - have remote ${track.kind} track`);
         } else if (track.kind === 'audio') {
             this.logger.debug(`SessionDescriptionHandler.setRemoteTrack - adding remote ${track.kind} track`);
-            remoteStream.getAudioTracks().forEach((track) => {
+            remoteStream.getAudioTracks().forEach(track => {
                 track.stop();
                 remoteStream.removeTrack(track);
                 SessionDescriptionHandler.dispatchRemoveTrackEvent(remoteStream, track);
@@ -657,7 +658,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
             SessionDescriptionHandler.dispatchAddTrackEvent(remoteStream, track);
         } else if (track.kind === 'video') {
             this.logger.debug(`SessionDescriptionHandler.setRemoteTrack - adding remote ${track.kind} track`);
-            remoteStream.getVideoTracks().forEach((track) => {
+            remoteStream.getVideoTracks().forEach(track => {
                 track.stop();
                 remoteStream.removeTrack(track);
                 SessionDescriptionHandler.dispatchRemoveTrackEvent(remoteStream, track);
@@ -764,7 +765,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
                         }
                     };
                     // set the transceiver direction to the offer direction
-                    this._peerConnection.getTransceivers().forEach((transceiver) => {
+                    this._peerConnection.getTransceivers().forEach(transceiver => {
                         if (transceiver.direction /* guarding, but should always be true */) {
                             const offerDirection = directionToOffer(transceiver.direction);
                             if (transceiver.direction !== offerDirection) {
@@ -825,7 +826,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
                     })();
 
                     // set the transceiver direction to the answer direction
-                    this._peerConnection.getTransceivers().forEach((transceiver) => {
+                    this._peerConnection.getTransceivers().forEach(transceiver => {
                         if (transceiver.direction /* guarding, but should always be true */) {
                             if (transceiver.direction !== 'stopped' && transceiver.direction !== answerDirection) {
                                 transceiver.direction = answerDirection;
@@ -1008,7 +1009,7 @@ export function defaultPeerConnectionConfiguration(): RTCConfiguration {
         bundlePolicy: 'balanced', // Note: max-bundle is not supported by the demo backend currently (5/15/17)
         certificates: undefined,
         iceCandidatePoolSize: 0,
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }], // TURN URL example: "turn:88.88.88.0:3478", "test", "test"
+        iceServers: [{urls: 'stun:stun.l.google.com:19302'}], // TURN URL example: "turn:88.88.88.0:3478", "test", "test"
         iceTransportPolicy: 'all',
         peerIdentity: undefined,
         rtcpMuxPolicy: 'require'

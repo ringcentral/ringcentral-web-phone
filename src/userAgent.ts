@@ -1,4 +1,4 @@
-import { EventEmitter } from 'events';
+import {EventEmitter} from 'events';
 import {
     UserAgent,
     UserAgentOptions,
@@ -10,12 +10,12 @@ import {
     SessionDescriptionHandlerModifier,
     Messager
 } from 'sip.js';
-import { IncomingResponse } from 'sip.js/lib/core';
-import { WebPhoneTransport, createWebPhoneTransport } from './transport';
+import {IncomingResponse} from 'sip.js/lib/core';
+import {WebPhoneTransport, createWebPhoneTransport} from './transport';
 
-import { SipInfo, WebPhoneOptions } from './index';
-import { AudioHelper } from './audioHelper';
-import { Events } from './events';
+import {SipInfo, WebPhoneOptions} from './index';
+import {AudioHelper} from './audioHelper';
+import {Events} from './events';
 import {
     onSessionDescriptionHandlerCreated,
     patchIncomingWebphoneSession,
@@ -24,7 +24,7 @@ import {
     WebPhoneInvitation,
     WebPhoneSession
 } from './session';
-import { patchUserAgentCore } from './userAgentCore';
+import {patchUserAgentCore} from './userAgentCore';
 
 /** RingCentral Active call info */
 export interface ActiveCallInfo {
@@ -63,7 +63,7 @@ export interface WebPhoneUserAgent extends UserAgent {
     /** instanceId used while registering to the backend SIP server */
     instanceId?: string;
     /** HTML media elements where local and remote audio and video streams should be sent */
-    media?: { local?: HTMLMediaElement; remote?: HTMLMediaElement };
+    media?: {local?: HTMLMediaElement; remote?: HTMLMediaElement};
     /** SDP modifiers to be used when generating local offer or creating answer */
     modifiers?: SessionDescriptionHandlerModifier[];
     /** Time interval in ms on how often should the quality of service data be collected */
@@ -199,7 +199,7 @@ export function createWebPhoneUserAgent(
     userAgent.switchFrom = switchFrom.bind(userAgent);
     patchUserAgentCore(userAgent);
     userAgent.start();
-    userAgent.stateChange.addListener((newState) => {
+    userAgent.stateChange.addListener(newState => {
         switch (newState) {
             case UserAgentState.Started: {
                 userAgent.emit(Events.UserAgent.Started);
@@ -211,7 +211,7 @@ export function createWebPhoneUserAgent(
             }
         }
     });
-    userAgent.registerer.stateChange.addListener((newState) => {
+    userAgent.registerer.stateChange.addListener(newState => {
         switch (newState) {
             case RegistererState.Registered: {
                 userAgent.emit(Events.UserAgent.Registered);
@@ -272,7 +272,7 @@ function sendMessage(this: WebPhoneUserAgent, to: string, messageData: string): 
     to = to.startsWith('#') ? `sip:${to.substring(1)}` : `sip:${to}`;
     const uri = UserAgent.makeURI(to);
     uri.user = user;
-    const messager = new Messager(this, uri, messageData, 'x-rc/agent', { extraHeaders });
+    const messager = new Messager(this, uri, messageData, 'x-rc/agent', {extraHeaders});
 
     return new Promise((resolve, reject) => {
         messager.message({
@@ -315,13 +315,13 @@ function invite(this: WebPhoneUserAgent, number: string, options: InviteOptions 
     ];
 
     options.RTCConstraints =
-        options.RTCConstraints || Object.assign({}, this.constraints, { optional: [{ DtlsSrtpKeyAgreement: 'true' }] });
+        options.RTCConstraints || Object.assign({}, this.constraints, {optional: [{DtlsSrtpKeyAgreement: 'true'}]});
     inviterOptions.sessionDescriptionHandlerModifiers = this.modifiers;
-    inviterOptions.sessionDescriptionHandlerOptions = { constraints: options.RTCConstraints };
+    inviterOptions.sessionDescriptionHandlerOptions = {constraints: options.RTCConstraints};
     inviterOptions.earlyMedia = this.earlyMedia;
     inviterOptions.delegate = {
         onSessionDescriptionHandler: (): void => onSessionDescriptionHandlerCreated(inviter),
-        onNotify: (notification) => notification.accept()
+        onNotify: notification => notification.accept()
     };
     this.audioHelper.playOutgoing(true);
     (this as any).logger.log(`Invite to ${number} created with playOutgoing set to true`);
@@ -333,17 +333,17 @@ function invite(this: WebPhoneUserAgent, number: string, options: InviteOptions 
     inviter
         .invite({
             requestDelegate: {
-                onAccept: (inviteResponse) => {
+                onAccept: inviteResponse => {
                     inviter.startTime = new Date();
                     inviter.emit(Events.Session.Accepted, inviteResponse.message);
                 },
-                onProgress: (inviteResponse) => {
+                onProgress: inviteResponse => {
                     inviter.emit(Events.Session.Progress, inviteResponse.message);
                 }
             }
         })
         .then(() => this.emit(Events.UserAgent.InviteSent, inviter))
-        .catch((e) => {
+        .catch(e => {
             if (e.message.indexOf('Permission denied') > -1) {
                 inviter.emit(Events.Session.UserMediaFailed);
             }
@@ -370,7 +370,7 @@ function switchFrom(this: WebPhoneUserAgent, activeCall: ActiveCallInfo, options
     options.fromNumber = options.fromNumber || fromNumber;
     const inviterOptions: InviterOptions = {
         extraHeaders: options.extraHeaders,
-        sessionDescriptionHandlerOptions: { constraints: options.RTCConstraints || this.constraints }
+        sessionDescriptionHandlerOptions: {constraints: options.RTCConstraints || this.constraints}
     };
     return this.invite(toNumber, inviterOptions);
 }

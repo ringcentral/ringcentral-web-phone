@@ -1,4 +1,4 @@
-import { EventEmitter } from 'events';
+import {EventEmitter} from 'events';
 import {
     Invitation,
     InvitationAcceptOptions,
@@ -19,21 +19,20 @@ import {
     OutgoingRequestDelegate,
     RequestOptions
 } from 'sip.js/lib/core';
-import { SessionState } from 'sip.js/lib/api/session-state';
+import {SessionState} from 'sip.js/lib/api/session-state';
 import {
     SessionDescriptionHandler,
     SessionDescriptionHandlerOptions
 } from 'sip.js/lib/platform/web/session-description-handler';
 
-import { extend } from './utils';
-import { responseTimeout, messages, Command } from './constants';
-import { MediaStreams } from './mediaStreams';
-import { RTPReport, isNoAudio } from './rtpReport';
-import { WebPhoneUserAgent } from './userAgent';
-import { Events } from './events';
-import { WehPhoneUserAgentCore } from './userAgentCore';
-import { startQosStatsCollection } from './qos';
-
+import {extend} from './utils';
+import {responseTimeout, messages, Command} from './constants';
+import {MediaStreams} from './mediaStreams';
+import {RTPReport, isNoAudio} from './rtpReport';
+import {WebPhoneUserAgent} from './userAgent';
+import {Events} from './events';
+import {WehPhoneUserAgentCore} from './userAgentCore';
+import {startQosStatsCollection} from './qos';
 
 export type QosStats = {
     cpuRC?: string;
@@ -93,7 +92,7 @@ export class CommonSession {
     /** Flag to check if the call is on hold or not */
     held?: boolean;
     /** Options to represent dom elements where media stream should be loaded */
-    media?: { local?: HTMLMediaElement; remote?: HTMLMediaElement };
+    media?: {local?: HTMLMediaElement; remote?: HTMLMediaElement};
     /** Flag to indicate if media stats are being collected */
     mediaStatsStarted?: boolean;
     /** MediaStreams class instance which has the logic to collect media stream stats */
@@ -279,7 +278,7 @@ export function patchWebphoneSession(session: WebPhoneSession): WebPhoneSession 
     session.__qosStats = {};
     session.setQosStats = setQosStats.bind(session);
     setupUserAgentCoreEvent(session);
-    session.stateChange.addListener((newState) => {
+    session.stateChange.addListener(newState => {
         switch (newState) {
             case SessionState.Establishing: {
                 session.emit(Events.Session.Establishing);
@@ -356,11 +355,11 @@ function createSessionMessage(this: WebPhoneSession, options: RCHeaders): string
 
 async function sendReceiveConfirm(this: WebPhoneSession): Promise<IncomingResponse> {
     return this.sendSessionMessage(messages.receiveConfirm)
-        .then((response) => {
+        .then(response => {
             (this as any).logger.log('sendReceiveConfirm success');
             return response;
         })
-        .catch((error) =>
+        .catch(error =>
             (this as any).logger.error(`failed to send receive confirmation via SIP MESSAGE due to ${error.message}`)
         );
 }
@@ -381,7 +380,7 @@ async function sendInfoAndReceiveResponse(this: WebPhoneSession, command: Comman
             onAccept: (response: IncomingResponse): void => {
                 let timeout = null;
                 const {
-                    message: { statusCode, callId }
+                    message: {statusCode, callId}
                 } = response;
                 if (statusCode === 200) {
                     const onInfo = (message: IncomingRequestMessage): void => {
@@ -415,18 +414,18 @@ async function sendInfoAndReceiveResponse(this: WebPhoneSession, command: Comman
                     reject(new Error(`The INFO response status code is: ${statusCode} (waiting for 200)`));
                 }
             },
-            onReject: (response) => {
+            onReject: response => {
                 reject(new Error(`The INFO response status code is: ${response.message.statusCode} (waiting for 200)`));
             }
         };
         const requestOptions: RequestOptions = {
             extraHeaders: [...(options.extraHeaders || []), ...this.userAgent.defaultHeaders],
             body: fromBodyLegacy({
-                body: JSON.stringify({ request: command }),
+                body: JSON.stringify({request: command}),
                 contentType: 'application/json;charset=utf-8'
             })
         };
-        this.info({ requestDelegate, requestOptions });
+        this.info({requestDelegate, requestOptions});
     });
 }
 
@@ -443,7 +442,7 @@ function sendMoveResponse(
     reqId: number,
     code: number,
     description: string,
-    options: { extraHeaders?: Array<string> } = {}
+    options: {extraHeaders?: Array<string>} = {}
 ): void {
     const extraHeaders = options.extraHeaders || [];
     const requestOptions: RequestOptions = {
@@ -462,7 +461,7 @@ function sendMoveResponse(
             contentType: 'application/json;charset=utf-8'
         })
     };
-    this.info({ requestOptions });
+    this.info({requestOptions});
 }
 
 function ignore(this: WebPhoneSession): Promise<IncomingResponse> {
@@ -484,12 +483,12 @@ function replyWithMessage(this: WebPhoneSession, replyOptions: ReplyOptions): Pr
         body += ' Dir="' + replyOptions.callbackDirection + '"';
     }
     return this.sendReceiveConfirm().then(() =>
-        this.sendSessionMessage({ reqid: messages.replyWithMessage.reqid, body })
+        this.sendSessionMessage({reqid: messages.replyWithMessage.reqid, body})
     );
 }
 
 async function flip(this: WebPhoneSession, target): Promise<any> {
-    return this.sendInfoAndReceiveResponse(messages.flip, { target });
+    return this.sendInfoAndReceiveResponse(messages.flip, {target});
 }
 
 async function whisper(this: WebPhoneSession): Promise<any> {
@@ -557,7 +556,7 @@ function addTrack(this: WebPhoneSession, remoteAudioEle?, localAudioEle?): void 
     // TODO: peerConnecton.remoteMediaStream already has reciver track added thanks to default session description handler. Can we remove this code?
     let remoteStream = new MediaStream();
     if (peerConnection.getReceivers) {
-        peerConnection.getReceivers().forEach((receiver) => {
+        peerConnection.getReceivers().forEach(receiver => {
             const rtrack = receiver.track;
             if (rtrack) {
                 remoteStream.addTrack(rtrack);
@@ -576,7 +575,7 @@ function addTrack(this: WebPhoneSession, remoteAudioEle?, localAudioEle?): void 
     // TODO: peerConnecton.localMediaStream already has sender track added thanks to default session description handler. Can we remove this code?
     let localStream = new MediaStream();
     if (peerConnection.getSenders) {
-        peerConnection.getSenders().forEach((sender) => {
+        peerConnection.getSenders().forEach(sender => {
             const strack = sender.track;
             if (strack && strack.kind === 'audio') {
                 localStream.addTrack(strack);
@@ -639,7 +638,7 @@ async function blindTransfer(
 async function warmTransfer(
     this: WebPhoneSession,
     target: string | URI | WebPhoneSession,
-    options: SessionReferOptions = { requestOptions: { extraHeaders: [] } }
+    options: SessionReferOptions = {requestOptions: {extraHeaders: []}}
 ): Promise<OutgoingReferRequest> {
     options.requestOptions.extraHeaders = (options.requestOptions.extraHeaders || []).concat(
         this.userAgent.defaultHeaders
@@ -652,7 +651,7 @@ async function warmTransfer(
 async function transfer(
     this: WebPhoneSession,
     target: string | URI | WebPhoneSession,
-    options: SessionReferOptions = { requestOptions: { extraHeaders: [] } }
+    options: SessionReferOptions = {requestOptions: {extraHeaders: []}}
 ): Promise<OutgoingReferRequest> {
     options.requestOptions.extraHeaders = (options.requestOptions.extraHeaders || []).concat(
         this.userAgent.defaultHeaders
@@ -715,7 +714,7 @@ function dtmf(this: WebPhoneSession, dtmf: string, duration = 100, interToneGap 
         return;
     }
     const senders = peerConnection.getSenders();
-    const audioSender = senders.find((sender) => sender.track && sender.track.kind === 'audio');
+    const audioSender = senders.find(sender => sender.track && sender.track.kind === 'audio');
     const dtmfSender = audioSender.dtmf;
     if (dtmfSender !== undefined && dtmfSender) {
         (this as any).logger.log(`Send DTMF: ${dtmf} Duration: ${duration} InterToneGap: ${interToneGap}`);
@@ -731,7 +730,7 @@ async function accept(this: WebPhoneSession, options: InvitationAcceptOptions = 
     options.sessionDescriptionHandlerOptions = Object.assign({}, options.sessionDescriptionHandlerOptions);
     options.sessionDescriptionHandlerOptions.constraints =
         options.sessionDescriptionHandlerOptions.constraints ||
-        Object.assign({}, this.userAgent.constraints, { optional: [{ DtlsSrtpKeyAgreement: 'true' }] });
+        Object.assign({}, this.userAgent.constraints, {optional: [{DtlsSrtpKeyAgreement: 'true'}]});
     try {
         await this.__accept(options);
         this.startTime = new Date();
@@ -751,7 +750,7 @@ async function forward(
     transferOptions: SessionReferOptions
 ): Promise<OutgoingReferRequest> {
     await (this as WebPhoneInvitation).accept(acceptOptions);
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
         this.mute();
         setTimeout(() => {
             resolve(this.transfer(target, transferOptions));
@@ -766,8 +765,8 @@ async function dispose(this: WebPhoneSession) {
 
 /* ---------------------------------------------------------- HELPER FUNCTIONS ---------------------------------------------------------- */
 
-function parseRcHeaderString(str = ''): { string?: string } {
-    const pairs = str.split(/; */).filter((pair) => pair.includes('=')); // skip things that don't look like key=value
+function parseRcHeaderString(str = ''): {string?: string} {
+    const pairs = str.split(/; */).filter(pair => pair.includes('=')); // skip things that don't look like key=value
     return pairs.reduce((seed, pair) => {
         let [key, value] = pair.split('=');
         key = key.trim();
@@ -828,7 +827,7 @@ function enableReceiverTracks(session: WebPhoneSession, enable: boolean): void {
         return;
     }
 
-    peerConnection.getReceivers().forEach((receiver) => {
+    peerConnection.getReceivers().forEach(receiver => {
         if (receiver.track) {
             receiver.track.enabled = enable;
         }
@@ -843,7 +842,7 @@ function enableSenderTracks(session: WebPhoneSession, enable: boolean): void {
         return;
     }
 
-    peerConnection.getSenders().forEach((sender) => {
+    peerConnection.getSenders().forEach(sender => {
         if (sender.track) {
             sender.track.enabled = enable;
         }
@@ -897,8 +896,7 @@ function setHold(session: WebPhoneSession, hold: boolean): Promise<void> {
         //    - May optionally be set via constructor option.
         //    - May optionally be set via options passed to Session.invite().
 
-        const sessionDescriptionHandlerOptions =
-            session.sessionDescriptionHandlerOptionsReInvite as SessionDescriptionHandlerOptions;
+        const sessionDescriptionHandlerOptions = session.sessionDescriptionHandlerOptionsReInvite as SessionDescriptionHandlerOptions;
         sessionDescriptionHandlerOptions.hold = hold;
         session.sessionDescriptionHandlerOptionsReInvite = sessionDescriptionHandlerOptions;
 
@@ -930,8 +928,8 @@ export function onSessionDescriptionHandlerCreated(session: WebPhoneSession): vo
     }
     (session as any).logger.log('SessionDescriptionHandler created');
     startQosStatsCollection(session);
-    navigator.mediaDevices.enumerateDevices().then(function (devices) {
-        devices.forEach((device) =>
+    navigator.mediaDevices.enumerateDevices().then(function(devices) {
+        devices.forEach(device =>
             (session as any).logger.log(`${device.kind} = ${device.label} ${JSON.stringify(device)}`)
         );
     });
@@ -942,10 +940,10 @@ function setupUserAgentCoreEvent(session: WebPhoneSession) {
         return;
     }
     const userAgentCore: WehPhoneUserAgentCore = session.userAgent.userAgentCore;
-    userAgentCore.on(Events.Session.UpdateReceived, (payload) => session.emit(Events.Session.UpdateReceived, payload));
-    userAgentCore.on(Events.Session.MoveToRcv, (payload) => session.emit(Events.Session.MoveToRcv, payload));
+    userAgentCore.on(Events.Session.UpdateReceived, payload => session.emit(Events.Session.UpdateReceived, payload));
+    userAgentCore.on(Events.Session.MoveToRcv, payload => session.emit(Events.Session.MoveToRcv, payload));
     // RC_SIP_INFO event is for internal use
-    userAgentCore.on('RC_SIP_INFO', (payload) => session.emit('RC_SIP_INFO', payload));
+    userAgentCore.on('RC_SIP_INFO', payload => session.emit('RC_SIP_INFO', payload));
     session.__userAgentCoreEventsSetup = true;
 }
 
