@@ -172,7 +172,7 @@ $ yarn install
 $ yarn start
 ```
 
-1. Open `http://localhost:8080/demo/` in the browser (port may change if `8080` will be already used by other app)
+1. Open `http://localhost:8080` in the browser (port may change if `8080` will be already used by other app)
 2. If your Application is of the Scope
    `Server/Web`
    `Browser-Based`
