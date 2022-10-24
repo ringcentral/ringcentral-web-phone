@@ -46,6 +46,7 @@ export interface WebPhoneOptions {
     reconnectionTimeoutWithBackup?: number;
     instanceId?: string;
     regId?: number;
+    closeWithHeaders?: boolean;
     enableDefaultModifiers?: boolean;
     enablePlanB?: boolean;
     enableTurnServers?: boolean;
@@ -219,7 +220,8 @@ export default class WebPhone {
             allowLegacyNotifications: true,
             registerOptions: {
                 instanceId: options.instanceId || undefined,
-                regId: options.regId || undefined
+                regId: options.regId || undefined,
+                closeWithHeaders: options.closeWithHeaders || false
             }
         };
 

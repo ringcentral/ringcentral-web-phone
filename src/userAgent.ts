@@ -2,6 +2,7 @@ import {ClientContext, UA} from 'sip.js';
 import {AudioHelper} from './audioHelper';
 import {patchSession, patchIncomingSession, WebPhoneSession} from './session';
 import {TransportConstructorWrapper, WebPhoneSIPTransport} from './sipTransportConstructor';
+import {WebPhoneOptions} from './index';
 
 export interface WebPhoneUserAgent extends UA {
     media: any;
@@ -115,7 +116,10 @@ export const patchUserAgent = (userAgent: WebPhoneUserAgent, sipInfo, options, i
 
 function onTransportConnected(this: WebPhoneUserAgent): any {
     if (this.configuration.register) {
-        return this.register();
+        const options = this.configuration.registerOptions;
+        return this.register({
+            closeWithHeaders: (options as any).closeWithHeaders
+        });
     }
 }
 
