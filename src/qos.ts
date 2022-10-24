@@ -14,10 +14,12 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
 
     let previousGetStatsResult;
 
-    const refreshIntervalId = setInterval(async () => {
+    let refreshIntervalId = setInterval(async () => {
         const sessionDescriptionHandler = session.sessionDescriptionHandler;
         if (!sessionDescriptionHandler || !sessionDescriptionHandler.peerConnection) {
             session.logger.error('There is no PeerConnection, can not getStats');
+            refreshIntervalId && clearInterval(refreshIntervalId);
+            refreshIntervalId = null;
             return;
         }
 
@@ -75,6 +77,7 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
         session.mediaStreams && session.mediaStreams.release();
         publishQosStats(session, qosStatsObj);
         refreshIntervalId && clearInterval(refreshIntervalId);
+        refreshIntervalId = null;
     });
 };
 
