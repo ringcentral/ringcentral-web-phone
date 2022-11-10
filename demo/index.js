@@ -624,7 +624,7 @@ $(function() {
                 '<dt>Company</dt><dd>' +
                 (extension.contact.company || '?') +
                 '</dd>' +
-                '<dt>Phone Number</dt><dd>' +
+                '<dt>From Phone Number</dt><dd>' +
                 username + (extensionNumber === '' ? '' : '*' + extensionNumber) +
                 '</dd>' +
                 '</dl>'
