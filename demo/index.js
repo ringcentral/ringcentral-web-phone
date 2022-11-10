@@ -17,6 +17,7 @@ $(function() {
     var logLevel = 0;
     var username = null;
     var extension = null;
+    var extensionNumber = '';
     var $app = $('#app');
 
     var $loginTemplate = $('#template-login');
@@ -38,7 +39,7 @@ $(function() {
         return $($tpl.html());
     }
 
-    function login(server, clientId, clientSecret, username, extension, password, ll) {
+    function login(server, clientId, clientSecret, _username, _extension, password, ll) {
         sdk = new SDK({
             clientId,
             clientSecret,
@@ -47,6 +48,8 @@ $(function() {
 
         platform = sdk.platform();
 
+        username = _username;
+        extensionNumber = _extension;
         // TODO: Improve later to support international phone number country codes better
         if (username) {
             username = username.match(/^[+1]/) ? username : '1' + username;
@@ -56,11 +59,11 @@ $(function() {
         platform
             .login({
                 username,
-                extension: extension || null,
+                extension: _extension || null,
                 password
             })
             .then(function() {
-                return postLogin(server, clientId, clientSecret, username, extension, password, ll);
+                return postLogin(server, clientId, clientSecret, username, _extension, password, ll);
             })
             .catch(function(e) {
                 console.error(e.stack || e);
@@ -95,13 +98,13 @@ $(function() {
             });
     }
 
-    function postLogin(server, clientId, clientSecret, username, ext, password, ll) {
+    function postLogin(server, clientId, clientSecret, _username, ext, password, ll) {
         logLevel = ll;
 
         localStorage.setItem('webPhoneServer', server || '');
         localStorage.setItem('webPhoneclientId', clientId || '');
         localStorage.setItem('webPhoneclientSecret', clientSecret || '');
-        localStorage.setItem('webPhoneLogin', username || '');
+        localStorage.setItem('webPhoneLogin', _username || '');
         localStorage.setItem('webPhoneExtension', ext || '');
         localStorage.setItem('webPhonePassword', password || '');
         localStorage.setItem('webPhoneLogLevel', logLevel || 0);
@@ -252,8 +255,8 @@ $(function() {
                         console.log('Forwarded');
                         $modal.modal('hide');
                     })
-                    .catch(function(e) {
-                        console.error('Forward failed', e.stack || e);
+                    .catch(function(e2) {
+                        console.error('Forward failed', e2.stack || e2);
                     });
             });
 
@@ -269,8 +272,8 @@ $(function() {
                         console.log('Replied');
                         $modal.modal('hide');
                     })
-                    .catch(function(e) {
-                        console.error('Reply failed', e.stack || e);
+                    .catch(function(e2) {
+                        console.error('Reply failed', e2.stack || e2);
                     });
             });
 
@@ -411,8 +414,8 @@ $(function() {
                     console.log('Transferred');
                     $modal.modal('hide');
                 })
-                .catch(function(e) {
-                    console.error('Transfer failed', e.stack || e);
+                .catch(function(e2) {
+                    console.error('Transfer failed', e2.stack || e2);
                 });
         });
 
@@ -424,14 +427,14 @@ $(function() {
                 var newSession = session.userAgent.invite($transfer.val().trim());
                 newSession.once('established', function() {
                     console.log('New call initated. Click Complete to complete the transfer');
-                    $modal.find('.transfer-form button.complete').on('click', function(e) {
+                    $modal.find('.transfer-form button.complete').on('click', function() {
                         session
                             .warmTransfer(newSession)
                             .then(function() {
                                 console.log('Warm transfer completed');
                             })
-                            .catch(function(e) {
-                                console.error('Transfer failed', e.stack || e);
+                            .catch(function(e2) {
+                                console.error('Transfer failed', e2.stack || e2);
                             });
                     });
                 });
@@ -446,8 +449,8 @@ $(function() {
                 .then(function() {
                     console.log('Flipped');
                 })
-                .catch(function(e) {
-                    console.error('Flip failed', e.stack || e);
+                .catch(function(e2) {
+                    console.error('Flip failed', e2.stack || e2);
                 });
             $flip.val('');
         });
@@ -622,7 +625,7 @@ $(function() {
                 (extension.contact.company || '?') +
                 '</dd>' +
                 '<dt>Phone Number</dt><dd>' +
-                username +
+                username + (extensionNumber === '' ? '' : '*' + extensionNumber) +
                 '</dd>' +
                 '</dl>'
         );
