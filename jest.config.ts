@@ -7,7 +7,9 @@ const config: Config = {
   },
   setupFiles: ['dotenv-override-true/config'],
   testTimeout: 128000,
-  testRegex: '.*\\.spec\\.ts$'
+  testRegex: '.*\\.spec\\.ts$',
+  collectCoverage: true,
+  coverageDirectory: '.coverage',
 };
 
 export default config;
