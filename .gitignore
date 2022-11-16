@@ -3,7 +3,7 @@
 .coverage*
 .idea
 .env
-.screenshots
+screenshots/*.png
 dist
 lib
 *npm-debug*

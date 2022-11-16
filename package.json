@@ -2,10 +2,8 @@
   "name": "ringcentral-web-phone",
   "version": "0.9.0",
   "scripts": {
-    "test": "yarn run test:ut && yarn run test:e2e",
+    "test": "jest",
     "test:coverage": "cat .coverage/lcov.info | coveralls -v",
-    "test:e2e": "jest --config jest.config.e2e.js --runInBand",
-    "test:ut": "jest --config jest.config.ut.js",
     "build": "yarn run build:tsc && yarn run build:webpack",
     "build:tsc": "tsc",
     "build:webpack": "cross-env NODE_ENV=production webpack --config webpack.config.js --progress --color",
@@ -16,12 +14,11 @@
     "lint:staged": "lint-staged"
   },
   "dependencies": {
-    "sip.js": "0.20.1"
+    "sip.js": "0.21.2"
   },
   "devDependencies": {
     "@faker-js/faker": "7.6.0",
     "@ringcentral/sdk": "4.7.3",
-    "@types/expect-puppeteer": "5.0.2",
     "@types/express-serve-static-core": "4.17.31",
     "@types/jest": "29.2.3",
     "@types/jest-environment-puppeteer": "5.0.3",
@@ -32,7 +29,7 @@
     "coveralls": "3.1.1",
     "cross-env": "7.0.3",
     "crypto-browserify": "3.12.0",
-    "dotenv": "16.0.3",
+    "dotenv-override-true": "6.2.2",
     "eslint": "8.27.0",
     "eslint-config-ringcentral-typescript": "7.0.3",
     "html-webpack-plugin": "5.5.0",
@@ -48,6 +45,7 @@
     "stream-browserify": "3.0.0",
     "ts-jest": "29.0.3",
     "ts-loader": "9.4.1",
+    "ts-node": "10.9.1",
     "typescript": "4.9.3",
     "uglifyjs-webpack-plugin": "2.2.0",
     "wait-for-async": "0.6.0",
@@ -57,7 +55,6 @@
     "yarn-upgrade-all": "0.7.1"
   },
   "preferGlobal": false,
-  "private": false,
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "author": {
@@ -93,7 +90,7 @@
   },
   "homepage": "https://github.com/ringcentral/ringcentral-web-phone",
   "engines": {
-    "node": ">=0.10.36"
+    "node": ">=14"
   },
   "license": "MIT"
 }
