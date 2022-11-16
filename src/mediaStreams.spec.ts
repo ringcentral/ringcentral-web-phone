@@ -1,7 +1,7 @@
 import EventEmitter from 'events';
 import {faker} from '@faker-js/faker'; // eslint-disable-line import/no-unresolved
 
-import {default as MediaStreams, MediaStreamsImpl, Browsers, WebPhoneRTPReport} from '../src/mediaStreams';
+import {default as MediaStreams, MediaStreamsImpl, Browsers, WebPhoneRTPReport} from './mediaStreams';
 import {Events} from './events';
 
 // #region Mocks
