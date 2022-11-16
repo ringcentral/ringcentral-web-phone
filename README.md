@@ -175,7 +175,7 @@ platform
 $ git clone https://github.com/ringcentral/ringcentral-web-phone.git
 $ cd ringcentral-web-phone
 $ yarn install
-$ yarn start
+$ yarn serve
 ```
 
 1. Open `http://localhost:8080` in the browser (port may change if `8080` will be already used by other app)
