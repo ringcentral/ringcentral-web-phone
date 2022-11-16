@@ -23,3 +23,11 @@ Visit http://localhost:8080 to test.
 event 'accepted' renamed to 'established'
 
 session.ua.xxx renamed to session.userAgent.xxx
+
+
+## Todo
+
+- Redo ESLint
+- Redo webpack
+- Update sip.js
+- Replace the demo with React.js

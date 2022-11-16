@@ -6,7 +6,6 @@
     "test:coverage": "cat .coverage/lcov.info | coveralls -v",
     "build": "cross-env NODE_ENV=production webpack --config webpack.config.js --progress --color",
     "serve": "webpack serve --config webpack.config.js --progress --color",
-    "watch": "npm-run-all --print-label --parallel \"build:** -- --watch\"",
     "lint": "eslint . --cache --cache-location node_modules/.cache/eslint --fix",
     "lint:all": "yarn run lint \"src/**/*.ts\" \"demo/**/*.js\"",
     "lint:staged": "lint-staged"
@@ -17,7 +16,6 @@
   "devDependencies": {
     "@faker-js/faker": "7.6.0",
     "@ringcentral/sdk": "4.7.3",
-    "@types/express-serve-static-core": "4.17.31",
     "@types/jest": "29.2.3",
     "@types/jest-environment-puppeteer": "5.0.3",
     "@types/node": "18.11.9",
@@ -37,7 +35,6 @@
     "jest-puppeteer": "6.1.1",
     "jquery": "3.6.1",
     "lint-staged": "13.0.3",
-    "npm-run-all": "4.1.5",
     "puppeteer": "19.2.2",
     "querystring-es3": "0.2.1",
     "stream-browserify": "3.0.0",
