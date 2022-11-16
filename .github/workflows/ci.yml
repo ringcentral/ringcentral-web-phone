@@ -21,24 +21,19 @@ jobs:
       - run: yarn install
       - run: DEBUG=eslint:cli-engine yarn run lint:all
       - run: yarn run build
-      - run: yarn run test:ut
-      - name: E2E test
+      - name: tests
         env:
-          RC_WP_CALLER_CLIENT_ID: ${{ secrets.RC_WP_CALLER_CLIENT_ID }}
-          RC_WP_CALLER_CLIENT_SECRET: ${{ secrets.RC_WP_CALLER_CLIENT_SECRET }}
-          RC_WP_CALLER_SERVER: ${{ secrets.RC_WP_CALLER_SERVER }}
-          RC_WP_RECEIVER_CLIENT_ID: ${{ secrets.RC_WP_RECEIVER_CLIENT_ID }}
-          RC_WP_RECEIVER_CLIENT_SECRET: ${{ secrets.RC_WP_RECEIVER_CLIENT_SECRET }}
-          RC_WP_RECEIVER_SERVER: ${{ secrets.RC_WP_RECEIVER_SERVER }}
+          RC_WP_CLIENT_ID: ${{ secrets.RC_WP_CLIENT_ID }}
+          RC_WP_CLIENT_SECRET: ${{ secrets.RC_WP_CLIENT_SECRET }}
+          RC_WP_SERVER: ${{ secrets.RC_WP_SERVER }}
           RC_WP_CALLER_USERNAME: ${{ secrets.RC_WP_CALLER_USERNAME }}
           RC_WP_CALLER_EXTENSION: ${{ secrets.RC_WP_CALLER_EXTENSION }}
           RC_WP_CALLER_PASSWORD: ${{ secrets.RC_WP_CALLER_PASSWORD }}
           RC_WP_RECEIVER_USERNAME: ${{ secrets.RC_WP_RECEIVER_USERNAME }}
           RC_WP_RECEIVER_EXTENSION: ${{ secrets.RC_WP_RECEIVER_EXTENSION }}
           RC_WP_RECEIVER_PASSWORD: ${{ secrets.RC_WP_RECEIVER_PASSWORD }}
-        if: ${{ env.RC_WP_CALLER_CLIENT_ID != '' && env.RC_WP_RECEIVER_PASSWORD != '' &&  env.RC_WP_CALLER_PASSWORD != '' }}
         run: |
-          yarn run test:e2e
+          yarn run test
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:
