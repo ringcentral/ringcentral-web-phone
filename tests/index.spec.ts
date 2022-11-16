@@ -4,12 +4,14 @@ import waitFor from 'wait-for-async';
 
 const login = async (username: string, extension = '', password: string) => {
   const thePage = await browser.newPage();
-  await thePage.goto('https://ringcentral.github.io/ringcentral-web-phone/');
+  await thePage.setViewport({width: 800, height: 800, deviceScaleFactor: 2});
+  await thePage.goto('http://localhost:8888/');
   await thePage.click('input[name="server"]', {clickCount: 3}); // click 3 times to select all
   await thePage.type('input[name="server"]', process.env.RC_WP_SERVER!);
   await thePage.click('input[name="clientId"]', {clickCount: 3});
   await thePage.type('input[name="clientId"]', process.env.RC_WP_CLIENT_ID!);
   await thePage.click('input[name="clientSecret"]', {clickCount: 3});
+  await thePage.select('select[name="logLevel"]', '3');
   await thePage.type(
     'input[name="clientSecret"]',
     process.env.RC_WP_CLIENT_SECRET!

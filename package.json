@@ -4,17 +4,15 @@
   "scripts": {
     "test": "jest",
     "test:coverage": "cat .coverage/lcov.info | coveralls -v",
-    "build": "yarn run build:tsc && yarn run build:webpack",
-    "build:tsc": "tsc",
-    "build:webpack": "cross-env NODE_ENV=production webpack --config webpack.config.js --progress --color",
-    "start": "webpack serve --config webpack.config.js --progress --color",
+    "build": "cross-env NODE_ENV=production webpack --config webpack.config.js --progress --color",
+    "serve": "webpack serve --config webpack.config.js --progress --color",
     "watch": "npm-run-all --print-label --parallel \"build:** -- --watch\"",
     "lint": "eslint . --cache --cache-location node_modules/.cache/eslint --fix",
     "lint:all": "yarn run lint \"src/**/*.ts\" \"demo/**/*.js\"",
     "lint:staged": "lint-staged"
   },
   "dependencies": {
-    "sip.js": "0.21.2"
+    "sip.js": "0.20.1"
   },
   "devDependencies": {
     "@faker-js/faker": "7.6.0",
