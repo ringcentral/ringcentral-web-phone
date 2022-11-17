@@ -31,8 +31,8 @@ export class WebPhoneRTPReport implements RTPReport {
   outboundRtpReport = {};
   inboundRtpReport = {};
   rttMs = {};
-  localCandidates = [];
-  remoteCandidates = [];
+  localCandidates: any[] = [];
+  remoteCandidates: any[] = [];
   transport = {};
 }
 

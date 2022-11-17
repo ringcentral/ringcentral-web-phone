@@ -24,6 +24,7 @@ import {
   defaultSessionDescriptionFactory,
   WebPhoneSessionDescriptionHandlerFactoryOptions,
 } from './sessionDescriptionHandler';
+import {AudioHelper} from './audioHelper';
 
 const {version} = require('../package.json');
 
@@ -77,7 +78,7 @@ export interface WebPhoneOptions {
    *
    * Can be overridden but the custom class should have `loadAudio`, `setVolume`, `playIncoming` and `playOutgoing` methods
    */
-  audioHelper?: any;
+  audioHelper?: AudioHelper;
   /** If `true`, user agent calls the stop() method on unload (if running in browser window).
    *
    * [Reference](https://github.com/onsip/SIP.js/blob/master/docs/api/sip.js.useragentoptions.autostop.md)
@@ -177,32 +178,32 @@ export interface WebPhoneOptions {
    *
    * default value `{ audio: true, video: false }`
    */
-  mediaConstraints?: any;
+  mediaConstraints?: {audio: boolean; video: boolean};
   /** Default modifiers used for SessionDescriptionHandler
    *
    * [Reference](https://github.com/onsip/SIP.js/blob/master/docs/api/sip.js.sessiondescriptionhandlermodifier.md)
    */
   modifiers?: SessionDescriptionHandlerModifier[];
   /** Callback function called when session is created */
-  onSession?: (session: WebPhoneSession) => any;
+  onSession?: (session: WebPhoneSession) => void;
   /** Recurring time interval in seconds after which QOS stats are collected
    *
    * default value `5000`
    */
   qosCollectInterval?: number;
-  /** Timeout before which reconenction is attempted when transport disconnects
+  /** Timeout before which reconnection is attempted when transport disconnects
    *
    * If value is passed, `reconnectionTimeoutNoBackup` and `reconnectionTimeoutNoBackup` will be ignored
    *
    * If value is not passed, reconnection timeout will be decided using `reconnectionTimeoutNoBackup` and `reconnectionTimeoutNoBackup` depending on what proxy the transport connects to
    */
   reconnectionTimeout?: number;
-  /** Timeout before which reconenction is attempted when transport disconnects when connected to outbound proxy
+  /** Timeout before which reconnection is attempted when transport disconnects when connected to outbound proxy
    *
    * default value `5`
    */
   reconnectionTimeoutNoBackup?: number;
-  /** Timeout before which reconenction is attempted when transport disconnects when connected to outbound backup proxy
+  /** Timeout before which reconnection is attempted when transport disconnects when connected to outbound backup proxy
    *
    * default value `4`
    */
@@ -313,8 +314,10 @@ export default class WebPhone {
   ) {
     options = Object.assign({}, defaultWebPhoneOptions, options);
 
-    this.sipInfo = registrationData.sipInfo[0] || registrationData.sipInfo;
-
+    this.sipInfo = registrationData.sipInfo as SipInfo;
+    if (Array.isArray(this.sipInfo)) {
+      this.sipInfo = this.sipInfo[0];
+    }
     this.uuidKey = options.uuidKey;
     this.appName = options.appName;
     this.appVersion = options.appVersion;
@@ -323,10 +326,7 @@ export default class WebPhone {
     localStorage.setItem(this.uuidKey as string, id as string);
     const uaMatch = navigator.userAgent.match(/\((.*?)\)/);
     const appClientOs =
-      (uaMatch && uaMatch.length && uaMatch[1]).replace(
-        /[^a-zA-Z0-9.:_]+/g,
-        '-'
-      ) || '';
+      uaMatch === null ? '' : uaMatch[1].replace(/[^a-zA-Z0-9.:_]+/g, '-');
 
     const userAgentString =
       (this.appName
@@ -335,7 +335,7 @@ export default class WebPhone {
       (appClientOs ? appClientOs : '') +
       ` RCWEBPHONE/${WebPhone.version}`;
 
-    const modifiers = options.modifiers;
+    const modifiers = options.modifiers!;
 
     if (!options.enableDefaultModifiers) {
       modifiers.push(Web.stripG722);
@@ -352,7 +352,7 @@ export default class WebPhone {
     const iceTransportPolicy = options.iceTransportPolicy;
     let iceServers: Array<RTCIceServer> = [];
     if (options.enableTurnServers) {
-      iceServers = options.turnServers.map(url => ({urls: url}));
+      iceServers = options.turnServers!.map(url => ({urls: url}));
       options.iceCheckingTimeout = options.iceCheckingTimeout || 2000;
     }
     iceServers = [
@@ -397,7 +397,7 @@ export default class WebPhone {
     let reconnectionTimeout = options.reconnectionTimeoutWithBackup;
     let maxReconnectionAttempts = options.maxReconnectionAttemptsWithBackup;
     if (this.sipInfo.outboundProxy && this.sipInfo.transport) {
-      options.transportServers.push({
+      options.transportServers!.push({
         uri:
           this.sipInfo.transport.toLowerCase() +
           '://' +
@@ -408,7 +408,7 @@ export default class WebPhone {
     }
 
     if (this.sipInfo.outboundProxyBackup && this.sipInfo.transport) {
-      options.transportServers.push({
+      options.transportServers!.push({
         uri:
           this.sipInfo.transport.toLowerCase() +
           '://' +
@@ -421,8 +421,8 @@ export default class WebPhone {
     options.maxReconnectionAttempts =
       options.maxReconnectionAttempts || maxReconnectionAttempts;
 
-    const transportServer = options.transportServers.length
-      ? options.transportServers[0].uri
+    const transportServer = options.transportServers!.length
+      ? options.transportServers![0].uri
       : '';
 
     const configuration: UserAgentOptions = {
@@ -441,9 +441,10 @@ export default class WebPhone {
       authorizationUsername: this.sipInfo.authorizationId,
       authorizationPassword: this.sipInfo.password,
       logLevel:
-        (LogLevels[options.logLevel] as unknown as LogLevel) || defaultLogLevel,
+        (LogLevels[options.logLevel!] as unknown as LogLevel) ||
+        defaultLogLevel,
       logBuiltinEnabled: options.builtinEnabled,
-      logConnector: options.connector || null,
+      logConnector: options.connector || undefined,
       autoStart: false,
       autoStop: options.autoStop,
       userAgentString,
@@ -458,7 +459,7 @@ export default class WebPhone {
       configuration,
       this.sipInfo,
       options,
-      id
+      id!
     );
   }
 }

@@ -1,5 +1,5 @@
 export interface DomAudio extends HTMLAudioElement {
-  playPromise?: Promise<any>;
+  playPromise?: Promise<void>;
 }
 
 export interface AudioHelperOptions {
@@ -13,20 +13,20 @@ export interface AudioHelperOptions {
 
 export class AudioHelper {
   private readonly _enabled: boolean;
-  private _incoming: string;
-  private _outgoing: string;
-  private _audio: {[key: string]: DomAudio};
+  private _incoming?: string;
+  private _outgoing?: string;
+  private _audio?: {[key: string]: DomAudio};
 
   /** Current volume */
-  public volume: number;
+  public volume?: number;
 
   public constructor(options: AudioHelperOptions = {}) {
     this._enabled = !!options.enabled;
     this.loadAudio(options);
   }
 
-  private _playSound(url, val, volume): AudioHelper {
-    if (!this._enabled || !url) {
+  private _playSound(url: string, val: boolean, volume: number): AudioHelper {
+    if (!this._enabled || !url || !this._audio) {
       return this;
     }
 
@@ -63,7 +63,7 @@ export class AudioHelper {
   }
 
   /** Set volume for incoming and outgoing feedback */
-  public setVolume(volume): void {
+  public setVolume(volume: number): void {
     if (volume < 0) {
       volume = 0;
     }
@@ -72,7 +72,7 @@ export class AudioHelper {
     }
     this.volume = volume;
     for (const url in this._audio) {
-      if (this._audio.hasOwnProperty(url)) {
+      if (Object.prototype.hasOwnProperty.call(this._audio, url)) {
         this._audio[url].volume = volume;
       }
     }
@@ -83,8 +83,8 @@ export class AudioHelper {
    * @param value `true` to play audio and `false` to pause
    * @returns
    */
-  public playIncoming(value): AudioHelper {
-    return this._playSound(this._incoming, value, this.volume || 0.5);
+  public playIncoming(value: boolean): AudioHelper {
+    return this._playSound(this._incoming!, value, this.volume || 0.5);
   }
 
   /**
@@ -92,7 +92,7 @@ export class AudioHelper {
    * @param value `true` to play audio and `false` to pause
    * @returns
    */
-  public playOutgoing(value): AudioHelper {
-    return this._playSound(this._outgoing, value, this.volume || 1);
+  public playOutgoing(value: boolean): AudioHelper {
+    return this._playSound(this._outgoing!, value, this.volume || 1);
   }
 }

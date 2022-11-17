@@ -1,5 +1,6 @@
 import EventEmitter from 'events';
-import {faker} from '@faker-js/faker'; // eslint-disable-line import/no-unresolved
+// eslint-disable-next-line node/no-unpublished-import
+import {faker} from '@faker-js/faker';
 
 import {
   default as MediaStreams,
@@ -8,6 +9,7 @@ import {
   WebPhoneRTPReport,
 } from './mediaStreams';
 import {Events} from './events';
+import {WebPhoneSession} from './session';
 
 // #region Mocks
 class MockNavigator {
@@ -22,10 +24,10 @@ class MockNavigator {
 }
 
 class MockLogger {
-  public log: (message) => any;
-  public debug: (message) => any;
-  public error: (message) => any;
-  public info: (message) => any;
+  public log: (message: string) => void;
+  public debug: (message: string) => void;
+  public error: (message: string) => void;
+  public info: (message: string) => void;
   constructor() {
     this.log = () => null;
     this.debug = () => null;
@@ -43,7 +45,7 @@ class MockSessionDescriptionHandler {
 
 class MockUserAgent {
   public logger: MockLogger;
-  public defaultHeaders: Record<string, any>;
+  public defaultHeaders: Record<string, string>;
   constructor() {
     this.logger = new MockLogger();
     this.defaultHeaders = {};
@@ -60,10 +62,10 @@ class MockSession {
     this.userAgent = new MockUserAgent();
     this.logger = new MockLogger();
   }
-  public emit(event, parameter) {
+  public emit(event: string, parameter: MockSession | null) {
     this.eventEmitter.emit(event, parameter);
   }
-  public on(event, callback) {
+  public on(event: string, callback: (p: MockSession | null) => void) {
     this.eventEmitter.on(event, callback);
   }
   public reinvite() {}
@@ -108,110 +110,103 @@ class MockPeerConnection {
   public get iceConnectionState() {
     return this.connectionState;
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public getStats(): Promise<any> {
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       resolve(MockPeerConnection.defaultStats);
     });
   }
-  public addEventListener(eventName, listener) {
+  public addEventListener(
+    eventName: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    listener: (...args: any[]) => void
+  ) {
     this.eventEmitter.addListener(eventName, listener);
   }
-  public removeEventListener(eventName, listener) {
+  public removeEventListener(
+    eventName: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    listener: (...args: any[]) => void
+  ) {
     this.eventEmitter.removeListener(eventName, listener);
   }
-  public emit(eventName, data) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public emit(eventName: string, ...data: any[]) {
     this.eventEmitter.emit(eventName, data);
   }
 }
 
-class MockRTPStats {
-  constructor(type, properties = {}) {
-    let result;
-    switch (type) {
-      case 'inbound-rtp':
-        result = {
-          type,
-          bytesReceived: faker.datatype.number(),
-          packetsReceived: faker.datatype.number(),
-          jitter: faker.datatype.number(),
-          packetsLost: faker.datatype.number(),
-          fractionLost: faker.datatype.number(),
-          mediaType: faker.random.word(),
-          roundTripTime: faker.datatype.number(),
-        };
-        break;
-      case 'outbound-rtp':
-        result = {
-          type,
-          bytesSent: faker.datatype.number(),
-          packetsSent: faker.datatype.number(),
-          mediaType: faker.random.word(),
-        };
-        break;
-      case 'candidate-pair':
-        result = {
-          type,
-          currentRoundTripTime: faker.datatype.number(),
-        };
-        break;
-      case 'local-candidate':
-        result = {
-          type,
-          id: faker.datatype.number(),
-          isRemote: faker.datatype.boolean(),
-          ip: faker.internet.ip(),
-          candidateType: faker.random.word(),
-          networkType: faker.random.word(),
-          priority: faker.datatype.number(),
-          port: faker.internet.port(),
-        };
-        break;
-      case 'remote-candidate':
-        result = {
-          type,
-          id: faker.datatype.number(),
-          isRemote: faker.datatype.boolean(),
-          ip: faker.internet.ip(),
-          candidateType: faker.random.word(),
-          priority: faker.datatype.number(),
-          port: faker.internet.port(),
-        };
-        break;
-      case 'media-source':
-      case 'track':
-        result = {
-          type,
-          audioLevel: faker.datatype.number({min: 0, max: 100}),
-        };
-        break;
-      case 'transport':
-        result = {
-          type,
-          dtlsState: faker.random.word(),
-          packetsSent: faker.datatype.number(),
-          packetsReceived: faker.datatype.number(),
-          selectedCandidatePairChanges: faker.datatype.boolean(),
-          selectedCandidatePairId: faker.datatype.number(),
-        };
-        break;
-    }
-    return Object.assign({}, result, properties);
-  }
-}
+const mockRtpStats = {
+  'inbound-rtp': {
+    type: 'inbound-rtp',
+    bytesReceived: faker.datatype.number(),
+    packetsReceived: faker.datatype.number(),
+    jitter: faker.datatype.number(),
+    packetsLost: faker.datatype.number(),
+    fractionLost: faker.datatype.number(),
+    mediaType: faker.random.word(),
+    roundTripTime: faker.datatype.number(),
+  },
+  'outbound-rtp': {
+    type: 'outbound-rtp',
+    bytesSent: faker.datatype.number(),
+    packetsSent: faker.datatype.number(),
+    mediaType: faker.random.word(),
+  },
+  'candidate-pair': {
+    type: 'candidate-pair',
+    currentRoundTripTime: faker.datatype.number(),
+  },
+  'local-candidate': {
+    type: 'local-candidate',
+    id: faker.datatype.number(),
+    isRemote: faker.datatype.boolean(),
+    ip: faker.internet.ip(),
+    candidateType: faker.random.word(),
+    networkType: faker.random.word(),
+    priority: faker.datatype.number(),
+    port: faker.internet.port(),
+  },
+  'remote-candidate': {
+    type: 'remote-candidate',
+    id: faker.datatype.number(),
+    isRemote: faker.datatype.boolean(),
+    ip: faker.internet.ip(),
+    candidateType: faker.random.word(),
+    priority: faker.datatype.number(),
+    port: faker.internet.port(),
+  },
+  'media-source': {
+    type: 'media-source',
+    audioLevel: faker.datatype.number({min: 0, max: 100}),
+  },
+  track: {
+    type: 'track',
+    audioLevel: faker.datatype.number({min: 0, max: 100}),
+  },
+  transport: {
+    type: 'transport',
+    dtlsState: faker.random.word(),
+    packetsSent: faker.datatype.number(),
+    packetsReceived: faker.datatype.number(),
+    selectedCandidatePairChanges: faker.datatype.boolean(),
+    selectedCandidatePairId: faker.datatype.number(),
+  },
+};
 
 // #endregion
 
-global.navigator = new MockNavigator() as any;
+global.navigator = new MockNavigator() as unknown as Navigator;
 
 function generateMockStatAndReport() {
-  const inboundRTP: any = new MockRTPStats('inbound-rtp');
-  const outboundRTP: any = new MockRTPStats('outbound-rtp');
-  const candidatePair: any = new MockRTPStats('candidate-pair');
-  const localCandidate: any = new MockRTPStats('local-candidate');
-  const remoteCandidate: any = new MockRTPStats('remote-candidate');
-  const mediaSource: any = new MockRTPStats('media-source');
-  const track: any = new MockRTPStats('track');
-  const transport: any = new MockRTPStats('transport');
+  const inboundRTP = mockRtpStats['inbound-rtp'];
+  const outboundRTP = mockRtpStats['outbound-rtp'];
+  const candidatePair = mockRtpStats['candidate-pair'];
+  const localCandidate = mockRtpStats['local-candidate'];
+  const remoteCandidate = mockRtpStats['remote-candidate'];
+  const mediaSource = mockRtpStats['media-source'];
+  const track = mockRtpStats['track'];
+  const transport = mockRtpStats['transport'];
   const mockStat = [
     inboundRTP,
     outboundRTP,
@@ -517,7 +512,9 @@ describe('MediaStreams', () => {
 
   test('should send reinvite when reconnecting media', async () => {
     const mockSession = new MockSession();
-    const mediaStreams = new MediaStreamsImpl(mockSession as any);
+    const mediaStreams = new MediaStreamsImpl(
+      mockSession as unknown as WebPhoneSession
+    );
     const mockReinvite = jest.fn().mockReturnValue(Promise.resolve(null));
     mockSession.reinvite = mockReinvite;
     await mediaStreams.reconnectMedia();
@@ -526,9 +523,11 @@ describe('MediaStreams', () => {
 
   test('should cleanup on release', done => {
     const mockSession = new MockSession();
-    const mediaStreams = new MediaStreams(mockSession as any);
+    const mediaStreams = new MediaStreams(
+      mockSession as unknown as WebPhoneSession
+    );
     mediaStreams.mediaStreamsImpl['mediaStatsTimer'] = 123;
-    const mockRemoveEventListener = (event, fn) => {
+    const mockRemoveEventListener = (event: string, fn: Function) => {
       expect(fn).toBe(
         mediaStreams.mediaStreamsImpl['onPeerConnectionStateChange']
       );
@@ -543,7 +542,9 @@ describe('MediaStreams', () => {
   test('getMediaStats should be called and rtpStat event should be emitted continuously as per the interval', async () => {
     jest.useFakeTimers();
     const mockSession = new MockSession();
-    const mediaStreams = new MediaStreams(mockSession as any);
+    const mediaStreams = new MediaStreams(
+      mockSession as unknown as WebPhoneSession
+    );
     const getStatsCallback = jest.fn();
     const rtpStatCallback = jest.fn();
     jest
@@ -575,7 +576,9 @@ describe('MediaStreams', () => {
   test('should stop sending stats when stopMediaStats is called', async () => {
     jest.useFakeTimers();
     const mockSession = new MockSession();
-    const mediaStreams = new MediaStreams(mockSession as any);
+    const mediaStreams = new MediaStreams(
+      mockSession as unknown as WebPhoneSession
+    );
     const getStatsCallback = jest.fn();
     jest
       .spyOn(
@@ -598,7 +601,9 @@ describe('MediaStreams', () => {
   test('should send media stats', async () => {
     jest.useFakeTimers();
     const mockSession = new MockSession();
-    const mediaStreams = new MediaStreams(mockSession as any);
+    const mediaStreams = new MediaStreams(
+      mockSession as unknown as WebPhoneSession
+    );
     jest
       .spyOn(
         mockSession.sessionDescriptionHandler.peerConnection,
