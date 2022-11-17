@@ -115,7 +115,7 @@ export class MediaStreamsImpl {
    *
    * @param callback function to be called when `peerConnection` iceconnectionstatechange changes
    */
-  public onMediaConnectionStateChange: (
+  public onMediaConnectionStateChange?: (
     state: string,
     session: WebPhoneSession
   ) => any;
@@ -123,7 +123,7 @@ export class MediaStreamsImpl {
    * Set a function to be called when media stats are generated
    * @param callback optionally, you can set a function on MediaStreams object. This will be treated as a default callback when media stats are generated if a callback function is not passed with `getMediaStats` function
    */
-  public onRTPStat: (stats: RTPReport, session: WebPhoneSession) => any;
+  public onRTPStat?: (stats: RTPReport, session: WebPhoneSession) => any;
 
   private get tag() {
     return this.ktag;
@@ -173,13 +173,13 @@ export class MediaStreamsImpl {
     let eventName = 'unknown';
     const sessionDescriptionHandler = this.session
       .sessionDescriptionHandler as SessionDescriptionHandler;
-    const state = sessionDescriptionHandler.peerConnection.iceConnectionState;
-    if (ConnectionState.hasOwnProperty(state)) {
+    const state = sessionDescriptionHandler.peerConnection!.iceConnectionState;
+    if (Object.prototype.hasOwnProperty.call(ConnectionState, state)) {
       eventName = ConnectionState[state];
       if (this.onMediaConnectionStateChange) {
         this.onMediaConnectionStateChange(eventName, this.session);
       }
-      this.session.emit(eventName);
+      this.session.emit!(eventName);
     } else {
       (this.session as any).logger.debug(
         `${this.tag}: Unknown peerConnection state: ${state}`
@@ -193,7 +193,7 @@ export class MediaStreamsImpl {
   private async getRTPReport(report: RTPReport) {
     const sessionDescriptionHandler = this.session
       .sessionDescriptionHandler as SessionDescriptionHandler;
-    const peerConnection = sessionDescriptionHandler.peerConnection;
+    const peerConnection = sessionDescriptionHandler.peerConnection!;
     try {
       const stats = await peerConnection.getStats();
       stats.forEach((stat: {[key: string]: any}) => {
@@ -235,8 +235,8 @@ export class MediaStreamsImpl {
               }
             });
             break;
-          case 'local-candidate':
-            const local_candidate = {};
+          case 'local-candidate': {
+            const local_candidate: {[key: string]: number} = {};
             Object.keys(stat).forEach(statName => {
               switch (statName) {
                 case 'id':
@@ -250,11 +250,12 @@ export class MediaStreamsImpl {
                   break;
               }
             });
-            report.localCandidates.push(local_candidate);
+            report.localCandidates!.push(local_candidate);
             break;
-          case 'remote-candidate':
-            const remote_candidate = {};
-            Object.keys(stat).forEach(statName => {
+          }
+          case 'remote-candidate': {
+            const remote_candidate: {[key: string]: number} = {};
+            Object.keys(stat).forEach((statName: string) => {
               switch (statName) {
                 case 'id':
                 case 'isRemote':
@@ -266,8 +267,9 @@ export class MediaStreamsImpl {
                   break;
               }
             });
-            report.remoteCandidates.push(remote_candidate);
+            report.remoteCandidates!.push(remote_candidate);
             break;
+          }
           case 'media-source':
             report.outboundRtpReport.rtpLocalAudioLevel = stat.audioLevel
               ? stat.audioLevel
@@ -299,8 +301,15 @@ export class MediaStreamsImpl {
         }
       });
 
-      if (!report.rttMs.hasOwnProperty('currentRoundTripTime')) {
-        if (!report.rttMs.hasOwnProperty('roundTripTime')) {
+      if (
+        !Object.prototype.hasOwnProperty.call(
+          report.rttMs,
+          'currentRoundTripTime'
+        )
+      ) {
+        if (
+          !Object.prototype.hasOwnProperty.call(report.rttMs, 'roundTripTime')
+        ) {
           report.rttMs.currentRoundTripTime = this.preRTT.currentRoundTripTime;
         } else {
           report.rttMs.currentRoundTripTime = report.rttMs.roundTripTime; // for Firefox
@@ -308,23 +317,28 @@ export class MediaStreamsImpl {
         }
       } else {
         report.rttMs.currentRoundTripTime = Math.round(
-          report.rttMs.currentRoundTripTime * 1000
+          report.rttMs.currentRoundTripTime! * 1000
         );
       }
 
-      if (report.rttMs.hasOwnProperty('currentRoundTripTime')) {
+      if (
+        Object.prototype.hasOwnProperty.call(
+          report.rttMs,
+          'currentRoundTripTime'
+        )
+      ) {
         this.preRTT.currentRoundTripTime = report.rttMs.currentRoundTripTime;
       }
-      this.onRTPStat(report, this.session);
-      this.session.emit(Events.Session.RTPStat, report);
+      this.onRTPStat!(report, this.session);
+      this.session.emit!(Events.Session.RTPStat, report);
     } catch (e) {
       (this.session as any).logger.error(
-        `${this.tag}: Unable to get media stats: ${e.message}`
+        `${this.tag}: Unable to get media stats: ${(e as any).message}`
       );
     }
   }
 
-  public constructor(session) {
+  public constructor(session: WebPhoneSession) {
     this.ktag = 'MediaStreams';
     if (!session) {
       throw new Error(
@@ -332,12 +346,12 @@ export class MediaStreamsImpl {
       );
     }
     this.session = session;
-    this.onMediaConnectionStateChange = null;
+    this.onMediaConnectionStateChange = undefined;
     this.onPeerConnectionStateChange =
       this.onPeerConnectionStateChange.bind(this);
     const sessionDescriptionHandler = this.session
       .sessionDescriptionHandler as SessionDescriptionHandler;
-    sessionDescriptionHandler.peerConnection.addEventListener(
+    sessionDescriptionHandler.peerConnection!.addEventListener(
       'iceconnectionstatechange',
       this.onPeerConnectionStateChange
     );
@@ -361,7 +375,7 @@ export class MediaStreamsImpl {
    * @param interval interval for the recurring call to the callback function
    * @returns
    */
-  public getMediaStats(callback = null, interval = 1000) {
+  public getMediaStats(callback?: (report: RTPReport) => any, interval = 1000) {
     if (!this.onRTPStat && !callback) {
       (this.session as any).logger.debug(
         `${this.ktag}: No event callback provided to call when media starts are generated`
@@ -386,7 +400,7 @@ export class MediaStreamsImpl {
   public stopMediaStats() {
     if (this.mediaStatsTimer) {
       clearTimeout(this.mediaStatsTimer);
-      this.onRTPStat = null;
+      this.onRTPStat = undefined;
     }
   }
 
@@ -397,8 +411,7 @@ export class MediaStreamsImpl {
    */
   public reconnectMedia(): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.session
-        .reinvite()
+      this.session.reinvite!()
         .then(() => resolve())
         .catch(reject);
     });

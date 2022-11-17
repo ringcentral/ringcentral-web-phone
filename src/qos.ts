@@ -13,11 +13,9 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
   qosStatsObj.callID = session.request.callId || '';
   qosStatsObj.fromTag = session.request.fromTag || '';
   qosStatsObj.toTag = session.request.toTag || '';
-  qosStatsObj.localID = session.request.getHeader('From');
-  qosStatsObj.remoteID = session.request.getHeader('To');
-  qosStatsObj.origID = session.request.getHeader('From');
-
-  let previousGetStatsResult;
+  qosStatsObj.localID = session.request.getHeader('From')!;
+  qosStatsObj.remoteID = session.request.getHeader('To')!;
+  qosStatsObj.origID = session.request.getHeader('From')!;
 
   const refreshIntervalId = setInterval(async () => {
     const sessionDescriptionHandler =
@@ -56,7 +54,7 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
             qosStatsObj.remotecandidate = item;
           }
           break;
-        case 'inbound-rtp':
+        case 'inbound-rtp': {
           qosStatsObj.jitterBufferDiscardRate =
             item.packetsDiscarded / item.packetsReceived;
           qosStatsObj.inboundPacketsLost = item.packetsLost;
@@ -75,6 +73,7 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
           qosStatsObj.JBM = Math.max(qosStatsObj.JBM, jitterBufferMs);
           qosStatsObj.netType = addToMap(qosStatsObj.netType, network);
           break;
+        }
         case 'candidate-pair':
           qosStatsObj.RTD = Math.round((item.currentRoundTripTime / 2) * 1000);
           break;
@@ -92,7 +91,6 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
 
   session.stateChange.addListener(newState => {
     if (newState === SessionState.Terminated) {
-      previousGetStatsResult && previousGetStatsResult.nomore();
       (session as any).logger.log('Release media streams');
       session.mediaStreams && session.mediaStreams.release();
       publishQosStats(session, qosStatsObj);
@@ -116,12 +114,15 @@ const publishQosStats = async (
   options.extraHeaders = (options.extraHeaders || []).concat(
     session.userAgent.defaultHeaders
   );
-  const cpuOS = session.__qosStats.cpuOS;
-  const cpuRC = session.__qosStats.cpuRC;
-  const ram = session.__qosStats.ram;
+  const cpuOS = session.__qosStats!.cpuOS;
+  const cpuRC = session.__qosStats!.cpuRC;
+  const ram = session.__qosStats!.ram;
   const networkType =
-    session.__qosStats.netType || calculateNetworkUsage(qosStatsObj) || '';
-  const effectiveType = navigator['connection'].effectiveType || '';
+    session.__qosStats!.netType || calculateNetworkUsage(qosStatsObj) || '';
+  let effectiveType = '';
+  if ('connection' in navigator) {
+    effectiveType = (navigator as any).connection.effectiveType;
+  }
   options.extraHeaders.push(
     `p-rc-client-info:cpuRC=${cpuRC};cpuOS=${cpuOS};netType=${networkType};ram=${ram};effectiveType=${effectiveType}`
   );
@@ -130,7 +131,7 @@ const publishQosStats = async (
   const body = createPublishBody(calculatedStatsObj);
   const publisher = new Publisher(
     session.userAgent,
-    UserAgent.makeURI(targetUrl),
+    UserAgent.makeURI(targetUrl)!,
     event,
     options
   );
@@ -143,7 +144,7 @@ const publishQosStats = async (
   );
   qosStatsObj.status = false;
   await publisher.dispose();
-  session.emit(Events.Session.QOSPublished, body);
+  session.emit!(Events.Session.QOSPublished, body);
 };
 
 const calculateNetworkUsage = (qosStatsObj: QosStats): string => {
@@ -269,23 +270,23 @@ const addToMap = (map: any = {}, key: string): any => ({
   [key]: (key in map ? parseInt(map[key]) : 0) + 1,
 });
 
-enum networkTypeMap {
-  bluetooth = 'Bluetooth',
-  cellular = 'Cellulars',
-  ethernet = 'Ethernet',
-  wifi = 'WiFi',
-  vpn = 'VPN',
-  wimax = 'WiMax',
-  '2g' = '2G',
-  '3g' = '3G',
-  '4g' = '4G',
-}
+const networkTypeMap: {[key: string]: string} = {
+  bluetooth: 'Bluetooth',
+  cellular: 'Cellulars',
+  ethernet: 'Ethernet',
+  wifi: 'WiFi',
+  vpn: 'VPN',
+  wimax: 'WiMax',
+  '2g': '2G',
+  '3g': '3G',
+  '4g': '4G',
+};
 
 //TODO: find reliable way to find network type , use navigator.connection.type?
-const getNetworkType = (connectionType: any): networkTypeMap => {
-  const sysNetwork = connectionType.systemNetworkType || 'unknown';
-  const localNetwork = connectionType || 'unknown';
-  const networkType =
+const getNetworkType = (connectionType: any): string => {
+  const sysNetwork: string = connectionType.systemNetworkType || 'unknown';
+  const localNetwork: string = connectionType || 'unknown';
+  const networkType: string =
     !sysNetwork || sysNetwork === 'unknown' ? localNetwork : sysNetwork;
   return networkType in networkTypeMap
     ? networkTypeMap[networkType]
@@ -335,7 +336,7 @@ export interface QosStats {
   outboundPacketsSent: number;
 }
 
-function calculateMos(packetLoss) {
+function calculateMos(packetLoss: number) {
   if (packetLoss <= 0.008) {
     return 4.5;
   }
