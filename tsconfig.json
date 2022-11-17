@@ -1,23 +1,12 @@
 {
+  "extends": "./node_modules/gts/tsconfig-google.json",
   "compilerOptions": {
-    "allowSyntheticDefaultImports": true,
-    "declaration": true,
-    "declarationDir": "lib",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "jsx": "react",
-    "lib": [
-      "DOM",
-    ],
-    "moduleResolution": "node",
-    "noImplicitAny": false,
-    "outDir": "lib",
-    "preserveConstEnums": true,
-    "pretty": true,
-    "sourceMap": true,
-    "target": "es5"
+    "outDir": "build",
+    "lib": ["DOM", "ES6"],
+    "target": "ES5"
   },
   "include": [
-    "src",
+    "src/**/*.ts",
+    "test/**/*.ts"
   ]
 }

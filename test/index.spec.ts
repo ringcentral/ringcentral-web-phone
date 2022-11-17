@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { ElementHandle } from 'puppeteer';
+import {ElementHandle} from 'puppeteer';
 import waitFor from 'wait-for-async';
 
 const login = async (username: string, extension = '', password: string) => {
