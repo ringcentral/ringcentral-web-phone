@@ -314,7 +314,9 @@ describe('MediaStreamsImpl', () => {
 
   test('should emit event on session and trigger onMediaConnectionStateChange on iceconnectionstatechange', () => {
     const mockSession = new MockSession();
-    const mediaStreamsImpl = new MediaStreamsImpl(mockSession);
+    const mediaStreamsImpl = new MediaStreamsImpl(
+      mockSession as unknown as WebPhoneSession
+    );
     const mockOnMediaConnectionStateChange = jest.fn();
     mediaStreamsImpl.onMediaConnectionStateChange =
       mockOnMediaConnectionStateChange;
@@ -467,7 +469,9 @@ describe('MediaStreamsImpl', () => {
 
   test('should not emit event on session and trigger onMediaConnectionStateChange on iceconnectionstatechange for unknown events', () => {
     const mockSession = new MockSession();
-    const mediaStreamsImpl = new MediaStreamsImpl(mockSession);
+    const mediaStreamsImpl = new MediaStreamsImpl(
+      mockSession as unknown as WebPhoneSession
+    );
     const mockOnMediaConnectionStateChange = jest.fn();
     mediaStreamsImpl.onMediaConnectionStateChange =
       mockOnMediaConnectionStateChange;
