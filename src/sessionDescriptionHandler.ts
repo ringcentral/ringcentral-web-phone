@@ -303,7 +303,7 @@ export class SessionDescriptionHandler
     try {
       dtmfSender.insertDTMF(tones, duration, interToneGap);
     } catch (e) {
-      this.logger.error(e);
+      this.logger.error(e as any);
       return false;
     }
     this.logger.log(
@@ -1083,14 +1083,14 @@ export class SessionDescriptionHandler
       }
     };
 
-    peerConnection.onicecandidateerror = (
+    peerConnection.onicecandidateerror = ((
       event: RTCPeerConnectionIceErrorEvent
     ): void => {
       this.logger.debug('SessionDescriptionHandler.onicecandidateerror');
       if (this._peerConnectionDelegate?.onicecandidateerror) {
         this._peerConnectionDelegate.onicecandidateerror(event);
       }
-    };
+    }) as (this: RTCPeerConnection, ev: Event) => any;
 
     peerConnection.oniceconnectionstatechange = (event): void => {
       const newState = peerConnection.iceConnectionState;
@@ -1203,7 +1203,7 @@ export const defaultSessionDescriptionFactory = (
   const sessionDescriptionHandlerConfiguration: WebPhoneSessionDescriptionHandlerConfiguration =
     {
       iceGatheringTimeout,
-      enableDscp: options.enableDscp,
+      enableDscp: options!.enableDscp,
       peerConnectionConfiguration: {
         ...defaultPeerConnectionConfiguration(),
         ...options?.peerConnectionConfiguration,

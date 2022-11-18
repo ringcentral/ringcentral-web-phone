@@ -273,13 +273,19 @@ describe('MediaStreamsImpl', () => {
   });
 
   test('throw error if MediaStreamsImpl is instantiated with no session', () => {
-    expect(() => new MediaStreamsImpl(null)).toThrow();
-    expect(() => new MediaStreamsImpl(undefined)).toThrow();
+    expect(
+      () => new MediaStreamsImpl(null as unknown as WebPhoneSession)
+    ).toThrow();
+    expect(
+      () => new MediaStreamsImpl(undefined as unknown as WebPhoneSession)
+    ).toThrow();
   });
 
   test('browser function should check for correct browser type as per the useragent', () => {
     const mockSession = new MockSession();
-    const mediaStreamsImpl = new MediaStreamsImpl(mockSession);
+    const mediaStreamsImpl = new MediaStreamsImpl(
+      mockSession as unknown as WebPhoneSession
+    );
     jest
       .spyOn(navigator, 'userAgent', 'get')
       .mockReturnValue(
