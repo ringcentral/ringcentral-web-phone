@@ -41,7 +41,7 @@ function receiveIncomingRequestFromTransport(
         'Receive UPDATE request. Do nothing just return 200 OK'
       );
       this.replyStateless(message, {statusCode: 200});
-      this.emit(Events.Session.UpdateReceived, message);
+      this.emit!(Events.Session.UpdateReceived, message);
       return;
     }
     case C.INFO: {
@@ -53,13 +53,13 @@ function receiveIncomingRequestFromTransport(
         content?.request?.target === 'rcv'
       ) {
         this.replyStateless(message, {statusCode: 200});
-        this.emit(Events.Session.MoveToRcv, content.request);
+        this.emit!(Events.Session.MoveToRcv, content.request);
         return;
       }
       // For other SIP INFO from server
-      this.emit('RC_SIP_INFO', message);
+      this.emit!('RC_SIP_INFO', message);
       // SIP.js does not support application/json content type, so we monkey override its behavior in this case
-      const contentType = message.getHeader('content-type');
+      const contentType = message.getHeader('content-type')!;
       if (contentType.match(/^application\/json/i)) {
         this.replyStateless(message, {statusCode: 200});
         return;

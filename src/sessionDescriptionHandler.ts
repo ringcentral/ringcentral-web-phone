@@ -514,28 +514,30 @@ export class SessionDescriptionHandler
    * Sets the encoding priorty to high for sender track.
    *
    */
-  protected enableSenderDscp(): Promise<void> {
-    if (!this.sessionDescriptionHandlerConfiguration.enableDscp) {
-      return Promise.resolve();
+  protected enableSenderDscp(): Promise<void[]> {
+    if (!this.sessionDescriptionHandlerConfiguration?.enableDscp) {
+      return Promise.all([]);
     }
     if (!this._peerConnection) {
       throw new Error('Peer connection undefined.');
     }
-    const pc = this._peerConnection;
-    pc.getSenders()
-      .filter(sender => sender.track)
-      .forEach(sender => {
-        const parameters = sender.getParameters();
-        console.info('getsender params =', parameters);
-        (parameters as any).priority = 'high';
-        sender.setParameters(parameters).catch(error => {
-          console.error(
-            `Error while setting encodings parameters for ${
-              sender.track.kind
-            } Track ${sender.track.id}: ${error.message || error.name}`
-          );
-        });
-      });
+    return Promise.all(
+      this._peerConnection
+        .getSenders()
+        .filter(sender => sender.track)
+        .map(sender => {
+          const parameters = sender.getParameters();
+          console.info('getsender params =', parameters);
+          (parameters as any).priority = 'high';
+          return sender.setParameters(parameters).catch(error => {
+            console.error(
+              `Error while setting encodings parameters for ${
+                sender.track!.kind
+              } Track ${sender.track!.id}: ${error.message || error.name}`
+            );
+          });
+        })
+    );
   }
 
   /**

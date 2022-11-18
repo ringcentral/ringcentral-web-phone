@@ -137,22 +137,22 @@ export function createWebPhoneUserAgent(
 ): WebPhoneUserAgent {
   const extraConfiguration: UserAgentOptions = {
     delegate: {
-      onConnect: (): Promise<void> => userAgent.register(),
+      onConnect: (): Promise<void> => userAgent.register!(),
       onInvite: (invitation: WebPhoneInvitation): void => {
-        userAgent.audioHelper.playIncoming(true);
+        userAgent.audioHelper!.playIncoming(true);
         invitation.delegate = {};
         invitation.delegate.onSessionDescriptionHandler = () =>
           onSessionDescriptionHandlerCreated(invitation);
         patchWebphoneSession(invitation);
         patchIncomingWebphoneSession(invitation);
         (invitation as any).logger.log('UA received incoming call invite');
-        invitation.sendReceiveConfirm();
-        userAgent.emit(Events.UserAgent.Invite, invitation);
+        invitation.sendReceiveConfirm!();
+        userAgent.emit!(Events.UserAgent.Invite, invitation);
       },
       onNotify: (notification): void => {
         const event = notification.request.getHeader('Event');
         if (event === '') {
-          userAgent.emit(Events.UserAgent.ProvisionUpdate);
+          userAgent.emit!(Events.UserAgent.ProvisionUpdate);
         }
         (userAgent as any).logger.log('UA received notify');
         notification.accept();
@@ -189,7 +189,7 @@ export function createWebPhoneUserAgent(
     userAgent.media.remote = options.media.remote;
     userAgent.media.local = options.media.local;
   } else {
-    userAgent.media = null;
+    userAgent.media = undefined;
   }
   userAgent.registerer = new Registerer(userAgent, {
     regId: userAgent.regId,
@@ -220,11 +220,11 @@ export function createWebPhoneUserAgent(
   userAgent.stateChange.addListener(newState => {
     switch (newState) {
       case UserAgentState.Started: {
-        userAgent.emit(Events.UserAgent.Started);
+        userAgent.emit!(Events.UserAgent.Started);
         break;
       }
       case UserAgentState.Stopped: {
-        userAgent.emit(Events.UserAgent.Stopped);
+        userAgent.emit!(Events.UserAgent.Stopped);
         break;
       }
     }
@@ -232,11 +232,11 @@ export function createWebPhoneUserAgent(
   userAgent.registerer.stateChange.addListener(newState => {
     switch (newState) {
       case RegistererState.Registered: {
-        userAgent.emit(Events.UserAgent.Registered);
+        userAgent.emit!(Events.UserAgent.Registered);
         break;
       }
       case RegistererState.Unregistered: {
-        userAgent.emit(Events.UserAgent.Unregistered);
+        userAgent.emit!(Events.UserAgent.Unregistered);
         break;
       }
     }
@@ -254,7 +254,7 @@ function onTransportDisconnect(this: WebPhoneUserAgent, error?: Error): void {
     this.delegate.onDisconnect(error);
   }
   if (error) {
-    this.transport.reconnect();
+    this.transport.reconnect!();
   }
 }
 
@@ -274,7 +274,7 @@ function createRcMessage(this: WebPhoneUserAgent, options: RCHeaders): string {
     options.reqid +
     '"/> ' +
     '<Bdy Cln="' +
-    this.sipInfo.authorizationId +
+    this.sipInfo!.authorizationId +
     '" ' +
     options.body +
     '/>' +
@@ -292,7 +292,7 @@ function sendMessage(
   // Fix in later release if this is fixed by SIP.js
   const [user] = to.split('@');
   to = to.startsWith('#') ? `sip:${to.substring(1)}` : `sip:${to}`;
-  const uri = UserAgent.makeURI(to);
+  const uri = UserAgent.makeURI(to)!;
   uri.user = user;
   const messager = new Messager(this, uri, messageData, 'x-rc/agent', {
     extraHeaders,
@@ -309,16 +309,16 @@ function sendMessage(
 }
 
 async function register(this: WebPhoneUserAgent): Promise<void> {
-  await this.registerer.register({
+  await this.registerer!.register({
     requestDelegate: {
       onReject: (response): void => {
         if (!response) {
           return;
         }
-        if (this.transport.isSipErrorCode(response.message.statusCode)) {
-          this.transport.onSipErrorCode();
+        if (this.transport.isSipErrorCode!(response.message.statusCode)) {
+          this.transport.onSipErrorCode!();
         }
-        this.emit(Events.UserAgent.RegistrationFailed, response);
+        this.emit!(Events.UserAgent.RegistrationFailed, response);
         (this as any).logger.warn('UA Registration Failed');
       },
     },
@@ -326,7 +326,7 @@ async function register(this: WebPhoneUserAgent): Promise<void> {
 }
 
 async function unregister(this: WebPhoneUserAgent): Promise<void> {
-  await this.registerer.unregister();
+  await this.registerer!.unregister();
 }
 
 function invite(
@@ -337,9 +337,11 @@ function invite(
   const inviterOptions: InviterOptions = {};
   inviterOptions.extraHeaders = [
     ...(options.extraHeaders || []),
-    ...this.defaultHeaders,
+    ...this.defaultHeaders!,
     `P-Asserted-Identity: sip: ${
-      (options.fromNumber || this.sipInfo.username) + '@' + this.sipInfo.domain
+      (options.fromNumber || this.sipInfo!.username) +
+      '@' +
+      this.sipInfo!.domain
     }`,
     ...(options.homeCountryId
       ? [`P-rc-country-id: ${options.homeCountryId}`]
@@ -361,13 +363,13 @@ function invite(
       onSessionDescriptionHandlerCreated(inviter),
     onNotify: notification => notification.accept(),
   };
-  this.audioHelper.playOutgoing(true);
+  this.audioHelper!.playOutgoing(true);
   (this as any).logger.log(
     `Invite to ${number} created with playOutgoing set to true`
   );
   const inviter: WebPhoneSession = new Inviter(
     this,
-    UserAgent.makeURI(`sip:${number}@${this.sipInfo.domain}`),
+    UserAgent.makeURI(`sip:${number}@${this.sipInfo!.domain}`)!,
     inviterOptions
   );
   inviter
@@ -375,17 +377,17 @@ function invite(
       requestDelegate: {
         onAccept: inviteResponse => {
           inviter.startTime = new Date();
-          inviter.emit(Events.Session.Accepted, inviteResponse.message);
+          inviter.emit!(Events.Session.Accepted, inviteResponse.message);
         },
         onProgress: inviteResponse => {
-          inviter.emit(Events.Session.Progress, inviteResponse.message);
+          inviter.emit!(Events.Session.Progress, inviteResponse.message);
         },
       },
     })
-    .then(() => this.emit(Events.UserAgent.InviteSent, inviter))
+    .then(() => this.emit!(Events.UserAgent.InviteSent, inviter))
     .catch(e => {
       if (e.message.indexOf('Permission denied') > -1) {
-        inviter.emit(Events.Session.UserMediaFailed);
+        inviter.emit!(Events.Session.UserMediaFailed);
       }
       throw e;
     });
@@ -420,5 +422,5 @@ function switchFrom(
       constraints: options.RTCConstraints || this.constraints,
     },
   };
-  return this.invite(toNumber, inviterOptions);
+  return this.invite!(toNumber, inviterOptions);
 }

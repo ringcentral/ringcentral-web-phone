@@ -24,7 +24,7 @@ import {
   defaultSessionDescriptionFactory,
   WebPhoneSessionDescriptionHandlerFactoryOptions,
 } from './sessionDescriptionHandler';
-import {AudioHelper} from './audioHelper';
+import {AudioHelperOptions} from './audioHelper';
 
 const {version} = require('../package.json');
 
@@ -78,7 +78,7 @@ export interface WebPhoneOptions {
    *
    * Can be overridden but the custom class should have `loadAudio`, `setVolume`, `playIncoming` and `playOutgoing` methods
    */
-  audioHelper?: AudioHelper;
+  audioHelper?: AudioHelperOptions;
   /** If `true`, user agent calls the stop() method on unload (if running in browser window).
    *
    * [Reference](https://github.com/onsip/SIP.js/blob/master/docs/api/sip.js.useragentoptions.autostop.md)
