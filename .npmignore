@@ -2,15 +2,10 @@
 /.chrome
 /.cache-loader
 /.coverage
-/.screenshots
-/.editorconfig
-/.eslintrc
-/.prettierrc
+/screenshots
 /.huskyrc
-/.lintstagedrc
 /demo
 /dist/*.html
 /dist/demo*.js
-/tests
-/Procfile
+/test
 /tsconfig.json

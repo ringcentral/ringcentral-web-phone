@@ -1,2 +1,8 @@
-dist/
+build/
 lib/
+dist/
+.coverage/
+.github/
+.vscode/
+node_modules/
+demo/
