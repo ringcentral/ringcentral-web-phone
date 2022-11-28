@@ -4,23 +4,15 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest # Firefox in it
-    strategy:
-      matrix:
-        node-version: [16.x]
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
-          persist-credentials: false
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
-          registry-url: 'https://registry.npmjs.org'
+          node-version: 16
       - run: yarn install
       - run: yarn lint
-      - run: yarn run build
+      - run: yarn build
       - name: test
         env:
           RC_WP_CLIENT_ID: ${{ secrets.RC_WP_CLIENT_ID }}
@@ -33,7 +25,7 @@ jobs:
           RC_WP_RECEIVER_EXTENSION: ${{ secrets.RC_WP_RECEIVER_EXTENSION }}
           RC_WP_RECEIVER_PASSWORD: ${{ secrets.RC_WP_RECEIVER_PASSWORD }}
         run: |
-          yarn run test
+          yarn test
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:
