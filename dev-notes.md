@@ -27,6 +27,5 @@ session.ua.xxx renamed to session.userAgent.xxx
 
 ## Todo
 
-- Redo webpack
 - Update sip.js
 - Replace the demo with React.js

@@ -54,7 +54,6 @@ jobs:
         with:
           files: |
             dist/ringcentral-web-phone.js
-            dist/ringcentral-web-phone.min.js
         env:
           GITHUB_REPOSITORY: ringcentral/ringcentral-web-phone
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
