@@ -1,15 +1,16 @@
 {
   "name": "ringcentral-web-phone",
-  "version": "0.9.0",
+  "version": "1.0.0-beta1",
   "scripts": {
     "test": "jest",
     "test:coverage": "cat .coverage/lcov.info | coveralls -v",
-    "build": "cross-env NODE_ENV=production webpack --config webpack.config.js --progress --color",
-    "serve": "webpack serve --config webpack.config.js --progress --color",
-    "lint": "gts fix"
+    "build": "yarn tsc && webpack --progress --color",
+    "serve": "webpack serve --progress --color",
+    "lint": "gts fix",
+    "prepare": "husky install"
   },
   "dependencies": {
-    "sip.js": "0.20.1"
+    "sip.js": "0.21.2"
   },
   "devDependencies": {
     "@faker-js/faker": "7.6.0",
@@ -21,27 +22,25 @@
     "cache-loader": "4.1.0",
     "copy-webpack-plugin": "11.0.0",
     "coveralls": "3.1.1",
-    "cross-env": "7.0.3",
     "crypto-browserify": "3.12.0",
     "dotenv-override-true": "6.2.2",
-    "gts": "^3.1.1",
+    "gts": "3.1.1",
     "html-webpack-plugin": "5.5.0",
     "husky": "8.0.2",
     "istanbul-instrumenter-loader": "3.0.1",
     "jest": "29.3.1",
     "jest-puppeteer": "6.1.1",
     "jquery": "3.6.1",
-    "puppeteer": "19.2.2",
+    "puppeteer": "19.3.0",
     "querystring-es3": "0.2.1",
     "stream-browserify": "3.0.0",
     "ts-jest": "29.0.3",
     "ts-loader": "9.4.1",
     "ts-node": "10.9.1",
     "typescript": "4.9.3",
-    "uglifyjs-webpack-plugin": "2.2.0",
     "wait-for-async": "0.6.0",
     "webpack": "5.75.0",
-    "webpack-cli": "4.10.0",
+    "webpack-cli": "5.0.0",
     "webpack-dev-server": "4.11.1",
     "yarn-upgrade-all": "0.7.1"
   },

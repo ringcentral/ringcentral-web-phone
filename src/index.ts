@@ -445,8 +445,6 @@ export default class WebPhone {
         defaultLogLevel,
       logBuiltinEnabled: options.builtinEnabled,
       logConnector: options.connector || undefined,
-      autoStart: false,
-      autoStop: options.autoStop,
       userAgentString,
       sessionDescriptionHandlerFactoryOptions,
       sessionDescriptionHandlerFactory,
