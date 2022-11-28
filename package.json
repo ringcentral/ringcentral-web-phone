@@ -10,7 +10,7 @@
     "prepare": "husky install"
   },
   "dependencies": {
-    "sip.js": "0.20.1"
+    "sip.js": "0.21.2"
   },
   "devDependencies": {
     "@faker-js/faker": "7.6.0",

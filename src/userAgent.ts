@@ -61,7 +61,7 @@ export interface WebPhoneUserAgent extends UserAgent {
   /** If `true`, Qality of service of the call is generated and published to RingCentral server once the call ends */
   enableQos?: boolean;
   /** instanceId used while registering to the backend SIP server */
-  instanceId?: string;
+  instanceId: string;
   /** HTML media elements where local and remote audio and video streams should be sent */
   media?: {local?: HTMLMediaElement; remote?: HTMLMediaElement};
   /** SDP modifiers to be used when generating local offer or creating answer */
@@ -180,7 +180,6 @@ export function createWebPhoneUserAgent(
     `Client-id: ${options.clientId}`,
   ];
   userAgent.regId = options.regId;
-  userAgent.instanceId = options.instanceId;
   userAgent.media = {};
   userAgent.enableQos = options.enableQos;
   userAgent.enableMediaReportLogging = options.enableMediaReportLogging;
