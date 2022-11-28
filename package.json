@@ -4,8 +4,8 @@
   "scripts": {
     "test": "jest",
     "test:coverage": "cat .coverage/lcov.info | coveralls -v",
-    "build": "cross-env NODE_ENV=production webpack --config webpack.config.js --progress --color",
-    "serve": "webpack serve --config webpack.config.js --progress --color",
+    "build": "yarn tsc",
+    "serve": "webpack serve --progress --color",
     "lint": "gts fix",
     "prepare": "husky install"
   },
@@ -22,7 +22,6 @@
     "cache-loader": "4.1.0",
     "copy-webpack-plugin": "11.0.0",
     "coveralls": "3.1.1",
-    "cross-env": "7.0.3",
     "crypto-browserify": "3.12.0",
     "dotenv-override-true": "6.2.2",
     "gts": "3.1.1",

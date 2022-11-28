@@ -1,13 +1,9 @@
 {
   "extends": "./node_modules/gts/tsconfig-google.json",
   "compilerOptions": {
-    "outDir": "build",
-    "lib": ["DOM", "ES6"],
-    "target": "ES5",
+    "outDir": "lib",
+    "lib": ["DOM"],
     "esModuleInterop": true
   },
-  "include": [
-    "src/**/*.ts",
-    "test/**/*.ts"
-  ]
+  "include": ["src"]
 }
