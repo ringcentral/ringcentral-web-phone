@@ -1,9 +1,6 @@
 const path = require('path');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
-
-const isProduction = process.env.NODE_ENV === 'production';
 
 const libConfig = {
   mode: 'development',
@@ -62,24 +59,6 @@ const libConfig = {
     port: 8080,
   },
 };
-
-if (isProduction) {
-  const [key, src] = Object.entries(libConfig.entry)[0];
-  libConfig.mode = 'production';
-  libConfig.devtool = 'source-map';
-  libConfig.entry = {
-    ...libConfig.entry,
-    [`${key}.min`]: src,
-  };
-  libConfig.optimization = {
-    minimize: true,
-    minimizer: [
-      new UglifyJsPlugin({
-        include: /\.min\.js$/,
-      }),
-    ],
-  };
-}
 
 module.exports = [
   libConfig,
