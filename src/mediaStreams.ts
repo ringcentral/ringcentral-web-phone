@@ -252,6 +252,7 @@ export class MediaStreamsImpl {
                 let offer: any;
                 try {
                     offer = await pc.createOffer(offerOptions);
+                    self.session.sessionDescriptionHandler.off('iceCandidate', self.onIceCandidate);
                     self.session.sessionDescriptionHandler.on('iceCandidate', self.onIceCandidate);
                     await pc.setLocalDescription(offer);
                     self.rcWPLogd(self.tag, 'reconnecting media');
