@@ -112,8 +112,8 @@ const publishQosStats = (session: WebPhoneSession, qosStatsObj: QosStats, option
 const calculateNetworkUsage = (qosStatsObj: QosStats): string => {
     const networkType = [];
     for (const [key, value] of Object.entries(qosStatsObj.netType)) {
-        const type = key === '' ? 'UNKNOWN' : key.toUpperCase();
-        networkType.push(type + ':' + formatFloat(((value as any) * 100) / qosStatsObj.totalIntervalCount));
+        const netType = key === '' ? 'UNKNOWN' : key.toUpperCase();
+        networkType.push(netType + ':' + formatFloat(((value as any) * 100) / qosStatsObj.totalIntervalCount));
     }
     return networkType.join();
 };
