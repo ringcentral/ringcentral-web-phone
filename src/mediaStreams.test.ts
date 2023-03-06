@@ -111,6 +111,10 @@ class FadeSession {
         globalEmitter.on(event, parameter);
     }
 
+    public off(event, parameter) {
+        globalEmitter.off(event, parameter);
+    }
+
     public reinvite(options) {
         this.sessionOptions = options;
     }
