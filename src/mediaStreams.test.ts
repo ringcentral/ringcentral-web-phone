@@ -63,6 +63,10 @@ class FadeSessionDescriptionHandler {
         globalEmitter.on(event, func);
     }
 
+    public off(event, func) {
+        globalEmitter.off(event, func);
+    }
+
     public removeListener(event, func) {
         globalEmitter.removeListener(event, func);
     }
@@ -109,6 +113,10 @@ class FadeSession {
 
     public on(event, parameter) {
         globalEmitter.on(event, parameter);
+    }
+
+    public off(event, parameter) {
+        globalEmitter.off(event, parameter);
     }
 
     public reinvite(options) {
