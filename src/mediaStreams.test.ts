@@ -63,6 +63,10 @@ class FadeSessionDescriptionHandler {
         globalEmitter.on(event, func);
     }
 
+    public off(event, func) {
+        globalEmitter.off(event, func);
+    }
+
     public removeListener(event, func) {
         globalEmitter.removeListener(event, func);
     }
