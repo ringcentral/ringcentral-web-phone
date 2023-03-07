@@ -89,10 +89,10 @@ const publishQosStats = (session: WebPhoneSession, qosStatsObj: QosStats, option
     options.expires = 60;
     options.contentType = 'application/vq-rtcpxr';
     options.extraHeaders = (options.extraHeaders || []).concat(session.ua.defaultHeaders);
-    const cpuOS = session.__qosStats.cpuOS;
-    const cpuRC = session.__qosStats.cpuRC;
-    const ram = session.__qosStats.ram;
-    const networkType = session.__qosStats.netType || calculateNetworkUsage(qosStatsObj) || '';
+    const cpuOS = session.__qosStats.cpuOS || '0:0:0';
+    const cpuRC = session.__qosStats.cpuRC || '0:0:0';
+    const ram = session.__qosStats.ram || '0:0:0';
+    const networkType = session.__qosStats.netType || calculateNetworkUsage(qosStatsObj) || 'UNKNOWN:100.00';
     const effectiveType = navigator['connection'].effectiveType || '';
     options.extraHeaders.push(
         `p-rc-client-info:cpuRC=${cpuRC};cpuOS=${cpuOS};netType=${networkType};ram=${ram};effectiveType=${effectiveType}`
@@ -112,7 +112,8 @@ const publishQosStats = (session: WebPhoneSession, qosStatsObj: QosStats, option
 const calculateNetworkUsage = (qosStatsObj: QosStats): string => {
     const networkType = [];
     for (const [key, value] of Object.entries(qosStatsObj.netType)) {
-        networkType.push(key + ':' + formatFloat(((value as any) * 100) / qosStatsObj.totalIntervalCount));
+        const netType = key === '' ? 'UNKNOWN' : key.toUpperCase();
+        networkType.push(netType + ':' + formatFloat(((value as any) * 100) / qosStatsObj.totalIntervalCount));
     }
     return networkType.join();
 };
