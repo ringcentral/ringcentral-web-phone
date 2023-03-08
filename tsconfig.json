@@ -1,9 +1,9 @@
 {
-  "extends": "./node_modules/gts/tsconfig-google.json",
   "compilerOptions": {
     "outDir": "lib",
-    "lib": ["DOM"],
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "target": "esnext",
+    "moduleResolution": "node",
   },
   "include": ["src"]
 }

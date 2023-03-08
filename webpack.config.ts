@@ -1,5 +1,3 @@
-/* eslint-disable node/no-unpublished-require */
-/* eslint-disable node/no-unpublished-import */
 import path from 'path';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import CopyPlugin from 'copy-webpack-plugin';
@@ -104,7 +102,7 @@ const demoConfig = {
       filename: 'callback.html',
       chunks: ['demoCallback', 'demoVendor'],
     }),
-    //FIXME Replace with file loader
+    // FIXME Replace with file loader
     new CopyPlugin({
       patterns: [
         {from: 'audio', to: 'audio'},

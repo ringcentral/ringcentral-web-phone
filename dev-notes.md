@@ -28,3 +28,4 @@ session.ua.xxx renamed to session.userAgent.xxx
 ## Todo
 
 - Replace the demo with React.js
+- Redo code coverage part
