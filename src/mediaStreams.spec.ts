@@ -1,22 +1,16 @@
 import EventEmitter from 'events';
 // eslint-disable-next-line node/no-unpublished-import
-import {faker} from '@faker-js/faker';
+import { faker } from '@faker-js/faker';
 
-import {
-  default as MediaStreams,
-  MediaStreamsImpl,
-  Browsers,
-  WebPhoneRTPReport,
-} from './mediaStreams';
-import {Events} from './events';
-import {WebPhoneSession} from './session';
+import { default as MediaStreams, MediaStreamsImpl, Browsers, WebPhoneRTPReport } from './mediaStreams';
+import { Events } from './events';
+import { WebPhoneSession } from './session';
 
 // #region Mocks
 class MockNavigator {
   private _userAgent: string;
   constructor() {
-    this._userAgent =
-      'Chrome/5.0 (Windows; U; Win98; en-US; rv:0.9.2) Gecko/20010725';
+    this._userAgent = 'Chrome/5.0 (Windows; U; Win98; en-US; rv:0.9.2) Gecko/20010725';
   }
   get userAgent() {
     return this._userAgent;
@@ -112,21 +106,21 @@ class MockPeerConnection {
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public getStats(): Promise<any> {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       resolve(MockPeerConnection.defaultStats);
     });
   }
   public addEventListener(
     eventName: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    listener: (...args: any[]) => void
+    listener: (...args: any[]) => void,
   ) {
     this.eventEmitter.addListener(eventName, listener);
   }
   public removeEventListener(
     eventName: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    listener: (...args: any[]) => void
+    listener: (...args: any[]) => void,
   ) {
     this.eventEmitter.removeListener(eventName, listener);
   }
@@ -178,11 +172,11 @@ const mockRtpStats = {
   },
   'media-source': {
     type: 'media-source',
-    audioLevel: faker.datatype.number({min: 0, max: 100}),
+    audioLevel: faker.datatype.number({ min: 0, max: 100 }),
   },
   track: {
     type: 'track',
-    audioLevel: faker.datatype.number({min: 0, max: 100}),
+    audioLevel: faker.datatype.number({ min: 0, max: 100 }),
   },
   transport: {
     type: 'transport',
@@ -264,7 +258,7 @@ function generateMockStatAndReport() {
     selectedCandidatePairChanges: transport.selectedCandidatePairChanges,
     selectedCandidatePairId: transport.selectedCandidatePairId,
   };
-  return {mockStat, mockReport};
+  return { mockStat, mockReport };
 }
 
 describe('MediaStreamsImpl', () => {
@@ -273,53 +267,36 @@ describe('MediaStreamsImpl', () => {
   });
 
   test('throw error if MediaStreamsImpl is instantiated with no session', () => {
-    expect(
-      () => new MediaStreamsImpl(null as unknown as WebPhoneSession)
-    ).toThrow();
-    expect(
-      () => new MediaStreamsImpl(undefined as unknown as WebPhoneSession)
-    ).toThrow();
+    expect(() => new MediaStreamsImpl(null as unknown as WebPhoneSession)).toThrow();
+    expect(() => new MediaStreamsImpl(undefined as unknown as WebPhoneSession)).toThrow();
   });
 
   test('browser function should check for correct browser type as per the useragent', () => {
     const mockSession = new MockSession();
-    const mediaStreamsImpl = new MediaStreamsImpl(
-      mockSession as unknown as WebPhoneSession
-    );
+    const mediaStreamsImpl = new MediaStreamsImpl(mockSession as unknown as WebPhoneSession);
     jest
       .spyOn(navigator, 'userAgent', 'get')
-      .mockReturnValue(
-        'Firefox/5.0 (Windows; U; Win98; en-US; rv:0.9.2) Gecko/20010725'
-      );
+      .mockReturnValue('Firefox/5.0 (Windows; U; Win98; en-US; rv:0.9.2) Gecko/20010725');
     expect(mediaStreamsImpl.browser()).toBe(Browsers.Firefox);
     jest
       .spyOn(navigator, 'userAgent', 'get')
-      .mockReturnValue(
-        'Safari/5.0 (Windows; U; Win98; en-US; rv:0.9.2) Gecko/20010725'
-      );
+      .mockReturnValue('Safari/5.0 (Windows; U; Win98; en-US; rv:0.9.2) Gecko/20010725');
     expect(mediaStreamsImpl.browser()).toBe(Browsers.Safari);
     jest
       .spyOn(navigator, 'userAgent', 'get')
-      .mockReturnValue(
-        'Opera/5.0 (Windows; U; Win98; en-US; rv:0.9.2) Gecko/20010725'
-      );
+      .mockReturnValue('Opera/5.0 (Windows; U; Win98; en-US; rv:0.9.2) Gecko/20010725');
     expect(mediaStreamsImpl.browser()).toBe(Browsers.Opera);
     jest
       .spyOn(navigator, 'userAgent', 'get')
-      .mockReturnValue(
-        'MSIE/5.0 (Windows; U; Win98; en-US; rv:0.9.2) Gecko/20010725'
-      );
+      .mockReturnValue('MSIE/5.0 (Windows; U; Win98; en-US; rv:0.9.2) Gecko/20010725');
     expect(mediaStreamsImpl.browser()).toBe(Browsers.MSIE);
   });
 
   test('should emit event on session and trigger onMediaConnectionStateChange on iceconnectionstatechange', () => {
     const mockSession = new MockSession();
-    const mediaStreamsImpl = new MediaStreamsImpl(
-      mockSession as unknown as WebPhoneSession
-    );
+    const mediaStreamsImpl = new MediaStreamsImpl(mockSession as unknown as WebPhoneSession);
     const mockOnMediaConnectionStateChange = jest.fn();
-    mediaStreamsImpl.onMediaConnectionStateChange =
-      mockOnMediaConnectionStateChange;
+    mediaStreamsImpl.onMediaConnectionStateChange = mockOnMediaConnectionStateChange;
     const mediaConnectionStateNew = jest.fn();
     const mediaConnectionStateChecking = jest.fn();
     const mediaConnectionStateConnected = jest.fn();
@@ -328,153 +305,68 @@ describe('MediaStreamsImpl', () => {
     const mediaConnectionStateDisconnected = jest.fn();
     const mediaConnectionStateClosed = jest.fn();
     mockSession.on('mediaConnectionStateNew', mediaConnectionStateNew);
-    mockSession.on(
-      'mediaConnectionStateChecking',
-      mediaConnectionStateChecking
-    );
-    mockSession.on(
-      'mediaConnectionStateConnected',
-      mediaConnectionStateConnected
-    );
-    mockSession.on(
-      'mediaConnectionStateCompleted',
-      mediaConnectionStateCompleted
-    );
+    mockSession.on('mediaConnectionStateChecking', mediaConnectionStateChecking);
+    mockSession.on('mediaConnectionStateConnected', mediaConnectionStateConnected);
+    mockSession.on('mediaConnectionStateCompleted', mediaConnectionStateCompleted);
     mockSession.on('mediaConnectionStateFailed', mediaConnectionStateFailed);
-    mockSession.on(
-      'mediaConnectionStateDisconnected',
-      mediaConnectionStateDisconnected
-    );
+    mockSession.on('mediaConnectionStateDisconnected', mediaConnectionStateDisconnected);
     mockSession.on('mediaConnectionStateClosed', mediaConnectionStateClosed);
 
     jest
-      .spyOn(
-        mockSession.sessionDescriptionHandler.peerConnection,
-        'iceConnectionState',
-        'get'
-      )
+      .spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get')
       .mockReturnValue('new');
-    mockSession.sessionDescriptionHandler.peerConnection.emit(
-      'iceconnectionstatechange',
-      null
-    );
-    expect(mockOnMediaConnectionStateChange).toBeCalledWith(
-      'mediaConnectionStateNew',
-      mockSession
-    );
+    mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
+    expect(mockOnMediaConnectionStateChange).toBeCalledWith('mediaConnectionStateNew', mockSession);
     expect(mediaConnectionStateNew).toBeCalled();
 
     jest
-      .spyOn(
-        mockSession.sessionDescriptionHandler.peerConnection,
-        'iceConnectionState',
-        'get'
-      )
+      .spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get')
       .mockReturnValue('checking');
-    mockSession.sessionDescriptionHandler.peerConnection.emit(
-      'iceconnectionstatechange',
-      null
-    );
-    expect(mockOnMediaConnectionStateChange).toBeCalledWith(
-      'mediaConnectionStateChecking',
-      mockSession
-    );
+    mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
+    expect(mockOnMediaConnectionStateChange).toBeCalledWith('mediaConnectionStateChecking', mockSession);
     expect(mediaConnectionStateChecking).toBeCalled();
 
     jest
-      .spyOn(
-        mockSession.sessionDescriptionHandler.peerConnection,
-        'iceConnectionState',
-        'get'
-      )
+      .spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get')
       .mockReturnValue('connected');
-    mockSession.sessionDescriptionHandler.peerConnection.emit(
-      'iceconnectionstatechange',
-      null
-    );
-    expect(mockOnMediaConnectionStateChange).toBeCalledWith(
-      'mediaConnectionStateConnected',
-      mockSession
-    );
+    mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
+    expect(mockOnMediaConnectionStateChange).toBeCalledWith('mediaConnectionStateConnected', mockSession);
     expect(mediaConnectionStateConnected).toBeCalled();
 
     jest
-      .spyOn(
-        mockSession.sessionDescriptionHandler.peerConnection,
-        'iceConnectionState',
-        'get'
-      )
+      .spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get')
       .mockReturnValue('completed');
-    mockSession.sessionDescriptionHandler.peerConnection.emit(
-      'iceconnectionstatechange',
-      null
-    );
-    expect(mockOnMediaConnectionStateChange).toBeCalledWith(
-      'mediaConnectionStateCompleted',
-      mockSession
-    );
+    mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
+    expect(mockOnMediaConnectionStateChange).toBeCalledWith('mediaConnectionStateCompleted', mockSession);
     expect(mediaConnectionStateCompleted).toBeCalled();
 
     jest
-      .spyOn(
-        mockSession.sessionDescriptionHandler.peerConnection,
-        'iceConnectionState',
-        'get'
-      )
+      .spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get')
       .mockReturnValue('failed');
-    mockSession.sessionDescriptionHandler.peerConnection.emit(
-      'iceconnectionstatechange',
-      null
-    );
-    expect(mockOnMediaConnectionStateChange).toBeCalledWith(
-      'mediaConnectionStateFailed',
-      mockSession
-    );
+    mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
+    expect(mockOnMediaConnectionStateChange).toBeCalledWith('mediaConnectionStateFailed', mockSession);
     expect(mediaConnectionStateFailed).toBeCalled();
 
     jest
-      .spyOn(
-        mockSession.sessionDescriptionHandler.peerConnection,
-        'iceConnectionState',
-        'get'
-      )
+      .spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get')
       .mockReturnValue('disconnected');
-    mockSession.sessionDescriptionHandler.peerConnection.emit(
-      'iceconnectionstatechange',
-      null
-    );
-    expect(mockOnMediaConnectionStateChange).toBeCalledWith(
-      'mediaConnectionStateDisconnected',
-      mockSession
-    );
+    mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
+    expect(mockOnMediaConnectionStateChange).toBeCalledWith('mediaConnectionStateDisconnected', mockSession);
     expect(mediaConnectionStateDisconnected).toBeCalled();
 
     jest
-      .spyOn(
-        mockSession.sessionDescriptionHandler.peerConnection,
-        'iceConnectionState',
-        'get'
-      )
+      .spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get')
       .mockReturnValue('closed');
-    mockSession.sessionDescriptionHandler.peerConnection.emit(
-      'iceconnectionstatechange',
-      null
-    );
-    expect(mockOnMediaConnectionStateChange).toBeCalledWith(
-      'mediaConnectionStateClosed',
-      mockSession
-    );
+    mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
+    expect(mockOnMediaConnectionStateChange).toBeCalledWith('mediaConnectionStateClosed', mockSession);
     expect(mediaConnectionStateClosed).toBeCalled();
   });
 
   test('should not emit event on session and trigger onMediaConnectionStateChange on iceconnectionstatechange for unknown events', () => {
     const mockSession = new MockSession();
-    const mediaStreamsImpl = new MediaStreamsImpl(
-      mockSession as unknown as WebPhoneSession
-    );
+    const mediaStreamsImpl = new MediaStreamsImpl(mockSession as unknown as WebPhoneSession);
     const mockOnMediaConnectionStateChange = jest.fn();
-    mediaStreamsImpl.onMediaConnectionStateChange =
-      mockOnMediaConnectionStateChange;
+    mediaStreamsImpl.onMediaConnectionStateChange = mockOnMediaConnectionStateChange;
     const sessionEventListener = jest.fn();
     mockSession.on('mediaConnectionStateNew', sessionEventListener);
     mockSession.on('mediaConnectionStateChecking', sessionEventListener);
@@ -485,30 +377,16 @@ describe('MediaStreamsImpl', () => {
     mockSession.on('mediaConnectionStateClosed', sessionEventListener);
 
     jest
-      .spyOn(
-        mockSession.sessionDescriptionHandler.peerConnection,
-        'iceConnectionState',
-        'get'
-      )
+      .spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get')
       .mockReturnValue('randomEvent');
-    mockSession.sessionDescriptionHandler.peerConnection.emit(
-      'iceconnectionstatechange',
-      null
-    );
+    mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
     expect(mockOnMediaConnectionStateChange).toBeCalledTimes(0);
     expect(sessionEventListener).toBeCalledTimes(0);
 
     jest
-      .spyOn(
-        mockSession.sessionDescriptionHandler.peerConnection,
-        'iceConnectionState',
-        'get'
-      )
+      .spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get')
       .mockReturnValue('kylo-ren-event');
-    mockSession.sessionDescriptionHandler.peerConnection.emit(
-      'iceconnectionstatechange',
-      null
-    );
+    mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
     expect(mockOnMediaConnectionStateChange).toBeCalledTimes(0);
     expect(sessionEventListener).toBeCalledTimes(0);
   });
@@ -522,47 +400,34 @@ describe('MediaStreams', () => {
 
   test('should send reinvite when reconnecting media', async () => {
     const mockSession = new MockSession();
-    const mediaStreams = new MediaStreamsImpl(
-      mockSession as unknown as WebPhoneSession
-    );
+    const mediaStreams = new MediaStreamsImpl(mockSession as unknown as WebPhoneSession);
     const mockReinvite = jest.fn().mockReturnValue(Promise.resolve(null));
     mockSession.reinvite = mockReinvite;
     await mediaStreams.reconnectMedia();
     expect(mockReinvite).toBeCalled();
   });
 
-  test('should cleanup on release', done => {
+  test('should cleanup on release', (done) => {
     const mockSession = new MockSession();
-    const mediaStreams = new MediaStreams(
-      mockSession as unknown as WebPhoneSession
-    );
+    const mediaStreams = new MediaStreams(mockSession as unknown as WebPhoneSession);
     mediaStreams.mediaStreamsImpl['mediaStatsTimer'] = 123;
     const mockRemoveEventListener = (event: string, fn: Function) => {
-      expect(fn).toBe(
-        mediaStreams.mediaStreamsImpl['onPeerConnectionStateChange']
-      );
+      expect(fn).toBe(mediaStreams.mediaStreamsImpl['onPeerConnectionStateChange']);
       expect(mediaStreams.mediaStreamsImpl['mediaStatsTimer']).toBe(null);
       done();
     };
-    mockSession.sessionDescriptionHandler.peerConnection.removeEventListener =
-      mockRemoveEventListener;
+    mockSession.sessionDescriptionHandler.peerConnection.removeEventListener = mockRemoveEventListener;
     mediaStreams.release();
   });
 
   test('getMediaStats should be called and rtpStat event should be emitted continuously as per the interval', async () => {
     jest.useFakeTimers();
     const mockSession = new MockSession();
-    const mediaStreams = new MediaStreams(
-      mockSession as unknown as WebPhoneSession
-    );
+    const mediaStreams = new MediaStreams(mockSession as unknown as WebPhoneSession);
     const getStatsCallback = jest.fn();
     const rtpStatCallback = jest.fn();
     jest
-      .spyOn(
-        mockSession.sessionDescriptionHandler.peerConnection,
-        'iceConnectionState',
-        'get'
-      )
+      .spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get')
       .mockReturnValue('connected');
     mockSession.on(Events.Session.RTPStat, rtpStatCallback);
     mediaStreams.getMediaStats(getStatsCallback, 100);
@@ -586,16 +451,10 @@ describe('MediaStreams', () => {
   test('should stop sending stats when stopMediaStats is called', async () => {
     jest.useFakeTimers();
     const mockSession = new MockSession();
-    const mediaStreams = new MediaStreams(
-      mockSession as unknown as WebPhoneSession
-    );
+    const mediaStreams = new MediaStreams(mockSession as unknown as WebPhoneSession);
     const getStatsCallback = jest.fn();
     jest
-      .spyOn(
-        mockSession.sessionDescriptionHandler.peerConnection,
-        'iceConnectionState',
-        'get'
-      )
+      .spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get')
       .mockReturnValue('connected');
     mediaStreams.getMediaStats(getStatsCallback, 100);
     jest.advanceTimersByTime(400);
@@ -611,20 +470,12 @@ describe('MediaStreams', () => {
   test('should send media stats', async () => {
     jest.useFakeTimers();
     const mockSession = new MockSession();
-    const mediaStreams = new MediaStreams(
-      mockSession as unknown as WebPhoneSession
-    );
+    const mediaStreams = new MediaStreams(mockSession as unknown as WebPhoneSession);
     jest
-      .spyOn(
-        mockSession.sessionDescriptionHandler.peerConnection,
-        'iceConnectionState',
-        'get'
-      )
+      .spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get')
       .mockReturnValue('connected');
-    const {mockStat: firstStat, mockReport: firstReport} =
-      generateMockStatAndReport();
-    const {mockStat: secondStat, mockReport: secondReport} =
-      generateMockStatAndReport();
+    const { mockStat: firstStat, mockReport: firstReport } = generateMockStatAndReport();
+    const { mockStat: secondStat, mockReport: secondReport } = generateMockStatAndReport();
     jest
       .spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'getStats')
       .mockReturnValueOnce(Promise.resolve(firstStat))
@@ -634,16 +485,8 @@ describe('MediaStreams', () => {
     jest.advanceTimersByTime(200);
     // Added promise resolve since fake timer + promise work differently
     await Promise.resolve();
-    expect(getStatsCallback).toHaveBeenNthCalledWith(
-      1,
-      firstReport,
-      mockSession
-    );
-    expect(getStatsCallback).toHaveBeenNthCalledWith(
-      2,
-      secondReport,
-      mockSession
-    );
+    expect(getStatsCallback).toHaveBeenNthCalledWith(1, firstReport, mockSession);
+    expect(getStatsCallback).toHaveBeenNthCalledWith(2, secondReport, mockSession);
     await mediaStreams.release();
   });
 });

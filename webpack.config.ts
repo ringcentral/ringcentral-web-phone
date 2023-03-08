@@ -1,7 +1,7 @@
 import path from 'path';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import CopyPlugin from 'copy-webpack-plugin';
-import {Configuration} from 'webpack';
+import { Configuration } from 'webpack';
 
 const commonConfig = {
   devtool: 'source-map',
@@ -105,8 +105,8 @@ const demoConfig = {
     // FIXME Replace with file loader
     new CopyPlugin({
       patterns: [
-        {from: 'audio', to: 'audio'},
-        {from: 'demo/img', to: 'img'},
+        { from: 'audio', to: 'audio' },
+        { from: 'demo/img', to: 'img' },
       ],
     }),
   ],

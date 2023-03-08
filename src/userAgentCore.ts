@@ -1,9 +1,9 @@
-import {EventEmitter} from 'events';
+import { EventEmitter } from 'events';
 
-import {UserAgentCore, C, IncomingRequestMessage} from 'sip.js/lib/core';
-import {Events} from './events';
+import { UserAgentCore, C, IncomingRequestMessage } from 'sip.js/lib/core';
+import { Events } from './events';
 
-import {WebPhoneUserAgent} from './userAgent';
+import { WebPhoneUserAgent } from './userAgent';
 
 export type WehPhoneUserAgentCore = UserAgentCore & {
   _receiveIncomingRequestFromTransport?: typeof UserAgentCore.prototype.receiveIncomingRequestFromTransport;
@@ -23,36 +23,25 @@ export function patchUserAgentCore(userAgent: WebPhoneUserAgent) {
   userAgentCore.addListener = eventEmitter.addListener.bind(eventEmitter);
   userAgentCore.removeListener = eventEmitter.removeListener.bind(eventEmitter);
   userAgentCore.emit = eventEmitter.emit.bind(eventEmitter);
-  userAgentCore._receiveIncomingRequestFromTransport =
-    userAgentCore.receiveIncomingRequestFromTransport.bind(
-      userAgent.userAgentCore
-    );
-  userAgentCore.receiveIncomingRequestFromTransport =
-    receiveIncomingRequestFromTransport.bind(userAgent.userAgentCore);
+  userAgentCore._receiveIncomingRequestFromTransport = userAgentCore.receiveIncomingRequestFromTransport.bind(
+    userAgent.userAgentCore,
+  );
+  userAgentCore.receiveIncomingRequestFromTransport = receiveIncomingRequestFromTransport.bind(userAgent.userAgentCore);
 }
 
-function receiveIncomingRequestFromTransport(
-  this: WehPhoneUserAgentCore,
-  message: IncomingRequestMessage
-): void {
+function receiveIncomingRequestFromTransport(this: WehPhoneUserAgentCore, message: IncomingRequestMessage): void {
   switch (message.method) {
     case C.UPDATE: {
-      (this as any).logger.log(
-        'Receive UPDATE request. Do nothing just return 200 OK'
-      );
-      this.replyStateless(message, {statusCode: 200});
+      (this as any).logger.log('Receive UPDATE request. Do nothing just return 200 OK');
+      this.replyStateless(message, { statusCode: 200 });
       this.emit!(Events.Session.UpdateReceived, message);
       return;
     }
     case C.INFO: {
       // For the Move2RCV request from server
       const content = getIncomingInfoContent(message);
-      if (
-        content?.request?.reqId &&
-        content?.request?.command === 'move' &&
-        content?.request?.target === 'rcv'
-      ) {
-        this.replyStateless(message, {statusCode: 200});
+      if (content?.request?.reqId && content?.request?.command === 'move' && content?.request?.target === 'rcv') {
+        this.replyStateless(message, { statusCode: 200 });
         this.emit!(Events.Session.MoveToRcv, content.request);
         return;
       }
@@ -61,7 +50,7 @@ function receiveIncomingRequestFromTransport(
       // SIP.js does not support application/json content type, so we monkey override its behavior in this case
       const contentType = message.getHeader('content-type')!;
       if (contentType.match(/^application\/json/i)) {
-        this.replyStateless(message, {statusCode: 200});
+        this.replyStateless(message, { statusCode: 200 });
         return;
       }
       break;
@@ -71,7 +60,7 @@ function receiveIncomingRequestFromTransport(
 }
 
 function getIncomingInfoContent(message: IncomingRequestMessage): any {
-  if (!message || !message.body) {
+  if (!message?.body) {
     return {};
   }
   let ret = {};

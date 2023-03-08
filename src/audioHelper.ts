@@ -15,7 +15,7 @@ export class AudioHelper {
   private readonly _enabled: boolean;
   private _incoming?: string;
   private _outgoing?: string;
-  private _audio?: {[key: string]: DomAudio};
+  private _audio?: { [key: string]: DomAudio };
 
   /** Current volume */
   public volume?: number;
@@ -72,7 +72,7 @@ export class AudioHelper {
     }
     this.volume = volume;
     for (const url in this._audio) {
-      if (Object.prototype.hasOwnProperty.call(this._audio, url)) {
+      if (Object.hasOwn(this._audio, url)) {
         this._audio[url].volume = volume;
       }
     }
