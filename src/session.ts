@@ -82,119 +82,119 @@ export interface RTCPeerConnectionLegacy extends RTCPeerConnection {
 
 export class CommonSession {
   /** @ignore */
-  __isRecording?: boolean;
+  public __isRecording?: boolean;
   /** @ignore */
-  __localHold?: boolean;
+  public __localHold?: boolean;
   /** @ignore */
-  __patched?: boolean;
+  public __patched?: boolean;
   /** @ignore */
-  __userAgentCoreEventsSetup?: boolean;
+  public __userAgentCoreEventsSetup?: boolean;
   /** Flag to check if the call is on hold or not */
-  held?: boolean;
+  public held?: boolean;
   /** Options to represent dom elements where media stream should be loaded */
-  media?: { local?: HTMLMediaElement; remote?: HTMLMediaElement };
+  public media?: { local?: HTMLMediaElement; remote?: HTMLMediaElement };
   /** Flag to indicate if media stats are being collected */
-  mediaStatsStarted?: boolean;
+  public mediaStatsStarted?: boolean;
   /** MediaStreams class instance which has the logic to collect media stream stats */
-  mediaStreams?: MediaStreams;
+  public mediaStreams?: MediaStreams;
   /** Flag to check if the call is muted or not */
-  muted?: boolean;
+  public muted?: boolean;
   /** Counter to represent how many media stats report were missed because of no audio */
-  noAudioReportCount?: number;
+  public noAudioReportCount?: number;
   /** JOSN representation of RC headers received for an incoming call */
-  rcHeaders?: RCHeaders;
-  __qosStats?: QosStats;
+  public rcHeaders?: RCHeaders;
+  public __qosStats?: QosStats;
   /** Flag to represent if reinvite request was sent because there was no audio reported */
-  reinviteForNoAudioSent?: boolean;
+  public reinviteForNoAudioSent?: boolean;
   /** Time when session was started */
-  startTime?: Date | undefined;
+  public startTime?: Date | undefined;
   /** @ignore */
-  __accept?: typeof Invitation.prototype.accept;
+  public __accept?: typeof Invitation.prototype.accept;
   /** @ignore */
-  __dispose?: typeof Session.prototype.dispose;
+  public __dispose?: typeof Session.prototype.dispose;
   /** Method to attach event listener for session specific events */
-  addListener?: typeof EventEmitter.prototype.addListener;
+  public addListener?: typeof EventEmitter.prototype.addListener;
   /** Add track to media source */
-  addTrack?: typeof addTrack;
+  public addTrack?: typeof addTrack;
   /** RingCentral barge implementation */
-  barge?: typeof barge;
+  public barge?: typeof barge;
   /** RingCentral blind transfer implementation */
-  blindTransfer?: typeof blindTransfer;
+  public blindTransfer?: typeof blindTransfer;
   /**
    * @internal
    * Helper function which represents if call control features can be used or not
    */
-  canUseRCMCallControl?: typeof canUseRCMCallControl;
+  public canUseRCMCallControl?: typeof canUseRCMCallControl;
   /**
    * @internal
    * Create session message which would be sent to the RingCentral backend
    */
-  createSessionMessage?: typeof createSessionMessage;
+  public createSessionMessage?: typeof createSessionMessage;
   /** Sends a DTMF over the call */
-  dtmf?: typeof dtmf;
+  public dtmf?: typeof dtmf;
   /** Emit session specific events which will trigger all the event listeners attached */
-  emit?: typeof EventEmitter.prototype.emit;
+  public emit?: typeof EventEmitter.prototype.emit;
   /** RingCentral flip implementation */
-  flip?: typeof flip;
+  public flip?: typeof flip;
   /** RingCentral flip implementation */
-  forward?: typeof forward;
+  public forward?: typeof forward;
   /** Put the call on hold */
-  hold?: typeof hold;
+  public hold?: typeof hold;
   /** Ignore incoming call */
-  ignore?: typeof ignore;
+  public ignore?: typeof ignore;
   /** Mute the call */
-  mute?: typeof mute;
+  public mute?: typeof mute;
   /** Remove event listener */
-  off?: typeof EventEmitter.prototype.off;
+  public off?: typeof EventEmitter.prototype.off;
   /** Add event listener. Same as addListener */
-  on?: typeof EventEmitter.prototype.on;
+  public on?: typeof EventEmitter.prototype.on;
   /** Add once event listener. Same as addListener */
-  once?: typeof EventEmitter.prototype.once;
+  public once?: typeof EventEmitter.prototype.once;
   /** Returns if the call is on hold locally or not */
-  onLocalHold?: typeof onLocalHold;
+  public onLocalHold?: typeof onLocalHold;
   /** RingCentral park implementation */
-  park?: typeof park;
+  public park?: typeof park;
   /** Send a session reinvite */
-  reinvite?: typeof reinvite;
+  public reinvite?: typeof reinvite;
   /** Remove event listener */
-  removeListener?: typeof EventEmitter.prototype.removeListener;
+  public removeListener?: typeof EventEmitter.prototype.removeListener;
   /** Remove all event listeners */
-  removeAllListeners?: typeof EventEmitter.prototype.removeAllListeners;
+  public removeAllListeners?: typeof EventEmitter.prototype.removeAllListeners;
   /** RingCentral reply with message implementation */
-  replyWithMessage?: typeof replyWithMessage;
+  public replyWithMessage?: typeof replyWithMessage;
   /**
    * @internal
    * Helper method that sends an INFO request to other user agent and then waits for an INFO request from the other user agent
    */
-  sendInfoAndReceiveResponse?: typeof sendInfoAndReceiveResponse;
+  public sendInfoAndReceiveResponse?: typeof sendInfoAndReceiveResponse;
   /**
    * @internal
    * Helper function to send INFO request with `move` instruction to RingCentral backend
    */
-  sendMoveResponse?: typeof sendMoveResponse;
+  public sendMoveResponse?: typeof sendMoveResponse;
   /** Send `receiveConfirm` command to backend */
-  sendReceiveConfirm?: typeof sendReceiveConfirm;
+  public sendReceiveConfirm?: typeof sendReceiveConfirm;
   /** Helper function to send session message to backend using UserAgent */
-  sendSessionMessage?: typeof sendSessionMessage;
+  public sendSessionMessage?: typeof sendSessionMessage;
   /** Start recording the call */
-  startRecord?: typeof startRecord;
+  public startRecord?: typeof startRecord;
   /** Function to stop collecting media stats */
-  stopMediaStats?: typeof stopMediaStats;
+  public stopMediaStats?: typeof stopMediaStats;
   /** Stop recording the call */
-  stopRecord?: typeof stopRecord;
+  public stopRecord?: typeof stopRecord;
   /** Send incoming call to voicemail */
-  toVoicemail?: typeof toVoicemail;
+  public toVoicemail?: typeof toVoicemail;
   /** Transfer current call */
-  transfer?: typeof transfer;
+  public transfer?: typeof transfer;
   /** Put the call on unhold */
-  unhold?: typeof unhold;
+  public unhold?: typeof unhold;
   /** Unmute the call */
-  unmute?: typeof unmute;
+  public unmute?: typeof unmute;
   /** RingCentral warm transfer implementation */
-  warmTransfer?: typeof warmTransfer;
+  public warmTransfer?: typeof warmTransfer;
   /** RingCentral whisper implementation */
-  whisper?: typeof whisper;
-  setQosStats?: typeof setQosStats;
+  public whisper?: typeof whisper;
+  public setQosStats?: typeof setQosStats;
 }
 
 export type WebPhoneSession = WebPhoneInvitation | WebPhoneInviter;

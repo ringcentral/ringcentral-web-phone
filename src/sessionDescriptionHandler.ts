@@ -70,7 +70,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
    * @param mediaStreamFactory - A factory to provide a MediaStream
    * @param options - Options passed from the SessionDescriptionHandleFactory
    */
-  constructor(
+  public constructor(
     logger: Logger,
     mediaStreamFactory: MediaStreamFactory,
     sessionDescriptionHandlerConfiguration?: WebPhoneSessionDescriptionHandlerConfiguration,
@@ -98,7 +98,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
    * to detect when a new track becomes available:
    * https://developer.mozilla.org/en-US/docs/Web/API/MediaStream/onaddtrack
    */
-  get localMediaStream(): MediaStream {
+  public get localMediaStream(): MediaStream {
     return this._localMediaStream;
   }
 
@@ -115,14 +115,14 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
    * to detect when a new track becomes available:
    * https://developer.mozilla.org/en-US/docs/Web/API/MediaStream/onaddtrack
    */
-  get remoteMediaStream(): MediaStream {
+  public get remoteMediaStream(): MediaStream {
     return this._remoteMediaStream;
   }
 
   /**
    * The data channel. Undefined before it is created.
    */
-  get dataChannel(): RTCDataChannel | undefined {
+  public get dataChannel(): RTCDataChannel | undefined {
     return this._dataChannel;
   }
 

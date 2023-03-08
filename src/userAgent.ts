@@ -267,10 +267,11 @@ function createRcMessage(this: WebPhoneUserAgent, options: RCHeaders): string {
   );
 }
 
-function sendMessage(this: WebPhoneUserAgent, to: string, messageData: string): Promise<IncomingResponse> {
+function sendMessage(this: WebPhoneUserAgent, _to: string, messageData: string): Promise<IncomingResponse> {
   const extraHeaders = [`P-rc-ws: ${this.contact}`];
   // For some reason, UserAgent.makeURI is unable to parse username starting with #
   // Fix in later release if this is fixed by SIP.js
+  let to = _to;
   const [user] = to.split('@');
   to = to.startsWith('#') ? `sip:${to.substring(1)}` : `sip:${to}`;
   const uri = UserAgent.makeURI(to)!;

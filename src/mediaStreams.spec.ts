@@ -1,5 +1,4 @@
 import EventEmitter from 'events';
-// eslint-disable-next-line node/no-unpublished-import
 import { faker } from '@faker-js/faker';
 
 import { default as MediaStreams, MediaStreamsImpl, Browsers, WebPhoneRTPReport } from './mediaStreams';
@@ -9,10 +8,10 @@ import { WebPhoneSession } from './session';
 // #region Mocks
 class MockNavigator {
   private _userAgent: string;
-  constructor() {
+  public constructor() {
     this._userAgent = 'Chrome/5.0 (Windows; U; Win98; en-US; rv:0.9.2) Gecko/20010725';
   }
-  get userAgent() {
+  public get userAgent() {
     return this._userAgent;
   }
 }
@@ -22,7 +21,7 @@ class MockLogger {
   public debug: (message: string) => void;
   public error: (message: string) => void;
   public info: (message: string) => void;
-  constructor() {
+  public constructor() {
     this.log = () => null;
     this.debug = () => null;
     this.error = () => null;
@@ -32,7 +31,7 @@ class MockLogger {
 
 class MockSessionDescriptionHandler {
   public peerConnection: MockPeerConnection;
-  constructor() {
+  public constructor() {
     this.peerConnection = new MockPeerConnection();
   }
 }
@@ -40,7 +39,7 @@ class MockSessionDescriptionHandler {
 class MockUserAgent {
   public logger: MockLogger;
   public defaultHeaders: Record<string, string>;
-  constructor() {
+  public constructor() {
     this.logger = new MockLogger();
     this.defaultHeaders = {};
   }
@@ -66,7 +65,7 @@ class MockSession {
 }
 
 class MockPeerConnection {
-  static iceConnectionStates = {
+  public static iceConnectionStates = {
     new: 'mediaConnectionStateNew',
     checking: 'mediaConnectionStateChecking',
     connected: 'mediaConnectionStateConnected',
@@ -75,7 +74,7 @@ class MockPeerConnection {
     disconnected: 'mediaConnectionStateDisconnected',
     closed: 'mediaConnectionStateClosed',
   };
-  static defaultStats = [
+  public static defaultStats = [
     {
       type: 'inbound-rtp',
       bytesReceived: 100,
