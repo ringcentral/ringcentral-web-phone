@@ -371,8 +371,8 @@ function sendSessionMessage(this: WebPhoneSession, options: RCHeaders): Promise<
   return this.userAgent.sendMessage!(this.rcHeaders!.from!, this.createSessionMessage!(options));
 }
 
-async function sendInfoAndReceiveResponse(this: WebPhoneSession, command: Command, options?: any): Promise<any> {
-  options = options || {};
+async function sendInfoAndReceiveResponse(this: WebPhoneSession, command: Command, _options?: any): Promise<any> {
+  const options = _options || {};
   extend(command, options);
   delete command.extraHeaders;
   return new Promise((resolve, reject) => {
@@ -388,7 +388,7 @@ async function sendInfoAndReceiveResponse(this: WebPhoneSession, command: Comman
             if (message.callId !== callId) {
               return;
             }
-            const body = (message && message.body) || '{}';
+            const body = message?.body || '{}';
             let obj;
 
             try {
@@ -437,6 +437,7 @@ async function stopRecord(this: WebPhoneSession): Promise<any> {
   return setRecord(this, false);
 }
 
+// eslint-disable-next-line max-params
 function sendMoveResponse(
   this: WebPhoneSession,
   reqId: number,
@@ -620,7 +621,7 @@ function stopMediaStats(this: WebPhoneSession): void {
   if (!this) {
     return;
   }
-  this.mediaStreams && this.mediaStreams.stopMediaStats();
+  this.mediaStreams?.stopMediaStats();
   this.mediaStatsStarted = false;
   this.noAudioReportCount = 0;
 }
@@ -631,8 +632,9 @@ async function blindTransfer(
   options: SessionReferOptions = {},
 ): Promise<OutgoingReferRequest> {
   (this as any).logger.log('Call transfer initiated');
-  target = typeof target === 'string' ? UserAgent.makeURI(`sip:${target}@${this.userAgent.sipInfo!.domain}`)! : target;
-  return this.refer(target, options);
+  const newTarget =
+    typeof target === 'string' ? UserAgent.makeURI(`sip:${target}@${this.userAgent.sipInfo!.domain}`)! : target;
+  return this.refer(newTarget, options);
 }
 
 async function warmTransfer(
@@ -643,9 +645,10 @@ async function warmTransfer(
   options.requestOptions!.extraHeaders = (options.requestOptions!.extraHeaders || []).concat(
     this.userAgent.defaultHeaders!,
   );
-  target = typeof target === 'string' ? UserAgent.makeURI(`sip:${target}@${this.userAgent.sipInfo!.domain}`)! : target;
+  const newTarget =
+    typeof target === 'string' ? UserAgent.makeURI(`sip:${target}@${this.userAgent.sipInfo!.domain}`)! : target;
   (this as any).logger.log('Completing warm transfer');
-  return this.refer(target, options);
+  return this.refer(newTarget, options);
 }
 
 async function transfer(
@@ -679,7 +682,7 @@ function reinvite(this: WebPhoneSession, options: SessionInviteOptions = {}): Pr
   const originalOnAccept = options.requestDelegate.onAccept?.bind(options.requestDelegate);
   options.requestDelegate.onAccept = (...args): void => {
     patchIncomingWebphoneSession(this);
-    originalOnAccept && originalOnAccept(...args);
+    originalOnAccept?.(...args);
   };
   return this.invite(options);
 }
@@ -705,9 +708,10 @@ async function unhold(this: WebPhoneSession): Promise<void> {
   }
 }
 
-function dtmf(this: WebPhoneSession, dtmf: string, duration = 100, interToneGap = 50): void {
-  duration = parseInt(duration.toString());
-  interToneGap = parseInt(interToneGap.toString());
+// eslint-disable-next-line max-params
+function dtmf(this: WebPhoneSession, dtmf: string, _duration = 100, _interToneGap = 50): void {
+  const duration = parseInt(_duration.toString(), 10);
+  const interToneGap = parseInt(_interToneGap.toString(), 10);
   const sessionDescriptionHandler = this.sessionDescriptionHandler as SessionDescriptionHandler;
   const peerConnection = sessionDescriptionHandler.peerConnection;
   if (!peerConnection) {
@@ -724,8 +728,8 @@ function dtmf(this: WebPhoneSession, dtmf: string, duration = 100, interToneGap 
   throw new Error('Send DTMF failed');
 }
 
-async function accept(this: WebPhoneSession, options: InvitationAcceptOptions = {}): Promise<void> {
-  options = options || {};
+async function accept(this: WebPhoneSession, _options: InvitationAcceptOptions = {}): Promise<void> {
+  const options = _options || {};
   options.extraHeaders = (options.extraHeaders || []).concat(this.userAgent.defaultHeaders!);
   options.sessionDescriptionHandlerOptions = {
     ...options.sessionDescriptionHandlerOptions,
@@ -745,6 +749,7 @@ async function accept(this: WebPhoneSession, options: InvitationAcceptOptions = 
   }
 }
 
+// eslint-disable-next-line max-params
 async function forward(
   this: WebPhoneSession,
   target: WebPhoneSession,
@@ -857,7 +862,8 @@ function setHold(session: WebPhoneSession, hold: boolean): Promise<void> {
   return new Promise((resolve, reject) => {
     // Just resolve if we are already in correct state
     if (session.held === hold) {
-      return resolve();
+      resolve();
+      return;
     }
 
     const options: SessionInviteOptions = {
@@ -879,7 +885,7 @@ function setHold(session: WebPhoneSession, hold: boolean): Promise<void> {
           (session as any).logger.warn('re-invite request was rejected');
           enableReceiverTracks(session, !session.held);
           enableSenderTracks(session, !session.held && !session.muted);
-          reject();
+          reject(new Error('re-invite request was rejected'));
         },
       },
     };

@@ -39,6 +39,17 @@ export interface WebPhoneSessionDescriptionHandlerFactoryOptions extends Session
  * @public
  */
 export class SessionDescriptionHandler implements SessionDescriptionHandlerDefinition {
+  // The addtrack event does not get fired when JavaScript code explicitly adds tracks to the stream (by calling addTrack()).
+  // https://developer.mozilla.org/en-US/docs/Web/API/MediaStream/onaddtrack
+  private static dispatchAddTrackEvent(stream: MediaStream, track: MediaStreamTrack): void {
+    stream.dispatchEvent(new MediaStreamTrackEvent('addtrack', { track }));
+  }
+  // The removetrack event does not get fired when JavaScript code explicitly removes tracks from the stream (by calling removeTrack()).
+  // https://developer.mozilla.org/en-US/docs/Web/API/MediaStream/onremovetrack
+  private static dispatchRemoveTrackEvent(stream: MediaStream, track: MediaStreamTrack): void {
+    stream.dispatchEvent(new MediaStreamTrackEvent('removetrack', { track }));
+  }
+
   /** Logger. */
   protected logger: Logger;
   /** Media stream factory. */
@@ -138,7 +149,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
    * the `RTCPeerConnection` or set the `peerConnectionDelegate` on
    * this `SessionDescriptionHandler`.
    */
-  get peerConnection(): RTCPeerConnection | undefined {
+  public get peerConnection(): RTCPeerConnection | undefined {
     return this._peerConnection;
   }
 
@@ -151,23 +162,12 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
    * to them, a delegate may be set which provides alternative access to
    * the event handlers in a fashion which is supported.
    */
-  get peerConnectionDelegate(): PeerConnectionDelegate | undefined {
+  public get peerConnectionDelegate(): PeerConnectionDelegate | undefined {
     return this._peerConnectionDelegate;
   }
 
-  set peerConnectionDelegate(delegate: PeerConnectionDelegate | undefined) {
+  public set peerConnectionDelegate(delegate: PeerConnectionDelegate | undefined) {
     this._peerConnectionDelegate = delegate;
-  }
-
-  // The addtrack event does not get fired when JavaScript code explicitly adds tracks to the stream (by calling addTrack()).
-  // https://developer.mozilla.org/en-US/docs/Web/API/MediaStream/onaddtrack
-  private static dispatchAddTrackEvent(stream: MediaStream, track: MediaStreamTrack): void {
-    stream.dispatchEvent(new MediaStreamTrackEvent('addtrack', { track }));
-  }
-  // The removetrack event does not get fired when JavaScript code explicitly removes tracks from the stream (by calling removeTrack()).
-  // https://developer.mozilla.org/en-US/docs/Web/API/MediaStream/onremovetrack
-  private static dispatchRemoveTrackEvent(stream: MediaStream, track: MediaStreamTrack): void {
-    stream.dispatchEvent(new MediaStreamTrackEvent('removetrack', { track }));
   }
 
   /**
@@ -179,10 +179,10 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
       return;
     }
     this._peerConnection.getReceivers().forEach((receiver) => {
-      receiver.track && receiver.track.stop();
+      receiver.track?.stop();
     });
     this._peerConnection.getSenders().forEach((sender) => {
-      sender.track && sender.track.stop();
+      sender.track?.stop();
     });
     if (this._dataChannel) {
       this._dataChannel.close();
@@ -449,30 +449,27 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
    * Sets the encoding priorty to high for sender track.
    *
    */
-  protected enableSenderDscp(): Promise<void[]> {
+  protected async enableSenderDscp() {
     if (!this.sessionDescriptionHandlerConfiguration?.enableDscp) {
-      return Promise.all([]);
+      return;
     }
     if (!this._peerConnection) {
       throw new Error('Peer connection undefined.');
     }
-    return Promise.all(
-      this._peerConnection
-        .getSenders()
-        .filter((sender) => sender.track)
-        .map((sender) => {
-          const parameters = sender.getParameters();
-          console.info('getsender params =', parameters);
-          (parameters as any).priority = 'high';
-          return sender.setParameters(parameters).catch((error) => {
-            console.error(
-              `Error while setting encodings parameters for ${sender.track!.kind} Track ${sender.track!.id}: ${
-                error.message || error.name
-              }`,
-            );
-          });
-        }),
-    );
+    for (const sender of this._peerConnection.getSenders().filter((sender) => sender.track)) {
+      const parameters = sender.getParameters();
+      console.info('getsender params =', parameters);
+      (parameters as any).priority = 'high';
+      try {
+        await sender.setParameters(parameters);
+      } catch (error) {
+        console.error(
+          `Error while setting encodings parameters for ${sender.track!.kind} Track ${sender.track!.id}: ${
+            error.message || error.name
+          }`,
+        );
+      }
+    }
   }
 
   /**
@@ -501,7 +498,6 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
       if (kind !== 'audio' && kind !== 'video') {
         throw new Error(`Unknown new track kind ${kind}.`);
       }
-      const s = pc.getSenders();
       const sender = pc.getSenders().find((sender) => sender.track && sender.track.kind === kind);
       if (sender) {
         trackUpdates.push(
@@ -849,7 +845,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     // resolve and cleanup promise if need be
     if (this.iceGatheringCompletePromise !== undefined) {
       this.logger.debug('SessionDescriptionHandler.iceGatheringComplete - resolving promise');
-      this.iceGatheringCompleteResolve && this.iceGatheringCompleteResolve();
+      this.iceGatheringCompleteResolve?.();
       this.iceGatheringCompletePromise = undefined;
       this.iceGatheringCompleteResolve = undefined;
       this.iceGatheringCompleteReject = undefined;
@@ -864,7 +860,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
   protected waitForIceGatheringComplete(restart = false, timeout = 0): Promise<void> {
     this.logger.debug('SessionDescriptionHandler.waitForIceGatheringToComplete');
     if (this._peerConnection === undefined) {
-      return Promise.reject('Peer connection closed.');
+      return Promise.reject(new Error('Peer connection closed.'));
     }
     // guard already complete
     if (!restart && this._peerConnection.iceGatheringState === 'complete') {
@@ -874,7 +870,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     // only one may be waiting, reject any prior
     if (this.iceGatheringCompletePromise !== undefined) {
       this.logger.debug('SessionDescriptionHandler.waitForIceGatheringToComplete - rejecting prior waiting promise');
-      this.iceGatheringCompleteReject && this.iceGatheringCompleteReject(new Error('Promise superseded.'));
+      this.iceGatheringCompleteReject?.(new Error('Promise superseded.'));
       this.iceGatheringCompletePromise = undefined;
       this.iceGatheringCompleteResolve = undefined;
       this.iceGatheringCompleteReject = undefined;
@@ -993,15 +989,15 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
 }
 
 export function defaultPeerConnectionConfiguration(): RTCConfiguration {
-  return {
+  const config: RTCConfiguration = {
     bundlePolicy: 'balanced', // Note: max-bundle is not supported by the demo backend currently (5/15/17)
     certificates: undefined,
     iceCandidatePoolSize: 0,
     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }], // TURN URL example: "turn:88.88.88.0:3478", "test", "test"
     iceTransportPolicy: 'all',
-    peerIdentity: undefined,
     rtcpMuxPolicy: 'require',
-  } as RTCConfiguration;
+  };
+  return config;
 }
 
 export function defaultMediaStreamFactory(): MediaStreamFactory {
@@ -1017,7 +1013,7 @@ export function defaultMediaStreamFactory(): MediaStreamFactory {
     if (navigator.mediaDevices === undefined) {
       return Promise.reject(new Error('Media devices not available in insecure contexts.'));
     }
-    return navigator.mediaDevices.getUserMedia.call(navigator.mediaDevices, constraints);
+    return navigator.mediaDevices.getUserMedia(constraints);
   };
 }
 

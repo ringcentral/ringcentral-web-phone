@@ -5,12 +5,9 @@ module.exports = {
     'prettier/prettier': ['error'],
     // todo: https://github.com/AlloyTeam/eslint-config-alloy/issues/239
     '@typescript-eslint/no-unused-vars': ['error'],
+    'no-undef': ['off'],
   },
   env: {
-    'jest/globals': true,
-  },
-  globals: {
-    page: true,
-    browser: true,
+    jest: true,
   },
 };
