@@ -7,7 +7,6 @@ Otherwise outbound call doesn't work.
 
 When you call a foreign number, it's a good idea to add prefix '+', for example: +61123456789
 
-
 ## Quick start
 
 ```
@@ -17,13 +16,11 @@ yarn serve
 
 Visit http://localhost:8080 to test.
 
-
 ## New changes in 0.9.0
 
 event 'accepted' renamed to 'established'
 
 session.ua.xxx renamed to session.userAgent.xxx
-
 
 ## Todo
 

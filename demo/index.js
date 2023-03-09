@@ -6,8 +6,7 @@ window.SIP = SIP;
 
 $(() => {
   const SDK = require('@ringcentral/sdk').SDK;
-  const WebPhone =
-    require('ringcentral-web-phone') || window.RingCentral.WebPhone;
+  const WebPhone = require('ringcentral-web-phone') || window.RingCentral.WebPhone;
 
   /** @type {SDK} */
   let sdk = null;
@@ -40,15 +39,7 @@ $(() => {
     return $($tpl.html());
   }
 
-  function login(
-    server,
-    clientId,
-    clientSecret,
-    _username,
-    _extension,
-    password,
-    ll
-  ) {
+  function login(server, clientId, clientSecret, _username, _extension, password, ll) {
     sdk = new SDK({
       clientId,
       clientSecret,
@@ -72,26 +63,16 @@ $(() => {
         password,
       })
       .then(() => {
-        return postLogin(
-          server,
-          clientId,
-          clientSecret,
-          username,
-          _extension,
-          password,
-          ll
-        );
+        return postLogin(server, clientId, clientSecret, username, _extension, password, ll);
       })
-      .catch(e => {
+      .catch((e) => {
         console.error(e.stack || e);
       });
   }
 
   // Redirect function
   function show3LeggedLogin(server, clientId, clientSecret, ll) {
-    const $redirectUri = decodeURIComponent(
-      window.location.href.split('login', 1) + 'callback.html'
-    );
+    const $redirectUri = decodeURIComponent(window.location.href.split('login', 1) + 'callback.html');
 
     console.log('The redirect uri value :', $redirectUri);
 
@@ -107,25 +88,17 @@ $(() => {
     const loginUrl = platform.loginUrl();
 
     platform
-      .loginWindow({url: loginUrl}) // this method also allows to supply more options to control window position
+      .loginWindow({ url: loginUrl }) // this method also allows to supply more options to control window position
       .then(platform.login.bind(platform))
       .then(() => {
         return postLogin(server, clientId, clientSecret, '', '', '', ll);
       })
-      .catch(e => {
+      .catch((e) => {
         console.error(e.stack || e);
       });
   }
 
-  function postLogin(
-    server,
-    clientId,
-    clientSecret,
-    _username,
-    ext,
-    password,
-    ll
-  ) {
+  function postLogin(server, clientId, clientSecret, _username, ext, password, ll) {
     logLevel = ll;
 
     localStorage.setItem('webPhoneServer', server || '');
@@ -138,8 +111,8 @@ $(() => {
 
     return platform
       .get('/restapi/v1.0/account/~/extension/~')
-      .then(res => res.json())
-      .then(res => {
+      .then((res) => res.json())
+      .then((res) => {
         extension = res;
         console.log('Extension info', extension);
 
@@ -151,10 +124,10 @@ $(() => {
           ],
         });
       })
-      .then(res => res.json())
+      .then((res) => res.json())
       .then(register)
       .then(makeCallForm)
-      .catch(e => {
+      .catch((e) => {
         console.error('Error in main promise chain');
         console.error(e.stack || e);
       });
@@ -227,27 +200,16 @@ $(() => {
   function onInvite(session) {
     outboundCall = false;
     console.log('EVENT: Invite', session.request);
-    console.log(
-      'To',
-      session.request.to.displayName,
-      session.request.to.friendlyName
-    );
-    console.log(
-      'From',
-      session.request.from.displayName,
-      session.request.from.friendlyName
-    );
+    console.log('To', session.request.to.displayName, session.request.to.friendlyName);
+    console.log('From', session.request.from.displayName, session.request.from.friendlyName);
 
-    if (
-      session.request.headers['Alert-Info'] &&
-      session.request.headers['Alert-Info'][0].raw === 'Auto Answer'
-    ) {
+    if (session.request.headers['Alert-Info'] && session.request.headers['Alert-Info'][0].raw === 'Auto Answer') {
       session
         .accept()
         .then(() => {
           onAccepted(session);
         })
-        .catch(e => {
+        .catch((e) => {
           console.error('Accept failed', e.stack || e);
         });
     } else {
@@ -264,7 +226,7 @@ $(() => {
             $modal.modal('hide');
             onAccepted(session);
           })
-          .catch(e => {
+          .catch((e) => {
             console.error('Accept failed', e.stack || e);
           });
       });
@@ -279,7 +241,7 @@ $(() => {
         $modal.modal('hide');
       });
 
-      $modal.find('.forward-form').on('submit', e => {
+      $modal.find('.forward-form').on('submit', (e) => {
         e.preventDefault();
         e.stopPropagation();
         session
@@ -288,12 +250,12 @@ $(() => {
             console.log('Forwarded');
             $modal.modal('hide');
           })
-          .catch(e2 => {
+          .catch((e2) => {
             console.error('Forward failed', e2.stack || e2);
           });
       });
 
-      $modal.find('.reply-form').on('submit', e => {
+      $modal.find('.reply-form').on('submit', (e) => {
         e.preventDefault();
         e.stopPropagation();
         session
@@ -305,7 +267,7 @@ $(() => {
             console.log('Replied');
             $modal.modal('hide');
           })
-          .catch(e2 => {
+          .catch((e2) => {
             console.error('Reply failed', e2.stack || e2);
           });
       });
@@ -343,16 +305,8 @@ $(() => {
 
   function onAccepted(session) {
     console.log('EVENT: Accepted', session.request);
-    console.log(
-      'To',
-      session.request.to.displayName,
-      session.request.to.friendlyName
-    );
-    console.log(
-      'From',
-      session.request.from.displayName,
-      session.request.from.friendlyName
-    );
+    console.log('To', session.request.to.displayName, session.request.to.friendlyName);
+    console.log('From', session.request.from.displayName, session.request.from.friendlyName);
 
     const $modal = cloneTemplate($acceptedTemplate).modal();
 
@@ -363,16 +317,8 @@ $(() => {
     const $conference = $modal.find('input[name=conference]').eq(0);
 
     const interval = setInterval(() => {
-      const time = session.startTime
-        ? Math.round((Date.now() - session.startTime) / 1000) + 's'
-        : 'Ringing';
-      $info.text(
-        'time: ' +
-          time +
-          '\nstartTime: ' +
-          JSON.stringify(session.startTime, null, 2) +
-          '\n'
-      );
+      const time = session.startTime ? Math.round((Date.now() - session.startTime) / 1000) + 's' : 'Ringing';
+      $info.text('time: ' + time + '\nstartTime: ' + JSON.stringify(session.startTime, null, 2) + '\n');
     }, 1000);
 
     function close() {
@@ -382,17 +328,13 @@ $(() => {
 
     $modal.find('.increase-volume').on('click', () => {
       session.userAgent.audioHelper.setVolume(
-        (session.userAgent.audioHelper.volume !== null
-          ? session.userAgent.audioHelper.volume
-          : 0.5) + 0.1
+        (session.userAgent.audioHelper.volume !== null ? session.userAgent.audioHelper.volume : 0.5) + 0.1,
       );
     });
 
     $modal.find('.decrease-volume').on('click', () => {
       session.userAgent.audioHelper.setVolume(
-        (session.userAgent.audioHelper.volume !== null
-          ? session.userAgent.audioHelper.volume
-          : 0.5) - 0.1
+        (session.userAgent.audioHelper.volume !== null ? session.userAgent.audioHelper.volume : 0.5) - 0.1,
       );
     });
 
@@ -410,7 +352,7 @@ $(() => {
         .then(() => {
           console.log('Holding');
         })
-        .catch(e => {
+        .catch((e) => {
           console.error('Holding failed', e.stack || e);
         });
     });
@@ -421,7 +363,7 @@ $(() => {
         .then(() => {
           console.log('UnHolding');
         })
-        .catch(e => {
+        .catch((e) => {
           console.error('UnHolding failed', e.stack || e);
         });
     });
@@ -431,7 +373,7 @@ $(() => {
         .then(() => {
           console.log('Recording Started');
         })
-        .catch(e => {
+        .catch((e) => {
           console.error('Recording Start failed', e.stack || e);
         });
     });
@@ -442,7 +384,7 @@ $(() => {
         .then(() => {
           console.log('Recording Stopped');
         })
-        .catch(e => {
+        .catch((e) => {
           console.error('Recording Stop failed', e.stack || e);
         });
     });
@@ -453,12 +395,12 @@ $(() => {
         .then(() => {
           console.log('Parked');
         })
-        .catch(e => {
+        .catch((e) => {
           console.error('Park failed', e.stack || e);
         });
     });
 
-    $modal.find('.transfer-form').on('submit', e => {
+    $modal.find('.transfer-form').on('submit', (e) => {
       e.preventDefault();
       e.stopPropagation();
       session
@@ -467,28 +409,26 @@ $(() => {
           console.log('Transferred');
           $modal.modal('hide');
         })
-        .catch(e2 => {
+        .catch((e2) => {
           console.error('Transfer failed', e2.stack || e2);
         });
     });
 
-    $modal.find('.transfer-form button.warm').on('click', e => {
+    $modal.find('.transfer-form button.warm').on('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       session.hold().then(() => {
         console.log('Placing the call on hold, initiating attended transfer');
         const newSession = session.userAgent.invite($transfer.val().trim());
         newSession.once('established', () => {
-          console.log(
-            'New call initated. Click Complete to complete the transfer'
-          );
+          console.log('New call initated. Click Complete to complete the transfer');
           $modal.find('.transfer-form button.complete').on('click', () => {
             session
               .warmTransfer(newSession)
               .then(() => {
                 console.log('Warm transfer completed');
               })
-              .catch(e2 => {
+              .catch((e2) => {
                 console.error('Transfer failed', e2.stack || e2);
               });
           });
@@ -496,7 +436,7 @@ $(() => {
       });
     });
 
-    $modal.find('.flip-form').on('submit', e => {
+    $modal.find('.flip-form').on('submit', (e) => {
       e.preventDefault();
       e.stopPropagation();
       session
@@ -504,13 +444,13 @@ $(() => {
         .then(() => {
           console.log('Flipped');
         })
-        .catch(e2 => {
+        .catch((e2) => {
           console.error('Flip failed', e2.stack || e2);
         });
       $flip.val('');
     });
 
-    $modal.find('.dtmf-form').on('submit', e => {
+    $modal.find('.dtmf-form').on('submit', (e) => {
       e.preventDefault();
       e.stopPropagation();
       session.dtmf($dtmf.val().trim());
@@ -519,7 +459,7 @@ $(() => {
 
     const $startConfButton = $modal.find('.startConf');
 
-    $startConfButton.on('click', e => {
+    $startConfButton.on('click', (e) => {
       initConference();
     });
 
@@ -555,13 +495,8 @@ $(() => {
       console.log('Event: Refer');
       close();
     });
-    session.on('replaced', newSession => {
-      console.log(
-        'Event: Replaced: old session',
-        session,
-        'has been replaced with',
-        newSession
-      );
+    session.on('replaced', (newSession) => {
+      console.log('Event: Replaced: old session', session, 'has been replaced with', newSession);
       close();
       onAccepted(newSession);
     });
@@ -613,11 +548,11 @@ $(() => {
   function initConference() {
     if (!onConference) {
       getPresenceActiveCalls()
-        .then(res => res.json())
-        .then(response => {
+        .then((res) => res.json())
+        .then((response) => {
           const pId = response.activeCalls[0].partyId;
           const tId = response.activeCalls[0].telephonySessionId;
-          getConfVoiceToken(pId, tId).then(voiceToken => {
+          getConfVoiceToken(pId, tId).then((voiceToken) => {
             startConferenceCall(voiceToken, pId, tId);
             onConference = true;
           });
@@ -626,16 +561,14 @@ $(() => {
   }
 
   function getPresenceActiveCalls() {
-    return platform.get(
-      '/restapi/v1.0/account/~/extension/~/presence?detailedTelephonyState=true'
-    );
+    return platform.get('/restapi/v1.0/account/~/extension/~/presence?detailedTelephonyState=true');
   }
 
   function getConfVoiceToken(pId, tId) {
     return platform
       .post('/restapi/v1.0/account/~/telephony/conference', {})
-      .then(res => res.json())
-      .then(res => {
+      .then((res) => res.json())
+      .then((res) => {
         confSessionId = res.session.id;
         return res.session.voiceCallToken;
       });
@@ -649,21 +582,18 @@ $(() => {
       onAccepted(session);
       console.log('Conference call started');
       bringIn(tId, pId)
-        .then(res => res.json())
-        .then(response => {
+        .then((res) => res.json())
+        .then((response) => {
           console.log('Adding call to conference succesful', response);
         })
-        .catch(e => {
+        .catch((e) => {
           console.error('Conference call failed', e.stack || e);
         });
     });
   }
 
   function bringIn(tId, pId) {
-    const url =
-      '/restapi/v1.0/account/accountId/telephony/sessions/' +
-      confSessionId +
-      '/parties/bring-in';
+    const url = '/restapi/v1.0/account/accountId/telephony/sessions/' + confSessionId + '/parties/bring-in';
     return platform.post(url, {
       telephonySessionId: tId,
       partyId: pId,
@@ -693,22 +623,22 @@ $(() => {
         username +
         (extensionNumber === '' ? '' : '*' + extensionNumber) +
         '</dd>' +
-        '</dl>'
+        '</dl>',
     );
 
-    $logout.on('click', e => {
+    $logout.on('click', (e) => {
       webPhone.userAgent.unregister();
       e.preventDefault();
       location.reload();
     });
 
-    $switch.on('click', e => {
+    $switch.on('click', (e) => {
       switchCall();
     });
 
     $number.val(localStorage.getItem('webPhoneLastNumber') || '');
 
-    $form.on('submit', e => {
+    $form.on('submit', (e) => {
       e.preventDefault();
       e.stopPropagation();
 
@@ -740,7 +670,7 @@ $(() => {
     $password.val(localStorage.getItem('webPhonePassword') || '');
     $logLevel.val(localStorage.getItem('webPhoneLogLevel') || logLevel);
 
-    $form.on('submit', e => {
+    $form.on('submit', (e) => {
       console.log('Normal Flow');
 
       e.preventDefault();
@@ -753,22 +683,17 @@ $(() => {
         $username.val(),
         $ext.val(),
         $password.val(),
-        $logLevel.val()
+        $logLevel.val(),
       );
     });
     //
-    $authForm.on('submit', e => {
+    $authForm.on('submit', (e) => {
       console.log('Authorized Flow');
 
       e.preventDefault();
       e.stopPropagation();
 
-      show3LeggedLogin(
-        $server.val(),
-        $clientId.val(),
-        $clientSecret.val(),
-        $logLevel.val()
-      );
+      show3LeggedLogin($server.val(), $clientId.val(), $clientSecret.val(), $logLevel.val());
     });
 
     $app.empty().append($authForm).append($form);

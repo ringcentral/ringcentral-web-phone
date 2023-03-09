@@ -4,6 +4,7 @@
     "esModuleInterop": true,
     "target": "esnext",
     "moduleResolution": "node",
+    "resolveJsonModule": true
   },
   "include": ["src"]
 }
