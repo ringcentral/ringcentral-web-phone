@@ -1008,10 +1008,10 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-18.8.2.tgz#17d42c6322d917764dd3d2d3a10d7884925de067"
   integrity sha512-cRMwIgdDN43GO4xMWAfJAecYn8wV4JbsOGHNfNUIDiuYkUYAR5ec4Rj7IO2SAhFPEfpPtLtUTbbny/TCT7aDwA==
 
-"@types/node@18.14.6":
-  version "18.14.6"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-18.14.6.tgz#ae1973dd2b1eeb1825695bb11ebfb746d27e3e93"
-  integrity sha512-93+VvleD3mXwlLI/xASjw0FzKcwzl3OdTCzm1LaRfqgS21gfFtK3zDXM5Op9TeeMsJVOaJ2VRDpT9q4Y3d0AvA==
+"@types/node@18.15.0":
+  version "18.15.0"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-18.15.0.tgz#286a65e3fdffd691e170541e6ecb0410b16a38be"
+  integrity sha512-z6nr0TTEOBGkzLGmbypWOGnpSpSIBorEhC4L+4HeQ2iezKCi4f77kyslRwvHeNitymGQ+oFyIWGP96l/DPSV9w==
 
 "@types/prettier@^2.1.5":
   version "2.7.1"
@@ -6092,10 +6092,10 @@ tsutils@^3.21.0:
   dependencies:
     tslib "^1.8.1"
 
-ttpt@0.1.7:
-  version "0.1.7"
-  resolved "https://registry.yarnpkg.com/ttpt/-/ttpt-0.1.7.tgz#8e5ddea624617860a9bd16fa478eaee069e4ee85"
-  integrity sha512-Vv09I5HV0koyekQuSp2iKi2vzppBna0RiVkvK0Gi/F2M+yPS8XFMPV2b6GDry1V3k1Z/7//q0y4uDSPLdqqSug==
+ttpt@0.1.9:
+  version "0.1.9"
+  resolved "https://registry.yarnpkg.com/ttpt/-/ttpt-0.1.9.tgz#8246b996d7ceaeaa945ecf494a795358a113cba6"
+  integrity sha512-iwPD5/t+VWiOHkbV138a6wcE/vQn/OyFA0TO1sKpQkelA3Y/SjyPajV6pTcRbJMQ8wmBPp6Jp+oK3QmkWb9LGQ==
   dependencies:
     lodash "^4.17.21"
     shell-commands "^0.1.2"
