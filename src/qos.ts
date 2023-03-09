@@ -18,7 +18,7 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
 
   const refreshIntervalId = setInterval(async () => {
     const sessionDescriptionHandler = session.sessionDescriptionHandler as SessionDescriptionHandler;
-    if (!sessionDescriptionHandler || !sessionDescriptionHandler.peerConnection) {
+    if (!sessionDescriptionHandler?.peerConnection) {
       (session as any).logger.error('There is no PeerConnection, can not getStats');
       return;
     }
@@ -74,15 +74,15 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
   session.stateChange.addListener((newState) => {
     if (newState === SessionState.Terminated) {
       (session as any).logger.log('Release media streams');
-      session.mediaStreams && session.mediaStreams.release();
+      session.mediaStreams?.release();
       publishQosStats(session, qosStatsObj);
       refreshIntervalId && clearInterval(refreshIntervalId);
     }
   });
 };
 
-const publishQosStats = async (session: WebPhoneSession, qosStatsObj: QosStats, options: any = {}): Promise<void> => {
-  options = options || {};
+const publishQosStats = async (session: WebPhoneSession, qosStatsObj: QosStats, _options: any = {}): Promise<void> => {
+  const options = _options || {};
 
   const targetUrl = options.targetUrl || 'sip:rtcpxr@rtcpxr.ringcentral.com:5060';
   const event = options.event || 'vq-rtcpxr';
@@ -221,7 +221,7 @@ const getQoSStatsTemplate = (): QosStats => ({
 
 const addToMap = (map: any = {}, key: string): any => ({
   ...map,
-  [key]: (key in map ? parseInt(map[key]) : 0) + 1,
+  [key]: (key in map ? parseInt(map[key], 10) : 0) + 1,
 });
 
 const networkTypeMap: { [key: string]: string } = {

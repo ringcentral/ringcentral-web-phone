@@ -12,47 +12,17 @@ export interface AudioHelperOptions {
 }
 
 export class AudioHelper {
+  /** Current volume */
+  public volume?: number;
+
   private readonly _enabled: boolean;
   private _incoming?: string;
   private _outgoing?: string;
   private _audio?: { [key: string]: DomAudio };
 
-  /** Current volume */
-  public volume?: number;
-
   public constructor(options: AudioHelperOptions = {}) {
     this._enabled = !!options.enabled;
     this.loadAudio(options);
-  }
-
-  private _playSound(url: string, val: boolean, volume: number): AudioHelper {
-    if (!this._enabled || !url || !this._audio) {
-      return this;
-    }
-
-    if (!this._audio[url]) {
-      if (val) {
-        this._audio[url] = new Audio();
-        this._audio[url].src = url;
-        this._audio[url].loop = true;
-        this._audio[url].volume = volume;
-        this._audio[url].playPromise = this._audio[url].play();
-      }
-    } else {
-      if (val) {
-        this._audio[url].currentTime = 0;
-        this._audio[url].playPromise = this._audio[url].play();
-      } else {
-        const audio = this._audio[url];
-        if (audio.playPromise !== undefined) {
-          audio.playPromise.then(() => {
-            audio.pause();
-          });
-        }
-      }
-    }
-
-    return this;
   }
 
   /** Load incoming and outgoing audio files for feedback */
@@ -63,7 +33,8 @@ export class AudioHelper {
   }
 
   /** Set volume for incoming and outgoing feedback */
-  public setVolume(volume: number): void {
+  public setVolume(_volume: number): void {
+    let volume = _volume;
     if (volume < 0) {
       volume = 0;
     }
@@ -94,5 +65,34 @@ export class AudioHelper {
    */
   public playOutgoing(value: boolean): AudioHelper {
     return this._playSound(this._outgoing!, value, this.volume || 1);
+  }
+
+  private _playSound(url: string, val: boolean, volume: number): AudioHelper {
+    if (!this._enabled || !url || !this._audio) {
+      return this;
+    }
+
+    if (!this._audio[url]) {
+      if (val) {
+        this._audio[url] = new Audio();
+        this._audio[url].src = url;
+        this._audio[url].loop = true;
+        this._audio[url].volume = volume;
+        this._audio[url].playPromise = this._audio[url].play();
+      }
+    } else {
+      if (val) {
+        this._audio[url].currentTime = 0;
+        this._audio[url].playPromise = this._audio[url].play();
+      } else {
+        const audio = this._audio[url];
+        if (audio.playPromise !== undefined) {
+          audio.playPromise.then(() => {
+            audio.pause();
+          });
+        }
+      }
+    }
+    return this;
   }
 }

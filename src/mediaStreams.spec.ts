@@ -95,8 +95,8 @@ class MockPeerConnection {
       currentRoundTripTime: 1.05,
     },
   ];
-  private eventEmitter = new EventEmitter();
   public connectionState = 'new';
+  private eventEmitter = new EventEmitter();
   public set iceConnectionState(state) {
     this.connectionState = state;
   }

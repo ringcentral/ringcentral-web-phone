@@ -28,12 +28,12 @@ export enum Browsers {
 }
 
 export class WebPhoneRTPReport implements RTPReport {
-  outboundRtpReport = {};
-  inboundRtpReport = {};
-  rttMs = {};
-  localCandidates: any[] = [];
-  remoteCandidates: any[] = [];
-  transport = {};
+  public outboundRtpReport = {};
+  public inboundRtpReport = {};
+  public rttMs = {};
+  public localCandidates: any[] = [];
+  public remoteCandidates: any[] = [];
+  public transport = {};
 }
 
 /** Media Streams class to monitor media stats */
@@ -76,6 +76,9 @@ export default class MediaStreams {
   public set onRTPStat(callback: (stats: RTPReport, session: WebPhoneSession) => any) {
     this.mediaStreamsImpl.onRTPStat = callback;
   }
+  public get onRTPStat() {
+    return this.mediaStreamsImpl.onRTPStat;
+  }
 
   /**
    * Set a function to be called when `peerConnetion` iceconnectionstatechange changes
@@ -84,18 +87,15 @@ export default class MediaStreams {
   public set onMediaConnectionStateChange(callback: (state: string, session: WebPhoneSession) => any) {
     this.mediaStreamsImpl.onMediaConnectionStateChange = callback;
   }
+  public get onMediaConnectionStateChange() {
+    return this.mediaStreamsImpl.onMediaConnectionStateChange;
+  }
 }
 
 /**
  * MediaStreams Implementation
  */
 export class MediaStreamsImpl {
-  private ktag = 'MediaStreams';
-  private session: WebPhoneSession;
-  private isChrome: boolean;
-  private isFirefox: boolean;
-  private isSafari: boolean;
-  private mediaStatsTimer: any;
   public preRTT: any;
   /**
    * Set a function to be called when `peerConnection` iceconnectionstatechange changes
@@ -108,6 +108,104 @@ export class MediaStreamsImpl {
    * @param callback optionally, you can set a function on MediaStreams object. This will be treated as a default callback when media stats are generated if a callback function is not passed with `getMediaStats` function
    */
   public onRTPStat?: (stats: RTPReport, session: WebPhoneSession) => any;
+
+  private ktag = 'MediaStreams';
+  private session: WebPhoneSession;
+  private isChrome: boolean;
+  private isFirefox: boolean;
+  private isSafari: boolean;
+  private mediaStatsTimer: any;
+
+  public constructor(session: WebPhoneSession) {
+    this.ktag = 'MediaStreams';
+    if (!session) {
+      throw new Error(`${this.ktag}: Cannot initial media stream monitoring. Session is not passed`);
+    }
+    this.session = session;
+    this.onMediaConnectionStateChange = undefined;
+    this.onPeerConnectionStateChange = this.onPeerConnectionStateChange.bind(this);
+    const sessionDescriptionHandler = this.session.sessionDescriptionHandler as SessionDescriptionHandler;
+    sessionDescriptionHandler.peerConnection!.addEventListener(
+      'iceconnectionstatechange',
+      this.onPeerConnectionStateChange,
+    );
+    this.isChrome = this.browser() === Browsers.Chrome;
+    this.isFirefox = this.browser() === Browsers.Firefox;
+    this.isSafari = this.browser() === Browsers.Safari;
+
+    this.preRTT = { currentRoundTripTime: 0 };
+
+    if (!this.isChrome && !this.isFirefox && !this.isSafari) {
+      (this.session as any).logger.error(
+        `${this.ktag} The web browser ${this.browser()} is not in the recommended list [Chrome, Safari, Firefox] !`,
+      );
+    }
+  }
+
+  /**
+   * @param callback function which will be called every time media stats are generated. Will override callback passed to `onRTPStat`
+   * @param interval interval for the recurring call to the callback function
+   * @returns
+   */
+  public getMediaStats(callback?: (report: RTPReport) => any, interval = 1000) {
+    if (!this.onRTPStat && !callback) {
+      (this.session as any).logger.debug(
+        `${this.ktag}: No event callback provided to call when media starts are generated`,
+      );
+      return;
+    }
+    if (callback) {
+      this.onRTPStat = callback;
+    }
+    if (this.mediaStatsTimer) {
+      clearTimeout(this.mediaStatsTimer);
+      this.mediaStatsTimer = null;
+    }
+    this.mediaStatsTimer = setInterval(() => {
+      this.mediaStatsTimerCallback();
+    }, interval);
+  }
+
+  /**
+   * Stop collecting stats. This will stop calling the registered function (either that was registered using `onRTPstat` or using `getMediaStats`)
+   */
+  public stopMediaStats() {
+    if (this.mediaStatsTimer) {
+      clearTimeout(this.mediaStatsTimer);
+      this.onRTPStat = undefined;
+    }
+  }
+
+  /**
+   * Reconnect media and send reinvite on the existing session.
+   *
+   * This will also recreate SDP and send it over with the reinvite message
+   */
+  public reconnectMedia(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.session.reinvite!()
+        .then(() => resolve())
+        .catch(reject);
+    });
+  }
+
+  /**
+   * Remove iceconnectionstatechange event listeners and stop collecting stats
+   */
+  public release() {
+    if (this.mediaStatsTimer) {
+      clearTimeout(this.mediaStatsTimer);
+      this.mediaStatsTimer = null;
+    }
+    const sessionDescriptionHandler = this.session.sessionDescriptionHandler as SessionDescriptionHandler;
+    if (!sessionDescriptionHandler.peerConnection) {
+      return;
+    }
+    sessionDescriptionHandler.peerConnection.removeEventListener(
+      'iceconnectionstatechange',
+      this.onPeerConnectionStateChange,
+    );
+  }
 
   private get tag() {
     return this.ktag;
@@ -288,97 +386,6 @@ export class MediaStreamsImpl {
     } catch (e) {
       (this.session as any).logger.error(`${this.tag}: Unable to get media stats: ${(e as any).message}`);
     }
-  }
-
-  public constructor(session: WebPhoneSession) {
-    this.ktag = 'MediaStreams';
-    if (!session) {
-      throw new Error(`${this.ktag}: Cannot initial media stream monitoring. Session is not passed`);
-    }
-    this.session = session;
-    this.onMediaConnectionStateChange = undefined;
-    this.onPeerConnectionStateChange = this.onPeerConnectionStateChange.bind(this);
-    const sessionDescriptionHandler = this.session.sessionDescriptionHandler as SessionDescriptionHandler;
-    sessionDescriptionHandler.peerConnection!.addEventListener(
-      'iceconnectionstatechange',
-      this.onPeerConnectionStateChange,
-    );
-    this.isChrome = this.browser() === Browsers.Chrome;
-    this.isFirefox = this.browser() === Browsers.Firefox;
-    this.isSafari = this.browser() === Browsers.Safari;
-
-    this.preRTT = { currentRoundTripTime: 0 };
-
-    if (!this.isChrome && !this.isFirefox && !this.isSafari) {
-      (this.session as any).logger.error(
-        `${this.ktag} The web browser ${this.browser()} is not in the recommended list [Chrome, Safari, Firefox] !`,
-      );
-    }
-  }
-
-  /**
-   * @param callback function which will be called every time media stats are generated. Will override callback passed to `onRTPStat`
-   * @param interval interval for the recurring call to the callback function
-   * @returns
-   */
-  public getMediaStats(callback?: (report: RTPReport) => any, interval = 1000) {
-    if (!this.onRTPStat && !callback) {
-      (this.session as any).logger.debug(
-        `${this.ktag}: No event callback provided to call when media starts are generated`,
-      );
-      return;
-    }
-    if (callback) {
-      this.onRTPStat = callback;
-    }
-    if (this.mediaStatsTimer) {
-      clearTimeout(this.mediaStatsTimer);
-      this.mediaStatsTimer = null;
-    }
-    this.mediaStatsTimer = setInterval(() => {
-      this.mediaStatsTimerCallback();
-    }, interval);
-  }
-
-  /**
-   * Stop collecting stats. This will stop calling the registered function (either that was registered using `onRTPstat` or using `getMediaStats`)
-   */
-  public stopMediaStats() {
-    if (this.mediaStatsTimer) {
-      clearTimeout(this.mediaStatsTimer);
-      this.onRTPStat = undefined;
-    }
-  }
-
-  /**
-   * Reconnect media and send reinvite on the existing session.
-   *
-   * This will also recreate SDP and send it over with the reinvite message
-   */
-  public reconnectMedia(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.session.reinvite!()
-        .then(() => resolve())
-        .catch(reject);
-    });
-  }
-
-  /**
-   * Remove iceconnectionstatechange event listeners and stop collecting stats
-   */
-  public release() {
-    if (this.mediaStatsTimer) {
-      clearTimeout(this.mediaStatsTimer);
-      this.mediaStatsTimer = null;
-    }
-    const sessionDescriptionHandler = this.session.sessionDescriptionHandler as SessionDescriptionHandler;
-    if (!sessionDescriptionHandler.peerConnection) {
-      return;
-    }
-    sessionDescriptionHandler.peerConnection.removeEventListener(
-      'iceconnectionstatechange',
-      this.onPeerConnectionStateChange,
-    );
   }
 }
 

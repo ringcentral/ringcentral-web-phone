@@ -26,7 +26,9 @@ import {
 } from './sessionDescriptionHandler';
 import { AudioHelperOptions } from './audioHelper';
 
-const { version } = require('../package.json');
+import pkg from '../package.json';
+
+const version = pkg.version;
 
 export interface TransportServer {
   uri: string;
@@ -306,8 +308,9 @@ export default class WebPhone {
    * TODO: include 'WebPhone' for all apps other than Chrome and Glip
    * TODO: parse wsservers from new api spec
    */
-  public constructor(registrationData: WebPhoneRegistrationData = {}, options: WebPhoneOptions = {}) {
-    options = { ...defaultWebPhoneOptions, ...options };
+  // eslint-disable-next-line complexity
+  public constructor(registrationData: WebPhoneRegistrationData = {}, _options: WebPhoneOptions = {}) {
+    const options = { ...defaultWebPhoneOptions, ..._options };
 
     this.sipInfo = registrationData.sipInfo as SipInfo;
     if (Array.isArray(this.sipInfo)) {
@@ -379,10 +382,9 @@ export default class WebPhone {
     const sessionDescriptionHandlerFactory =
       options.sessionDescriptionHandlerFactory || defaultSessionDescriptionFactory;
 
-    const sipErrorCodes =
-      registrationData.sipErrorCodes && registrationData.sipErrorCodes.length
-        ? registrationData.sipErrorCodes
-        : defaultSipErrorCodes;
+    const sipErrorCodes = registrationData.sipErrorCodes?.length
+      ? registrationData.sipErrorCodes
+      : defaultSipErrorCodes;
 
     let reconnectionTimeout = options.reconnectionTimeoutWithBackup;
     let maxReconnectionAttempts = options.maxReconnectionAttemptsWithBackup;
