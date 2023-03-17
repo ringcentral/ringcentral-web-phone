@@ -3,7 +3,6 @@
 /.cache-loader
 /.coverage
 /screenshots
-/.huskyrc
 /demo
 /dist/*.html
 /dist/demo*.js

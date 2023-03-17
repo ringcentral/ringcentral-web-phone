@@ -1,3 +1,3 @@
 module.exports = {
-  ...require('gts/.prettierrc.json')
-}
+  ...require('eslint-config-alloy/.prettierrc.js'),
+};

@@ -1,4 +1,4 @@
-import {EventEmitter} from 'events';
+import { EventEmitter } from 'events';
 import {
   Invitation,
   InvitationAcceptOptions,
@@ -19,27 +19,27 @@ import {
   OutgoingRequestDelegate,
   RequestOptions,
 } from 'sip.js/lib/core';
-import {SessionState} from 'sip.js/lib/api/session-state';
+import { SessionState } from 'sip.js/lib/api/session-state';
 import {
   SessionDescriptionHandler,
   SessionDescriptionHandlerOptions,
 } from 'sip.js/lib/platform/web/session-description-handler';
 
-import {extend} from './utils';
-import {responseTimeout, messages, Command} from './constants';
-import {MediaStreams} from './mediaStreams';
-import {RTPReport, isNoAudio} from './rtpReport';
-import {WebPhoneUserAgent} from './userAgent';
-import {Events} from './events';
-import {WehPhoneUserAgentCore} from './userAgentCore';
-import {startQosStatsCollection} from './qos';
+import { extend } from './utils';
+import { responseTimeout, messages, Command } from './constants';
+import { MediaStreams } from './mediaStreams';
+import { RTPReport, isNoAudio } from './rtpReport';
+import { WebPhoneUserAgent } from './userAgent';
+import { Events } from './events';
+import { WehPhoneUserAgentCore } from './userAgentCore';
+import { startQosStatsCollection } from './qos';
 
-export type QosStats = {
+export interface QosStats {
   cpuRC?: string;
   cpuOS?: string;
   ram?: string;
   netType?: string;
-};
+}
 
 /**
  * Object representing all the headers used by RingCentral backend
@@ -68,7 +68,7 @@ export interface RCHeaders {
 }
 
 export interface ReplyOptions {
-  replyType: number; //FIXME: Use enum
+  replyType: number; // FIXME: Use enum
   replyText: string;
   timeValue: string;
   timeUnits: string;
@@ -82,119 +82,119 @@ export interface RTCPeerConnectionLegacy extends RTCPeerConnection {
 
 export class CommonSession {
   /** @ignore */
-  __isRecording?: boolean;
+  public __isRecording?: boolean;
   /** @ignore */
-  __localHold?: boolean;
+  public __localHold?: boolean;
   /** @ignore */
-  __patched?: boolean;
+  public __patched?: boolean;
   /** @ignore */
-  __userAgentCoreEventsSetup?: boolean;
+  public __userAgentCoreEventsSetup?: boolean;
   /** Flag to check if the call is on hold or not */
-  held?: boolean;
+  public held?: boolean;
   /** Options to represent dom elements where media stream should be loaded */
-  media?: {local?: HTMLMediaElement; remote?: HTMLMediaElement};
+  public media?: { local?: HTMLMediaElement; remote?: HTMLMediaElement };
   /** Flag to indicate if media stats are being collected */
-  mediaStatsStarted?: boolean;
+  public mediaStatsStarted?: boolean;
   /** MediaStreams class instance which has the logic to collect media stream stats */
-  mediaStreams?: MediaStreams;
+  public mediaStreams?: MediaStreams;
   /** Flag to check if the call is muted or not */
-  muted?: boolean;
+  public muted?: boolean;
   /** Counter to represent how many media stats report were missed because of no audio */
-  noAudioReportCount?: number;
+  public noAudioReportCount?: number;
   /** JOSN representation of RC headers received for an incoming call */
-  rcHeaders?: RCHeaders;
-  __qosStats?: QosStats;
+  public rcHeaders?: RCHeaders;
+  public __qosStats?: QosStats;
   /** Flag to represent if reinvite request was sent because there was no audio reported */
-  reinviteForNoAudioSent?: boolean;
+  public reinviteForNoAudioSent?: boolean;
   /** Time when session was started */
-  startTime?: Date | undefined;
+  public startTime?: Date | undefined;
   /** @ignore */
-  __accept?: typeof Invitation.prototype.accept;
+  public __accept?: typeof Invitation.prototype.accept;
   /** @ignore */
-  __dispose?: typeof Session.prototype.dispose;
+  public __dispose?: typeof Session.prototype.dispose;
   /** Method to attach event listener for session specific events */
-  addListener?: typeof EventEmitter.prototype.addListener;
+  public addListener?: typeof EventEmitter.prototype.addListener;
   /** Add track to media source */
-  addTrack?: typeof addTrack;
+  public addTrack?: typeof addTrack;
   /** RingCentral barge implementation */
-  barge?: typeof barge;
+  public barge?: typeof barge;
   /** RingCentral blind transfer implementation */
-  blindTransfer?: typeof blindTransfer;
+  public blindTransfer?: typeof blindTransfer;
   /**
    * @internal
    * Helper function which represents if call control features can be used or not
    */
-  canUseRCMCallControl?: typeof canUseRCMCallControl;
+  public canUseRCMCallControl?: typeof canUseRCMCallControl;
   /**
    * @internal
    * Create session message which would be sent to the RingCentral backend
    */
-  createSessionMessage?: typeof createSessionMessage;
+  public createSessionMessage?: typeof createSessionMessage;
   /** Sends a DTMF over the call */
-  dtmf?: typeof dtmf;
+  public dtmf?: typeof dtmf;
   /** Emit session specific events which will trigger all the event listeners attached */
-  emit?: typeof EventEmitter.prototype.emit;
+  public emit?: typeof EventEmitter.prototype.emit;
   /** RingCentral flip implementation */
-  flip?: typeof flip;
+  public flip?: typeof flip;
   /** RingCentral flip implementation */
-  forward?: typeof forward;
+  public forward?: typeof forward;
   /** Put the call on hold */
-  hold?: typeof hold;
+  public hold?: typeof hold;
   /** Ignore incoming call */
-  ignore?: typeof ignore;
+  public ignore?: typeof ignore;
   /** Mute the call */
-  mute?: typeof mute;
+  public mute?: typeof mute;
   /** Remove event listener */
-  off?: typeof EventEmitter.prototype.off;
+  public off?: typeof EventEmitter.prototype.off;
   /** Add event listener. Same as addListener */
-  on?: typeof EventEmitter.prototype.on;
+  public on?: typeof EventEmitter.prototype.on;
   /** Add once event listener. Same as addListener */
-  once?: typeof EventEmitter.prototype.once;
+  public once?: typeof EventEmitter.prototype.once;
   /** Returns if the call is on hold locally or not */
-  onLocalHold?: typeof onLocalHold;
+  public onLocalHold?: typeof onLocalHold;
   /** RingCentral park implementation */
-  park?: typeof park;
+  public park?: typeof park;
   /** Send a session reinvite */
-  reinvite?: typeof reinvite;
+  public reinvite?: typeof reinvite;
   /** Remove event listener */
-  removeListener?: typeof EventEmitter.prototype.removeListener;
+  public removeListener?: typeof EventEmitter.prototype.removeListener;
   /** Remove all event listeners */
-  removeAllListeners?: typeof EventEmitter.prototype.removeAllListeners;
+  public removeAllListeners?: typeof EventEmitter.prototype.removeAllListeners;
   /** RingCentral reply with message implementation */
-  replyWithMessage?: typeof replyWithMessage;
+  public replyWithMessage?: typeof replyWithMessage;
   /**
    * @internal
    * Helper method that sends an INFO request to other user agent and then waits for an INFO request from the other user agent
    */
-  sendInfoAndReceiveResponse?: typeof sendInfoAndReceiveResponse;
+  public sendInfoAndReceiveResponse?: typeof sendInfoAndReceiveResponse;
   /**
    * @internal
    * Helper function to send INFO request with `move` instruction to RingCentral backend
    */
-  sendMoveResponse?: typeof sendMoveResponse;
+  public sendMoveResponse?: typeof sendMoveResponse;
   /** Send `receiveConfirm` command to backend */
-  sendReceiveConfirm?: typeof sendReceiveConfirm;
+  public sendReceiveConfirm?: typeof sendReceiveConfirm;
   /** Helper function to send session message to backend using UserAgent */
-  sendSessionMessage?: typeof sendSessionMessage;
+  public sendSessionMessage?: typeof sendSessionMessage;
   /** Start recording the call */
-  startRecord?: typeof startRecord;
+  public startRecord?: typeof startRecord;
   /** Function to stop collecting media stats */
-  stopMediaStats?: typeof stopMediaStats;
+  public stopMediaStats?: typeof stopMediaStats;
   /** Stop recording the call */
-  stopRecord?: typeof stopRecord;
+  public stopRecord?: typeof stopRecord;
   /** Send incoming call to voicemail */
-  toVoicemail?: typeof toVoicemail;
+  public toVoicemail?: typeof toVoicemail;
   /** Transfer current call */
-  transfer?: typeof transfer;
+  public transfer?: typeof transfer;
   /** Put the call on unhold */
-  unhold?: typeof unhold;
+  public unhold?: typeof unhold;
   /** Unmute the call */
-  unmute?: typeof unmute;
+  public unmute?: typeof unmute;
   /** RingCentral warm transfer implementation */
-  warmTransfer?: typeof warmTransfer;
+  public warmTransfer?: typeof warmTransfer;
   /** RingCentral whisper implementation */
-  whisper?: typeof whisper;
-  setQosStats?: typeof setQosStats;
+  public whisper?: typeof whisper;
+  public setQosStats?: typeof setQosStats;
 }
 
 export type WebPhoneSession = WebPhoneInvitation | WebPhoneInviter;
@@ -237,9 +237,7 @@ export interface WebPhoneInviter extends Inviter, CommonSession {
 
 const mediaCheckTimer = 2000;
 
-export function patchWebphoneSession(
-  session: WebPhoneSession
-): WebPhoneSession {
+export function patchWebphoneSession(session: WebPhoneSession): WebPhoneSession {
   if (session.__patched) {
     return session;
   }
@@ -255,8 +253,7 @@ export function patchWebphoneSession(
   session.once = eventEmitter.once.bind(eventEmitter);
   session.addListener = eventEmitter.addListener.bind(eventEmitter);
   session.removeListener = eventEmitter.removeListener.bind(eventEmitter);
-  session.removeAllListeners =
-    eventEmitter.removeAllListeners.bind(eventEmitter);
+  session.removeAllListeners = eventEmitter.removeAllListeners.bind(eventEmitter);
   session.emit = eventEmitter.emit.bind(eventEmitter);
   session.sendInfoAndReceiveResponse = sendInfoAndReceiveResponse.bind(session);
   session.startRecord = startRecord.bind(session);
@@ -281,7 +278,7 @@ export function patchWebphoneSession(
   session.__qosStats = {};
   session.setQosStats = setQosStats.bind(session);
   setupUserAgentCoreEvent(session);
-  session.stateChange.addListener(newState => {
+  session.stateChange.addListener((newState) => {
     switch (newState) {
       case SessionState.Establishing: {
         session.emit!(Events.Session.Establishing);
@@ -325,9 +322,7 @@ export function patchIncomingWebphoneSession(session: WebPhoneSession): void {
   try {
     parseRcHeader(session);
   } catch (e) {
-    (session as any).logger.error(
-      "Can't parse RC headers from invite request due to " + e
-    );
+    (session as any).logger.error("Can't parse RC headers from invite request due to " + e);
   }
   session.canUseRCMCallControl = canUseRCMCallControl.bind(session);
   session.createSessionMessage = createSessionMessage.bind(session);
@@ -345,10 +340,7 @@ function canUseRCMCallControl(this: WebPhoneSession): boolean {
   return !!this.rcHeaders;
 }
 
-function createSessionMessage(
-  this: WebPhoneSession,
-  options: RCHeaders
-): string {
+function createSessionMessage(this: WebPhoneSession, options: RCHeaders): string {
   if (!this.rcHeaders) {
     throw Error('createSessionMessage options is undefined');
   }
@@ -361,52 +353,34 @@ function createSessionMessage(
   return this.userAgent.createRcMessage!(options);
 }
 
-async function sendReceiveConfirm(
-  this: WebPhoneSession
-): Promise<IncomingResponse> {
-  return this.sendSessionMessage!(
-    messages.receiveConfirm as unknown as RCHeaders
-  )
-    .then(response => {
+async function sendReceiveConfirm(this: WebPhoneSession): Promise<IncomingResponse> {
+  return this.sendSessionMessage!(messages.receiveConfirm as unknown as RCHeaders)
+    .then((response) => {
       (this as any).logger.log('sendReceiveConfirm success');
       return response;
     })
-    .catch(error =>
-      (this as any).logger.error(
-        `failed to send receive confirmation via SIP MESSAGE due to ${error.message}`
-      )
+    .catch((error) =>
+      (this as any).logger.error(`failed to send receive confirmation via SIP MESSAGE due to ${error.message}`),
     );
 }
 
-function sendSessionMessage(
-  this: WebPhoneSession,
-  options: RCHeaders
-): Promise<IncomingResponse> {
+function sendSessionMessage(this: WebPhoneSession, options: RCHeaders): Promise<IncomingResponse> {
   if (!this.rcHeaders) {
-    (this as any).logger.error(
-      "Can't send SIP MESSAGE related to session: no RC headers available"
-    );
+    (this as any).logger.error("Can't send SIP MESSAGE related to session: no RC headers available");
   }
-  return this.userAgent.sendMessage!(
-    this.rcHeaders!.from!,
-    this.createSessionMessage!(options)
-  );
+  return this.userAgent.sendMessage!(this.rcHeaders!.from!, this.createSessionMessage!(options));
 }
 
-async function sendInfoAndReceiveResponse(
-  this: WebPhoneSession,
-  command: Command,
-  options?: any
-): Promise<any> {
-  options = options || {};
+async function sendInfoAndReceiveResponse(this: WebPhoneSession, command: Command, _options?: any): Promise<any> {
+  const options = _options || {};
   extend(command, options);
   delete command.extraHeaders;
   return new Promise((resolve, reject) => {
     const requestDelegate: OutgoingRequestDelegate = {
       onAccept: (response: IncomingResponse): void => {
-        let timeout: ReturnType<typeof setTimeout> | undefined = undefined;
+        let timeout: ReturnType<typeof setTimeout> | undefined;
         const {
-          message: {statusCode, callId},
+          message: { statusCode, callId },
         } = response;
         if (statusCode === 200) {
           const onInfo = (message: IncomingRequestMessage): void => {
@@ -414,7 +388,7 @@ async function sendInfoAndReceiveResponse(
             if (message.callId !== callId) {
               return;
             }
-            const body = (message && message.body) || '{}';
+            const body = message?.body || '{}';
             let obj;
 
             try {
@@ -422,11 +396,7 @@ async function sendInfoAndReceiveResponse(
             } catch (e) {
               obj = {};
             }
-            if (
-              obj.response &&
-              obj.response.command === command.command &&
-              obj.response.result
-            ) {
+            if (obj.response && obj.response.command === command.command && obj.response.result) {
               timeout && clearTimeout(timeout);
               this.off!('RC_SIP_INFO', onInfo);
               if (obj.response.result.code.toString() === '0') {
@@ -441,32 +411,21 @@ async function sendInfoAndReceiveResponse(
           }, responseTimeout);
           this.on!('RC_SIP_INFO', onInfo);
         } else {
-          reject(
-            new Error(
-              `The INFO response status code is: ${statusCode} (waiting for 200)`
-            )
-          );
+          reject(new Error(`The INFO response status code is: ${statusCode} (waiting for 200)`));
         }
       },
-      onReject: response => {
-        reject(
-          new Error(
-            `The INFO response status code is: ${response.message.statusCode} (waiting for 200)`
-          )
-        );
+      onReject: (response) => {
+        reject(new Error(`The INFO response status code is: ${response.message.statusCode} (waiting for 200)`));
       },
     };
     const requestOptions: RequestOptions = {
-      extraHeaders: [
-        ...(options.extraHeaders || []),
-        ...this.userAgent.defaultHeaders!,
-      ],
+      extraHeaders: [...(options.extraHeaders || []), ...this.userAgent.defaultHeaders!],
       body: fromBodyLegacy({
-        body: JSON.stringify({request: command}),
+        body: JSON.stringify({ request: command }),
         contentType: 'application/json;charset=utf-8',
       }),
     };
-    this.info({requestDelegate, requestOptions});
+    this.info({ requestDelegate, requestOptions });
   });
 }
 
@@ -478,12 +437,13 @@ async function stopRecord(this: WebPhoneSession): Promise<any> {
   return setRecord(this, false);
 }
 
+// eslint-disable-next-line max-params
 function sendMoveResponse(
   this: WebPhoneSession,
   reqId: number,
   code: number,
   description: string,
-  options: {extraHeaders?: Array<string>} = {}
+  options: { extraHeaders?: Array<string> } = {},
 ): void {
   const extraHeaders = options.extraHeaders || [];
   const requestOptions: RequestOptions = {
@@ -502,25 +462,18 @@ function sendMoveResponse(
       contentType: 'application/json;charset=utf-8',
     }),
   };
-  this.info({requestOptions});
+  this.info({ requestOptions });
 }
 
 function ignore(this: WebPhoneSession): Promise<IncomingResponse> {
-  return this.sendReceiveConfirm!().then(() =>
-    this.sendSessionMessage!(messages.ignore)
-  );
+  return this.sendReceiveConfirm!().then(() => this.sendSessionMessage!(messages.ignore));
 }
 
 function toVoicemail(this: WebPhoneSession): Promise<IncomingResponse> {
-  return this.sendReceiveConfirm!().then(() =>
-    this.sendSessionMessage!(messages.toVoicemail)
-  );
+  return this.sendReceiveConfirm!().then(() => this.sendSessionMessage!(messages.toVoicemail));
 }
 
-function replyWithMessage(
-  this: WebPhoneSession,
-  replyOptions: ReplyOptions
-): Promise<IncomingResponse> {
+function replyWithMessage(this: WebPhoneSession, replyOptions: ReplyOptions): Promise<IncomingResponse> {
   let body = 'RepTp="' + replyOptions.replyType + '"';
 
   if (replyOptions.replyType === 0) {
@@ -531,12 +484,12 @@ function replyWithMessage(
     body += ' Dir="' + replyOptions.callbackDirection + '"';
   }
   return this.sendReceiveConfirm!().then(() =>
-    this.sendSessionMessage!({reqid: messages.replyWithMessage.reqid, body})
+    this.sendSessionMessage!({ reqid: messages.replyWithMessage.reqid, body }),
   );
 }
 
 async function flip(this: WebPhoneSession, target: string): Promise<any> {
-  return this.sendInfoAndReceiveResponse!(messages.flip, {target});
+  return this.sendInfoAndReceiveResponse!(messages.flip, { target });
 }
 
 async function whisper(this: WebPhoneSession): Promise<any> {
@@ -585,13 +538,8 @@ function unmute(this: WebPhoneSession, silent?: boolean): void {
   }
 }
 
-function addTrack(
-  this: WebPhoneSession,
-  remoteAudioEle?: HTMLVideoElement,
-  localAudioEle?: HTMLVideoElement
-): void {
-  const sessionDescriptionHandler = this
-    .sessionDescriptionHandler as SessionDescriptionHandler;
+function addTrack(this: WebPhoneSession, remoteAudioEle?: HTMLVideoElement, localAudioEle?: HTMLVideoElement): void {
+  const sessionDescriptionHandler = this.sessionDescriptionHandler as SessionDescriptionHandler;
   const peerConnection = sessionDescriptionHandler.peerConnection;
   let remoteAudio: HTMLMediaElement;
   let localAudio: HTMLMediaElement;
@@ -609,7 +557,7 @@ function addTrack(
   // TODO: peerConnecton.remoteMediaStream already has reciver track added thanks to default session description handler. Can we remove this code?
   let remoteStream = new MediaStream();
   if (peerConnection?.getReceivers) {
-    peerConnection.getReceivers().forEach(receiver => {
+    peerConnection.getReceivers().forEach((receiver) => {
       const rtrack = receiver.track;
       if (rtrack) {
         remoteStream.addTrack(rtrack);
@@ -628,7 +576,7 @@ function addTrack(
   // TODO: peerConnecton.localMediaStream already has sender track added thanks to default session description handler. Can we remove this code?
   let localStream = new MediaStream();
   if (peerConnection?.getSenders) {
-    peerConnection.getSenders().forEach(sender => {
+    peerConnection.getSenders().forEach((sender) => {
       const strack = sender.track;
       if (strack && strack.kind === 'audio') {
         localStream.addTrack(strack);
@@ -656,9 +604,7 @@ function addTrack(
         (this as any).logger.log('No audio report');
         this.noAudioReportCount!++;
         if (this.noAudioReportCount === 3) {
-          (this as any).logger.log(
-            'No audio for 6 sec. Trying to recover audio by sending Re-invite'
-          );
+          (this as any).logger.log('No audio for 6 sec. Trying to recover audio by sending Re-invite');
           this.mediaStreams!.reconnectMedia();
           this.reinviteForNoAudioSent = true;
           this.noAudioReportCount = 0;
@@ -675,7 +621,7 @@ function stopMediaStats(this: WebPhoneSession): void {
   if (!this) {
     return;
   }
-  this.mediaStreams && this.mediaStreams.stopMediaStats();
+  this.mediaStreams?.stopMediaStats();
   this.mediaStatsStarted = false;
   this.noAudioReportCount = 0;
 }
@@ -683,40 +629,36 @@ function stopMediaStats(this: WebPhoneSession): void {
 async function blindTransfer(
   this: WebPhoneSession,
   target: string | URI | WebPhoneSession,
-  options: SessionReferOptions = {}
+  options: SessionReferOptions = {},
 ): Promise<OutgoingReferRequest> {
   (this as any).logger.log('Call transfer initiated');
-  target =
-    typeof target === 'string'
-      ? UserAgent.makeURI(`sip:${target}@${this.userAgent.sipInfo!.domain}`)!
-      : target;
-  return this.refer(target, options);
+  const newTarget =
+    typeof target === 'string' ? UserAgent.makeURI(`sip:${target}@${this.userAgent.sipInfo!.domain}`)! : target;
+  return this.refer(newTarget, options);
 }
 
 async function warmTransfer(
   this: WebPhoneSession,
   target: string | URI | WebPhoneSession,
-  options: SessionReferOptions = {requestOptions: {extraHeaders: []}}
+  options: SessionReferOptions = { requestOptions: { extraHeaders: [] } },
 ): Promise<OutgoingReferRequest> {
-  options.requestOptions!.extraHeaders = (
-    options.requestOptions!.extraHeaders || []
-  ).concat(this.userAgent.defaultHeaders!);
-  target =
-    typeof target === 'string'
-      ? UserAgent.makeURI(`sip:${target}@${this.userAgent.sipInfo!.domain}`)!
-      : target;
+  options.requestOptions!.extraHeaders = (options.requestOptions!.extraHeaders || []).concat(
+    this.userAgent.defaultHeaders!,
+  );
+  const newTarget =
+    typeof target === 'string' ? UserAgent.makeURI(`sip:${target}@${this.userAgent.sipInfo!.domain}`)! : target;
   (this as any).logger.log('Completing warm transfer');
-  return this.refer(target, options);
+  return this.refer(newTarget, options);
 }
 
 async function transfer(
   this: WebPhoneSession,
   target: string | URI | WebPhoneSession,
-  options: SessionReferOptions = {requestOptions: {extraHeaders: []}}
+  options: SessionReferOptions = { requestOptions: { extraHeaders: [] } },
 ): Promise<OutgoingReferRequest> {
-  options.requestOptions!.extraHeaders = (
-    options.requestOptions!.extraHeaders || []
-  ).concat(this.userAgent.defaultHeaders!);
+  options.requestOptions!.extraHeaders = (options.requestOptions!.extraHeaders || []).concat(
+    this.userAgent.defaultHeaders!,
+  );
   return this.blindTransfer!(target, options);
 }
 
@@ -729,26 +671,18 @@ async function transfer(
  * Sends a reinvite. Also makes sure to regenerate a new SDP by passing offerToReceiveAudio: true, offerToReceiveVideo: false  and iceRestart: true
  * Once the SDP is ready, the local description is set and the SDP is sent to the remote peer along with an INVITE request
  */
-function reinvite(
-  this: WebPhoneSession,
-  options: SessionInviteOptions = {}
-): Promise<OutgoingInviteRequest> {
-  options.sessionDescriptionHandlerOptions = Object.assign(
-    {},
-    options.sessionDescriptionHandlerOptions,
-    {
-      offerToReceiveAudio: true,
-      offerToReceiveVideo: false,
-      iceRestart: true,
-    }
-  );
+function reinvite(this: WebPhoneSession, options: SessionInviteOptions = {}): Promise<OutgoingInviteRequest> {
+  options.sessionDescriptionHandlerOptions = {
+    ...options.sessionDescriptionHandlerOptions,
+    offerToReceiveAudio: true,
+    offerToReceiveVideo: false,
+    iceRestart: true,
+  } as any;
   options.requestDelegate = options.requestDelegate || {};
-  const originalOnAccept = options.requestDelegate.onAccept?.bind(
-    options.requestDelegate
-  );
+  const originalOnAccept = options.requestDelegate.onAccept?.bind(options.requestDelegate);
   options.requestDelegate.onAccept = (...args): void => {
     patchIncomingWebphoneSession(this);
-    originalOnAccept && originalOnAccept(...args);
+    originalOnAccept?.(...args);
   };
   return this.invite(options);
 }
@@ -774,52 +708,36 @@ async function unhold(this: WebPhoneSession): Promise<void> {
   }
 }
 
-function dtmf(
-  this: WebPhoneSession,
-  dtmf: string,
-  duration = 100,
-  interToneGap = 50
-): void {
-  duration = parseInt(duration.toString());
-  interToneGap = parseInt(interToneGap.toString());
-  const sessionDescriptionHandler = this
-    .sessionDescriptionHandler as SessionDescriptionHandler;
+// eslint-disable-next-line max-params
+function dtmf(this: WebPhoneSession, dtmf: string, _duration = 100, _interToneGap = 50): void {
+  const duration = parseInt(_duration.toString(), 10);
+  const interToneGap = parseInt(_interToneGap.toString(), 10);
+  const sessionDescriptionHandler = this.sessionDescriptionHandler as SessionDescriptionHandler;
   const peerConnection = sessionDescriptionHandler.peerConnection;
   if (!peerConnection) {
     (this as any).logger.error('Peer connection closed.');
     return;
   }
   const senders = peerConnection.getSenders();
-  const audioSender = senders.find(
-    sender => sender.track && sender.track.kind === 'audio'
-  );
+  const audioSender = senders.find((sender) => sender.track && sender.track.kind === 'audio');
   const dtmfSender: RTCDTMFSender | null = audioSender!.dtmf;
   if (dtmfSender !== undefined && dtmfSender) {
-    (this as any).logger.log(
-      `Send DTMF: ${dtmf} Duration: ${duration} InterToneGap: ${interToneGap}`
-    );
+    (this as any).logger.log(`Send DTMF: ${dtmf} Duration: ${duration} InterToneGap: ${interToneGap}`);
     return dtmfSender.insertDTMF(dtmf, duration, interToneGap);
   }
   throw new Error('Send DTMF failed');
 }
 
-async function accept(
-  this: WebPhoneSession,
-  options: InvitationAcceptOptions = {}
-): Promise<void> {
-  options = options || {};
-  options.extraHeaders = (options.extraHeaders || []).concat(
-    this.userAgent.defaultHeaders!
-  );
-  options.sessionDescriptionHandlerOptions = Object.assign(
-    {},
-    options.sessionDescriptionHandlerOptions
-  );
-  options.sessionDescriptionHandlerOptions.constraints =
-    options.sessionDescriptionHandlerOptions.constraints ||
-    Object.assign({}, this.userAgent.constraints, {
-      optional: [{DtlsSrtpKeyAgreement: 'true'}],
-    });
+async function accept(this: WebPhoneSession, _options: InvitationAcceptOptions = {}): Promise<void> {
+  const options = _options || {};
+  options.extraHeaders = (options.extraHeaders || []).concat(this.userAgent.defaultHeaders!);
+  options.sessionDescriptionHandlerOptions = {
+    ...options.sessionDescriptionHandlerOptions,
+  };
+  options.sessionDescriptionHandlerOptions.constraints = options.sessionDescriptionHandlerOptions.constraints || {
+    ...this.userAgent.constraints,
+    optional: [{ DtlsSrtpKeyAgreement: 'true' }],
+  };
   try {
     await this.__accept!(options);
     this.startTime = new Date();
@@ -831,14 +749,15 @@ async function accept(
   }
 }
 
+// eslint-disable-next-line max-params
 async function forward(
   this: WebPhoneSession,
   target: WebPhoneSession,
   acceptOptions: InvitationAcceptOptions,
-  transferOptions: SessionReferOptions
+  transferOptions: SessionReferOptions,
 ): Promise<OutgoingReferRequest> {
   await (this as WebPhoneInvitation).accept(acceptOptions);
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     this.mute!();
     setTimeout(() => {
       resolve(this.transfer!(target, transferOptions));
@@ -853,9 +772,9 @@ async function dispose(this: WebPhoneSession) {
 
 /* ---------------------------------------------------------- HELPER FUNCTIONS ---------------------------------------------------------- */
 
-function parseRcHeaderString(str = ''): {[key: string]: string} {
-  const pairs = str.split(/; */).filter(pair => pair.includes('=')); // skip things that don't look like key=value
-  const result: {[key: string]: string} = {};
+function parseRcHeaderString(str = ''): { [key: string]: string } {
+  const pairs = str.split(/; */).filter((pair) => pair.includes('=')); // skip things that don't look like key=value
+  const result: { [key: string]: string } = {};
   for (const pair of pairs) {
     let [key, value] = pair.split('=');
     key = key.trim();
@@ -899,10 +818,7 @@ function parseRcHeader(session: WebPhoneSession): void {
   }
 }
 
-async function setRecord(
-  session: WebPhoneSession,
-  flag: boolean
-): Promise<any> {
+async function setRecord(session: WebPhoneSession, flag: boolean): Promise<any> {
   const message = flag ? messages.startRecord : messages.stopRecord;
 
   if ((session.__isRecording && !flag) || (!session.__isRecording && flag)) {
@@ -913,15 +829,14 @@ async function setRecord(
 }
 
 function enableReceiverTracks(session: WebPhoneSession, enable: boolean): void {
-  const sessionDescriptionHandler =
-    session.sessionDescriptionHandler as SessionDescriptionHandler;
+  const sessionDescriptionHandler = session.sessionDescriptionHandler as SessionDescriptionHandler;
   const peerConnection = sessionDescriptionHandler.peerConnection;
   if (!peerConnection) {
     (session as any).logger.error('Peer connection closed.');
     return;
   }
 
-  peerConnection.getReceivers().forEach(receiver => {
+  peerConnection.getReceivers().forEach((receiver) => {
     if (receiver.track) {
       receiver.track.enabled = enable;
     }
@@ -929,15 +844,14 @@ function enableReceiverTracks(session: WebPhoneSession, enable: boolean): void {
 }
 
 function enableSenderTracks(session: WebPhoneSession, enable: boolean): void {
-  const sessionDescriptionHandler =
-    session.sessionDescriptionHandler as SessionDescriptionHandler;
+  const sessionDescriptionHandler = session.sessionDescriptionHandler as SessionDescriptionHandler;
   const peerConnection = sessionDescriptionHandler.peerConnection;
   if (!peerConnection) {
     (session as any).logger.error('Peer connection closed.');
     return;
   }
 
-  peerConnection.getSenders().forEach(sender => {
+  peerConnection.getSenders().forEach((sender) => {
     if (sender.track) {
       sender.track.enabled = enable;
     }
@@ -948,26 +862,21 @@ function setHold(session: WebPhoneSession, hold: boolean): Promise<void> {
   return new Promise((resolve, reject) => {
     // Just resolve if we are already in correct state
     if (session.held === hold) {
-      return resolve();
+      resolve();
+      return;
     }
 
     const options: SessionInviteOptions = {
       requestDelegate: {
         onAccept: async (response): Promise<void> => {
           session.held = hold;
-          const sessionDescriptionHandler =
-            session.sessionDescriptionHandler as SessionDescriptionHandler;
+          const sessionDescriptionHandler = session.sessionDescriptionHandler as SessionDescriptionHandler;
           const peerConnection = sessionDescriptionHandler.peerConnection;
           const localSdp = peerConnection!.localDescription!.sdp;
-          const match = localSdp.match(
-            /a=(sendrecv|sendonly|recvonly|inactive)/
-          );
+          const match = localSdp.match(/a=(sendrecv|sendonly|recvonly|inactive)/);
           const direction = match ? match[1] : '';
-          session.__localHold =
-            response.message.statusCode === 200 && direction === 'sendonly';
-          (session as any).logger.log(
-            'localhold is set to ' + session.__localHold
-          );
+          session.__localHold = response.message.statusCode === 200 && direction === 'sendonly';
+          (session as any).logger.log('localhold is set to ' + session.__localHold);
           enableReceiverTracks(session, !session.held);
           enableSenderTracks(session, !session.held && !session.muted);
           resolve();
@@ -976,7 +885,7 @@ function setHold(session: WebPhoneSession, hold: boolean): Promise<void> {
           (session as any).logger.warn('re-invite request was rejected');
           enableReceiverTracks(session, !session.held);
           enableSenderTracks(session, !session.held && !session.muted);
-          reject();
+          reject(new Error('re-invite request was rejected'));
         },
       },
     };
@@ -1000,8 +909,7 @@ function setHold(session: WebPhoneSession, hold: boolean): Promise<void> {
     const sessionDescriptionHandlerOptions =
       session.sessionDescriptionHandlerOptionsReInvite as SessionDescriptionHandlerOptions;
     sessionDescriptionHandlerOptions.hold = hold;
-    session.sessionDescriptionHandlerOptionsReInvite =
-      sessionDescriptionHandlerOptions;
+    session.sessionDescriptionHandlerOptionsReInvite = sessionDescriptionHandlerOptions;
 
     // Send re-INVITE
     session
@@ -1013,9 +921,7 @@ function setHold(session: WebPhoneSession, hold: boolean): Promise<void> {
       })
       .catch((error: Error) => {
         if (error instanceof RequestPendingError) {
-          (session as any).logger.error(
-            'A hold request is already in progress.'
-          );
+          (session as any).logger.error('A hold request is already in progress.');
         }
         reject(error);
       });
@@ -1027,19 +933,15 @@ function stopPlaying(session: WebPhoneSession): void {
   session.userAgent.audioHelper!.playIncoming(false);
 }
 
-export function onSessionDescriptionHandlerCreated(
-  session: WebPhoneSession
-): void {
+export function onSessionDescriptionHandlerCreated(session: WebPhoneSession): void {
   if (!session.userAgent.enableQos) {
     return;
   }
   (session as any).logger.log('SessionDescriptionHandler created');
   startQosStatsCollection(session);
-  navigator.mediaDevices.enumerateDevices().then(devices => {
-    devices.forEach(device =>
-      (session as any).logger.log(
-        `${device.kind} = ${device.label} ${JSON.stringify(device)}`
-      )
+  navigator.mediaDevices.enumerateDevices().then((devices) => {
+    devices.forEach((device) =>
+      (session as any).logger.log(`${device.kind} = ${device.label} ${JSON.stringify(device)}`),
     );
   });
 }
@@ -1049,16 +951,10 @@ function setupUserAgentCoreEvent(session: WebPhoneSession) {
     return;
   }
   const userAgentCore: WehPhoneUserAgentCore = session.userAgent.userAgentCore;
-  userAgentCore.on!(Events.Session.UpdateReceived, payload =>
-    session.emit!(Events.Session.UpdateReceived, payload)
-  );
-  userAgentCore.on!(Events.Session.MoveToRcv, payload =>
-    session.emit!(Events.Session.MoveToRcv, payload)
-  );
+  userAgentCore.on!(Events.Session.UpdateReceived, (payload) => session.emit!(Events.Session.UpdateReceived, payload));
+  userAgentCore.on!(Events.Session.MoveToRcv, (payload) => session.emit!(Events.Session.MoveToRcv, payload));
   // RC_SIP_INFO event is for internal use
-  userAgentCore.on!('RC_SIP_INFO', payload =>
-    session.emit!('RC_SIP_INFO', payload)
-  );
+  userAgentCore.on!('RC_SIP_INFO', (payload) => session.emit!('RC_SIP_INFO', payload));
   session.__userAgentCoreEventsSetup = true;
 }
 

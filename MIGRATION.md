@@ -5,7 +5,7 @@ v0.9.0 is not fully backward compatible with v0.8.x. This is because sip.js has 
 ## 1. [WebPhoneUserAgent](docs/api/interfaces/WebPhoneUserAgent.md)
 
 - The return type of `sendMessage` method has changed from `ClientContext` to `IncomingResponse`.
-More details on `IncomingResponse` can be found on sip.js documentation at [`IncomingResponse`](https://github.com/onsip/SIP.js/blob/master/docs/core/sip.js.incomingresponse.md)
+  More details on `IncomingResponse` can be found on sip.js documentation at [`IncomingResponse`](https://github.com/onsip/SIP.js/blob/master/docs/core/sip.js.incomingresponse.md)
 - `__invite` internal method has been removed. `userAgent` still has the `invite` method which will work the same way
 - `__register` internal method has been removed. `userAgent` still has the `register` method which will work the same way
 - `__unregister` internal method has been removed. `userAgent` still has the `unregister` method which will work the same way
@@ -17,6 +17,7 @@ More details on `IncomingResponse` can be found on sip.js documentation at [`Inc
 
 sip.js has removed all `userAgent` events
 WebPhone SDK will still supports some basic events on `WebPhoneUserAgent`
+
 - `registered` : Fired when UserAgent is registered with the registerer
 - `unregistered` : Fired when UserAgent is unregistered from the registerer
 - `registrationFailed`: Fired when UserAgent is registered with failure state
@@ -25,7 +26,6 @@ WebPhone SDK will still supports some basic events on `WebPhoneUserAgent`
 - `provisionUpdate` : Fired when provisionUpdate notification is received from RingCentral backend
 - `started` : Fired when UserAgent is started
 - `stopped` : Fired when UserAgent is stopped
-
 
 ## 2. [WebPhoneTransport](docs/api/interfaces/WebPhoneTransport.md)
 
@@ -44,6 +44,7 @@ WebPhone SDK will still supports some basic events on `WebPhoneUserAgent`
 
 sip.js has removed all `transport` events
 WebPhone SDK will still supports some basic events on `WebPhoneTransport`
+
 - `connecting` : Fired when Transport is connecting
 - `connected` : Fired when Transport is connected
 - `disconnecting` : Fired when Transport is disconnecting
@@ -56,6 +57,7 @@ WebPhone SDK will still supports some basic events on `WebPhoneTransport`
 ## 3. [WebPhoneSession](docs/api/modules.md#webphonesession)
 
 `WebphoneSession` is now a union of `WebPhoneInvitation | WebPhoneInviter`
+
 - `__sendRequest` internal method has been removed
 - `__receiveRequest` internal method has been removed
 - `receiveRequest` method has been removed from `session`. Renamed to `receiveIncomingRequestFromTransport` and is moved to `userAgentCore` by `sip.js`
@@ -112,6 +114,7 @@ WebPhone SDK will still supports some basic events on `WebPhoneSession`
 - `userMediaFailed`: Fired when getting user media is failed
 
 ## 4. [MediaStreamsImpl](docs/api/classes/MediaStreamsImpl.md)
+
 - `onMediaConnectionStateChange` order of params has changed. The method now takes `state: string` as the first parameter and `session: WebPhoneSession` as the second parameter
 - `on` method has been removed
 - `localStream` has been removed

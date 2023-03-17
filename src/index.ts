@@ -1,5 +1,5 @@
-import {Levels as LogLevels} from 'sip.js/lib/core/log/levels';
-import {LogLevel} from 'sip.js/lib/api/user-agent-options';
+import { Levels as LogLevels } from 'sip.js/lib/core/log/levels';
+import { LogLevel } from 'sip.js/lib/api/user-agent-options';
 import {
   UserAgent,
   Web,
@@ -9,9 +9,9 @@ import {
   SessionDescriptionHandlerFactory,
 } from 'sip.js';
 
-import {createWebPhoneUserAgent, WebPhoneUserAgent} from './userAgent';
-import {default as MediaStreams, MediaStreamsImpl} from './mediaStreams';
-import {uuid, delay, extend} from './utils';
+import { createWebPhoneUserAgent, WebPhoneUserAgent } from './userAgent';
+import { default as MediaStreams, MediaStreamsImpl } from './mediaStreams';
+import { uuid, extend } from './utils';
 import {
   uuidKey,
   defaultMediaConstraints,
@@ -19,14 +19,16 @@ import {
   defaultSipErrorCodes,
   defaultStunServers,
 } from './constants';
-import {WebPhoneSession} from './session';
+import { WebPhoneSession } from './session';
 import {
   defaultSessionDescriptionFactory,
   WebPhoneSessionDescriptionHandlerFactoryOptions,
 } from './sessionDescriptionHandler';
-import {AudioHelperOptions} from './audioHelper';
+import { AudioHelperOptions } from './audioHelper';
 
-const {version} = require('../package.json');
+import pkg from '../package.json';
+
+const version = pkg.version;
 
 export interface TransportServer {
   uri: string;
@@ -173,12 +175,12 @@ export interface WebPhoneOptions {
    */
   maxReconnectionAttemptsWithBackup?: number;
   /** local and remote reference to HTML media elements */
-  media?: {local?: HTMLMediaElement; remote?: HTMLMediaElement};
+  media?: { local?: HTMLMediaElement; remote?: HTMLMediaElement };
   /** Constraints used when creating peerConnection
    *
    * default value `{ audio: true, video: false }`
    */
-  mediaConstraints?: {audio: boolean; video: boolean};
+  mediaConstraints?: { audio: boolean; video: boolean };
   /** Default modifiers used for SessionDescriptionHandler
    *
    * [Reference](https://github.com/onsip/SIP.js/blob/master/docs/api/sip.js.sessiondescriptionhandlermodifier.md)
@@ -267,7 +269,7 @@ const defaultWebPhoneOptions: WebPhoneOptions = {
   maxReconnectionAttemptsWithBackup: 10,
   mediaConstraints: defaultMediaConstraints,
   modifiers: [],
-  //FIXME: This should be in seconds since every other config is in seconds
+  // FIXME: This should be in seconds since every other config is in seconds
   qosCollectInterval: 5000,
   reconnectionTimeoutNoBackup: 5,
   reconnectionTimeoutWithBackup: 4,
@@ -285,8 +287,6 @@ export default class WebPhone {
   public static version = version;
   /** Utility function to generate uuid */
   public static uuid = uuid;
-  /** Utility function to generate delay */
-  public static delay = delay;
   /** Utility function to extend object */
   public static extend = extend;
 
@@ -308,11 +308,9 @@ export default class WebPhone {
    * TODO: include 'WebPhone' for all apps other than Chrome and Glip
    * TODO: parse wsservers from new api spec
    */
-  public constructor(
-    registrationData: WebPhoneRegistrationData = {},
-    options: WebPhoneOptions = {}
-  ) {
-    options = Object.assign({}, defaultWebPhoneOptions, options);
+  // eslint-disable-next-line complexity
+  public constructor(registrationData: WebPhoneRegistrationData = {}, _options: WebPhoneOptions = {}) {
+    const options = { ...defaultWebPhoneOptions, ..._options };
 
     this.sipInfo = registrationData.sipInfo as SipInfo;
     if (Array.isArray(this.sipInfo)) {
@@ -325,13 +323,10 @@ export default class WebPhone {
     const id = options.uuid;
     localStorage.setItem(this.uuidKey as string, id as string);
     const uaMatch = navigator.userAgent.match(/\((.*?)\)/);
-    const appClientOs =
-      uaMatch === null ? '' : uaMatch[1].replace(/[^a-zA-Z0-9.:_]+/g, '-');
+    const appClientOs = uaMatch === null ? '' : uaMatch[1].replace(/[^a-zA-Z0-9.:_]+/g, '-');
 
     const userAgentString =
-      (this.appName
-        ? this.appName + (this.appVersion ? '/' + this.appVersion : '') + ' '
-        : '') +
+      (this.appName ? this.appName + (this.appVersion ? '/' + this.appVersion : '') + ' ' : '') +
       (appClientOs ? appClientOs : '') +
       ` RCWEBPHONE/${WebPhone.version}`;
 
@@ -352,27 +347,26 @@ export default class WebPhone {
     const iceTransportPolicy = options.iceTransportPolicy;
     let iceServers: Array<RTCIceServer> = [];
     if (options.enableTurnServers) {
-      iceServers = options.turnServers!.map(url => ({urls: url}));
+      iceServers = options.turnServers!.map((url) => ({ urls: url }));
       options.iceCheckingTimeout = options.iceCheckingTimeout || 2000;
     }
     iceServers = [
       ...iceServers,
-      ...stunServers.map(_url => {
+      ...stunServers.map((_url) => {
         const url = !/^(stun:)/.test(_url) ? `stun:${_url}` : _url;
-        return {urls: url};
+        return { urls: url };
       }),
     ];
 
-    const sessionDescriptionHandlerFactoryOptions =
-      options.sessionDescriptionHandlerFactoryOptions || {
-        iceGatheringTimeout: options.iceCheckingTimeout || 500,
-        enableDscp: options.enableDscp,
-        peerConnectionConfiguration: {
-          iceServers,
-          iceTransportPolicy,
-          sdpSemantics,
-        },
-      };
+    const sessionDescriptionHandlerFactoryOptions = options.sessionDescriptionHandlerFactoryOptions || {
+      iceGatheringTimeout: options.iceCheckingTimeout || 500,
+      enableDscp: options.enableDscp,
+      peerConnectionConfiguration: {
+        iceServers,
+        iceTransportPolicy,
+        sdpSemantics,
+      },
+    };
 
     sessionDescriptionHandlerFactoryOptions.enableDscp = !!options.enableDscp;
 
@@ -386,22 +380,17 @@ export default class WebPhone {
     }
 
     const sessionDescriptionHandlerFactory =
-      options.sessionDescriptionHandlerFactory ||
-      defaultSessionDescriptionFactory;
+      options.sessionDescriptionHandlerFactory || defaultSessionDescriptionFactory;
 
-    const sipErrorCodes =
-      registrationData.sipErrorCodes && registrationData.sipErrorCodes.length
-        ? registrationData.sipErrorCodes
-        : defaultSipErrorCodes;
+    const sipErrorCodes = registrationData.sipErrorCodes?.length
+      ? registrationData.sipErrorCodes
+      : defaultSipErrorCodes;
 
     let reconnectionTimeout = options.reconnectionTimeoutWithBackup;
     let maxReconnectionAttempts = options.maxReconnectionAttemptsWithBackup;
     if (this.sipInfo.outboundProxy && this.sipInfo.transport) {
       options.transportServers!.push({
-        uri:
-          this.sipInfo.transport.toLowerCase() +
-          '://' +
-          this.sipInfo.outboundProxy,
+        uri: this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxy,
       });
       reconnectionTimeout = options.reconnectionTimeoutNoBackup;
       maxReconnectionAttempts = options.maxReconnectionAttemptsNoBackup;
@@ -409,26 +398,17 @@ export default class WebPhone {
 
     if (this.sipInfo.outboundProxyBackup && this.sipInfo.transport) {
       options.transportServers!.push({
-        uri:
-          this.sipInfo.transport.toLowerCase() +
-          '://' +
-          this.sipInfo.outboundProxyBackup,
+        uri: this.sipInfo.transport.toLowerCase() + '://' + this.sipInfo.outboundProxyBackup,
       });
     }
 
-    options.reconnectionTimeout =
-      options.reconnectionTimeout || reconnectionTimeout;
-    options.maxReconnectionAttempts =
-      options.maxReconnectionAttempts || maxReconnectionAttempts;
+    options.reconnectionTimeout = options.reconnectionTimeout || reconnectionTimeout;
+    options.maxReconnectionAttempts = options.maxReconnectionAttempts || maxReconnectionAttempts;
 
-    const transportServer = options.transportServers!.length
-      ? options.transportServers![0].uri
-      : '';
+    const transportServer = options.transportServers!.length ? options.transportServers![0].uri : '';
 
     const configuration: UserAgentOptions = {
-      uri: UserAgent.makeURI(
-        `sip:${this.sipInfo.username}@${this.sipInfo.domain}`
-      ),
+      uri: UserAgent.makeURI(`sip:${this.sipInfo.username}@${this.sipInfo.domain}`),
       transportOptions: {
         server: transportServer,
         traceSip: true,
@@ -440,9 +420,7 @@ export default class WebPhone {
       reconnectionAttempts: 0,
       authorizationUsername: this.sipInfo.authorizationId,
       authorizationPassword: this.sipInfo.password,
-      logLevel:
-        (LogLevels[options.logLevel!] as unknown as LogLevel) ||
-        defaultLogLevel,
+      logLevel: (LogLevels[options.logLevel!] as unknown as LogLevel) || defaultLogLevel,
       logBuiltinEnabled: options.builtinEnabled,
       logConnector: options.connector || undefined,
       userAgentString,
@@ -453,11 +431,6 @@ export default class WebPhone {
 
     options.sipErrorCodes = sipErrorCodes;
     options.switchBackInterval = this.sipInfo.switchBackInterval;
-    this.userAgent = createWebPhoneUserAgent(
-      configuration,
-      this.sipInfo,
-      options,
-      id!
-    );
+    this.userAgent = createWebPhoneUserAgent(configuration, this.sipInfo, options, id!);
   }
 }

@@ -1,12 +1,12 @@
-import {EventEmitter} from 'events';
-import {Exception, Logger} from 'sip.js/lib/core';
-import {Transport} from 'sip.js/lib/api/transport';
-import {Transport as WebTransport} from 'sip.js/lib/platform/web/transport';
-import {TransportOptions} from 'sip.js/lib/platform/web/transport/transport-options';
-import {TransportState} from 'sip.js';
+import { EventEmitter } from 'events';
+import { Exception, Logger } from 'sip.js/lib/core';
+import { Transport } from 'sip.js/lib/api/transport';
+import { Transport as WebTransport } from 'sip.js/lib/platform/web/transport';
+import { TransportOptions } from 'sip.js/lib/platform/web/transport/transport-options';
+import { TransportState } from 'sip.js';
 
-import {TransportServer, WebPhoneOptions} from './index';
-import {Events} from './events';
+import { TransportServer, WebPhoneOptions } from './index';
+import { Events } from './events';
 
 export interface WebPhoneTransport extends Transport {
   /** @ignore */
@@ -83,7 +83,7 @@ export interface WebPhoneTransport extends Transport {
   once?: typeof EventEmitter.prototype.once;
   /** @ignore */
   onSipErrorCode?: typeof onSipErrorCode;
-  /** Function to try reconnecting to the transport. Is automatically triggered when transport connection is dropped or `sipErrorCode` is returned from backend server*/
+  /** Function to try reconnecting to the transport. Is automatically triggered when transport connection is dropped or `sipErrorCode` is returned from backend server */
   reconnect?: typeof WebTransport.prototype.connect;
   /**
    * Unregister functions to be called when events are fired on the transport object
@@ -95,10 +95,7 @@ export interface WebPhoneTransport extends Transport {
   removeAllListeners?: typeof EventEmitter.prototype.removeAllListeners;
 }
 
-export function createWebPhoneTransport(
-  transport: WebPhoneTransport,
-  options: WebPhoneOptions
-): WebPhoneTransport {
+export function createWebPhoneTransport(transport: WebPhoneTransport, options: WebPhoneOptions): WebPhoneTransport {
   transport.reconnectionAttempts = 0;
   transport.sipErrorCodes = options.sipErrorCodes;
   transport.servers = options.transportServers;
@@ -108,25 +105,21 @@ export function createWebPhoneTransport(
   transport.once = eventEmitter.once.bind(eventEmitter);
   transport.addListener = eventEmitter.addListener.bind(eventEmitter);
   transport.removeListener = eventEmitter.removeListener.bind(eventEmitter);
-  transport.removeAllListeners =
-    eventEmitter.removeAllListeners.bind(eventEmitter);
+  transport.removeAllListeners = eventEmitter.removeAllListeners.bind(eventEmitter);
   transport.emit = eventEmitter.emit.bind(eventEmitter);
   transport.mainProxy = options.transportServers![0];
   transport.switchBackInterval = options.switchBackInterval;
   transport.reconnectionTimeout = options.reconnectionTimeout;
   transport.maxReconnectionAttempts = options.maxReconnectionAttempts;
   transport.__afterWSConnected = __afterWSConnected.bind(transport);
-  transport.__clearSwitchBackToMainProxyTimer =
-    __clearSwitchBackToMainProxyTimer.bind(transport);
+  transport.__clearSwitchBackToMainProxyTimer = __clearSwitchBackToMainProxyTimer.bind(transport);
   transport.__computeRandomTimeout = __computeRandomTimeout.bind(transport);
   transport.__connect = transport.connect;
   transport.__isCurrentMainProxy = __isCurrentMainProxy.bind(transport);
   transport.__onConnectedToBackup = __onConnectedToBackup.bind(transport);
   transport.__onConnectedToMain = __onConnectedToMain.bind(transport);
-  transport.__resetServersErrorStatus =
-    __resetServersErrorStatus.bind(transport);
-  transport.__scheduleSwitchBackToMainProxy =
-    __scheduleSwitchBackToMainProxy.bind(transport);
+  transport.__resetServersErrorStatus = __resetServersErrorStatus.bind(transport);
+  transport.__scheduleSwitchBackToMainProxy = __scheduleSwitchBackToMainProxy.bind(transport);
   transport.__setServerIsError = __setServerIsError.bind(transport);
   transport.connect = __connect.bind(transport);
   transport.getNextWsServer = getNextWsServer.bind(transport);
@@ -134,7 +127,7 @@ export function createWebPhoneTransport(
   transport.noAvailableServers = noAvailableServers.bind(transport);
   transport.onSipErrorCode = onSipErrorCode.bind(transport);
   transport.reconnect = reconnect.bind(transport);
-  transport.stateChange.addListener(newState => {
+  transport.stateChange.addListener((newState) => {
     switch (newState) {
       case TransportState.Connecting: {
         transport.emit!(Events.Transport.Connecting);
@@ -160,39 +153,26 @@ export function createWebPhoneTransport(
 
 function __connect(this: WebPhoneTransport): Promise<void> {
   return this.__connect!().catch(async (e: Exception) => {
-    this.logger!.error(
-      `unable to establish connection to server ${this.server} - ${e.message}`
-    );
+    this.logger!.error(`unable to establish connection to server ${this.server} - ${e.message}`);
     this.emit!(Events.Transport.ConnectionAttemptFailure, e); // Can we move to onTransportDisconnect?
     await this.reconnect!();
   });
 }
 
-function __computeRandomTimeout(
-  reconnectionAttempts = 1,
-  randomMinInterval = 0,
-  randomMaxInterval = 0
-): number {
-  if (
-    randomMinInterval < 0 ||
-    randomMaxInterval < 0 ||
-    reconnectionAttempts < 1
-  ) {
+function __computeRandomTimeout(reconnectionAttempts = 1, randomMinInterval = 0, randomMaxInterval = 0): number {
+  if (randomMinInterval < 0 || randomMaxInterval < 0 || reconnectionAttempts < 1) {
     throw new Error('Arguments must be positive numbers');
   }
 
   const randomInterval =
-    Math.floor(
-      Math.random() * Math.abs(randomMaxInterval - randomMinInterval)
-    ) + randomMinInterval;
-  const retryOffset =
-    ((reconnectionAttempts - 1) * (randomMinInterval + randomMaxInterval)) / 2;
+    Math.floor(Math.random() * Math.abs(randomMaxInterval - randomMinInterval)) + randomMinInterval;
+  const retryOffset = ((reconnectionAttempts - 1) * (randomMinInterval + randomMaxInterval)) / 2;
 
   return randomInterval + retryOffset;
 }
 
 function __setServerIsError(this: WebPhoneTransport, uri: string): void {
-  this.servers!.forEach(server => {
+  this.servers!.forEach((server) => {
     if (server.uri === uri && !server.isError) {
       server.isError = true;
     }
@@ -200,7 +180,7 @@ function __setServerIsError(this: WebPhoneTransport, uri: string): void {
 }
 
 function __resetServersErrorStatus(this: WebPhoneTransport): void {
-  this.servers!.forEach(server => {
+  this.servers!.forEach((server) => {
     server.isError = false;
   });
 }
@@ -210,9 +190,7 @@ function __isCurrentMainProxy(this: WebPhoneTransport): boolean {
 }
 
 function __afterWSConnected(this: WebPhoneTransport): void {
-  this.__isCurrentMainProxy!()
-    ? this.__onConnectedToMain!()
-    : this.__onConnectedToBackup!();
+  this.__isCurrentMainProxy!() ? this.__onConnectedToMain!() : this.__onConnectedToBackup!();
 }
 
 function __onConnectedToMain(this: WebPhoneTransport): void {
@@ -226,31 +204,23 @@ function __onConnectedToBackup(this: WebPhoneTransport): void {
 }
 
 function __scheduleSwitchBackToMainProxy(this: WebPhoneTransport): void {
-  const randomInterval = 15 * 60 * 1000; //15 min
+  const randomInterval = 15 * 60 * 1000; // 15 min
 
-  let switchBackInterval = this.switchBackInterval
-    ? this.switchBackInterval * 1000
-    : null;
+  let switchBackInterval = this.switchBackInterval ? this.switchBackInterval * 1000 : null;
 
   // Add random time to expand clients connections in time;
   if (switchBackInterval) {
     switchBackInterval += this.__computeRandomTimeout!(1, 0, randomInterval);
-    this.logger!.warn(
-      'Try to switch back to main proxy after ' +
-        Math.round(switchBackInterval / 1000 / 60) +
-        ' min'
-    );
+    this.logger!.warn('Try to switch back to main proxy after ' + Math.round(switchBackInterval / 1000 / 60) + ' min');
 
     this.switchBackToMainProxyTimer = setTimeout(() => {
       this.switchBackToMainProxyTimer = null;
       this.logger!.warn('switchBack initiated');
       this.emit!(Events.Transport.SwitchBackToMainProxy);
-      //FIXME: Why is force reconnect not called here and the client is made to do that?
+      // FIXME: Why is force reconnect not called here and the client is made to do that?
     }, switchBackInterval);
   } else {
-    this.logger!.warn(
-      'switchBackInterval is not set. Will be switched with next provision update '
-    );
+    this.logger!.warn('switchBackInterval is not set. Will be switched with next provision update ');
   }
 }
 
@@ -261,14 +231,9 @@ function __clearSwitchBackToMainProxyTimer(this: WebPhoneTransport): void {
   }
 }
 
-async function reconnect(
-  this: WebPhoneTransport,
-  forceReconnectToMain?: boolean
-): Promise<void> {
+async function reconnect(this: WebPhoneTransport, forceReconnectToMain?: boolean): Promise<void> {
   if (this.reconnectionAttempts! > 0) {
-    this.logger!.warn(
-      `Reconnection attempt ${this.reconnectionAttempts} failed`
-    );
+    this.logger!.warn(`Reconnection attempt ${this.reconnectionAttempts} failed`);
   }
 
   if (this.reconnectTimer) {
@@ -286,9 +251,7 @@ async function reconnect(
   }
 
   if (this.isConnected()) {
-    this.logger!.warn(
-      'attempted to reconnect while connected - forcing disconnect'
-    );
+    this.logger!.warn('attempted to reconnect while connected - forcing disconnect');
     await this.disconnect();
     await this.reconnect!();
     return;
@@ -306,9 +269,7 @@ async function reconnect(
   this.reconnectionAttempts! += 1;
 
   if (this.reconnectionAttempts! > this.maxReconnectionAttempts!) {
-    this.logger!.warn(
-      `maximum reconnection attempts for WebSocket ${this.server}`
-    );
+    this.logger!.warn(`maximum reconnection attempts for WebSocket ${this.server}`);
     this.logger!.warn(`transport ${this.server} failed`);
     this.__setServerIsError!(this.server!);
     this.emit!(Events.Transport.ConnectionFailure);
@@ -327,10 +288,10 @@ async function reconnect(
     this.nextReconnectInterval = this.__computeRandomTimeout!(
       this.reconnectionAttempts,
       randomMinInterval,
-      randomMaxInterval
+      randomMaxInterval,
     );
     this.logger!.warn(
-      `trying to reconnect to WebSocket ${this.server} (reconnection attempt: ${this.reconnectionAttempts})`
+      `trying to reconnect to WebSocket ${this.server} (reconnection attempt: ${this.reconnectionAttempts})`,
     );
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = undefined;
@@ -338,39 +299,25 @@ async function reconnect(
         this.reconnectionAttempts = 0;
       });
     }, this.nextReconnectInterval);
-    this.logger!.warn(
-      `next reconnection attempt in: ${Math.round(
-        this.nextReconnectInterval / 1000
-      )} seconds.`
-    );
+    this.logger!.warn(`next reconnection attempt in: ${Math.round(this.nextReconnectInterval / 1000)} seconds.`);
   }
 }
 
-function getNextWsServer(
-  this: WebPhoneTransport,
-  force = false
-): TransportServer | undefined {
+function getNextWsServer(this: WebPhoneTransport, force = false): TransportServer | undefined {
   // Adding the force check because otherwise it will not bypass error check
   if (!force && this.noAvailableServers!()) {
-    this.logger!.warn(
-      'attempted to get next ws server but there are no available ws servers left'
-    );
+    this.logger!.warn('attempted to get next ws server but there are no available ws servers left');
     return;
   }
-  const candidates = force
-    ? this.servers
-    : this.servers!.filter(({isError}) => !isError);
+  const candidates = force ? this.servers : this.servers!.filter(({ isError }) => !isError);
   return candidates![0];
 }
 
 function noAvailableServers(this: WebPhoneTransport): boolean {
-  return this.servers!.every(({isError}) => isError);
+  return this.servers!.every(({ isError }) => isError);
 }
 
-function isSipErrorCode(
-  this: WebPhoneTransport,
-  statusCode: number | undefined
-): boolean {
+function isSipErrorCode(this: WebPhoneTransport, statusCode: number | undefined): boolean {
   if (!statusCode) {
     return false;
   }
@@ -381,9 +328,7 @@ function isSipErrorCode(
 }
 
 async function onSipErrorCode(this: WebPhoneTransport): Promise<void> {
-  this.logger!.warn(
-    'Error received from the server. Disconnecting from the proxy'
-  );
+  this.logger!.warn('Error received from the server. Disconnecting from the proxy');
   this.__setServerIsError!(this.server!);
   this.emit!(Events.Transport.ConnectionFailure);
   this.reconnectionAttempts = 0;
