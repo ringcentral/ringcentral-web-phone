@@ -7,5 +7,7 @@ module.exports = {
     '@typescript-eslint/no-unused-vars': ['error'],
     // todo: https://github.com/AlloyTeam/eslint-config-alloy/issues/241
     'no-undef': ['off'],
+    quotes: ['error', 'single', { avoidEscape: true }],
+    'prefer-const': ['error'],
   },
 };

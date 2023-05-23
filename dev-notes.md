@@ -16,6 +16,12 @@ yarn serve
 
 Visit http://localhost:8080 to test.
 
+## Run tests
+
+```
+yarn test
+```
+
 ## New changes in 0.9.0
 
 event 'accepted' renamed to 'established'
@@ -26,3 +32,5 @@ session.ua.xxx renamed to session.userAgent.xxx
 
 - Replace the demo with React.js
 - Redo code coverage part
+- Replace webpack with parcel in demo
+- Replace puppeteer with playwright

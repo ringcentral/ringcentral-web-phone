@@ -56,7 +56,7 @@ describe('RingCentral Web Phone', () => {
     await callerPage.type('input[name="number"]', receiverPhoneNumber);
     const [callButton] = await callerPage.$x("//button[text()='Call']");
     await (callButton as ElementHandle<HTMLElement>).click();
-    await waitFor({ interval: 3000 });
+    await waitFor({ interval: 5000 });
     expect(await callerPage.$x("//h4[contains(text(), 'Call In Progress')]")).toHaveLength(1);
     fs.writeFileSync('./screenshots/caller_calling.png', await callerPage.screenshot());
 
@@ -65,7 +65,7 @@ describe('RingCentral Web Phone', () => {
     expect(await receiverPage.$x("//button[text()='Answer']")).toHaveLength(1);
     const [answerButton] = await receiverPage.$x("//button[text()='Answer']");
     await (answerButton as ElementHandle<HTMLElement>).click();
-    await waitFor({ interval: 3000 });
+    await waitFor({ interval: 5000 });
     expect(await receiverPage.$x("//h4[contains(text(), 'Call In Progress')]")).toHaveLength(1);
     fs.writeFileSync('./screenshots/receiver_answered.png', await receiverPage.screenshot());
 
