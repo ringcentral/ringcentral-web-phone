@@ -87,7 +87,7 @@
     "yarn-upgrade-all": "0.7.2"
   },
   "engines": {
-    "node": ">=14"
+    "node": ">=16"
   },
   "preferGlobal": false
 }

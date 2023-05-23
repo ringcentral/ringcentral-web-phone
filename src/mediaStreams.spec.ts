@@ -171,11 +171,11 @@ const mockRtpStats = {
   },
   'media-source': {
     type: 'media-source',
-    audioLevel: faker.datatype.number({ min: 0, max: 100 }),
+    audioLevel: faker.number.int({ min: 0, max: 100 }),
   },
   track: {
     type: 'track',
-    audioLevel: faker.datatype.number({ min: 0, max: 100 }),
+    audioLevel: faker.number.int({ min: 0, max: 100 }),
   },
   transport: {
     type: 'transport',
