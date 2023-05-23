@@ -1,14 +1,48 @@
 {
-  "license": "MIT",
-  "version": "1.0.0-beta2",
-  "scripts": {
-    "test": "jest",
-    "test:coverage": "cat .coverage/lcov.info | coveralls -v",
-    "build": "yarn tsc && webpack --progress --color",
-    "serve": "webpack serve --progress --color",
-    "lint": "eslint --fix '**/*.{ts,tsx,js}' && prettier --write ."
-  },
   "name": "ringcentral-web-phone",
+  "version": "1.0.0-beta2",
+  "homepage": "https://github.com/ringcentral/ringcentral-web-phone",
+  "bugs": {
+    "url": "https://github.com/ringcentral/ringcentral-web-phone/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ringcentral/ringcentral-web-phone.git"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "RingCentral, Inc.",
+    "email": "devsupport@ringcentral.com"
+  },
+  "contributors": [
+    {
+      "name": "Kirill Konshin"
+    },
+    {
+      "name": "Elias Sun"
+    },
+    {
+      "name": "Vyshakh Babji"
+    },
+    {
+      "name": "Yatin Gera"
+    },
+    {
+      "name": "Tyler Liu"
+    },
+    {
+      "name": "Embbnux Ji"
+    }
+  ],
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "scripts": {
+    "build": "yarn tsc && webpack --progress --color",
+    "lint": "eslint --fix '**/*.{ts,tsx,js,jsx}' && prettier --write . && sort-package-json",
+    "serve": "webpack serve --progress --color",
+    "test": "jest",
+    "test:coverage": "cat .coverage/lcov.info | coveralls -v"
+  },
   "dependencies": {
     "sip.js": "0.21.2"
   },
@@ -39,6 +73,7 @@
     "prettier": "2.8.4",
     "puppeteer": "19.7.4",
     "querystring-es3": "0.2.1",
+    "sort-package-json": "2.4.1",
     "stream-browserify": "3.0.0",
     "ts-jest": "29.0.5",
     "ts-loader": "9.4.2",
@@ -51,42 +86,8 @@
     "webpack-dev-server": "4.11.1",
     "yarn-upgrade-all": "0.7.2"
   },
-  "preferGlobal": false,
-  "main": "./lib/index.js",
-  "types": "./lib/index.d.ts",
-  "author": {
-    "name": "RingCentral, Inc.",
-    "email": "devsupport@ringcentral.com"
-  },
-  "contributors": [
-    {
-      "name": "Kirill Konshin"
-    },
-    {
-      "name": "Elias Sun"
-    },
-    {
-      "name": "Vyshakh Babji"
-    },
-    {
-      "name": "Yatin Gera"
-    },
-    {
-      "name": "Tyler Liu"
-    },
-    {
-      "name": "Embbnux Ji"
-    }
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/ringcentral/ringcentral-web-phone.git"
-  },
-  "bugs": {
-    "url": "https://github.com/ringcentral/ringcentral-web-phone/issues"
-  },
-  "homepage": "https://github.com/ringcentral/ringcentral-web-phone",
   "engines": {
     "node": ">=14"
-  }
+  },
+  "preferGlobal": false
 }

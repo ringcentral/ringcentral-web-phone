@@ -2529,10 +2529,20 @@ detect-indent@^4.0.0:
   dependencies:
     repeating "^2.0.0"
 
+detect-indent@^7.0.1:
+  version "7.0.1"
+  resolved "https://registry.npmjs.org/detect-indent/-/detect-indent-7.0.1.tgz#cbb060a12842b9c4d333f1cac4aa4da1bb66bc25"
+  integrity sha512-Mc7QhQ8s+cLrnUfU/Ji94vG/r8M26m8f++vyres4ZoojaRDpZ1eSIh/EpzLNwlWuvzSZ3UbDFspjFvTDXe6e/g==
+
 detect-newline@^3.0.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/detect-newline/-/detect-newline-3.1.0.tgz#576f5dfc63ae1a192ff192d8ad3af6308991b651"
   integrity sha512-TLz+x/vEXm/Y7P7wn1EJFNLxYpUD4TgMosxY6fAVJUnJMbupHBOncxyWUG9OpTaH9EBD7uFI5LfEgmMOc54DsA==
+
+detect-newline@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.npmjs.org/detect-newline/-/detect-newline-4.0.0.tgz#450ac3f864d5f61112b53a524123b012c59581bc"
+  integrity sha512-1aXUEPdfGdzVPFpzGJJNgq9o81bGg1s09uxTWsqBlo9PI332uyJRQq13+LK/UN4JfxJbFdCXonUFQ9R/p7yCtw==
 
 detect-node@^2.0.4:
   version "2.1.0"
@@ -3317,6 +3327,11 @@ getpass@^0.1.1:
   dependencies:
     assert-plus "^1.0.0"
 
+git-hooks-list@^3.0.0:
+  version "3.1.0"
+  resolved "https://registry.npmjs.org/git-hooks-list/-/git-hooks-list-3.1.0.tgz#386dc531dcc17474cf094743ff30987a3d3e70fc"
+  integrity sha512-LF8VeHeR7v+wAbXqfgRlTSX/1BJR9Q1vEMR8JAz1cEg6GX07+zyj3sAdDvYjj/xnlIfVuGgj4qBei1K3hKH+PA==
+
 glob-parent@^5.1.2, glob-parent@~5.1.2:
   version "5.1.2"
   resolved "https://registry.yarnpkg.com/glob-parent/-/glob-parent-5.1.2.tgz#869832c58034fe68a4093c17dc15e8340d8401c4"
@@ -3409,6 +3424,17 @@ globby@^13.1.1:
   version "13.1.2"
   resolved "https://registry.yarnpkg.com/globby/-/globby-13.1.2.tgz#29047105582427ab6eca4f905200667b056da515"
   integrity sha512-LKSDZXToac40u8Q1PQtZihbNdTYSNMuWe+K5l+oa6KgDzSvVrHXlJy40hUP522RjAIoNLJYBJi7ow+rbFpIhHQ==
+  dependencies:
+    dir-glob "^3.0.1"
+    fast-glob "^3.2.11"
+    ignore "^5.2.0"
+    merge2 "^1.4.1"
+    slash "^4.0.0"
+
+globby@^13.1.2:
+  version "13.1.4"
+  resolved "https://registry.npmjs.org/globby/-/globby-13.1.4.tgz#2f91c116066bcec152465ba36e5caa4a13c01317"
+  integrity sha512-iui/IiiW+QrJ1X1hKH5qwlMQyv34wJAYwH1vrf8b9kBA4sNiif3gKsMHa+BrdnOpEudWjpotfa7LrTzB1ERS/g==
   dependencies:
     dir-glob "^3.0.1"
     fast-glob "^3.2.11"
@@ -3786,6 +3812,11 @@ is-plain-obj@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/is-plain-obj/-/is-plain-obj-3.0.0.tgz#af6f2ea14ac5a646183a5bbdb5baabbc156ad9d7"
   integrity sha512-gwsOE28k+23GP1B6vFl1oVh/WOzmawBrKwo5Ev6wMKzPkaXaCDIQKzLnvsA42DRlbVTWorkgTKIviAKCWkfUwA==
+
+is-plain-obj@^4.1.0:
+  version "4.1.0"
+  resolved "https://registry.npmjs.org/is-plain-obj/-/is-plain-obj-4.1.0.tgz#d65025edec3657ce032fd7db63c97883eaed71f0"
+  integrity sha512-+Pgi+vMuUNkJyExiMBt5IlFoMyKnr5zhJ4Uspz58WOhBF5QoIZkFyNHIbBAtHwzVAgk5RtndVNsDRN61/mmDqg==
 
 is-plain-object@^2.0.4:
   version "2.0.4"
@@ -5743,6 +5774,23 @@ sockjs@^0.3.24:
     faye-websocket "^0.11.3"
     uuid "^8.3.2"
     websocket-driver "^0.7.4"
+
+sort-object-keys@^1.1.3:
+  version "1.1.3"
+  resolved "https://registry.npmjs.org/sort-object-keys/-/sort-object-keys-1.1.3.tgz#bff833fe85cab147b34742e45863453c1e190b45"
+  integrity sha512-855pvK+VkU7PaKYPc+Jjnmt4EzejQHyhhF33q31qG8x7maDzkeFhAAThdCYay11CISO+qAMwjOBP+fPZe0IPyg==
+
+sort-package-json@2.4.1:
+  version "2.4.1"
+  resolved "https://registry.npmjs.org/sort-package-json/-/sort-package-json-2.4.1.tgz#4ea68a0b9ef34c2bc519e86d0d07de56622a7600"
+  integrity sha512-Nd3rgLBJcZ4iw7tpuOhwBupG6SvUDU0Fy1cZGAMorA2JmDUb+29Dg5phJK9gapa2Ak9d15w/RuMl/viwX+nKwQ==
+  dependencies:
+    detect-indent "^7.0.1"
+    detect-newline "^4.0.0"
+    git-hooks-list "^3.0.0"
+    globby "^13.1.2"
+    is-plain-obj "^4.1.0"
+    sort-object-keys "^1.1.3"
 
 source-map-support@0.5.13:
   version "0.5.13"
