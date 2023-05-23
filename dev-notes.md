@@ -16,6 +16,13 @@ yarn serve
 
 Visit http://localhost:8080 to test.
 
+## Run tests
+
+```
+yarn test
+```
+
+
 ## New changes in 0.9.0
 
 event 'accepted' renamed to 'established'
