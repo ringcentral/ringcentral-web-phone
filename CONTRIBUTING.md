@@ -41,7 +41,3 @@ Keep the browser open to manually refresh tests when needed (useful for debug):
 ```sh
 $ yarn run test:watch
 ```
-
-# Releasing
-
-Make sure version in `src/ringcentral-web-phone.js` is bumped.
