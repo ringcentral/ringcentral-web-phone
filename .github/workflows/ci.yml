@@ -34,7 +34,7 @@ jobs:
           path-to-lcov: .coverage/lcov.info
       - run: echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
       - name: Release
-        if: ${{ env.TAG != '' && !contains(env.TAG, '/') && !contains(env.TAG, '-') && github.repository == 'ringcentral/ringcentral-web-phone' }}
+        if: ${{ env.TAG != '' && !contains(env.TAG, '/') && github.repository == 'ringcentral/ringcentral-web-phone' }}
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_REPOSITORY: ringcentral/ringcentral-web-phone
