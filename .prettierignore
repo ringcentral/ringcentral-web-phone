@@ -3,3 +3,6 @@ dist/
 lib/
 .github/
 .coverage/
+docs/
+.coverage/
+.parcel-cache/

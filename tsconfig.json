@@ -5,7 +5,7 @@
     "target": "esnext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "declaration": true,
+    "declaration": true
   },
   "include": ["src"]
 }
