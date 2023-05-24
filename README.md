@@ -62,8 +62,8 @@ yarn add ringcentral-web-phone
 1. Download SIP.JS: [https://github.com/onsip/SIP.js/releases/tag/0.20.0](https://github.com/onsip/SIP.js/releases/tag/0.20.0)
 2. Download WebPhone SDK: [https://github.com/ringcentral/ringcentral-web-phone/releases/latest](https://github.com/ringcentral/ringcentral-web-phone/releases/latest)
 3. Download audio files:
-   1. [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/incoming.ogg](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/incoming.ogg)
-   2. [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/outgoing.ogg](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/audio/outgoing.ogg)
+   1. [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/demo/audio/incoming.ogg](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/demo/audio/incoming.ogg)
+   2. [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/demo/audio/outgoing.ogg](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/demo/audio/outgoing.ogg)
 
 ---
 

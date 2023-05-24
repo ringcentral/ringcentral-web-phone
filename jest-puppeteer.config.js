@@ -11,7 +11,7 @@ module.exports = {
     ],
   },
   server: {
-    command: 'yarn serve --port 8888',
+    command: 'yarn build && yarn http-server docs -c-1 -p8888',
     debug: false,
     port: 8888,
     launchTimeout: 30000,

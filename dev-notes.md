@@ -32,5 +32,4 @@ session.ua.xxx renamed to session.userAgent.xxx
 
 - Replace the demo with React.js
 - Redo code coverage part
-- Replace webpack with parcel in demo
 - Replace puppeteer with playwright
