@@ -1,4 +1,3 @@
-.cache-loader
 .chrome
 .coverage*
 .idea
@@ -9,3 +8,4 @@ lib
 *npm-debug*
 node_modules
 .secret
+.parcel-cache

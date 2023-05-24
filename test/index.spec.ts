@@ -6,6 +6,7 @@ const login = async (username: string, extension = '', password: string) => {
   const thePage = await browser.newPage();
   await thePage.setViewport({ width: 800, height: 800, deviceScaleFactor: 2 });
   await thePage.goto('http://localhost:8888/');
+  fs.writeFileSync('./screenshots/before-login.png', await thePage.screenshot());
   await thePage.click('input[name="server"]', { clickCount: 3 }); // click 3 times to select all
   await thePage.type('input[name="server"]', process.env.RC_WP_SERVER!);
   await thePage.click('input[name="clientId"]', { clickCount: 3 });

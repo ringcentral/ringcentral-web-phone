@@ -1,6 +1,5 @@
 /*.js
 /.chrome
-/.cache-loader
 /.coverage
 /screenshots
 /demo
@@ -8,3 +7,5 @@
 /dist/demo*.js
 /test
 /tsconfig.json
+/docs
+/.parcel-cache
