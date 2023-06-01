@@ -11,10 +11,8 @@ global.jQuery = $;
 import('bootstrap');
 
 $(() => {
-  /** @type {SDK} */
   let sdk = null;
   let platform = null;
-  /** @type {WebPhone} */
   let webPhone = null;
 
   let logLevel: 0 | 1 | 2 | 3 = 0;
