@@ -10,7 +10,8 @@
   },
   "name": "ringcentral-web-phone",
   "dependencies": {
-    "sip.js": "0.21.2"
+    "sip.js": "0.21.2",
+    "yarn": "1.22.19"
   },
   "devDependencies": {
     "@faker-js/faker": "7.6.0",
