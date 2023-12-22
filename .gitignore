@@ -9,3 +9,5 @@ lib
 *npm-debug*
 node_modules
 .secret
+.package.json
+.package-lock.json
