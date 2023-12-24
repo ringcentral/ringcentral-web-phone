@@ -583,7 +583,7 @@ $(() => {
   }
 
   function bringIn(tId, pId) {
-    const url = '/restapi/v1.0/account/accountId/telephony/sessions/' + confSessionId + '/parties/bring-in';
+    const url = '/restapi/v1.0/account/~/telephony/sessions/' + confSessionId + '/parties/bring-in';
     return platform.post(url, {
       telephonySessionId: tId,
       partyId: pId,

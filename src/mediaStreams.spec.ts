@@ -189,7 +189,7 @@ const mockRtpStats = {
 
 // #endregion
 
-global.navigator = new MockNavigator() as unknown as Navigator;
+// (global as any).navigator = new MockNavigator() as unknown as Navigator;
 
 function generateMockStatAndReport() {
   const inboundRTP = mockRtpStats['inbound-rtp'];
