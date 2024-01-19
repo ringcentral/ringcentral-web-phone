@@ -1,8 +1,9 @@
 import * as fs from 'fs';
 import { ElementHandle } from 'puppeteer';
 import waitFor from 'wait-for-async';
+import RingCentral from '@rc-ex/core';
 
-const login = async (username: string, extension = '', password: string) => {
+const login = async (jwtToken: string) => {
   const thePage = await browser.newPage();
   await thePage.setViewport({ width: 800, height: 800, deviceScaleFactor: 2 });
   await thePage.goto('http://localhost:8888/');
@@ -14,18 +15,14 @@ const login = async (username: string, extension = '', password: string) => {
   await thePage.click('input[name="clientSecret"]', { clickCount: 3 });
   await thePage.select('select[name="logLevel"]', '3');
   await thePage.type('input[name="clientSecret"]', process.env.RC_WP_CLIENT_SECRET!);
-  const [a] = await thePage.$x("//a[contains(text(),'Simple Login')]");
+  const [a] = await thePage.$x("//a[contains(text(),'Personal JWT Flow')]");
   await (a as ElementHandle<HTMLElement>).click();
   await waitFor({ interval: 1000 });
 
-  await thePage.click('input[name="username"]', { clickCount: 3 });
-  await thePage.type('input[name="username"]', username);
-  await thePage.click('input[name="extension"]', { clickCount: 3 });
-  await thePage.type('input[name="extension"]', extension);
-  await thePage.click('input[name="password"]', { clickCount: 3 });
-  await thePage.type('input[name="password"]', password);
-  const [button] = await thePage.$x("//button[text()='Login']");
-  await (button as ElementHandle<HTMLElement>).click();
+  await thePage.click('input[name="jwtToken"]', { clickCount: 3 });
+  await thePage.type('input[name="jwtToken"]', jwtToken);
+  const button = await thePage.$('#jwt-login');
+  await button!.click();
   await waitFor({ interval: 5000 });
   return thePage;
 };
@@ -33,26 +30,25 @@ const login = async (username: string, extension = '', password: string) => {
 describe('RingCentral Web Phone', () => {
   it('default', async () => {
     // login
-    const callerPage = await login(
-      process.env.RC_WP_CALLER_USERNAME!,
-      process.env.RC_WP_CALLER_EXTENSION,
-      process.env.RC_WP_CALLER_PASSWORD!,
-    );
+    const callerPage = await login(process.env.RC_WP_CALLER_JWT_TOKEN!);
     expect(await callerPage.$x("//button[text()='Logout']")).toHaveLength(1);
-    const receiverPage = await login(
-      process.env.RC_WP_RECEIVER_USERNAME!,
-      process.env.RC_WP_RECEIVER_EXTENSION,
-      process.env.RC_WP_RECEIVER_PASSWORD!,
-    );
+    const receiverPage = await login(process.env.RC_WP_RECEIVER_JWT_TOKEN!);
     expect(await receiverPage.$x("//button[text()='Logout']")).toHaveLength(1);
     fs.writeFileSync('./screenshots/caller_logged_in.png', await callerPage.screenshot());
     fs.writeFileSync('./screenshots/receiver_logged_in.png', await receiverPage.screenshot());
 
     // make the call
-    let receiverPhoneNumber = process.env.RC_WP_RECEIVER_USERNAME!;
-    if (process.env.RC_WP_RECEIVER_EXTENSION !== undefined && process.env.RC_WP_RECEIVER_EXTENSION.length > 0) {
-      receiverPhoneNumber += '*' + process.env.RC_WP_RECEIVER_EXTENSION;
-    }
+    const rc = new RingCentral({
+      server: process.env.RC_WP_SERVER!,
+      clientId: process.env.RC_WP_CLIENT_ID!,
+      clientSecret: process.env.RC_WP_CLIENT_SECRET!,
+    });
+    await rc.authorize({
+      jwt: process.env.RC_WP_RECEIVER_JWT_TOKEN!,
+    });
+    const r = await rc.restapi().account().extension().phoneNumber().get();
+    const receiverPhoneNumber = r.records!.filter((p) => p.primary === true)[0]!.phoneNumber!;
+    await rc.revoke();
     await callerPage.click('input[name="number"]', { clickCount: 3 });
     await callerPage.type('input[name="number"]', receiverPhoneNumber);
     const [callButton] = await callerPage.$x("//button[text()='Call']");

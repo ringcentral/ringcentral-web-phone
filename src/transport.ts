@@ -73,18 +73,18 @@ export interface WebPhoneTransport extends Transport {
    *
    * alias for removeListener
    */
-  off?: typeof EventEmitter.prototype.off;
+  off: typeof EventEmitter.prototype.off;
   /** Register functions to be called when events are fired on the transport object
    *
    * alias for addListener
    */
-  on?: typeof EventEmitter.prototype.on;
+  on: typeof EventEmitter.prototype.on;
   /** Register functions to be called once when events are fired on the transport object */
-  once?: typeof EventEmitter.prototype.once;
+  once: typeof EventEmitter.prototype.once;
   /** @ignore */
   onSipErrorCode?: typeof onSipErrorCode;
   /** Function to try reconnecting to the transport. Is automatically triggered when transport connection is dropped or `sipErrorCode` is returned from backend server */
-  reconnect?: typeof WebTransport.prototype.connect;
+  reconnect: typeof WebTransport.prototype.connect;
   /**
    * Unregister functions to be called when events are fired on the transport object
    */

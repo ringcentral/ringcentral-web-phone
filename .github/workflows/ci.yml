@@ -19,12 +19,8 @@ jobs:
           RC_WP_CLIENT_ID: ${{ secrets.RC_WP_CLIENT_ID }}
           RC_WP_CLIENT_SECRET: ${{ secrets.RC_WP_CLIENT_SECRET }}
           RC_WP_SERVER: ${{ secrets.RC_WP_SERVER }}
-          RC_WP_CALLER_USERNAME: ${{ secrets.RC_WP_CALLER_USERNAME }}
-          RC_WP_CALLER_EXTENSION: ${{ secrets.RC_WP_CALLER_EXTENSION }}
-          RC_WP_CALLER_PASSWORD: ${{ secrets.RC_WP_CALLER_PASSWORD }}
-          RC_WP_RECEIVER_USERNAME: ${{ secrets.RC_WP_RECEIVER_USERNAME }}
-          RC_WP_RECEIVER_EXTENSION: ${{ secrets.RC_WP_RECEIVER_EXTENSION }}
-          RC_WP_RECEIVER_PASSWORD: ${{ secrets.RC_WP_RECEIVER_PASSWORD }}
+          RC_WP_CALLER_JWT_TOKEN: ${{ secrets.RC_WP_CALLER_JWT_TOKEN }}
+          RC_WP_RECEIVER_JWT_TOKEN: ${{ secrets.RC_WP_RECEIVER_JWT_TOKEN }}
         run: |
           yarn test
       - name: Coveralls

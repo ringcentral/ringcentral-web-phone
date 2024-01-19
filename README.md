@@ -123,8 +123,7 @@ var platform = sdk.platform();
 
 platform
   .login({
-    username: '...',
-    password: '...',
+    jwt: '...',
   })
   .then(function (loginResponse) {
     return platform

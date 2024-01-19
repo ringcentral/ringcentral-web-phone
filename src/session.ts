@@ -145,11 +145,11 @@ export class CommonSession {
   /** Mute the call */
   public mute?: typeof mute;
   /** Remove event listener */
-  public off?: typeof EventEmitter.prototype.off;
+  public off: typeof EventEmitter.prototype.off;
   /** Add event listener. Same as addListener */
-  public on?: typeof EventEmitter.prototype.on;
+  public on: typeof EventEmitter.prototype.on;
   /** Add once event listener. Same as addListener */
-  public once?: typeof EventEmitter.prototype.once;
+  public once: typeof EventEmitter.prototype.once;
   /** Returns if the call is on hold locally or not */
   public onLocalHold?: typeof onLocalHold;
   /** RingCentral park implementation */

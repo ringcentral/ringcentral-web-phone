@@ -7,18 +7,18 @@ import incomingAudio from 'url:./audio/incoming.ogg';
 import outgoingAudio from 'url:./audio/outgoing.ogg';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
+import Platform from '@ringcentral/sdk/lib/platform/Platform';
 global.jQuery = $;
 import('bootstrap');
 
 $(() => {
-  let sdk = null;
-  let platform = null;
-  let webPhone = null;
+  let sdk: SDK;
+  let platform: Platform;
+  let webPhone: WebPhone;
 
   let logLevel: 0 | 1 | 2 | 3 = 0;
-  let username = null;
-  let extension = null;
-  let extensionNumber = '';
+  let extension: any;
+  let primaryNumber: string;
   const $app = $('#app');
 
   const $loginTemplate = $('#template-login');
@@ -40,7 +40,7 @@ $(() => {
     return $($tpl.html());
   }
 
-  function login(server, clientId, clientSecret, _username, _extension, password, ll) {
+  function login(server, clientId, clientSecret, jwtToken, ll) {
     sdk = new SDK({
       clientId,
       clientSecret,
@@ -49,21 +49,12 @@ $(() => {
 
     platform = sdk.platform();
 
-    username = _username;
-    extensionNumber = _extension;
-    if (username) {
-      username = username.match(/^[+1]/) ? username : '1' + username;
-      username = username.replace(/\W/g, '');
-    }
-
     platform
       .login({
-        username,
-        extension: _extension || null,
-        password,
+        jwt: jwtToken,
       })
       .then(() => {
-        return postLogin(server, clientId, clientSecret, username, _extension, password, ll);
+        return postLogin(server, clientId, clientSecret, jwtToken, ll);
       })
       .catch((e) => {
         console.error(e.stack || e);
@@ -91,22 +82,22 @@ $(() => {
       .loginWindow({ url: loginUrl }) // this method also allows to supply more options to control window position
       .then(platform.login.bind(platform))
       .then(() => {
-        return postLogin(server, clientId, clientSecret, '', '', '', ll);
+        return postLogin(server, clientId, clientSecret, '', ll);
       })
       .catch((e) => {
         console.error(e.stack || e);
       });
   }
 
-  function postLogin(server, clientId, clientSecret, _username, ext, password, ll) {
+  function postLogin(server, clientId, clientSecret, jwtToken, ll) {
     logLevel = ll;
 
     localStorage.setItem('webPhoneServer', server || '');
     localStorage.setItem('webPhoneclientId', clientId || '');
     localStorage.setItem('webPhoneclientSecret', clientSecret || '');
-    localStorage.setItem('webPhoneLogin', _username || '');
-    localStorage.setItem('webPhoneExtension', ext || '');
-    localStorage.setItem('webPhonePassword', password || '');
+    if (jwtToken && jwtToken.length > 0) {
+      localStorage.setItem('webPhoneJwtToken', jwtToken);
+    }
     localStorage.setItem('webPhoneLogLevel', (logLevel || 0).toString());
 
     return platform
@@ -115,7 +106,13 @@ $(() => {
       .then((res) => {
         extension = res;
         console.log('Extension info', extension);
-
+        return platform.get('/restapi/v1.0/account/~/extension/~/phone-number');
+      })
+      .then((res) => res.json())
+      .then((r) => {
+        primaryNumber = r.records.filter((r) => r.primary === true)[0].phoneNumber;
+      })
+      .then(() => {
         return platform.post('/restapi/v1.0/client-info/sip-provision', {
           sipInfo: [
             {
@@ -136,7 +133,7 @@ $(() => {
   function register(data) {
     webPhone = new WebPhone(data, {
       enableDscp: true,
-      clientId: localStorage.getItem('webPhoneclientId'),
+      clientId: localStorage.getItem('webPhoneclientId')!,
       audioHelper: {
         enabled: true,
         incoming: incomingAudio,
@@ -179,7 +176,7 @@ $(() => {
     });
     webPhone.userAgent.transport.on('switchBackProxy', () => {
       console.log('switching back to primary outbound proxy');
-      webPhone.userAgent.transport.reconnect(true);
+      webPhone.userAgent.transport.reconnect();
     });
     webPhone.userAgent.transport.on('closed', () => {
       console.log('WebSocket closed.');
@@ -519,7 +516,7 @@ $(() => {
     homeCountryId = homeCountryId || extension?.regionalSettings?.homeCountry?.id || null;
 
     const session = webPhone.userAgent.invite(number, {
-      fromNumber: username,
+      fromNumber: primaryNumber,
       homeCountryId,
     });
 
@@ -527,9 +524,9 @@ $(() => {
   }
 
   function switchCall() {
-    const activeCallItem = JSON.parse(localStorage.getItem('activeCallInfo'));
+    const activeCallItem = JSON.parse(localStorage.getItem('activeCallInfo')!);
     console.log('Switching active call to current tab: ', activeCallItem);
-    const session = webPhone.userAgent.switchFrom(activeCallItem);
+    const session = webPhone.userAgent.switchFrom(activeCallItem, {});
     onAccepted(session);
   }
 
@@ -566,7 +563,7 @@ $(() => {
 
   function startConferenceCall(number, pId, tId) {
     const session = webPhone.userAgent.invite(number, {
-      fromNumber: username,
+      fromNumber: primaryNumber,
     });
     session.on('established', () => {
       onAccepted(session);
@@ -610,8 +607,7 @@ $(() => {
         (extension.contact.company || '?') +
         '</dd>' +
         '<dt>From Phone Number</dt><dd>' +
-        username +
-        (extensionNumber === '' ? '' : '*' + extensionNumber) +
+        primaryNumber +
         '</dd>' +
         '</dl>',
     );
@@ -647,17 +643,13 @@ $(() => {
     const $server = $authForm.find('input[name=server]').eq(0);
     const $clientId = $authForm.find('input[name=clientId]').eq(0);
     const $clientSecret = $authForm.find('input[name=clientSecret]').eq(0);
-    const $username = $form.find('input[name=username]').eq(0);
-    const $ext = $form.find('input[name=extension]').eq(0);
-    const $password = $form.find('input[name=password]').eq(0);
+    const $jwtToken = $form.find('input[name=jwtToken]').eq(0);
     const $logLevel = $authForm.find('select[name=logLevel]').eq(0);
 
     $server.val(localStorage.getItem('webPhoneServer') || SDK.server.sandbox);
     $clientId.val(localStorage.getItem('webPhoneclientId') || '');
     $clientSecret.val(localStorage.getItem('webPhoneclientSecret') || '');
-    $username.val(localStorage.getItem('webPhoneLogin') || '');
-    $ext.val(localStorage.getItem('webPhoneExtension') || '');
-    $password.val(localStorage.getItem('webPhonePassword') || '');
+    $jwtToken.val(localStorage.getItem('webPhoneJwtToken') || '');
     $logLevel.val(localStorage.getItem('webPhoneLogLevel') || logLevel);
 
     $form.on('submit', (e) => {
@@ -666,15 +658,7 @@ $(() => {
       e.preventDefault();
       e.stopPropagation();
 
-      login(
-        $server.val(),
-        $clientId.val(),
-        $clientSecret.val(),
-        $username.val(),
-        $ext.val(),
-        $password.val(),
-        $logLevel.val(),
-      );
+      login($server.val(), $clientId.val(), $clientSecret.val(), $jwtToken.val(), $logLevel.val());
     });
     //
     $authForm.on('submit', (e) => {

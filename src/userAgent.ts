@@ -42,7 +42,7 @@ export interface ActiveCallInfo {
  */
 export interface WebPhoneUserAgent extends UserAgent {
   /** Utility class to help play incoming and outgoing cues for calls */
-  audioHelper?: AudioHelper;
+  audioHelper: AudioHelper;
   /** RTC constraints to be passed to browser when requesting for media stream */
   constraints?: object;
   /**
@@ -87,15 +87,15 @@ export interface WebPhoneUserAgent extends UserAgent {
    */
   createRcMessage?: (options: RCHeaders) => string;
   /** Emit event along with data which will trigger all listerenes attached to that event */
-  emit?: typeof EventEmitter.prototype.emit;
+  emit: typeof EventEmitter.prototype.emit;
   /** Send call invitation */
-  invite?: (number: string, options: InviteOptions) => WebPhoneSession;
+  invite: (number: string, options: InviteOptions) => WebPhoneSession;
   /** Remove event listener from list of listeners for that event */
-  off?: typeof EventEmitter.prototype.off;
+  off: typeof EventEmitter.prototype.off;
   /** To add event listeners to be triggered whenever an event on UserAgent is emitted */
-  on?: typeof EventEmitter.prototype.on;
+  on: typeof EventEmitter.prototype.on;
   /** Add once event listener from list of listeners for that event */
-  once?: typeof EventEmitter.prototype.once;
+  once: typeof EventEmitter.prototype.once;
   /**
    * @internal
    * Function which will be called when session is created. It's value is picked using options.onSession when instantiating userAgent object
@@ -113,9 +113,9 @@ export interface WebPhoneUserAgent extends UserAgent {
    */
   sendMessage?: (to: string, messageData: string) => Promise<IncomingResponse>;
   /** To switch from another device to this device */
-  switchFrom?: (activeCall: ActiveCallInfo, options: InviteOptions) => WebPhoneSession;
+  switchFrom: (activeCall: ActiveCallInfo, options: InviteOptions) => WebPhoneSession;
   /** Unregister device from the registrar */
-  unregister?: () => Promise<void>;
+  unregister: () => Promise<void>;
 }
 
 export interface InviteOptions {
@@ -339,7 +339,7 @@ function invite(this: WebPhoneUserAgent, number: string, options: InviteOptions 
     this,
     UserAgent.makeURI(`sip:${number}@${this.sipInfo!.domain}`)!,
     inviterOptions,
-  );
+  ) as WebPhoneSession;
   inviter
     .invite({
       requestDelegate: {
