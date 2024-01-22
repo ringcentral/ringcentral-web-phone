@@ -16,6 +16,8 @@ jobs:
       - run: yarn install
       - run: yarn lint
       - run: yarn build
+      - run: echo ${{github.ref_name}}
+      - run: echo ${{github.ref_name}}
       - name: test
         env:
           RC_WP_CLIENT_ID: ${{ secrets.RC_WP_CLIENT_ID }}
@@ -30,14 +32,13 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path-to-lcov: .coverage/lcov.info
-      - run: echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
       - name: Release
-        if: ${{ env.TAG != '' && github.repository == 'ringcentral/ringcentral-web-phone' }}
+        if: ${{ github.ref_type == 'tag' && github.ref_name != '' && github.repository == 'ringcentral/ringcentral-web-phone' }}
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_REPOSITORY: ringcentral/ringcentral-web-phone
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: npm publish
-        if: ${{ env.TAG != '' && github.repository == 'ringcentral/ringcentral-web-phone' }}
+        if: ${{ github.ref_type == 'tag' && github.ref_name != '' && github.repository == 'ringcentral/ringcentral-web-phone' }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
