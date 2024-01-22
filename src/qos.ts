@@ -1,7 +1,7 @@
 import { SessionState, Publisher, UserAgent } from 'sip.js';
 
-import { WebPhoneSession } from './session';
-import { SessionDescriptionHandler } from 'sip.js/lib/platform/web';
+import type { WebPhoneSession } from './session';
+import type { SessionDescriptionHandler } from 'sip.js/lib/platform/web';
 import { Events } from './events';
 
 const formatFloat = (input: any): string => parseFloat(input.toString()).toFixed(2);

@@ -3,18 +3,9 @@ import { faker } from '@faker-js/faker';
 
 import { default as MediaStreams, MediaStreamsImpl, Browsers, WebPhoneRTPReport } from './mediaStreams';
 import { Events } from './events';
-import { WebPhoneSession } from './session';
+import type { WebPhoneSession } from './session';
 
 // #region Mocks
-class MockNavigator {
-  private _userAgent: string;
-  public constructor() {
-    this._userAgent = 'Chrome/5.0 (Windows; U; Win98; en-US; rv:0.9.2) Gecko/20010725';
-  }
-  public get userAgent() {
-    return this._userAgent;
-  }
-}
 
 class MockLogger {
   public log: (message: string) => void;

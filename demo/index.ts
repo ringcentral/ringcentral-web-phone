@@ -7,7 +7,7 @@ import incomingAudio from 'url:./audio/incoming.ogg';
 import outgoingAudio from 'url:./audio/outgoing.ogg';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-import Platform from '@ringcentral/sdk/lib/platform/Platform';
+import type Platform from '@ringcentral/sdk/lib/platform/Platform';
 global.jQuery = $;
 import('bootstrap');
 

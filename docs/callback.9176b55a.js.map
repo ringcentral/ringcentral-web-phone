@@ -1,1 +1,0 @@
-{"mappings":"oeAAAA,EAAA,SAEAC,IAAIC,yBAAoBC,OAAWA","sources":["demo/callback.ts"],"sourcesContent":["import { SDK } from '@ringcentral/sdk';\n\nSDK.handleLoginRedirect(undefined, undefined);\n"],"names":["parcelRequire","SDK","handleLoginRedirect","undefined"],"version":3,"file":"callback.9176b55a.js.map"}

@@ -1,11 +1,11 @@
 import { EventEmitter } from 'events';
-import { Exception, Logger } from 'sip.js/lib/core';
-import { Transport } from 'sip.js/lib/api/transport';
-import { Transport as WebTransport } from 'sip.js/lib/platform/web/transport';
-import { TransportOptions } from 'sip.js/lib/platform/web/transport/transport-options';
+import type { Exception, Logger } from 'sip.js/lib/core';
+import type { Transport } from 'sip.js/lib/api/transport';
+import type { Transport as WebTransport } from 'sip.js/lib/platform/web/transport';
+import type { TransportOptions } from 'sip.js/lib/platform/web/transport/transport-options';
 import { TransportState } from 'sip.js';
 
-import { TransportServer, WebPhoneOptions } from './index';
+import type { TransportServer, WebPhoneOptions } from './index';
 import { Events } from './events';
 
 export interface WebPhoneTransport extends Transport {

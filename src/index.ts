@@ -1,15 +1,15 @@
 import { Levels as LogLevels } from 'sip.js/lib/core/log/levels';
-import { LogLevel } from 'sip.js/lib/api/user-agent-options';
-import {
-  UserAgent,
-  Web,
+import type { LogLevel } from 'sip.js/lib/api/user-agent-options';
+import type {
   SessionDescriptionHandlerModifier,
   UserAgentOptions,
   LogConnector,
   SessionDescriptionHandlerFactory,
 } from 'sip.js';
+import { UserAgent, Web } from 'sip.js';
 
-import { createWebPhoneUserAgent, WebPhoneUserAgent } from './userAgent';
+import type { WebPhoneUserAgent } from './userAgent';
+import { createWebPhoneUserAgent } from './userAgent';
 import { default as MediaStreams, MediaStreamsImpl } from './mediaStreams';
 import { uuid, extend } from './utils';
 import {
@@ -19,12 +19,10 @@ import {
   defaultSipErrorCodes,
   defaultStunServers,
 } from './constants';
-import { WebPhoneSession } from './session';
-import {
-  defaultSessionDescriptionFactory,
-  WebPhoneSessionDescriptionHandlerFactoryOptions,
-} from './sessionDescriptionHandler';
-import { AudioHelperOptions } from './audioHelper';
+import type { WebPhoneSession } from './session';
+import type { WebPhoneSessionDescriptionHandlerFactoryOptions } from './sessionDescriptionHandler';
+import { defaultSessionDescriptionFactory } from './sessionDescriptionHandler';
+import type { AudioHelperOptions } from './audioHelper';
 
 import pkg from '../package.json';
 

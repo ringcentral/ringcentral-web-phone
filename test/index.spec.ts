@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { ElementHandle } from 'puppeteer';
+import type { ElementHandle } from 'puppeteer';
 import waitFor from 'wait-for-async';
 import RingCentral from '@rc-ex/core';
 

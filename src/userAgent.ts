@@ -1,29 +1,15 @@
 import { EventEmitter } from 'events';
-import {
-  UserAgent,
-  UserAgentOptions,
-  UserAgentState,
-  Registerer,
-  RegistererState,
-  Inviter,
-  InviterOptions,
-  SessionDescriptionHandlerModifier,
-  Messager,
-} from 'sip.js';
-import { IncomingResponse } from 'sip.js/lib/core';
-import { WebPhoneTransport, createWebPhoneTransport } from './transport';
+import type { UserAgentOptions, InviterOptions, SessionDescriptionHandlerModifier } from 'sip.js';
+import { UserAgent, UserAgentState, Registerer, RegistererState, Inviter, Messager } from 'sip.js';
+import type { IncomingResponse } from 'sip.js/lib/core';
+import type { WebPhoneTransport } from './transport';
+import { createWebPhoneTransport } from './transport';
 
-import { SipInfo, WebPhoneOptions } from './index';
+import type { SipInfo, WebPhoneOptions } from './index';
 import { AudioHelper } from './audioHelper';
 import { Events } from './events';
-import {
-  onSessionDescriptionHandlerCreated,
-  patchIncomingWebphoneSession,
-  patchWebphoneSession,
-  RCHeaders,
-  WebPhoneInvitation,
-  WebPhoneSession,
-} from './session';
+import type { RCHeaders, WebPhoneInvitation, WebPhoneSession } from './session';
+import { onSessionDescriptionHandlerCreated, patchIncomingWebphoneSession, patchWebphoneSession } from './session';
 import { patchUserAgentCore } from './userAgentCore';
 
 /** RingCentral Active call info */

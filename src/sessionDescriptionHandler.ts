@@ -1,15 +1,15 @@
-import {
+import type {
   BodyAndContentType,
   Session,
   SessionDescriptionHandler as SessionDescriptionHandlerDefinition,
   SessionDescriptionHandlerModifier,
 } from 'sip.js';
-import { Logger } from 'sip.js/lib/core';
-import { MediaStreamFactory } from 'sip.js/lib/platform/web/session-description-handler/media-stream-factory';
-import { SessionDescriptionHandlerConfiguration } from 'sip.js/lib/platform/web/session-description-handler/session-description-handler-configuration';
-import { SessionDescriptionHandlerOptions } from 'sip.js/lib/platform/web/session-description-handler/session-description-handler-options';
-import { PeerConnectionDelegate } from 'sip.js/lib/platform/web/session-description-handler/peer-connection-delegate';
-import { SessionDescriptionHandlerFactoryOptions } from 'sip.js/lib/platform/web';
+import type { Logger } from 'sip.js/lib/core';
+import type { MediaStreamFactory } from 'sip.js/lib/platform/web/session-description-handler/media-stream-factory';
+import type { SessionDescriptionHandlerConfiguration } from 'sip.js/lib/platform/web/session-description-handler/session-description-handler-configuration';
+import type { SessionDescriptionHandlerOptions } from 'sip.js/lib/platform/web/session-description-handler/session-description-handler-options';
+import type { PeerConnectionDelegate } from 'sip.js/lib/platform/web/session-description-handler/peer-connection-delegate';
+import type { SessionDescriptionHandlerFactoryOptions } from 'sip.js/lib/platform/web';
 
 type ResolveFunction = () => void;
 type RejectFunction = (reason: Error) => void;

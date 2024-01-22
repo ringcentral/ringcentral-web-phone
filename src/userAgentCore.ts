@@ -1,9 +1,10 @@
 import { EventEmitter } from 'events';
 
-import { UserAgentCore, C, IncomingRequestMessage } from 'sip.js/lib/core';
+import type { UserAgentCore, IncomingRequestMessage } from 'sip.js/lib/core';
+import { C } from 'sip.js/lib/core';
 import { Events } from './events';
 
-import { WebPhoneUserAgent } from './userAgent';
+import type { WebPhoneUserAgent } from './userAgent';
 
 export type WehPhoneUserAgentCore = UserAgentCore & {
   _receiveIncomingRequestFromTransport?: typeof UserAgentCore.prototype.receiveIncomingRequestFromTransport;

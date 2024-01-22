@@ -4,9 +4,9 @@
  * Copyright © RingCentral. All rights reserved.
  */
 
-import { SessionDescriptionHandler } from 'sip.js/lib/platform/web';
-import { WebPhoneSession } from './session';
-import { RTPReport } from './rtpReport';
+import type { SessionDescriptionHandler } from 'sip.js/lib/platform/web';
+import type { WebPhoneSession } from './session';
+import type { RTPReport } from './rtpReport';
 import { Events } from './events';
 
 enum ConnectionState {

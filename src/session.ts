@@ -1,17 +1,15 @@
 import { EventEmitter } from 'events';
-import {
+import type {
   Invitation,
   InvitationAcceptOptions,
   Inviter,
-  RequestPendingError,
   SessionInviteOptions,
   SessionReferOptions,
-  UserAgent,
   URI,
   Session,
 } from 'sip.js';
-import {
-  fromBodyLegacy,
+import { RequestPendingError, UserAgent } from 'sip.js';
+import type {
   IncomingRequestMessage,
   IncomingResponse,
   OutgoingInviteRequest,
@@ -19,19 +17,22 @@ import {
   OutgoingRequestDelegate,
   RequestOptions,
 } from 'sip.js/lib/core';
+import { fromBodyLegacy } from 'sip.js/lib/core';
 import { SessionState } from 'sip.js/lib/api/session-state';
-import {
+import type {
   SessionDescriptionHandler,
   SessionDescriptionHandlerOptions,
 } from 'sip.js/lib/platform/web/session-description-handler';
 
 import { extend } from './utils';
-import { responseTimeout, messages, Command } from './constants';
+import type { Command } from './constants';
+import { responseTimeout, messages } from './constants';
 import { MediaStreams } from './mediaStreams';
-import { RTPReport, isNoAudio } from './rtpReport';
-import { WebPhoneUserAgent } from './userAgent';
+import type { RTPReport } from './rtpReport';
+import { isNoAudio } from './rtpReport';
+import type { WebPhoneUserAgent } from './userAgent';
 import { Events } from './events';
-import { WehPhoneUserAgentCore } from './userAgentCore';
+import type { WehPhoneUserAgentCore } from './userAgentCore';
 import { startQosStatsCollection } from './qos';
 
 export interface QosStats {
