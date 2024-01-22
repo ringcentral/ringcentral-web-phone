@@ -1,0 +1,29 @@
+name: Tests
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 21
+          registry-url: 'https://registry.npmjs.org'
+      - run: yarn install
+      - run: yarn lint
+      - run: yarn build
+      - name: Release
+        if: ${{ github.repository == 'ringcentral/ringcentral-web-phone' }}
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_REPOSITORY: ringcentral/ringcentral-web-phone
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: npm publish
+        if: ${{ github.repository == 'ringcentral/ringcentral-web-phone' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

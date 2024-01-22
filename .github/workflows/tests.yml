@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: Tests
 
 on: [push, pull_request]
 
@@ -7,8 +7,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 21
@@ -16,8 +14,6 @@ jobs:
       - run: yarn install
       - run: yarn lint
       - run: yarn build
-      - run: echo ${{github.ref_name}}
-      - run: echo ${{github.ref_name}}
       - name: test
         env:
           RC_WP_CLIENT_ID: ${{ secrets.RC_WP_CLIENT_ID }}
@@ -32,13 +28,3 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path-to-lcov: .coverage/lcov.info
-      - name: Release
-        if: ${{ github.ref_type == 'tag' && github.ref_name != '' && github.repository == 'ringcentral/ringcentral-web-phone' }}
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_REPOSITORY: ringcentral/ringcentral-web-phone
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: npm publish
-        if: ${{ github.ref_type == 'tag' && github.ref_name != '' && github.repository == 'ringcentral/ringcentral-web-phone' }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
