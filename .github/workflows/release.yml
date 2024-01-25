@@ -1,6 +1,10 @@
-name: CI Pipeline
+name: Release
 
-on: [push, pull_request]
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
   build:
@@ -39,16 +43,17 @@ jobs:
         if: ${{ env.RC_WP_CALLER_CLIENT_ID != '' && env.RC_WP_RECEIVER_PASSWORD != '' &&  env.RC_WP_CALLER_PASSWORD != '' }}
         run: |
           yarn run test:e2e
-      - name: Coveralls
-        uses: coverallsapp/github-action@master
+      - name: Release
+        if: ${{ github.repository == 'ringcentral/ringcentral-web-phone' }}
+        uses: softprops/action-gh-release@v1
         with:
-          github-token: ${{ secrets.GH_TOKEN }}
-          path-to-lcov: .coverage/lcov.info
-      - name: Github Pages
-        if: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
-        uses: JamesIves/github-pages-deploy-action@3.7.1
-        with:
+          files: |
+            dist/ringcentral-web-phone.js
+            dist/ringcentral-web-phone.min.js
+        env:
+          GITHUB_REPOSITORY: ringcentral/ringcentral-web-phone
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          BRANCH: gh-pages
-          FOLDER: dist
-          CLEAN: true
+      - run: npm publish
+        if: ${{ github.repository == 'ringcentral/ringcentral-web-phone' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
