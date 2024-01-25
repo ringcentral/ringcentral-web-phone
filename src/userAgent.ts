@@ -310,7 +310,7 @@ function invite(this: WebPhoneUserAgent, number: string, options: InviteOptions 
     inviterOptions.extraHeaders = [
         ...(options.extraHeaders || []),
         ...this.defaultHeaders,
-        `P-Asserted-Identity: sip: ${(options.fromNumber || this.sipInfo.username) + '@' + this.sipInfo.domain}`,
+        `P-Asserted-Identity: sip:${(options.fromNumber || this.sipInfo.username) + '@' + this.sipInfo.domain}`,
         ...(options.homeCountryId ? [`P-rc-country-id: ${options.homeCountryId}`] : [])
     ];
 
