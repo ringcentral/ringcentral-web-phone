@@ -52,7 +52,7 @@ jobs:
             dist/ringcentral-web-phone.min.js
         env:
           GITHUB_REPOSITORY: ringcentral/ringcentral-web-phone
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: npm publish
         if: ${{ github.repository == 'ringcentral/ringcentral-web-phone' }}
         env:
