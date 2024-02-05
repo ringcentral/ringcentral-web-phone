@@ -537,13 +537,15 @@ $(() => {
       getPresenceActiveCalls()
         .then((res) => res.json())
         .then((response) => {
-          const pId = response.activeCalls[0].partyId;
-          const tId = response.activeCalls[0].telephonySessionId;
+          const partyId = response.activeCalls[0].partyId;
+          const telephonySessionId = response.activeCalls[0].telephonySessionId;
           getConfVoiceToken().then((voiceToken) => {
-            startConferenceCall(voiceToken, pId, tId);
+            startConferenceCall(voiceToken, partyId, telephonySessionId);
             onConference = true;
           });
         });
+    } else {
+      alert('A conference is already in progress');
     }
   }
 
@@ -561,14 +563,14 @@ $(() => {
       });
   }
 
-  function startConferenceCall(number, pId, tId) {
-    const session = webPhone.userAgent.invite(number, {
+  function startConferenceCall(voiceToken, partyId, telephonySessionId) {
+    const session = webPhone.userAgent.invite(voiceToken, {
       fromNumber: primaryNumber,
     });
     session.on('established', () => {
       onAccepted(session);
       console.log('Conference call started');
-      bringIn(tId, pId)
+      bringIn(telephonySessionId, partyId)
         .then((res) => res.json())
         .then((response) => {
           console.log('Adding call to conference succesful', response);
@@ -579,11 +581,11 @@ $(() => {
     });
   }
 
-  function bringIn(tId, pId) {
+  function bringIn(telephonySessionId, partyId) {
     const url = '/restapi/v1.0/account/~/telephony/sessions/' + confSessionId + '/parties/bring-in';
     return platform.post(url, {
-      telephonySessionId: tId,
-      partyId: pId,
+      telephonySessionId: telephonySessionId,
+      partyId: partyId,
     });
   }
 
