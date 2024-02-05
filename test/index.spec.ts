@@ -15,7 +15,7 @@ const login = async (jwtToken: string) => {
   await thePage.click('input[name="clientSecret"]', { clickCount: 3 });
   await thePage.select('select[name="logLevel"]', '3');
   await thePage.type('input[name="clientSecret"]', process.env.RC_WP_CLIENT_SECRET!);
-  const [a] = await thePage.$x("//a[contains(text(),'Personal JWT Flow')]");
+  const [a] = await thePage.$$("xpath/.//a[contains(text(),'Personal JWT Flow')]");
   await (a as ElementHandle<HTMLElement>).click();
   await waitFor({ interval: 1000 });
 
@@ -31,9 +31,9 @@ describe('RingCentral Web Phone', () => {
   it('default', async () => {
     // login
     const callerPage = await login(process.env.RC_WP_CALLER_JWT_TOKEN!);
-    expect(await callerPage.$x("//button[text()='Logout']")).toHaveLength(1);
+    expect(await callerPage.$$("xpath/.//button[text()='Logout']")).toHaveLength(1);
     const receiverPage = await login(process.env.RC_WP_RECEIVER_JWT_TOKEN!);
-    expect(await receiverPage.$x("//button[text()='Logout']")).toHaveLength(1);
+    expect(await receiverPage.$$("xpath/.//button[text()='Logout']")).toHaveLength(1);
     fs.writeFileSync('./screenshots/caller_logged_in.png', await callerPage.screenshot());
     fs.writeFileSync('./screenshots/receiver_logged_in.png', await receiverPage.screenshot());
 
@@ -51,23 +51,23 @@ describe('RingCentral Web Phone', () => {
     await rc.revoke();
     await callerPage.click('input[name="number"]', { clickCount: 3 });
     await callerPage.type('input[name="number"]', receiverPhoneNumber);
-    const [callButton] = await callerPage.$x("//button[text()='Call']");
+    const [callButton] = await callerPage.$$("xpath/.//button[text()='Call']");
     await (callButton as ElementHandle<HTMLElement>).click();
     await waitFor({ interval: 5000 });
-    expect(await callerPage.$x("//h4[contains(text(), 'Call In Progress')]")).toHaveLength(1);
+    expect(await callerPage.$$("xpath/.//h4[contains(text(), 'Call In Progress')]")).toHaveLength(1);
     fs.writeFileSync('./screenshots/caller_calling.png', await callerPage.screenshot());
 
     // answer the call
     fs.writeFileSync('./screenshots/receiver_ringing.png', await receiverPage.screenshot());
-    expect(await receiverPage.$x("//button[text()='Answer']")).toHaveLength(1);
-    const [answerButton] = await receiverPage.$x("//button[text()='Answer']");
+    expect(await receiverPage.$$("xpath/.//button[text()='Answer']")).toHaveLength(1);
+    const [answerButton] = await receiverPage.$$("xpath/.//button[text()='Answer']");
     await (answerButton as ElementHandle<HTMLElement>).click();
     await waitFor({ interval: 5000 });
-    expect(await receiverPage.$x("//h4[contains(text(), 'Call In Progress')]")).toHaveLength(1);
+    expect(await receiverPage.$$("xpath/.//h4[contains(text(), 'Call In Progress')]")).toHaveLength(1);
     fs.writeFileSync('./screenshots/receiver_answered.png', await receiverPage.screenshot());
 
     // hang up the call
-    const [hangButton] = await receiverPage.$x("//button[text()='Hang Up']");
+    const [hangButton] = await receiverPage.$$("xpath/.//button[text()='Hang Up']");
     await (hangButton as ElementHandle<HTMLElement>).click();
     await waitFor({ interval: 1000 });
     fs.writeFileSync('./screenshots/receiver_hang_up.png', await receiverPage.screenshot());
