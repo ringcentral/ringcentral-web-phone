@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
   build:
@@ -17,12 +18,6 @@ jobs:
       - run: yarn install
       - run: yarn lint
       - run: yarn build
-      - name: Release
-        if: ${{ github.repository == 'ringcentral/ringcentral-web-phone' }}
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_REPOSITORY: ringcentral/ringcentral-web-phone
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: npm publish
         if: ${{ github.repository == 'ringcentral/ringcentral-web-phone' }}
         env:
