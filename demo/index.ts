@@ -2,12 +2,13 @@
 /* eslint-disable max-nested-callbacks */
 import $ from 'jquery';
 import { SDK } from '@ringcentral/sdk';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import type Platform from '@ringcentral/sdk/lib/platform/Platform';
+import { SessionState } from 'sip.js';
+
 import WebPhone from '../src/index';
 import incomingAudio from 'url:./audio/incoming.ogg';
 import outgoingAudio from 'url:./audio/outgoing.ogg';
-
-import 'bootstrap/dist/css/bootstrap.min.css';
-import type Platform from '@ringcentral/sdk/lib/platform/Platform';
 global.jQuery = $;
 import('bootstrap');
 
@@ -191,6 +192,37 @@ $(() => {
   }
 
   function onInvite(session) {
+    const $modal = cloneTemplate($incomingTemplate).modal({
+      backdrop: 'static',
+    });
+
+    session.stateChange.addListener((newState: SessionState) => {
+      switch (newState) {
+        case SessionState.Initial: {
+          console.log('Initial');
+          break;
+        }
+        case SessionState.Establishing: {
+          console.log('Establishing');
+          break;
+        }
+        case SessionState.Established: {
+          console.log('Established');
+          break;
+        }
+        case SessionState.Terminating: {
+          console.log('Terminating');
+          $modal.modal('hide');
+          break;
+        }
+        case SessionState.Terminated: {
+          console.log('Terminated');
+          $modal.modal('hide');
+          break;
+        }
+      }
+    });
+
     outboundCall = false;
     console.log('EVENT: Invite', session.request);
     console.log('To', session.request.to.displayName, session.request.to.friendlyName);
@@ -206,10 +238,6 @@ $(() => {
           console.error('Accept failed', e.stack || e);
         });
     } else {
-      const $modal = cloneTemplate($incomingTemplate).modal({
-        backdrop: 'static',
-      });
-
       $modal.find('.answer').on('click', () => {
         $modal.find('.before-answer').css('display', 'none');
         $modal.find('.answered').css('display', '');
@@ -264,10 +292,6 @@ $(() => {
             console.error('Reply failed', e2.stack || e2);
           });
       });
-
-      session.on('rejected', () => {
-        $modal.modal('hide');
-      });
     }
   }
 
@@ -313,7 +337,7 @@ $(() => {
       $info.text('time: ' + time + '\nstartTime: ' + JSON.stringify(session.startTime, null, 2) + '\n');
     }, 1000);
 
-    function close() {
+    function closeModal() {
       clearInterval(interval);
       $modal.modal('hide');
     }
@@ -468,28 +492,28 @@ $(() => {
     });
     session.on('rejected', () => {
       console.log('Event: Rejected');
-      close();
+      closeModal();
     });
     session.on('failed', function () {
       console.log('Event: Failed', arguments);
-      close();
+      closeModal();
     });
     session.on('terminated', () => {
       console.log('Event: Terminated');
       localStorage.setItem('activeCallInfo', '');
-      close();
+      closeModal();
     });
     session.on('cancel', () => {
       console.log('Event: Cancel');
-      close();
+      closeModal();
     });
     session.on('refer', () => {
       console.log('Event: Refer');
-      close();
+      closeModal();
     });
     session.on('replaced', (newSession) => {
       console.log('Event: Replaced: old session', session, 'has been replaced with', newSession);
-      close();
+      closeModal();
       onAccepted(newSession);
     });
     session.on('dtmf', () => {
@@ -506,7 +530,7 @@ $(() => {
     });
     session.on('bye', () => {
       console.log('Event: Bye');
-      close();
+      closeModal();
     });
   }
 

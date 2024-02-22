@@ -39,7 +39,7 @@
   "scripts": {
     "build": "rm -rf lib && yarn tsc && rm -rf docs && parcel build demo/index.html demo/callback.html --dist-dir docs --public-url ./",
     "lint": "eslint --fix '**/*.{ts,tsx,js,jsx}' && prettier --write . && sort-package-json",
-    "serve": "parcel demo/index.html demo/callback.html --dist-dir docs",
+    "serve": "rm -rf .parcel-cache && parcel demo/index.html demo/callback.html --dist-dir docs",
     "test": "jest",
     "test:coverage": "cat .coverage/lcov.info | coveralls -v"
   },
