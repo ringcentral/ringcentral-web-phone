@@ -483,30 +483,35 @@ $(() => {
       session.dispose();
     });
 
-    session.on('established', () => {
-      console.log('Event: Established');
-      captureActiveCallInfo(session);
+    session.stateChange.addListener((newState: SessionState) => {
+      switch (newState) {
+        case SessionState.Initial: {
+          console.log('Initial');
+          break;
+        }
+        case SessionState.Establishing: {
+          console.log('Establishing');
+          break;
+        }
+        case SessionState.Established: {
+          console.log('Established');
+          captureActiveCallInfo(session);
+          break;
+        }
+        case SessionState.Terminating: {
+          console.log('Terminating');
+          closeModal();
+          break;
+        }
+        case SessionState.Terminated: {
+          console.log('Terminated');
+          closeModal();
+          localStorage.setItem('activeCallInfo', '');
+          break;
+        }
+      }
     });
-    session.on('progress', () => {
-      console.log('Event: Progress');
-    });
-    session.on('rejected', () => {
-      console.log('Event: Rejected');
-      closeModal();
-    });
-    session.on('failed', function () {
-      console.log('Event: Failed', arguments);
-      closeModal();
-    });
-    session.on('terminated', () => {
-      console.log('Event: Terminated');
-      localStorage.setItem('activeCallInfo', '');
-      closeModal();
-    });
-    session.on('cancel', () => {
-      console.log('Event: Cancel');
-      closeModal();
-    });
+
     session.on('refer', () => {
       console.log('Event: Refer');
       closeModal();
@@ -524,13 +529,6 @@ $(() => {
     });
     session.on('unmuted', () => {
       console.log('Event: Unmuted');
-    });
-    session.on('connecting', () => {
-      console.log('Event: Connecting');
-    });
-    session.on('bye', () => {
-      console.log('Event: Bye');
-      closeModal();
     });
   }
 
@@ -591,17 +589,19 @@ $(() => {
     const session = webPhone.userAgent.invite(voiceToken, {
       fromNumber: primaryNumber,
     });
-    session.on('established', () => {
-      onAccepted(session);
-      console.log('Conference call started');
-      bringIn(telephonySessionId, partyId)
-        .then((res) => res.json())
-        .then((response) => {
-          console.log('Adding call to conference succesful', response);
-        })
-        .catch((e) => {
-          console.error('Conference call failed', e.stack || e);
-        });
+    session.stateChange.addListener((newState) => {
+      if (newState === SessionState.Established) {
+        onAccepted(session);
+        console.log('Conference call started');
+        bringIn(telephonySessionId, partyId)
+          .then((res) => res.json())
+          .then((response) => {
+            console.log('Adding call to conference succesful', response);
+          })
+          .catch((e) => {
+            console.error('Conference call failed', e.stack || e);
+          });
+      }
     });
   }
 
