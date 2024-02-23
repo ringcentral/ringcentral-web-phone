@@ -71,9 +71,9 @@ export interface RCHeaders {
 export interface ReplyOptions {
   replyType: number; // FIXME: Use enum
   replyText: string;
-  timeValue: string;
-  timeUnits: string;
-  callbackDirection: string;
+  timeValue?: string;
+  timeUnits?: string;
+  callbackDirection?: string;
 }
 
 export interface RTCPeerConnectionLegacy extends RTCPeerConnection {
@@ -420,7 +420,7 @@ async function sendInfoAndReceiveResponse(this: WebPhoneSession, command: Comman
       },
     };
     const requestOptions: RequestOptions = {
-      extraHeaders: [...(options.extraHeaders || []), ...this.userAgent.defaultHeaders!],
+      extraHeaders: [...(options.extraHeaders || []), ...this.userAgent.defaultHeaders],
       body: fromBodyLegacy({
         body: JSON.stringify({ request: command }),
         contentType: 'application/json;charset=utf-8',
@@ -448,7 +448,7 @@ function sendMoveResponse(
 ): void {
   const extraHeaders = options.extraHeaders || [];
   const requestOptions: RequestOptions = {
-    extraHeaders: [...extraHeaders, ...this.userAgent.defaultHeaders!],
+    extraHeaders: [...extraHeaders, ...this.userAgent.defaultHeaders],
     body: fromBodyLegacy({
       body: JSON.stringify({
         response: {
@@ -644,7 +644,7 @@ async function warmTransfer(
   options: SessionReferOptions = { requestOptions: { extraHeaders: [] } },
 ): Promise<OutgoingReferRequest> {
   options.requestOptions!.extraHeaders = (options.requestOptions!.extraHeaders || []).concat(
-    this.userAgent.defaultHeaders!,
+    this.userAgent.defaultHeaders,
   );
   const newTarget =
     typeof target === 'string' ? UserAgent.makeURI(`sip:${target}@${this.userAgent.sipInfo!.domain}`)! : target;
@@ -655,11 +655,15 @@ async function warmTransfer(
 async function transfer(
   this: WebPhoneSession,
   target: string | URI | WebPhoneSession,
-  options: SessionReferOptions = { requestOptions: { extraHeaders: [] } },
+  options: SessionReferOptions = {},
 ): Promise<OutgoingReferRequest> {
-  options.requestOptions!.extraHeaders = (options.requestOptions!.extraHeaders || []).concat(
-    this.userAgent.defaultHeaders!,
-  );
+  if (!options.requestOptions) {
+    options.requestOptions = {};
+  }
+  if (!options.requestOptions.extraHeaders) {
+    options.requestOptions.extraHeaders = [];
+  }
+  options.requestOptions.extraHeaders = [...options.requestOptions.extraHeaders, ...this.userAgent.defaultHeaders];
   return this.blindTransfer!(target, options);
 }
 
@@ -731,7 +735,7 @@ function dtmf(this: WebPhoneSession, dtmf: string, _duration = 100, _interToneGa
 
 async function accept(this: WebPhoneSession, _options: InvitationAcceptOptions = {}): Promise<void> {
   const options = _options || {};
-  options.extraHeaders = (options.extraHeaders || []).concat(this.userAgent.defaultHeaders!);
+  options.extraHeaders = (options.extraHeaders || []).concat(this.userAgent.defaultHeaders);
   options.sessionDescriptionHandlerOptions = {
     ...options.sessionDescriptionHandlerOptions,
   };
@@ -754,8 +758,8 @@ async function accept(this: WebPhoneSession, _options: InvitationAcceptOptions =
 async function forward(
   this: WebPhoneSession,
   target: WebPhoneSession,
-  acceptOptions: InvitationAcceptOptions,
-  transferOptions: SessionReferOptions,
+  acceptOptions: InvitationAcceptOptions = {},
+  transferOptions: SessionReferOptions = {},
 ): Promise<OutgoingReferRequest> {
   await (this as WebPhoneInvitation).accept(acceptOptions);
   return new Promise((resolve) => {

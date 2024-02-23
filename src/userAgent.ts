@@ -35,7 +35,7 @@ export interface WebPhoneUserAgent extends UserAgent {
    * @internal
    * Contains list of default headers needed to be sent to RingCentral SIP server
    */
-  defaultHeaders?: string[];
+  defaultHeaders: string[];
   /**
    * If `true`, the first answer to the local offer is immediately utilized for media.
    * Requires that the INVITE request MUST NOT fork.
@@ -301,7 +301,7 @@ function invite(this: WebPhoneUserAgent, number: string, options: InviteOptions 
   const inviterOptions: InviterOptions = {};
   inviterOptions.extraHeaders = [
     ...(options.extraHeaders || []),
-    ...this.defaultHeaders!,
+    ...this.defaultHeaders,
     `P-Asserted-Identity: sip:${(options.fromNumber || this.sipInfo!.username) + '@' + this.sipInfo!.domain}`,
     ...(options.homeCountryId ? [`P-rc-country-id: ${options.homeCountryId}`] : []),
   ];

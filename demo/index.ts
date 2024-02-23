@@ -9,6 +9,7 @@ import { SessionState } from 'sip.js';
 import WebPhone from '../src/index';
 import incomingAudio from 'url:./audio/incoming.ogg';
 import outgoingAudio from 'url:./audio/outgoing.ogg';
+import type { WebPhoneInvitation } from '../src/session';
 global.jQuery = $;
 import('bootstrap');
 
@@ -191,7 +192,7 @@ $(() => {
     return webPhone;
   }
 
-  function onInvite(session) {
+  function onInvite(session: WebPhoneInvitation) {
     const $modal = cloneTemplate($incomingTemplate).modal({
       backdrop: 'static',
     });
@@ -258,15 +259,14 @@ $(() => {
       });
 
       $modal.find('.toVoicemail').on('click', () => {
-        session.toVoicemail();
+        session.toVoicemail!();
         $modal.modal('hide');
       });
 
       $modal.find('.forward-form').on('submit', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        session
-          .forward($modal.find('input[name=forward]').val().trim())
+        session.forward!($modal.find('input[name=forward]').val().trim())
           .then(() => {
             console.log('Forwarded');
             $modal.modal('hide');
@@ -279,11 +279,10 @@ $(() => {
       $modal.find('.reply-form').on('submit', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        session
-          .replyWithMessage({
-            replyType: 0,
-            replyText: $modal.find('input[name=reply]').val(),
-          })
+        session.replyWithMessage!({
+          replyType: 0,
+          replyText: $modal.find('input[name=reply]').val(),
+        })
           .then(() => {
             console.log('Replied');
             $modal.modal('hide');
