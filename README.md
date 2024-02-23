@@ -5,6 +5,10 @@
 
 The RingCentral WebPhone Library includes a JavaScript WebRTC library and a WebRTC phone demo app.
 
+## Version 1.0.0 release notes
+
+https://gist.github.com/tylerlong/72b51a72cc16206850c4cdfa36c6793a
+
 ## Prerequisites
 
 - You will need an active RingCentral account. Don't have an account? [Get your Free RingCentral Developer Account Now!](https://developers.ringcentral.com)
