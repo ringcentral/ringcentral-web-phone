@@ -1,6 +1,6 @@
 {
   "name": "ringcentral-web-phone",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "scripts": {
     "test": "yarn run test:ut && yarn run test:e2e",
     "test:coverage": "cat .coverage/lcov.info | coveralls -v",
