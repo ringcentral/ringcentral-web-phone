@@ -711,6 +711,7 @@ async function unhold(this: WebPhoneSession): Promise<void> {
   } catch (e) {
     throw new Error('Unhold could not be completed');
   }
+  this.addTrack(this.media.remote as HTMLVideoElement, this.media.local as HTMLVideoElement);
 }
 
 // eslint-disable-next-line max-params
