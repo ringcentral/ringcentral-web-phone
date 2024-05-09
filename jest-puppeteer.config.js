@@ -1,7 +1,7 @@
 module.exports = {
   launch: {
-    dumpio: false, // enable this to see console.log
-    headless: 'old', // https://developer.chrome.com/articles/new-headless/, 'new' doesn't work
+    dumpio: true, // enable this to see console.log
+    headless: false, // https://developer.chrome.com/articles/new-headless/, 'new' doesn't work
     args: [
       '--use-fake-ui-for-media-stream',
       '--use-fake-device-for-media-stream',
