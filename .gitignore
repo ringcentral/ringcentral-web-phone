@@ -9,3 +9,4 @@ lib
 node_modules
 .secret
 .parcel-cache
+test-results/

@@ -22,7 +22,7 @@ jobs:
           RC_WP_CALLER_JWT_TOKEN: ${{ secrets.RC_WP_CALLER_JWT_TOKEN }}
           RC_WP_RECEIVER_JWT_TOKEN: ${{ secrets.RC_WP_RECEIVER_JWT_TOKEN }}
         run: |
-          yarn test
+          yarn test2
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:
