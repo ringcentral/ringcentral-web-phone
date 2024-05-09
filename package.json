@@ -42,7 +42,7 @@
     "serve": "rm -rf .parcel-cache && parcel demo/index.html demo/callback.html --dist-dir docs",
     "test": "jest src/mediaStreams.spec.ts",
     "test:coverage": "cat .coverage/lcov.info | coveralls -v",
-    "test2": "NODE_OPTIONS=--require=dotenv-override-true/config playwright test test/index2.spec.ts --workers=1"
+    "test2": "NODE_OPTIONS=--require=dotenv-override-true/config playwright test test/index.spec.ts --workers=1"
   },
   "dependencies": {
     "sip.js": "^0.21.2"
