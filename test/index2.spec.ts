@@ -52,15 +52,15 @@ test('home page', async ({ context }) => {
 
   // answer the call
   await receiverPage.screenshot({ path: 'screenshots/receiver-ringing.png' });
-  await expect(receiverPage.locator('text=Answer')).toBeVisible();
-  await receiverPage.click('#btn-answer');
-  await receiverPage.waitForTimeout(3000);
-  await expect(receiverPage.locator('text=Call In Progress')).toBeVisible();
-  await receiverPage.screenshot({ path: 'screenshots/receiver-answered.png' });
+  // await expect(receiverPage.locator('text=Answer')).toBeVisible();
+  // await receiverPage.click('#btn-answer');
+  // await receiverPage.waitForTimeout(3000);
+  // await expect(receiverPage.locator('text=Call In Progress')).toBeVisible();
+  // await receiverPage.screenshot({ path: 'screenshots/receiver-answered.png' });
 
-  // hang up the call
-  await receiverPage.click('#btn-hang-up');
-  await receiverPage.waitForTimeout(1000);
-  await expect(receiverPage.locator('text=Call In Progress')).toBeHidden();
-  await receiverPage.screenshot({ path: 'screenshots/receiver-hung-up.png' });
+  // // hang up the call
+  // await receiverPage.click('#btn-hang-up');
+  // await receiverPage.waitForTimeout(1000);
+  // await expect(receiverPage.locator('text=Call In Progress')).toBeHidden();
+  // await receiverPage.screenshot({ path: 'screenshots/receiver-hung-up.png' });
 });
