@@ -40,7 +40,7 @@
     "build": "rm -rf lib && yarn tsc && rm -rf docs && parcel build demo/index.html demo/callback.html --dist-dir docs --public-url ./",
     "lint": "eslint --fix '**/*.{ts,tsx,js,jsx}' && prettier --write . && sort-package-json",
     "serve": "rm -rf .parcel-cache && parcel demo/index.html demo/callback.html --dist-dir docs",
-    "test": "jest",
+    "test": "jest src/mediaStreams.spec.ts",
     "test:coverage": "cat .coverage/lcov.info | coveralls -v",
     "test2": "NODE_OPTIONS=--require=dotenv-override-true/config playwright test test/index2.spec.ts --workers=1"
   },

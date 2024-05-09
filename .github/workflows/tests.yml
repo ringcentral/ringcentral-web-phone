@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,6 +24,7 @@ jobs:
         run: |
           yarn playwright install
           yarn test2
+          yarn test
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:
