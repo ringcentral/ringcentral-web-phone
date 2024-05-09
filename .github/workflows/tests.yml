@@ -22,15 +22,15 @@ jobs:
           RC_WP_CALLER_JWT_TOKEN: ${{ secrets.RC_WP_CALLER_JWT_TOKEN }}
           RC_WP_RECEIVER_JWT_TOKEN: ${{ secrets.RC_WP_RECEIVER_JWT_TOKEN }}
         run: |
+          yarn test
           yarn playwright install --with-deps
           yarn test2
       - name: ⬆ Upload report
         uses: actions/upload-artifact@v4
         with:
           path: screenshots
-      #     yarn test
-      # - name: Coveralls
-      #   uses: coverallsapp/github-action@master
-      #   with:
-      #     github-token: ${{ secrets.GITHUB_TOKEN }}
-      #     path-to-lcov: .coverage/lcov.info
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: .coverage/lcov.info
