@@ -74,7 +74,6 @@ export const startQosStatsCollection = (session: WebPhoneSession): void => {
   session.stateChange.addListener((newState) => {
     if (newState === SessionState.Terminated) {
       (session as any).logger.log('Release media streams');
-      session.mediaStreams?.release();
       publishQosStats(session, qosStatsObj);
       refreshIntervalId && clearInterval(refreshIntervalId);
     }

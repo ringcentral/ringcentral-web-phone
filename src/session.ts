@@ -27,9 +27,6 @@ import type {
 import { extend } from './utils';
 import type { Command } from './constants';
 import { responseTimeout, messages } from './constants';
-import { MediaStreams } from './mediaStreams';
-import type { RTPReport } from './rtpReport';
-import { isNoAudio } from './rtpReport';
 import type { WebPhoneUserAgent } from './userAgent';
 import { Events } from './events';
 import type { WehPhoneUserAgentCore } from './userAgentCore';
@@ -76,11 +73,6 @@ export interface ReplyOptions {
   callbackDirection?: string;
 }
 
-export interface RTCPeerConnectionLegacy extends RTCPeerConnection {
-  getRemoteStreams: () => MediaStream[];
-  getLocalStreams: () => MediaStream[];
-}
-
 export class CommonSession {
   /** @ignore */
   public __isRecording?: boolean;
@@ -97,7 +89,6 @@ export class CommonSession {
   /** Flag to indicate if media stats are being collected */
   public mediaStatsStarted?: boolean;
   /** MediaStreams class instance which has the logic to collect media stream stats */
-  public mediaStreams?: MediaStreams;
   /** Flag to check if the call is muted or not */
   public muted?: boolean;
   /** Counter to represent how many media stats report were missed because of no audio */
@@ -179,8 +170,6 @@ export class CommonSession {
   public sendSessionMessage?: typeof sendSessionMessage;
   /** Start recording the call */
   public startRecord?: typeof startRecord;
-  /** Function to stop collecting media stats */
-  public stopMediaStats?: typeof stopMediaStats;
   /** Stop recording the call */
   public stopRecord?: typeof stopRecord;
   /** Send incoming call to voicemail */
@@ -236,8 +225,6 @@ export interface WebPhoneInviter extends Inviter, CommonSession {
   userAgent: WebPhoneUserAgent;
 }
 
-const mediaCheckTimer = 2000;
-
 export function patchWebphoneSession(session: WebPhoneSession): WebPhoneSession {
   if (session.__patched) {
     return session;
@@ -267,7 +254,6 @@ export function patchWebphoneSession(session: WebPhoneSession): WebPhoneSession 
   session.mute = mute.bind(session);
   session.unmute = unmute.bind(session);
   session.addTrack = addTrack.bind(session);
-  session.stopMediaStats = stopMediaStats.bind(session);
   session.warmTransfer = warmTransfer.bind(session);
   session.blindTransfer = blindTransfer.bind(session);
   session.transfer = transfer.bind(session);
@@ -293,7 +279,6 @@ export function patchWebphoneSession(session: WebPhoneSession): WebPhoneSession 
       }
       case SessionState.Terminating: {
         stopPlaying(session);
-        stopMediaStreamStats(session);
         session.emit!(Events.Session.Terminating);
         break;
       }
@@ -592,39 +577,6 @@ function addTrack(this: WebPhoneSession, remoteAudioEle?: HTMLVideoElement, loca
   localAudio.play().catch(() => {
     (this as any).logger.error('Local play was rejected');
   });
-
-  if (localStream && remoteStream && !this.mediaStatsStarted) {
-    this.mediaStreams = new MediaStreams(this);
-    (this as any).logger.log('Start gathering media report');
-    this.mediaStatsStarted = true;
-    this.mediaStreams.getMediaStats((report: RTPReport) => {
-      if (this.userAgent.enableMediaReportLogging) {
-        (this as any).logger.log(`Got media report: ${JSON.stringify(report)}`);
-      }
-      if (!this.reinviteForNoAudioSent && isNoAudio(report)) {
-        (this as any).logger.log('No audio report');
-        this.noAudioReportCount!++;
-        if (this.noAudioReportCount === 3) {
-          (this as any).logger.log('No audio for 6 sec. Trying to recover audio by sending Re-invite');
-          this.mediaStreams!.reconnectMedia();
-          this.reinviteForNoAudioSent = true;
-          this.noAudioReportCount = 0;
-        }
-      } else if (!isNoAudio(report)) {
-        this.noAudioReportCount = 0;
-      }
-    }, mediaCheckTimer);
-  }
-}
-
-function stopMediaStats(this: WebPhoneSession): void {
-  (this as any).logger.log('Stopping media stats collection');
-  if (!this) {
-    return;
-  }
-  this.mediaStreams?.stopMediaStats();
-  this.mediaStatsStarted = false;
-  this.noAudioReportCount = 0;
 }
 
 async function blindTransfer(
@@ -693,7 +645,6 @@ function reinvite(this: WebPhoneSession, options: SessionInviteOptions = {}): Pr
 }
 
 async function hold(this: WebPhoneSession): Promise<void> {
-  this.stopMediaStats!();
   try {
     (this as any).logger.log('Hold Initiated');
     await setHold(this, true);
@@ -772,7 +723,6 @@ async function forward(
 }
 
 async function dispose(this: WebPhoneSession) {
-  stopMediaStreamStats(this);
   this.__dispose!();
 }
 
@@ -962,13 +912,6 @@ function setupUserAgentCoreEvent(session: WebPhoneSession) {
   // RC_SIP_INFO event is for internal use
   userAgentCore.on!('RC_SIP_INFO', (payload) => session.emit!('RC_SIP_INFO', payload));
   session.__userAgentCoreEventsSetup = true;
-}
-
-function stopMediaStreamStats(session: WebPhoneSession) {
-  if (session.mediaStreams) {
-    (session as any).logger.log('Releasing media streams');
-    session.mediaStreams.release();
-  }
 }
 
 function onLocalHold(this: WebPhoneSession): boolean {

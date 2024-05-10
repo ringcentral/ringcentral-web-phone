@@ -62,5 +62,5 @@ test('home page', async ({ context }) => {
   await receiverPage.click('#btn-hang-up');
   await receiverPage.waitForTimeout(1000);
   await expect(receiverPage.locator('text=Call In Progress')).toBeHidden();
-  await receiverPage.screenshot({ path: 'screenshots/receiver-hung-up.png' });
+  await receiverPage.screenshot({ path: 'screenshots/receiver-hang-up.png' });
 });

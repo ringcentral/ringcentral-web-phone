@@ -10,7 +10,6 @@ import { UserAgent, Web } from 'sip.js';
 
 import type { WebPhoneUserAgent } from './userAgent';
 import { createWebPhoneUserAgent } from './userAgent';
-import { default as MediaStreams, MediaStreamsImpl } from './mediaStreams';
 import { uuid, extend } from './utils';
 import {
   uuidKey,
@@ -287,9 +286,6 @@ export default class WebPhone {
   public static uuid = uuid;
   /** Utility function to extend object */
   public static extend = extend;
-
-  public static MediaStreams = MediaStreams;
-  public static MediaStreamsImpl = MediaStreamsImpl;
 
   /** Sip Info received from the registration endpoint */
   public sipInfo: SipInfo;
