@@ -55,7 +55,7 @@ export class AudioHelper {
    * @returns
    */
   public playIncoming(value: boolean): AudioHelper {
-    return this._playSound(this._incoming!, value, this.volume || 0.5);
+    return this._playSound(this._incoming!, value, this.volume ?? 0.5);
   }
 
   /**
@@ -64,7 +64,7 @@ export class AudioHelper {
    * @returns
    */
   public playOutgoing(value: boolean): AudioHelper {
-    return this._playSound(this._outgoing!, value, this.volume || 1);
+    return this._playSound(this._outgoing!, value, this.volume ?? 1);
   }
 
   private _playSound(url: string, val: boolean, volume: number): AudioHelper {
