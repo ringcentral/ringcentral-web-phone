@@ -458,7 +458,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     }
     for (const sender of this._peerConnection.getSenders().filter((sender) => sender.track)) {
       const parameters = sender.getParameters();
-      console.info('getsender params =', parameters);
+      // console.info('getsender params =', parameters);
       (parameters as any).priority = 'high';
       try {
         await sender.setParameters(parameters);
