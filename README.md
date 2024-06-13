@@ -27,9 +27,13 @@ Please visit Network Requirement links below
 1. Network Requirements and Recommendations | RingCentral Office : [https://support.ringcentral.com/s/article/9233?language=en_US](https://support.ringcentral.com/s/article/9233?language=en_US)
 2. Network Requirements and Recommendations - Resources : [https://support.ringcentral.com/s/article/Network-Requirements-and-Recommendations-Resources?language=en_US](https://support.ringcentral.com/s/article/Network-Requirements-and-Recommendations-Resources?language=en_US)
 
-## Demo application
+## Demo application for React.js
 
-Here is a demo application based on React. It is a work-in-progress project: https://github.com/tylerlong/ringcentral-web-phone-demo
+Here is a demo application based on React.js:
+https://chuntaoliu.com/rc-web-phone-demo/
+
+Source code is here: https://github.com/tylerlong/rc-web-phone-demo
+
 
 ## Table of Contents
 
