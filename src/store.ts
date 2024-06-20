@@ -1,8 +1,6 @@
 import { manage } from 'manate';
 
-export class Store {
-  public count = 0;
-}
+import Store from './models/store';
 
 const store = manage(new Store());
 

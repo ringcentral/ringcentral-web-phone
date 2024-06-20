@@ -3,3 +3,9 @@
 body {
   padding: 1rem;
 }
+
+#logout-btn {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+}

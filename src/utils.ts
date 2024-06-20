@@ -1,10 +1,9 @@
 import type SipInfoResponse from '@rc-ex/core/lib/definitions/SipInfoResponse';
-import { randomUUID, createHash } from 'crypto';
+import { v4 } from 'uuid';
+import md5 from 'blueimp-md5';
 
-export const uuid = () => randomUUID();
+export const uuid = () => v4();
 export const branch = () => 'z9hG4bK-' + uuid();
-
-const md5 = (s: string) => createHash('md5').update(s).digest('hex');
 
 const generateResponse = (sipInfo: SipInfoResponse, endpoint: string, nonce: string) => {
   const ha1 = md5(`${sipInfo.authorizationId}:${sipInfo.domain}:${sipInfo.password}`);

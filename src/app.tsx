@@ -1,33 +1,17 @@
 import React from 'react';
-import { Button, Space, Typography } from 'antd';
+import { Typography } from 'antd';
 import { auto } from 'manate/react';
 
-import type { Store } from './store';
-
-const { Text, Title } = Typography;
+import type { Store } from './models/store';
+import Login from './components/login';
+import Phone from './components/phone';
 
 const App = (props: { store: Store }) => {
   const { store } = props;
   const render = () => (
     <>
-      <Title>Untitled App</Title>
-      <Space>
-        <Button
-          onClick={() => {
-            store.count -= 1;
-          }}
-        >
-          -
-        </Button>
-        <Text>{store.count}</Text>
-        <Button
-          onClick={() => {
-            store.count += 1;
-          }}
-        >
-          +
-        </Button>
-      </Space>
+      <Typography.Title>RingCentral Web Phone 2 Demo</Typography.Title>
+      {store.rcToken === '' ? <Login store={store} /> : <Phone store={store} />}
     </>
   );
   return auto(render, props);
