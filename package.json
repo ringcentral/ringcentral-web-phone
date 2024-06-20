@@ -1,0 +1,38 @@
+{
+  "name": "untitled-app",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "lint": "tsc --noEmit ./src/*.ts && eslint --fix '**/*.{ts,tsx,js,jsx}' && prettier --write . && sort-package-json",
+    "serve": "rm -rf .parcel-cache && parcel src/index.html --dist-dir docs"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.6",
+    "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/eslint-plugin": "^7.13.1",
+    "@typescript-eslint/parser": "^7.13.1",
+    "antd": "^5.18.3",
+    "dotenv-override-true": "^6.2.2",
+    "eslint": "^8.57.0",
+    "eslint-config-alloy": "^5.1.2",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "eslint-plugin-react": "^7.34.3",
+    "manate": "^0.5.5",
+    "parcel": "^2.12.0",
+    "prettier": "^3.3.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "sort-package-json": "^2.10.0",
+    "tsx": "^4.15.6",
+    "ttpt": "^0.9.6",
+    "typescript": "^5.5.2",
+    "yarn-upgrade-all": "^0.7.2"
+  },
+  "yarn-upgrade-all": {
+    "ignore": [
+      "eslint"
+    ]
+  }
+}

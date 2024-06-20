@@ -1,0 +1,5 @@
+@import '../node_modules/antd/dist/reset.css';
+
+body {
+  padding: 1rem;
+}
