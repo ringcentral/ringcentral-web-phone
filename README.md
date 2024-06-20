@@ -34,7 +34,6 @@ https://chuntaoliu.com/rc-web-phone-demo/
 
 Source code is here: https://github.com/tylerlong/rc-web-phone-demo
 
-
 ## Table of Contents
 
 1. [Installation](#installation)
