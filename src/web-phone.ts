@@ -1,0 +1,137 @@
+import type SipInfoResponse from '@rc-ex/core/lib/definitions/SipInfoResponse';
+import EventEmitter from './event-emitter';
+import waitFor from 'wait-for-async';
+
+import type { OutboundMessage } from './sip-message';
+import { InboundMessage, RequestMessage, ResponseMessage } from './sip-message';
+import { branch, generateAuthorization, uuid } from './utils';
+import InboundCallSession from './call-session/inbound';
+import OutboundCallSession from './call-session/outbound';
+
+class WebPhone extends EventEmitter {
+  public sipInfo: SipInfoResponse;
+  public wsc: WebSocket;
+
+  public fakeDomain = uuid() + '.invalid';
+  public fakeEmail = uuid() + '@' + this.fakeDomain;
+
+  private intervalHandle: NodeJS.Timeout;
+  private connected = false;
+
+  public constructor(sipInfo: SipInfoResponse) {
+    super();
+    this.sipInfo = sipInfo;
+    this.wsc = new WebSocket(this.sipInfo.outboundProxy!);
+    this.wsc.onopen = () => {
+      this.connected = true;
+    };
+    this.wsc.onmessage = (event) => {
+      this.emit('message', InboundMessage.fromString(event.data));
+    };
+  }
+
+  public async register() {
+    if (!this.connected) {
+      await waitFor({ interval: 100, condition: () => this.connected });
+    }
+    const sipRegister = async () => {
+      const requestMessage = new RequestMessage(`REGISTER sip:${this.sipInfo.domain} SIP/2.0`, {
+        'Call-Id': uuid(),
+        Contact: `<sip:${this.fakeEmail};transport=tcp>;expires=600`,
+        From: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>;tag=${uuid()}`,
+        To: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>`,
+        Via: `SIP/2.0/TCP ${this.fakeDomain};branch=${branch()}`,
+      });
+      const inboundMessage = await this.send(requestMessage, true);
+      const wwwAuth = inboundMessage.headers['Www-Authenticate'] || inboundMessage!.headers['WWW-Authenticate'];
+      const nonce = wwwAuth.match(/, nonce="(.+?)"/)![1];
+      const newMessage = requestMessage.fork();
+      newMessage.headers.Authorization = generateAuthorization(this.sipInfo, nonce, 'REGISTER');
+      this.send(newMessage);
+    };
+    sipRegister();
+    this.intervalHandle = setInterval(
+      () => {
+        sipRegister();
+      },
+      3 * 60 * 1000, // refresh registration every 3 minutes
+    );
+    this.on('message', (inboundMessage) => {
+      if (!inboundMessage.subject.startsWith('INVITE sip:')) {
+        return;
+      }
+      this.emit('invite', inboundMessage);
+    });
+  }
+
+  public async enableDebugMode() {
+    this.on('message', (message) => console.log(`Receiving...(${new Date()})\n` + message.toString()));
+    const wscSend = this.wsc.send.bind(this.wsc);
+    this.wsc.send = (message) => {
+      console.log(`Sending...(${new Date()})\n` + message);
+      return wscSend(message);
+    };
+  }
+
+  public send(message: OutboundMessage, waitForReply = false): Promise<InboundMessage> {
+    this.wsc.send(message.toString());
+    if (!waitForReply) {
+      return new Promise<InboundMessage>((resolve) => {
+        resolve(new InboundMessage());
+      });
+    }
+    return new Promise<InboundMessage>((resolve) => {
+      const messageListerner = (inboundMessage: InboundMessage) => {
+        if (inboundMessage.headers.CSeq !== message.headers.CSeq) {
+          return;
+        }
+        if (inboundMessage.subject.startsWith('SIP/2.0 100 ')) {
+          return; // ignore
+        }
+        this.off('message', messageListerner);
+        resolve(inboundMessage);
+      };
+      this.on('message', messageListerner);
+    });
+  }
+
+  public async answer(inviteMessage: InboundMessage) {
+    const inboundCallSession = new InboundCallSession(this, inviteMessage);
+    await inboundCallSession.answer();
+    return inboundCallSession;
+  }
+
+  // decline an inbound call
+  public async decline(inviteMessage: InboundMessage) {
+    const newMessage = new ResponseMessage(inviteMessage, 603);
+    this.send(newMessage);
+  }
+
+  public async call(callee: number, callerId?: number) {
+    const offerSDP = ''.trim(); // todo: generate offer SDP
+    const inviteMessage = new RequestMessage(
+      `INVITE sip:${callee}@${this.sipInfo.domain} SIP/2.0`,
+      {
+        'Call-Id': uuid(),
+        Contact: `<sip:${this.fakeEmail};transport=tcp>;expires=600`,
+        From: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>;tag=${uuid()}`,
+        To: `<sip:${callee}@${this.sipInfo.domain}>`,
+        Via: `SIP/2.0/TCP ${this.fakeDomain};branch=${branch()}`,
+        'Content-Type': 'application/sdp',
+      },
+      offerSDP,
+    );
+    if (callerId) {
+      inviteMessage.headers['P-Asserted-Identity'] = `sip:${callerId}@${this.sipInfo.domain}`;
+    }
+    const inboundMessage = await this.send(inviteMessage, true);
+    const proxyAuthenticate = inboundMessage.headers['Proxy-Authenticate'];
+    const nonce = proxyAuthenticate.match(/, nonce="(.+?)"/)![1];
+    const newMessage = inviteMessage.fork();
+    newMessage.headers['Proxy-Authorization'] = generateAuthorization(this.sipInfo, nonce, 'INVITE');
+    const progressMessage = await this.send(newMessage, true);
+    return new OutboundCallSession(this, progressMessage);
+  }
+}
+
+export default WebPhone;
