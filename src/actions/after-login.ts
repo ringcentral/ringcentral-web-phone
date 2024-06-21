@@ -18,6 +18,7 @@ const afterLogin = async () => {
       sipInfo: [{ transport: 'WSS' }],
     });
   const webPhone = new WebPhone(r.sipInfo![0]);
+  global.webPhone = webPhone;
   await webPhone.register();
 };
 

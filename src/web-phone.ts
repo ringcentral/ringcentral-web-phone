@@ -37,10 +37,10 @@ class WebPhone extends EventEmitter {
     const sipRegister = async () => {
       const requestMessage = new RequestMessage(`REGISTER sip:${this.sipInfo.domain} SIP/2.0`, {
         'Call-Id': uuid(),
-        Contact: `<sip:${this.fakeEmail};transport=tcp>;expires=600`,
+        Contact: `<sip:${this.fakeEmail};transport=wss>;expires=600`,
         From: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>;tag=${uuid()}`,
         To: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>`,
-        Via: `SIP/2.0/TCP ${this.fakeDomain};branch=${branch()}`,
+        Via: `SIP/2.0/WSS ${this.fakeDomain};branch=${branch()}`,
       });
       const inboundMessage = await this.send(requestMessage, true);
       const wwwAuth = inboundMessage.headers['Www-Authenticate'] || inboundMessage!.headers['WWW-Authenticate'];
@@ -48,15 +48,18 @@ class WebPhone extends EventEmitter {
         const nonce = wwwAuth.match(/, nonce="(.+?)"/)![1];
         const newMessage = requestMessage.fork();
         newMessage.headers.Authorization = generateAuthorization(this.sipInfo, nonce, 'REGISTER');
-        this.send(newMessage);
+        await this.send(newMessage, true);
+      } else if (inboundMessage.subject.startsWith('SIP/2.0 603 ')) {
+        throw new Error('Registration failed: ' + inboundMessage.subject);
       }
     };
-    sipRegister();
+    await sipRegister();
     this.intervalHandle = setInterval(
       () => {
         sipRegister();
       },
-      1 * 60 * 1000, // refresh registration every 1 minute, otherwise WS will disconnect
+      // todo: change to 1 minute
+      10 * 60 * 1000, // refresh registration every 1 minute, otherwise WS will disconnect
     );
     this.on('message', (inboundMessage) => {
       if (!inboundMessage.subject.startsWith('INVITE sip:')) {
@@ -116,18 +119,38 @@ class WebPhone extends EventEmitter {
   }
 
   public async call(callee: number, callerId?: number) {
-    const offerSDP = ''.trim(); // todo: generate offer SDP
+    const pc = new RTCPeerConnection({
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+    });
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: false,
+      audio: true,
+    });
+    stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+    const offer = await pc.createOffer({ iceRestart: true });
+    await pc.setLocalDescription(offer);
+    // wait for ICE gathering to complete
+    await new Promise((resolve) => {
+      pc.onicecandidate = (event) => {
+        console.log(event.candidate);
+        if (event.candidate === null) {
+          resolve(true);
+        }
+      };
+      setTimeout(() => resolve(false), 3000);
+    });
+
     const inviteMessage = new RequestMessage(
       `INVITE sip:${callee}@${this.sipInfo.domain} SIP/2.0`,
       {
         'Call-Id': uuid(),
-        Contact: `<sip:${this.fakeEmail};transport=tcp>;expires=600`,
+        Contact: `<sip:${this.fakeEmail};transport=wss>;expires=600`,
         From: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>;tag=${uuid()}`,
         To: `<sip:${callee}@${this.sipInfo.domain}>`,
-        Via: `SIP/2.0/TCP ${this.fakeDomain};branch=${branch()}`,
+        Via: `SIP/2.0/WSS ${this.fakeDomain};branch=${branch()}`,
         'Content-Type': 'application/sdp',
       },
-      offerSDP,
+      pc.localDescription!.sdp!,
     );
     if (callerId) {
       inviteMessage.headers['P-Asserted-Identity'] = `sip:${callerId}@${this.sipInfo.domain}`;

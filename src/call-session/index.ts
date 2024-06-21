@@ -30,7 +30,7 @@ abstract class CallSession extends EventEmitter {
       'Call-Id': this.callId,
       From: this.localPeer,
       To: this.remotePeer,
-      Via: `SIP/2.0/TCP ${this.softphone.fakeDomain};branch=${branch()}`,
+      Via: `SIP/2.0/WSS ${this.softphone.fakeDomain};branch=${branch()}`,
       'Refer-To': `sip:${target}@sip.ringcentral.com`,
       'Referred-By': `<${extractAddress(this.localPeer)}>`,
     });
@@ -54,7 +54,7 @@ abstract class CallSession extends EventEmitter {
       'Call-Id': this.callId,
       From: this.localPeer,
       To: this.remotePeer,
-      Via: `SIP/2.0/TCP ${this.softphone.fakeDomain};branch=${branch()}`,
+      Via: `SIP/2.0/WSS ${this.softphone.fakeDomain};branch=${branch()}`,
     });
     this.softphone.send(requestMessage);
   }
