@@ -44,17 +44,19 @@ class WebPhone extends EventEmitter {
       });
       const inboundMessage = await this.send(requestMessage, true);
       const wwwAuth = inboundMessage.headers['Www-Authenticate'] || inboundMessage!.headers['WWW-Authenticate'];
-      const nonce = wwwAuth.match(/, nonce="(.+?)"/)![1];
-      const newMessage = requestMessage.fork();
-      newMessage.headers.Authorization = generateAuthorization(this.sipInfo, nonce, 'REGISTER');
-      this.send(newMessage);
+      if (wwwAuth) {
+        const nonce = wwwAuth.match(/, nonce="(.+?)"/)![1];
+        const newMessage = requestMessage.fork();
+        newMessage.headers.Authorization = generateAuthorization(this.sipInfo, nonce, 'REGISTER');
+        this.send(newMessage);
+      }
     };
     sipRegister();
     this.intervalHandle = setInterval(
       () => {
         sipRegister();
       },
-      3 * 60 * 1000, // refresh registration every 3 minutes
+      1 * 60 * 1000, // refresh registration every 1 minute, otherwise WS will disconnect
     );
     this.on('message', (inboundMessage) => {
       if (!inboundMessage.subject.startsWith('INVITE sip:')) {
@@ -71,6 +73,12 @@ class WebPhone extends EventEmitter {
       console.log(`Sending...(${new Date()})\n` + message);
       return wscSend(message);
     };
+  }
+
+  public async revoke() {
+    clearInterval(this.intervalHandle);
+    this.removeAllListeners();
+    this.wsc.close();
   }
 
   public send(message: OutboundMessage, waitForReply = false): Promise<InboundMessage> {

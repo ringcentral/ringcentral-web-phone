@@ -1,6 +1,5 @@
 class EventEmitter {
   private listeners = new Map<string, Function[]>();
-
   // This is used to store temporary listeners that are only called once
   private tempListeners = new Map<string, Function[]>();
 
@@ -39,6 +38,11 @@ class EventEmitter {
     (this.listeners.get(eventName) ?? []).forEach((listener) => listener(...args));
     (this.tempListeners.get(eventName) ?? []).forEach((listener) => listener(...args));
     this.tempListeners.delete(eventName);
+  }
+
+  public removeAllListeners() {
+    this.listeners.clear();
+    this.tempListeners.clear();
   }
 }
 
