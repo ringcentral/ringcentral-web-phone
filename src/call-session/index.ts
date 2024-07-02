@@ -12,13 +12,16 @@ abstract class CallSession extends EventEmitter {
   public remoteIP: string;
   public remotePort: number;
   public disposed = false;
+  public rtcPeerConnection: RTCPeerConnection;
+  public audioElement: HTMLAudioElement;
 
-  public constructor(softphone: WebPhone, sipMessage: InboundMessage) {
+  public constructor(softphone: WebPhone, sipMessage: InboundMessage, rtcPeerConnection: RTCPeerConnection) {
     super();
     this.softphone = softphone;
     this.sipMessage = sipMessage;
     this.remoteIP = this.sipMessage.body.match(/c=IN IP4 ([\d.]+)/)![1];
     this.remotePort = parseInt(this.sipMessage.body.match(/m=audio (\d+) /)![1], 10);
+    this.rtcPeerConnection = rtcPeerConnection;
   }
 
   public get callId() {
@@ -70,9 +73,20 @@ abstract class CallSession extends EventEmitter {
       }
     };
     this.softphone.on('message', byeHandler);
+
+    this.rtcPeerConnection.ontrack = (event) => {
+      const remoteStream = event.streams[0];
+      this.audioElement = document.createElement('audio') as HTMLAudioElement;
+      this.audioElement.autoplay = true;
+      this.audioElement.hidden = true;
+      document.body.appendChild(this.audioElement);
+      this.audioElement.srcObject = remoteStream;
+    };
   }
 
   private dispose() {
+    this.rtcPeerConnection.close();
+    this.audioElement.remove();
     this.disposed = true;
     this.emit('disposed');
   }

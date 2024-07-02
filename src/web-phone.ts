@@ -107,7 +107,15 @@ class WebPhone extends EventEmitter {
   }
 
   public async answer(inviteMessage: InboundMessage) {
-    const inboundCallSession = new InboundCallSession(this, inviteMessage);
+    const rtcPeerConnection = new RTCPeerConnection({
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+    });
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: false,
+      audio: true,
+    });
+    stream.getTracks().forEach((track) => rtcPeerConnection.addTrack(track, stream));
+    const inboundCallSession = new InboundCallSession(this, inviteMessage, rtcPeerConnection);
     await inboundCallSession.answer();
     return inboundCallSession;
   }
@@ -119,19 +127,19 @@ class WebPhone extends EventEmitter {
   }
 
   public async call(callee: number, callerId?: number) {
-    const pc = new RTCPeerConnection({
+    const rtcPeerConnection = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
     });
     const stream = await navigator.mediaDevices.getUserMedia({
       video: false,
       audio: true,
     });
-    stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-    const offer = await pc.createOffer({ iceRestart: true });
-    await pc.setLocalDescription(offer);
+    stream.getTracks().forEach((track) => rtcPeerConnection.addTrack(track, stream));
+    const offer = await rtcPeerConnection.createOffer({ iceRestart: true });
+    await rtcPeerConnection.setLocalDescription(offer);
     // wait for ICE gathering to complete
     await new Promise((resolve) => {
-      pc.onicecandidate = (event) => {
+      rtcPeerConnection.onicecandidate = (event) => {
         console.log(event.candidate);
         if (event.candidate === null) {
           resolve(true);
@@ -150,7 +158,7 @@ class WebPhone extends EventEmitter {
         Via: `SIP/2.0/WSS ${this.fakeDomain};branch=${branch()}`,
         'Content-Type': 'application/sdp',
       },
-      pc.localDescription!.sdp!,
+      rtcPeerConnection.localDescription!.sdp!,
     );
     if (callerId) {
       inviteMessage.headers['P-Asserted-Identity'] = `sip:${callerId}@${this.sipInfo.domain}`;
@@ -161,7 +169,7 @@ class WebPhone extends EventEmitter {
     const newMessage = inviteMessage.fork();
     newMessage.headers['Proxy-Authorization'] = generateAuthorization(this.sipInfo, nonce, 'INVITE');
     const progressMessage = await this.send(newMessage, true);
-    return new OutboundCallSession(this, progressMessage);
+    return new OutboundCallSession(this, progressMessage, rtcPeerConnection);
   }
 }
 

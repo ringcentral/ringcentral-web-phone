@@ -4,8 +4,8 @@ import CallSession from '.';
 import { extractAddress, withoutTag } from '../utils';
 
 class OutboundCallSession extends CallSession {
-  public constructor(softphone: WebPhone, answerMessage: InboundMessage) {
-    super(softphone, answerMessage);
+  public constructor(softphone: WebPhone, answerMessage: InboundMessage, rtcPeerConnection: RTCPeerConnection) {
+    super(softphone, answerMessage, rtcPeerConnection);
     this.localPeer = answerMessage.headers.From;
     this.remotePeer = answerMessage.headers.To;
     this.init();
@@ -17,7 +17,7 @@ class OutboundCallSession extends CallSession {
       if (message.headers.CSeq === this.sipMessage.headers.CSeq) {
         this.softphone.off('message', answerHandler);
         this.emit('answered');
-
+        this.rtcPeerConnection.setRemoteDescription({ type: 'answer', sdp: message.body });
         const ackMessage = new RequestMessage(`ACK ${extractAddress(this.remotePeer)} SIP/2.0`, {
           'Call-Id': this.callId,
           From: this.localPeer,
