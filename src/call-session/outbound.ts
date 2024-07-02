@@ -1,18 +1,54 @@
 import { RequestMessage, type InboundMessage } from '../sip-message';
 import type WebPhone from '../web-phone';
 import CallSession from '.';
-import { extractAddress, withoutTag } from '../utils';
+import { extractAddress, withoutTag, branch, generateAuthorization, uuid } from '../utils';
 
 class OutboundCallSession extends CallSession {
-  public constructor(softphone: WebPhone, answerMessage: InboundMessage, rtcPeerConnection: RTCPeerConnection) {
-    super(softphone, answerMessage, rtcPeerConnection);
-    this.localPeer = answerMessage.headers.From;
-    this.remotePeer = answerMessage.headers.To;
-    this.init();
+  public constructor(softphone: WebPhone) {
+    super(softphone);
   }
 
-  public async init() {
-    // wait for user to answer the call
+  public async call(callee: number, callerId?: number) {
+    const offer = await this.rtcPeerConnection.createOffer({ iceRestart: true });
+    await this.rtcPeerConnection.setLocalDescription(offer);
+
+    // wait for ICE gathering to complete
+    await new Promise((resolve) => {
+      this.rtcPeerConnection.onicecandidate = (event) => {
+        console.log(event.candidate);
+        if (event.candidate === null) {
+          resolve(true);
+        }
+      };
+      setTimeout(() => resolve(false), 3000);
+    });
+
+    const inviteMessage = new RequestMessage(
+      `INVITE sip:${callee}@${this.softphone.sipInfo.domain} SIP/2.0`,
+      {
+        'Call-Id': uuid(),
+        Contact: `<sip:${this.softphone.fakeEmail};transport=wss>;expires=600`,
+        From: `<sip:${this.softphone.sipInfo.username}@${this.softphone.sipInfo.domain}>;tag=${uuid()}`,
+        To: `<sip:${callee}@${this.softphone.sipInfo.domain}>`,
+        Via: `SIP/2.0/WSS ${this.softphone.fakeDomain};branch=${branch()}`,
+        'Content-Type': 'application/sdp',
+      },
+      this.rtcPeerConnection.localDescription!.sdp!,
+    );
+    if (callerId) {
+      inviteMessage.headers['P-Asserted-Identity'] = `sip:${callerId}@${this.softphone.sipInfo.domain}`;
+    }
+    const inboundMessage = await this.softphone.send(inviteMessage, true);
+    const proxyAuthenticate = inboundMessage.headers['Proxy-Authenticate'];
+    const nonce = proxyAuthenticate.match(/, nonce="(.+?)"/)![1];
+    const newMessage = inviteMessage.fork();
+    newMessage.headers['Proxy-Authorization'] = generateAuthorization(this.softphone.sipInfo, nonce, 'INVITE');
+    const progressMessage = await this.softphone.send(newMessage, true);
+    this.sipMessage = progressMessage;
+    this.localPeer = progressMessage.headers.From;
+    this.remotePeer = progressMessage.headers.To;
+
+    // when the call is answered
     const answerHandler = (message: InboundMessage) => {
       if (message.headers.CSeq === this.sipMessage.headers.CSeq) {
         this.softphone.off('message', answerHandler);
@@ -29,7 +65,20 @@ class OutboundCallSession extends CallSession {
       }
     };
     this.softphone.on('message', answerHandler);
-    this.once('answered', async () => this.startLocalServices());
+
+    // when the call is terminated
+    this.once('answered', async () => {
+      const byeHandler = (inboundMessage: InboundMessage) => {
+        if (inboundMessage.headers['Call-Id'] !== this.callId) {
+          return;
+        }
+        if (inboundMessage.headers.CSeq.endsWith(' BYE')) {
+          this.softphone.off('message', byeHandler);
+          this.dispose();
+        }
+      };
+      this.softphone.on('message', byeHandler);
+    });
   }
 
   public async cancel() {

@@ -3,8 +3,9 @@ import type WebPhone from '../web-phone';
 import CallSession from '.';
 
 class InboundCallSession extends CallSession {
-  public constructor(softphone: WebPhone, inviteMessage: InboundMessage, rtcPeerConnection: RTCPeerConnection) {
-    super(softphone, inviteMessage, rtcPeerConnection);
+  public constructor(softphone: WebPhone, inviteMessage: InboundMessage) {
+    super(softphone);
+    this.sipMessage = inviteMessage;
     this.localPeer = inviteMessage.headers.To;
     this.remotePeer = inviteMessage.headers.From;
   }
@@ -34,7 +35,17 @@ class InboundCallSession extends CallSession {
       answer.sdp,
     );
     this.softphone.send(newMessage);
-    this.startLocalServices();
+
+    const byeHandler = (inboundMessage: InboundMessage) => {
+      if (inboundMessage.headers['Call-Id'] !== this.callId) {
+        return;
+      }
+      if (inboundMessage.headers.CSeq.endsWith(' BYE')) {
+        this.softphone.off('message', byeHandler);
+        this.dispose();
+      }
+    };
+    this.softphone.on('message', byeHandler);
   }
 }
 

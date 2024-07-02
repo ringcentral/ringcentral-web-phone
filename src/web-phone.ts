@@ -1,5 +1,4 @@
 import type SipInfoResponse from '@rc-ex/core/lib/definitions/SipInfoResponse';
-import EventEmitter from './event-emitter';
 import waitFor from 'wait-for-async';
 
 import type { OutboundMessage } from './sip-message';
@@ -7,6 +6,7 @@ import { InboundMessage, RequestMessage, ResponseMessage } from './sip-message';
 import { branch, generateAuthorization, uuid } from './utils';
 import InboundCallSession from './call-session/inbound';
 import OutboundCallSession from './call-session/outbound';
+import EventEmitter from './event-emitter';
 
 class WebPhone extends EventEmitter {
   public sipInfo: SipInfoResponse;
@@ -107,15 +107,8 @@ class WebPhone extends EventEmitter {
   }
 
   public async answer(inviteMessage: InboundMessage) {
-    const rtcPeerConnection = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
-    });
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: false,
-      audio: true,
-    });
-    stream.getTracks().forEach((track) => rtcPeerConnection.addTrack(track, stream));
-    const inboundCallSession = new InboundCallSession(this, inviteMessage, rtcPeerConnection);
+    const inboundCallSession = new InboundCallSession(this, inviteMessage);
+    await inboundCallSession.init();
     await inboundCallSession.answer();
     return inboundCallSession;
   }
@@ -127,49 +120,10 @@ class WebPhone extends EventEmitter {
   }
 
   public async call(callee: number, callerId?: number) {
-    const rtcPeerConnection = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
-    });
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: false,
-      audio: true,
-    });
-    stream.getTracks().forEach((track) => rtcPeerConnection.addTrack(track, stream));
-    const offer = await rtcPeerConnection.createOffer({ iceRestart: true });
-    await rtcPeerConnection.setLocalDescription(offer);
-    // wait for ICE gathering to complete
-    await new Promise((resolve) => {
-      rtcPeerConnection.onicecandidate = (event) => {
-        console.log(event.candidate);
-        if (event.candidate === null) {
-          resolve(true);
-        }
-      };
-      setTimeout(() => resolve(false), 3000);
-    });
-
-    const inviteMessage = new RequestMessage(
-      `INVITE sip:${callee}@${this.sipInfo.domain} SIP/2.0`,
-      {
-        'Call-Id': uuid(),
-        Contact: `<sip:${this.fakeEmail};transport=wss>;expires=600`,
-        From: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>;tag=${uuid()}`,
-        To: `<sip:${callee}@${this.sipInfo.domain}>`,
-        Via: `SIP/2.0/WSS ${this.fakeDomain};branch=${branch()}`,
-        'Content-Type': 'application/sdp',
-      },
-      rtcPeerConnection.localDescription!.sdp!,
-    );
-    if (callerId) {
-      inviteMessage.headers['P-Asserted-Identity'] = `sip:${callerId}@${this.sipInfo.domain}`;
-    }
-    const inboundMessage = await this.send(inviteMessage, true);
-    const proxyAuthenticate = inboundMessage.headers['Proxy-Authenticate'];
-    const nonce = proxyAuthenticate.match(/, nonce="(.+?)"/)![1];
-    const newMessage = inviteMessage.fork();
-    newMessage.headers['Proxy-Authorization'] = generateAuthorization(this.sipInfo, nonce, 'INVITE');
-    const progressMessage = await this.send(newMessage, true);
-    return new OutboundCallSession(this, progressMessage, rtcPeerConnection);
+    const outboundCallSession = new OutboundCallSession(this);
+    await outboundCallSession.init();
+    await outboundCallSession.call(callee, callerId);
+    return outboundCallSession;
   }
 }
 
