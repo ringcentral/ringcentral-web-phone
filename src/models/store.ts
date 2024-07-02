@@ -1,6 +1,7 @@
 import RingCentral from '@rc-ex/core';
 import { message } from 'antd';
 import AuthorizeUriExtension from '@rc-ex/authorize-uri';
+import type GetExtensionInfoResponse from '@rc-ex/core/lib/definitions/GetExtensionInfoResponse';
 
 import afterLogin from '../actions/after-login';
 
@@ -10,6 +11,8 @@ export class Store {
   public clientId = '';
   public clientSecret = '';
   public jwtToken = '';
+  public extInfo: GetExtensionInfoResponse;
+  public primaryNumber = '';
 
   public async logout() {
     const rc = new RingCentral({

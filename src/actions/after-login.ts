@@ -10,6 +10,11 @@ const afterLogin = async () => {
   const rc = new RingCentral();
   rc.token = { access_token: store.rcToken, refresh_token: store.refreshToken };
 
+  // fetch extension and phone number info
+  store.extInfo = await rc.restapi().account().extension().get();
+  const numberList = await rc.restapi().account().extension().phoneNumber().get();
+  store.primaryNumber = numberList.records?.find((n) => n.primary)?.phoneNumber ?? '';
+
   const r = await rc
     .restapi()
     .clientInfo()
