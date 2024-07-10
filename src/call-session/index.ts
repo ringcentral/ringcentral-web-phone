@@ -11,6 +11,8 @@ abstract class CallSession extends EventEmitter {
   public rtcPeerConnection: RTCPeerConnection;
   public mediaStream: MediaStream;
   public audioElement: HTMLAudioElement;
+  public state: 'init' | 'ringing' | 'answered' | 'disposed' = 'init';
+  public direction: 'inbound' | 'outbound';
 
   public constructor(softphone: WebPhone) {
     super();
@@ -78,7 +80,8 @@ abstract class CallSession extends EventEmitter {
     this.rtcPeerConnection.close();
     this.audioElement.remove();
     this.mediaStream.getTracks().forEach((track) => track.stop());
-    this.emit('disposed');
+    this.state = 'disposed';
+    this.emit('state', 'disposed');
   }
 }
 

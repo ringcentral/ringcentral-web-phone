@@ -6,6 +6,7 @@ import { extractAddress, withoutTag, branch, generateAuthorization, uuid } from 
 class OutboundCallSession extends CallSession {
   public constructor(softphone: WebPhone) {
     super(softphone);
+    this.direction = 'outbound';
   }
 
   public async call(callee: number, callerId?: number) {
@@ -47,12 +48,15 @@ class OutboundCallSession extends CallSession {
     this.sipMessage = progressMessage;
     this.localPeer = progressMessage.headers.From;
     this.remotePeer = progressMessage.headers.To;
+    this.state = 'ringing';
+    this.emit('state', 'ringing');
 
     // when the call is answered
     const answerHandler = (message: InboundMessage) => {
       if (message.headers.CSeq === this.sipMessage.headers.CSeq) {
         this.softphone.off('message', answerHandler);
-        this.emit('answered');
+        this.state = 'answered';
+        this.emit('state', 'answered');
         this.rtcPeerConnection.setRemoteDescription({ type: 'answer', sdp: message.body });
         const ackMessage = new RequestMessage(`ACK ${extractAddress(this.remotePeer)} SIP/2.0`, {
           'Call-Id': this.callId,

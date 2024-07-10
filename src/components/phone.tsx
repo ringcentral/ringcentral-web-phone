@@ -6,7 +6,7 @@ import type { Store } from '../models/store';
 
 const Phone = (props: { store: Store }) => {
   const { store } = props;
-  const [callee, setCallee] = React.useState<string>('');
+  const [callee, setCallee] = React.useState<string>('16504306662'); // todo: remove hard-coded number
   const render = () => (
     <>
       <Button id="logout-btn" onClick={() => store.logout()}>
