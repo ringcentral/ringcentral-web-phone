@@ -49,14 +49,14 @@ class OutboundCallSession extends CallSession {
     this.localPeer = progressMessage.headers.From;
     this.remotePeer = progressMessage.headers.To;
     this.state = 'ringing';
-    this.emit('state', 'ringing');
+    this.emit('ringing');
 
     // when the call is answered
     const answerHandler = (message: InboundMessage) => {
       if (message.headers.CSeq === this.sipMessage.headers.CSeq) {
         this.softphone.off('message', answerHandler);
         this.state = 'answered';
-        this.emit('state', 'answered');
+        this.emit('answered');
         this.rtcPeerConnection.setRemoteDescription({ type: 'answer', sdp: message.body });
         const ackMessage = new RequestMessage(`ACK ${extractAddress(this.remotePeer)} SIP/2.0`, {
           'Call-Id': this.callId,

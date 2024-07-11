@@ -10,7 +10,7 @@ class InboundCallSession extends CallSession {
     this.remotePeer = inviteMessage.headers.From;
     this.direction = 'inbound';
     this.state = 'ringing';
-    this.emit('state', 'ringing');
+    this.emit('ringing');
   }
 
   public async answer() {
@@ -40,7 +40,7 @@ class InboundCallSession extends CallSession {
     this.softphone.send(newMessage);
 
     this.state = 'answered';
-    this.emit('state', 'answered');
+    this.emit('answered');
 
     const byeHandler = (inboundMessage: InboundMessage) => {
       if (inboundMessage.headers['Call-Id'] !== this.callId) {

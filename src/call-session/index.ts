@@ -81,7 +81,7 @@ abstract class CallSession extends EventEmitter {
     this.audioElement.remove();
     this.mediaStream.getTracks().forEach((track) => track.stop());
     this.state = 'disposed';
-    this.emit('state', 'disposed');
+    this.emit('disposed');
   }
 }
 
