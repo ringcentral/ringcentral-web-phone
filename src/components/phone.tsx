@@ -27,7 +27,7 @@ const Phone = (props: { store: Store }) => {
           <Button
             type="primary"
             onClick={() => {
-              global.webPhone.call(callee);
+              store.webPhone.call(parseInt(callee, 10));
             }}
             disabled={callee.trim().length < 3}
           >

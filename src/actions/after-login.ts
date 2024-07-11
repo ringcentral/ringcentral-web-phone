@@ -1,6 +1,7 @@
 import RingCentral from '@rc-ex/core';
-import WebPhone from '../web-phone';
+import { exclude } from 'manate';
 
+import WebPhone from '../web-phone';
 import store from '../store';
 
 const afterLogin = async () => {
@@ -23,7 +24,7 @@ const afterLogin = async () => {
       sipInfo: [{ transport: 'WSS' }],
     });
   const webPhone = new WebPhone(r.sipInfo![0]);
-  global.webPhone = webPhone;
+  store.webPhone = exclude(webPhone);
   await webPhone.register();
 };
 

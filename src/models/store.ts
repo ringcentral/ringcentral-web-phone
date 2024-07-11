@@ -4,6 +4,7 @@ import AuthorizeUriExtension from '@rc-ex/authorize-uri';
 import type GetExtensionInfoResponse from '@rc-ex/core/lib/definitions/GetExtensionInfoResponse';
 
 import afterLogin from '../actions/after-login';
+import type WebPhone from '../web-phone';
 
 export class Store {
   public rcToken = '';
@@ -13,6 +14,8 @@ export class Store {
   public jwtToken = '';
   public extInfo: GetExtensionInfoResponse;
   public primaryNumber = '';
+
+  public webPhone: WebPhone; // reference but do not track. Ref: https://github.com/tylerlong/manate?tab=readme-ov-file#reference-but-do-not-track
 
   public async logout() {
     const rc = new RingCentral({

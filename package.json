@@ -30,7 +30,7 @@
     "eslint-plugin-react": "^7.34.3",
     "events": "^3.3.0",
     "localforage": "^1.10.0",
-    "manate": "^0.5.5",
+    "manate": "^0.6.1",
     "parcel": "^2.12.0",
     "prettier": "^3.3.2",
     "process": "^0.11.10",
