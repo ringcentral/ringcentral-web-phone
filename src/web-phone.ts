@@ -65,7 +65,8 @@ class WebPhone extends EventEmitter {
       if (!inboundMessage.subject.startsWith('INVITE sip:')) {
         return;
       }
-      this.emit('invite', inboundMessage);
+      const inboundCallSession = new InboundCallSession(this, inboundMessage);
+      this.emit('incomingCall', inboundCallSession);
     });
   }
 
@@ -106,8 +107,7 @@ class WebPhone extends EventEmitter {
     });
   }
 
-  public async answer(inviteMessage: InboundMessage) {
-    const inboundCallSession = new InboundCallSession(this, inviteMessage);
+  public async answer(inboundCallSession: InboundCallSession) {
     await inboundCallSession.init();
     await inboundCallSession.answer();
     return inboundCallSession;

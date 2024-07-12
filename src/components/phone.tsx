@@ -34,6 +34,10 @@ const Phone = (props: { store: Store }) => {
             Call
           </Button>
         </Space>
+        <Divider>Call Sessions</Divider>
+        {store.callSessions.map((callSession) => (
+          <div key={callSession.callId}>{callSession.direction}</div>
+        ))}
       </Space>
     </>
   );

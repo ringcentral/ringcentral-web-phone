@@ -5,6 +5,7 @@ import type GetExtensionInfoResponse from '@rc-ex/core/lib/definitions/GetExtens
 
 import afterLogin from '../actions/after-login';
 import type WebPhone from '../web-phone';
+import type CallSession from '../call-session';
 
 export class Store {
   public rcToken = '';
@@ -16,6 +17,14 @@ export class Store {
   public primaryNumber = '';
 
   public webPhone: WebPhone; // reference but do not track. Ref: https://github.com/tylerlong/manate?tab=readme-ov-file#reference-but-do-not-track
+  public callSessions: CallSession[] = [];
+
+  public addCallSession(callSession: CallSession) {
+    this.callSessions.push(callSession);
+    callSession.once('dispose', () => {
+      this.callSessions = this.callSessions.filter((cs) => cs !== callSession);
+    });
+  }
 
   public async logout() {
     const rc = new RingCentral({

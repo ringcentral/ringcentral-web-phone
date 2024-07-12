@@ -3,6 +3,7 @@ import { exclude } from 'manate';
 
 import WebPhone from '../web-phone';
 import store from '../store';
+import type InboundCallSession from '../call-session/inbound';
 
 const afterLogin = async () => {
   if (store.rcToken === '') {
@@ -26,6 +27,10 @@ const afterLogin = async () => {
   const webPhone = new WebPhone(r.sipInfo![0]);
   store.webPhone = exclude(webPhone);
   await webPhone.register();
+
+  webPhone.on('incomingCall', (inbundCallSession: InboundCallSession) => {
+    store.addCallSession(inbundCallSession);
+  });
 };
 
 export default afterLogin;
