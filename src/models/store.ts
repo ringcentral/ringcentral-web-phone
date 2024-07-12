@@ -21,7 +21,8 @@ export class Store {
 
   public addCallSession(callSession: CallSession) {
     this.callSessions.push(callSession);
-    callSession.once('dispose', () => {
+    callSession.once('disposed', () => {
+      console.log('remove call session');
       this.callSessions = this.callSessions.filter((cs) => cs !== callSession);
     });
   }

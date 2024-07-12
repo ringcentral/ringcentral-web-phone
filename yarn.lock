@@ -3261,10 +3261,10 @@ loose-envify@^1.1.0, loose-envify@^1.4.0:
   dependencies:
     js-tokens "^3.0.0 || ^4.0.0"
 
-manate@^0.6.2:
-  version "0.6.2"
-  resolved "https://registry.yarnpkg.com/manate/-/manate-0.6.2.tgz#8b11c93556e76446a7243f134a20580caa3e128d"
-  integrity sha512-GIPEmgMNZyDhKi4MvE3WIrMc5Zvj/vPGuHZHHaQ4x5wdraO36h3U5YEV0apv7/Y+f5Ei8h39vKCmYvdIWb+lPw==
+manate@^0.6.4:
+  version "0.6.4"
+  resolved "https://registry.yarnpkg.com/manate/-/manate-0.6.4.tgz#3071210020c5ccc00fcc2634eb789c52e909b966"
+  integrity sha512-1WtPnHDDVqAdb345VffVj646RDpaUOopDm727T0UD+ZL1v0/SKzk90l27eJLtlA4G2xM+oxCEF/b1v9ie6jSQQ==
 
 md5.js@^1.3.4:
   version "1.3.5"

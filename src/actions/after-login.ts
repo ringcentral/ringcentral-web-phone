@@ -26,6 +26,7 @@ const afterLogin = async () => {
     });
   const webPhone = new WebPhone(r.sipInfo![0]);
   store.webPhone = exclude(webPhone);
+  await webPhone.enableDebugMode();
   await webPhone.register();
 
   webPhone.on('incomingCall', (inbundCallSession: InboundCallSession) => {

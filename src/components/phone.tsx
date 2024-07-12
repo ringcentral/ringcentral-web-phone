@@ -1,8 +1,9 @@
 import React from 'react';
 import { auto } from 'manate/react';
-import { Button, Divider, Input, Space, Typography } from 'antd';
+import { Button, Divider, Input, List, Space, Typography } from 'antd';
 
 import type { Store } from '../models/store';
+import CallSession from './call-session';
 
 const Phone = (props: { store: Store }) => {
   const { store } = props;
@@ -26,8 +27,9 @@ const Phone = (props: { store: Store }) => {
           <Input placeholder="16501234567" onChange={(e) => setCallee(e.target.value.trim())} value={callee} />
           <Button
             type="primary"
-            onClick={() => {
-              store.webPhone.call(parseInt(callee, 10));
+            onClick={async () => {
+              const callSession = await store.webPhone.call(parseInt(callee, 10));
+              store.addCallSession(callSession);
             }}
             disabled={callee.trim().length < 3}
           >
@@ -38,6 +40,7 @@ const Phone = (props: { store: Store }) => {
         {store.callSessions.map((callSession) => (
           <div key={callSession.callId}>{callSession.direction}</div>
         ))}
+        <List bordered dataSource={store.callSessions} renderItem={(item) => <CallSession callSession={item} />} />
       </Space>
     </>
   );

@@ -21,7 +21,6 @@ class InboundCallSession extends CallSession {
     // wait for ICE gathering to complete
     await new Promise((resolve) => {
       this.rtcPeerConnection.onicecandidate = (event) => {
-        console.log(event.candidate);
         if (event.candidate === null) {
           resolve(true);
         }
