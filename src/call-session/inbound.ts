@@ -13,6 +13,12 @@ class InboundCallSession extends CallSession {
     this.emit('ringing');
   }
 
+  public async decline() {
+    const newMessage = new ResponseMessage(this.sipMessage, 603);
+    await this.softphone.send(newMessage);
+    this.dispose();
+  }
+
   public async answer() {
     await this.rtcPeerConnection.setRemoteDescription({ type: 'offer', sdp: this.sipMessage.body });
     const answer = await this.rtcPeerConnection.createAnswer();

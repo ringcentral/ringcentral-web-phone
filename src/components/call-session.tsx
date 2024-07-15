@@ -1,5 +1,6 @@
 import React from 'react';
 import { auto } from 'manate/react';
+import { Button, Space } from 'antd';
 
 import type CallSession from '../call-session';
 import type InboundCallSession from '../call-session/inbound';
@@ -23,7 +24,19 @@ const InboundSession = (props: { session: InboundCallSession }) => {
     <div>
       <div>
         <strong>{session.direction}</strong> call from {extractNumber(session.remotePeer)} to{' '}
-        {extractNumber(session.localPeer)}
+        {extractNumber(session.localPeer)}{' '}
+        {session.state === 'ringing' ? (
+          <Space>
+            <Button>Answer</Button>
+            <Button onClick={() => session.decline()}>Decline</Button>
+          </Space>
+        ) : null}
+        {session.state === 'answered' ? (
+          <Space>
+            <Button onClick={() => session.hangup()}>Hang up</Button>
+            <Button>Transfer</Button>
+          </Space>
+        ) : null}
       </div>
     </div>
   );
@@ -36,7 +49,13 @@ const OutboundSession = (props: { session: OutboundCallSession }) => {
     <div>
       <div>
         <strong>{session.direction}</strong> call from {extractNumber(session.localPeer)} to{' '}
-        {extractNumber(session.remotePeer)}
+        {extractNumber(session.remotePeer)}{' '}
+        {session.state === 'answered' ? (
+          <Space>
+            <Button onClick={() => session.hangup()}>Hang up</Button>
+            <Button>Transfer</Button>
+          </Space>
+        ) : null}
       </div>
     </div>
   );

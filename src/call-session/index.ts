@@ -77,9 +77,9 @@ abstract class CallSession extends EventEmitter {
   }
 
   protected dispose() {
-    this.rtcPeerConnection.close();
-    this.audioElement.remove();
-    this.mediaStream.getTracks().forEach((track) => track.stop());
+    this.rtcPeerConnection?.close();
+    this.audioElement?.remove();
+    this.mediaStream?.getTracks().forEach((track) => track.stop());
     this.state = 'disposed';
     this.emit('disposed');
   }
