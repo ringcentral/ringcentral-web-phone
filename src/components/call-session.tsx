@@ -27,13 +27,19 @@ const InboundSession = (props: { session: InboundCallSession }) => {
         {extractNumber(session.localPeer)}{' '}
         {session.state === 'ringing' ? (
           <Space>
-            <Button>Answer</Button>
-            <Button onClick={() => session.decline()}>Decline</Button>
+            <Button onClick={() => session.answer()} type="primary">
+              Answer
+            </Button>
+            <Button onClick={() => session.decline()} danger>
+              Decline
+            </Button>
           </Space>
         ) : null}
         {session.state === 'answered' ? (
           <Space>
-            <Button onClick={() => session.hangup()}>Hang up</Button>
+            <Button onClick={() => session.hangup()} danger>
+              Hang up
+            </Button>
             <Button>Transfer</Button>
           </Space>
         ) : null}
@@ -52,7 +58,9 @@ const OutboundSession = (props: { session: OutboundCallSession }) => {
         {extractNumber(session.remotePeer)}{' '}
         {session.state === 'answered' ? (
           <Space>
-            <Button onClick={() => session.hangup()}>Hang up</Button>
+            <Button onClick={() => session.hangup()} danger>
+              Hang up
+            </Button>
             <Button>Transfer</Button>
           </Space>
         ) : null}

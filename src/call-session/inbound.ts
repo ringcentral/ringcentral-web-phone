@@ -20,6 +20,7 @@ class InboundCallSession extends CallSession {
   }
 
   public async answer() {
+    await this.init();
     await this.rtcPeerConnection.setRemoteDescription({ type: 'offer', sdp: this.sipMessage.body });
     const answer = await this.rtcPeerConnection.createAnswer();
     await this.rtcPeerConnection.setLocalDescription(answer);
