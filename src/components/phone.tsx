@@ -27,10 +27,7 @@ const Phone = (props: { store: Store }) => {
           <Input placeholder="16501234567" onChange={(e) => setCallee(e.target.value.trim())} value={callee} />
           <Button
             type="primary"
-            onClick={async () => {
-              const callSession = await store.webPhone.call(parseInt(callee, 10));
-              store.addCallSession(callSession);
-            }}
+            onClick={() => store.webPhone.call(parseInt(callee, 10))}
             disabled={callee.trim().length < 3}
           >
             Call
@@ -38,9 +35,10 @@ const Phone = (props: { store: Store }) => {
         </Space>
         <Divider>Call Sessions</Divider>
         {store.callSessions.map((callSession) => (
-          <div key={callSession.callId}>{callSession.direction}</div>
+          <div key={callSession.callId}>
+            <CallSession callSession={callSession} />
+          </div>
         ))}
-        <List bordered dataSource={store.callSessions} renderItem={(item) => <CallSession callSession={item} />} />
       </Space>
     </>
   );

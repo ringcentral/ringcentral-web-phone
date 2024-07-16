@@ -1,7 +1,7 @@
 import EventEmitter from '../event-emitter';
 import { RequestMessage, type InboundMessage, ResponseMessage } from '../sip-message';
 import type WebPhone from '../web-phone';
-import { branch, extractAddress } from '../utils';
+import { branch, extractAddress, uuid } from '../utils';
 
 abstract class CallSession extends EventEmitter {
   public softphone: WebPhone;
@@ -20,7 +20,7 @@ abstract class CallSession extends EventEmitter {
   }
 
   public get callId() {
-    return this.sipMessage.headers['Call-Id'];
+    return this.sipMessage?.headers['Call-Id'] ?? uuid();
   }
 
   public async init() {

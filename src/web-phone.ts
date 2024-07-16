@@ -2,7 +2,7 @@ import type SipInfoResponse from '@rc-ex/core/lib/definitions/SipInfoResponse';
 import waitFor from 'wait-for-async';
 
 import type { OutboundMessage } from './sip-message';
-import { InboundMessage, RequestMessage, ResponseMessage } from './sip-message';
+import { InboundMessage, RequestMessage } from './sip-message';
 import { branch, generateAuthorization, uuid } from './utils';
 import InboundCallSession from './call-session/inbound';
 import OutboundCallSession from './call-session/outbound';
@@ -14,6 +14,7 @@ class WebPhone extends EventEmitter {
 
   public fakeDomain = uuid() + '.invalid';
   public fakeEmail = uuid() + '@' + this.fakeDomain;
+  public instanceId = uuid(); // todo: Embbnux said we should reuse this instanceId
 
   private intervalHandle: NodeJS.Timeout;
   private connected = false;
@@ -37,7 +38,7 @@ class WebPhone extends EventEmitter {
     const sipRegister = async () => {
       const requestMessage = new RequestMessage(`REGISTER sip:${this.sipInfo.domain} SIP/2.0`, {
         'Call-Id': uuid(),
-        Contact: `<sip:${this.fakeEmail};transport=wss>;expires=600`,
+        Contact: `<sip:${this.fakeEmail};transport=wss>;+sip.instance="<urn:uuid:${this.instanceId}>";expires=600`,
         From: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>;tag=${uuid()}`,
         To: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>`,
         Via: `SIP/2.0/WSS ${this.fakeDomain};branch=${branch()}`,
@@ -58,8 +59,7 @@ class WebPhone extends EventEmitter {
       () => {
         sipRegister();
       },
-      // todo: change to 1 minute
-      10 * 60 * 1000, // refresh registration every 1 minute, otherwise WS will disconnect
+      1 * 60 * 1000, // refresh registration every 1 minute, otherwise WS will disconnect
     );
     this.on('message', (inboundMessage) => {
       if (!inboundMessage.subject.startsWith('INVITE sip:')) {
@@ -70,6 +70,7 @@ class WebPhone extends EventEmitter {
     });
   }
 
+  // to print all SIP messages to console
   public async enableDebugMode() {
     this.on('message', (message) => console.log(`Receiving...(${new Date()})\n` + message.toString()));
     const wscSend = this.wsc.send.bind(this.wsc);
@@ -85,6 +86,7 @@ class WebPhone extends EventEmitter {
     this.wsc.close();
   }
 
+  // send a SIP message to SIP server
   public send(message: OutboundMessage, waitForReply = false): Promise<InboundMessage> {
     this.wsc.send(message.toString());
     if (!waitForReply) {
@@ -107,22 +109,12 @@ class WebPhone extends EventEmitter {
     });
   }
 
-  public async answer(inboundCallSession: InboundCallSession) {
-    await inboundCallSession.init();
-    await inboundCallSession.answer();
-    return inboundCallSession;
-  }
-
-  // decline an inbound call
-  public async decline(inviteMessage: InboundMessage) {
-    const newMessage = new ResponseMessage(inviteMessage, 603);
-    this.send(newMessage);
-  }
-
+  // make an outbound call
   public async call(callee: number, callerId?: number) {
     const outboundCallSession = new OutboundCallSession(this);
     await outboundCallSession.init();
     await outboundCallSession.call(callee, callerId);
+    this.emit('outboundCall', outboundCallSession);
     return outboundCallSession;
   }
 }

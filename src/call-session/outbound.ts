@@ -38,6 +38,7 @@ class OutboundCallSession extends CallSession {
     if (callerId) {
       inviteMessage.headers['P-Asserted-Identity'] = `sip:${callerId}@${this.softphone.sipInfo.domain}`;
     }
+
     const inboundMessage = await this.softphone.send(inviteMessage, true);
     const proxyAuthenticate = inboundMessage.headers['Proxy-Authenticate'];
     const nonce = proxyAuthenticate.match(/, nonce="(.+?)"/)![1];
@@ -45,10 +46,10 @@ class OutboundCallSession extends CallSession {
     newMessage.headers['Proxy-Authorization'] = generateAuthorization(this.softphone.sipInfo, nonce, 'INVITE');
     const progressMessage = await this.softphone.send(newMessage, true);
     this.sipMessage = progressMessage;
-    this.localPeer = progressMessage.headers.From;
-    this.remotePeer = progressMessage.headers.To;
     this.state = 'ringing';
     this.emit('ringing');
+    this.localPeer = progressMessage.headers.From;
+    this.remotePeer = progressMessage.headers.To;
 
     // when the call is answered
     const answerHandler = (message: InboundMessage) => {

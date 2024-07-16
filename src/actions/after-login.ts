@@ -4,6 +4,7 @@ import { exclude } from 'manate';
 import WebPhone from '../web-phone';
 import store from '../store';
 import type InboundCallSession from '../call-session/inbound';
+import type OutboundCallSession from '../call-session/outbound';
 
 const afterLogin = async () => {
   if (store.rcToken === '') {
@@ -31,6 +32,9 @@ const afterLogin = async () => {
 
   webPhone.on('incomingCall', (inbundCallSession: InboundCallSession) => {
     store.addCallSession(inbundCallSession);
+  });
+  webPhone.on('outboundCall', (outboundCallSession: OutboundCallSession) => {
+    store.addCallSession(outboundCallSession);
   });
 };
 
