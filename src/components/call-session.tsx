@@ -32,6 +32,7 @@ const InboundSession = (props: { session: InboundCallSession }) => {
             <Button onClick={() => session.answer()} type="primary">
               Answer
             </Button>
+            <Button onClick={() => session.toVoiceMail()}>To Voicemail</Button>
             <Button onClick={() => session.decline()} danger>
               Decline
             </Button>

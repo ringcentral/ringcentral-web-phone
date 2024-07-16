@@ -1,6 +1,8 @@
-import { ResponseMessage, type InboundMessage } from '../sip-message';
+import { RequestMessage, ResponseMessage, type InboundMessage } from '../sip-message';
 import type WebPhone from '../web-phone';
 import CallSession from '.';
+import { branch, uuid } from '../utils';
+import RcMessage from '../rc-message/rc-message';
 
 class InboundCallSession extends CallSession {
   public constructor(softphone: WebPhone, inviteMessage: InboundMessage) {
@@ -23,6 +25,41 @@ class InboundCallSession extends CallSession {
       }
     };
     this.softphone.on('message', cancelHandler);
+  }
+
+  public async sendRcMessage(cmd: number) {
+    if (!this.sipMessage.headers['P-rc']) {
+      return;
+    }
+    const rcMessage = RcMessage.fromXml(this.sipMessage.headers['P-rc']);
+    const newRcMessage = new RcMessage(
+      {
+        SID: rcMessage.Hdr.SID,
+        Req: rcMessage.Hdr.Req,
+        From: rcMessage.Hdr.To,
+        To: rcMessage.Hdr.From,
+        Cmd: cmd.toString(),
+      },
+      {
+        Cln: this.softphone.sipInfo.authorizationId,
+      },
+    );
+    const requestSipMessage = new RequestMessage(
+      `MESSAGE sip:${newRcMessage.Hdr.To} SIP/2.0`,
+      {
+        Via: `SIP/2.0/WSS ${this.softphone.fakeDomain};branch=${branch()}`,
+        To: `<sip:${newRcMessage.Hdr.To}>`,
+        From: `<sip:${this.softphone.sipInfo.username}@${this.softphone.sipInfo.domain}>;tag=${uuid()}`,
+        'Call-ID': this.callId,
+        'Content-Type': 'x-rc/agent',
+      },
+      newRcMessage.toXml(),
+    );
+    await this.softphone.send(requestSipMessage);
+  }
+
+  public async toVoiceMail() {
+    this.sendRcMessage(11);
   }
 
   public async decline() {
