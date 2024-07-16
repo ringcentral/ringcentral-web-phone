@@ -1,6 +1,6 @@
 import React from 'react';
 import { auto } from 'manate/react';
-import { Button, Divider, Input, List, Space, Typography } from 'antd';
+import { Button, Divider, Input, Space, Typography } from 'antd';
 
 import type { Store } from '../models/store';
 import CallSession from './call-session';

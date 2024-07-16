@@ -8,6 +8,9 @@ import InboundCallSession from './call-session/inbound';
 import OutboundCallSession from './call-session/outbound';
 import EventEmitter from './event-emitter';
 
+// todo: remove dependency on manate?
+import { manage } from 'manate';
+
 class WebPhone extends EventEmitter {
   public sipInfo: SipInfoResponse;
   public wsc: WebSocket;
@@ -66,7 +69,7 @@ class WebPhone extends EventEmitter {
         return;
       }
       const inboundCallSession = new InboundCallSession(this, inboundMessage);
-      this.emit('incomingCall', inboundCallSession);
+      this.emit('inboundCall', inboundCallSession);
     });
   }
 
@@ -111,7 +114,8 @@ class WebPhone extends EventEmitter {
 
   // make an outbound call
   public async call(callee: number, callerId?: number) {
-    const outboundCallSession = new OutboundCallSession(this);
+    // if we don't manage right now, state change cannot be detected
+    const outboundCallSession = manage(new OutboundCallSession(this));
     await outboundCallSession.init();
     await outboundCallSession.call(callee, callerId);
     this.emit('outboundCall', outboundCallSession);

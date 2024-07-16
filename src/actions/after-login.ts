@@ -30,7 +30,7 @@ const afterLogin = async () => {
   await webPhone.enableDebugMode();
   await webPhone.register();
 
-  webPhone.on('incomingCall', (inbundCallSession: InboundCallSession) => {
+  webPhone.on('inboundCall', (inbundCallSession: InboundCallSession) => {
     store.addCallSession(inbundCallSession);
   });
   webPhone.on('outboundCall', (outboundCallSession: OutboundCallSession) => {
