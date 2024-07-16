@@ -1,5 +1,6 @@
 import type SipInfoResponse from '@rc-ex/core/lib/definitions/SipInfoResponse';
 import waitFor from 'wait-for-async';
+import { manage } from 'manate';
 
 import type { OutboundMessage } from './sip-message';
 import { InboundMessage, RequestMessage } from './sip-message';
@@ -8,8 +9,10 @@ import InboundCallSession from './call-session/inbound';
 import OutboundCallSession from './call-session/outbound';
 import EventEmitter from './event-emitter';
 
-// todo: remove dependency on manate?
-import { manage } from 'manate';
+interface WebPhoneOptions {
+  sipInfo: SipInfoResponse;
+  instanceId?: string; // ref: https://docs.oracle.com/cd/E95618_01/html/sbc_scz810_acliconfiguration/GUID-B2A15693-DA4A-4E24-86D4-58B19435F4DA.htm
+}
 
 class WebPhone extends EventEmitter {
   public sipInfo: SipInfoResponse;
@@ -17,14 +20,15 @@ class WebPhone extends EventEmitter {
 
   public fakeDomain = uuid() + '.invalid';
   public fakeEmail = uuid() + '@' + this.fakeDomain;
-  public instanceId = uuid(); // todo: Embbnux said we should reuse this instanceId
+  public instanceId;
 
   private intervalHandle: NodeJS.Timeout;
   private connected = false;
 
-  public constructor(sipInfo: SipInfoResponse) {
+  public constructor(options: WebPhoneOptions) {
     super();
-    this.sipInfo = sipInfo;
+    this.sipInfo = options.sipInfo;
+    this.instanceId = options.instanceId ?? uuid();
     this.wsc = new WebSocket('wss://' + this.sipInfo.outboundProxy, 'sip');
     this.wsc.onopen = () => {
       this.connected = true;
@@ -68,7 +72,7 @@ class WebPhone extends EventEmitter {
       if (!inboundMessage.subject.startsWith('INVITE sip:')) {
         return;
       }
-      const inboundCallSession = new InboundCallSession(this, inboundMessage);
+      const inboundCallSession = manage(new InboundCallSession(this, inboundMessage));
       this.emit('inboundCall', inboundCallSession);
     });
   }
@@ -114,7 +118,6 @@ class WebPhone extends EventEmitter {
 
   // make an outbound call
   public async call(callee: number, callerId?: number) {
-    // if we don't manage right now, state change cannot be detected
     const outboundCallSession = manage(new OutboundCallSession(this));
     await outboundCallSession.init();
     await outboundCallSession.call(callee, callerId);

@@ -10,12 +10,13 @@
   "dependencies": {
     "@rc-ex/core": "^1.4.0",
     "blueimp-md5": "^2.19.0",
+    "manate": "^0.6.5",
     "uuid": "^10.0.0",
     "wait-for-async": "^0.6.1"
   },
   "devDependencies": {
     "@rc-ex/authorize-uri": "^1.1.16",
-    "@types/node": "^20.14.10",
+    "@types/node": "^20.14.11",
     "@types/react-dom": "^18.3.0",
     "@typescript-eslint/eslint-plugin": "^7.16.1",
     "@typescript-eslint/parser": "^7.16.1",
@@ -30,7 +31,6 @@
     "eslint-plugin-react": "^7.34.4",
     "events": "^3.3.0",
     "localforage": "^1.10.0",
-    "manate": "^0.6.5",
     "parcel": "^2.12.0",
     "prettier": "^3.3.3",
     "process": "^0.11.10",

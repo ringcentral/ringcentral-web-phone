@@ -7,7 +7,7 @@ import CallSession from './call-session';
 
 const Phone = (props: { store: Store }) => {
   const { store } = props;
-  const [callee, setCallee] = React.useState<string>('16504306662'); // todo: remove hard-coded number
+  const [callee, setCallee] = React.useState<string>('');
   const render = () => (
     <>
       <Button id="logout-btn" onClick={() => store.logout()}>

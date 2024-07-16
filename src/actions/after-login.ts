@@ -25,7 +25,7 @@ const afterLogin = async () => {
     .post({
       sipInfo: [{ transport: 'WSS' }],
     });
-  const webPhone = new WebPhone(r.sipInfo![0]);
+  const webPhone = new WebPhone({ sipInfo: r.sipInfo![0], instanceId: 'my-unique-phone-instance-id' });
   store.webPhone = exclude(webPhone);
   await webPhone.enableDebugMode();
   await webPhone.register();
