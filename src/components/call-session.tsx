@@ -54,7 +54,6 @@ const InboundSession = (props: { session: InboundCallSession }) => {
 const OutboundSession = (props: { session: OutboundCallSession }) => {
   const { session } = props;
   const render = () => {
-    console.log('outboundsession render', session.state);
     return (
       <div>
         <div>

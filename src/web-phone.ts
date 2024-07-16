@@ -3,7 +3,7 @@ import waitFor from 'wait-for-async';
 import { manage } from 'manate';
 
 import type { OutboundMessage } from './sip-message';
-import { InboundMessage, RequestMessage } from './sip-message';
+import { InboundMessage, RequestMessage, ResponseMessage } from './sip-message';
 import { branch, generateAuthorization, uuid } from './utils';
 import InboundCallSession from './call-session/inbound';
 import OutboundCallSession from './call-session/outbound';
@@ -74,6 +74,12 @@ class WebPhone extends EventEmitter {
       }
       const inboundCallSession = manage(new InboundCallSession(this, inboundMessage));
       this.emit('inboundCall', inboundCallSession);
+
+      // tell SIP server that we are ringing
+      let tempMesage = new ResponseMessage(inboundMessage, 100);
+      this.send(tempMesage);
+      tempMesage = new ResponseMessage(inboundMessage, 180);
+      this.send(tempMesage);
     });
   }
 

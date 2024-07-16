@@ -11,6 +11,18 @@ class InboundCallSession extends CallSession {
     this.direction = 'inbound';
     this.state = 'ringing';
     this.emit('ringing');
+
+    // caller can cancel the call
+    const cancelHandler = (inboundMessage: InboundMessage) => {
+      if (inboundMessage.headers['Call-Id'] !== this.callId) {
+        return;
+      }
+      if (inboundMessage.subject.startsWith('CANCEL sip:')) {
+        this.softphone.off('message', cancelHandler);
+        this.dispose();
+      }
+    };
+    this.softphone.on('message', cancelHandler);
   }
 
   public async decline() {
