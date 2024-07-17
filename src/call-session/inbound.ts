@@ -68,9 +68,7 @@ class InboundCallSession extends CallSession {
   }
 
   public async decline() {
-    const newMessage = new ResponseMessage(this.sipMessage, 603);
-    await this.softphone.send(newMessage);
-    this.dispose();
+    this.sendRcMessage(callControlCommands.ClientReject);
   }
 
   public async answer() {
