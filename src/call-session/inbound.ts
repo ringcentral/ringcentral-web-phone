@@ -3,6 +3,7 @@ import type WebPhone from '../web-phone';
 import CallSession from '.';
 import { branch, uuid } from '../utils';
 import RcMessage from '../rc-message/rc-message';
+import callControlCommands from '../rc-message/call-control-commands';
 
 class InboundCallSession extends CallSession {
   public constructor(softphone: WebPhone, inviteMessage: InboundMessage) {
@@ -58,8 +59,12 @@ class InboundCallSession extends CallSession {
     await this.softphone.send(requestSipMessage);
   }
 
+  public async confirmReceive() {
+    this.sendRcMessage(callControlCommands.ClientReceiveConfirm);
+  }
+
   public async toVoiceMail() {
-    this.sendRcMessage(11);
+    this.sendRcMessage(callControlCommands.ClientVoiceMail);
   }
 
   public async decline() {

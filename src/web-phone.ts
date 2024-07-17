@@ -80,6 +80,9 @@ class WebPhone extends EventEmitter {
       this.send(tempMesage);
       tempMesage = new ResponseMessage(inboundMessage, 180);
       this.send(tempMesage);
+
+      // if we don't send this, toVoiceMail() will not work
+      inboundCallSession.confirmReceive();
     });
   }
 
