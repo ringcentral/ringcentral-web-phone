@@ -28,7 +28,7 @@ class InboundCallSession extends CallSession {
     this.softphone.on('message', cancelHandler);
   }
 
-  public async sendRcMessage(cmd: number) {
+  public async sendRcMessage(cmd: number, body: any = {}) {
     if (!this.sipMessage.headers['P-rc']) {
       return;
     }
@@ -43,6 +43,7 @@ class InboundCallSession extends CallSession {
       },
       {
         Cln: this.softphone.sipInfo.authorizationId,
+        ...body,
       },
     );
     const requestSipMessage = new RequestMessage(
@@ -72,9 +73,7 @@ class InboundCallSession extends CallSession {
   }
 
   public async forward(target: string) {
-    await this.answer();
-    await this.transfer(target);
-    this.dispose();
+    this.sendRcMessage(callControlCommands.ClientForward, { FwdDly: '0', Phn: target, PhnTp: '3' });
   }
 
   public async answer() {

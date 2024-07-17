@@ -23,7 +23,7 @@ const Session = (props: { callSession: CallSession }) => {
 const InboundSession = (props: { session: InboundCallSession }) => {
   const { session } = props;
   const [forwardPopoverVisible, setForwardPopoverVisible] = useState(false);
-  const [forwardToNumber, setForwardToNumber] = useState('');
+  const [forwardToNumber, setForwardToNumber] = useState('16506417402'); // todo: remove hardcoded number
   const render = () => (
     <div>
       <div>
