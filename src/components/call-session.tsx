@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { auto } from 'manate/react';
-import { Button, Space, Tag } from 'antd';
+import { Button, Input, Popover, Space, Tag } from 'antd';
 
 import type CallSession from '../call-session';
 import type InboundCallSession from '../call-session/inbound';
@@ -22,6 +22,8 @@ const Session = (props: { callSession: CallSession }) => {
 
 const InboundSession = (props: { session: InboundCallSession }) => {
   const { session } = props;
+  const [forwardPopoverVisible, setForwardPopoverVisible] = useState(false);
+  const [forwardToNumber, setForwardToNumber] = useState('');
   const render = () => (
     <div>
       <div>
@@ -33,6 +35,31 @@ const InboundSession = (props: { session: InboundCallSession }) => {
               Answer
             </Button>
             <Button onClick={() => session.toVoiceMail()}>To Voicemail</Button>
+            <Popover
+              open={forwardPopoverVisible}
+              onOpenChange={(visible) => setForwardPopoverVisible(visible)}
+              trigger="click"
+              placement="top"
+              content={
+                <Space direction="vertical">
+                  <Input
+                    placeholder="16501234567"
+                    value={forwardToNumber}
+                    onChange={(e) => setForwardToNumber(e.target.value.trim())}
+                  />
+                  <Button
+                    onClick={() => {
+                      session.forward(forwardToNumber);
+                      setForwardPopoverVisible(false);
+                    }}
+                  >
+                    Forward
+                  </Button>
+                </Space>
+              }
+            >
+              <Button>Forward</Button>
+            </Popover>
             <Button onClick={() => session.decline()} danger>
               Decline
             </Button>

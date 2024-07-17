@@ -71,6 +71,12 @@ class InboundCallSession extends CallSession {
     this.sendRcMessage(callControlCommands.ClientReject);
   }
 
+  public async forward(target: string) {
+    await this.answer();
+    await this.transfer(target);
+    this.dispose();
+  }
+
   public async answer() {
     await this.init();
     await this.rtcPeerConnection.setRemoteDescription({ type: 'offer', sdp: this.sipMessage.body });
