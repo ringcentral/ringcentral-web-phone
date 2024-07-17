@@ -23,7 +23,9 @@ const Session = (props: { callSession: CallSession }) => {
 const InboundSession = (props: { session: InboundCallSession }) => {
   const { session } = props;
   const [forwardPopoverVisible, setForwardPopoverVisible] = useState(false);
-  const [forwardToNumber, setForwardToNumber] = useState('16506417402'); // todo: remove hardcoded number
+  const [forwardToNumber, setForwardToNumber] = useState('');
+  const [transferPopoverVisible, setTransferPopoverVisible] = useState(false);
+  const [transferToNumber, setTransferToNumber] = useState('');
   const render = () => (
     <div>
       <div>
@@ -70,7 +72,31 @@ const InboundSession = (props: { session: InboundCallSession }) => {
             <Button onClick={() => session.hangup()} danger>
               Hang up
             </Button>
-            <Button>Transfer</Button>
+            <Popover
+              open={transferPopoverVisible}
+              onOpenChange={(visible) => setTransferPopoverVisible(visible)}
+              trigger="click"
+              placement="top"
+              content={
+                <Space direction="vertical">
+                  <Input
+                    placeholder="16501234567"
+                    value={transferToNumber}
+                    onChange={(e) => setTransferToNumber(e.target.value.trim())}
+                  />
+                  <Button
+                    onClick={() => {
+                      session.transfer(transferToNumber);
+                      setTransferPopoverVisible(false);
+                    }}
+                  >
+                    Transer
+                  </Button>
+                </Space>
+              }
+            >
+              <Button>Transfer</Button>
+            </Popover>
           </Space>
         ) : null}
       </div>
@@ -81,6 +107,8 @@ const InboundSession = (props: { session: InboundCallSession }) => {
 
 const OutboundSession = (props: { session: OutboundCallSession }) => {
   const { session } = props;
+  const [transferPopoverVisible, setTransferPopoverVisible] = useState(false);
+  const [transferToNumber, setTransferToNumber] = useState('');
   const render = () => {
     return (
       <div>
@@ -93,7 +121,31 @@ const OutboundSession = (props: { session: OutboundCallSession }) => {
               <Button onClick={() => session.hangup()} danger>
                 Hang up
               </Button>
-              <Button>Transfer</Button>
+              <Popover
+                open={transferPopoverVisible}
+                onOpenChange={(visible) => setTransferPopoverVisible(visible)}
+                trigger="click"
+                placement="top"
+                content={
+                  <Space direction="vertical">
+                    <Input
+                      placeholder="16501234567"
+                      value={transferToNumber}
+                      onChange={(e) => setTransferToNumber(e.target.value.trim())}
+                    />
+                    <Button
+                      onClick={() => {
+                        session.transfer(transferToNumber);
+                        setTransferPopoverVisible(false);
+                      }}
+                    >
+                      Transer
+                    </Button>
+                  </Space>
+                }
+              >
+                <Button>Transfer</Button>
+              </Popover>
             </Space>
           ) : null}
         </div>
