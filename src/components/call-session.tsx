@@ -120,6 +120,8 @@ const AnsweredSession = (props: { session: CallSession }) => {
   const { session } = props;
   const [transferPopoverVisible, setTransferPopoverVisible] = useState(false);
   const [transferToNumber, setTransferToNumber] = useState('');
+  const [dtmfPopoverVisible, setDtmfPopoverVisible] = useState(false);
+  const [dtmfString, setDtmfString] = useState('');
   const render = () => {
     return (
       <Space>
@@ -155,6 +157,32 @@ const AnsweredSession = (props: { session: CallSession }) => {
         <Button onClick={() => session.stopRecording()}>Stop Recording</Button>
         <Button onClick={() => session.hold()}>Hold</Button>
         <Button onClick={() => session.unhold()}>Unhold</Button>
+        <Popover
+          open={dtmfPopoverVisible}
+          onOpenChange={(visible) => setDtmfPopoverVisible(visible)}
+          trigger="click"
+          placement="top"
+          content={
+            <Space direction="vertical">
+              <Input
+                placeholder="16501234567"
+                value={dtmfString}
+                onChange={(e) => setDtmfString(e.target.value.trim())}
+              />
+              <Button
+                onClick={() => {
+                  session.sendDtmf(dtmfString);
+                  setDtmfString('');
+                  setDtmfPopoverVisible(false);
+                }}
+              >
+                Send
+              </Button>
+            </Space>
+          }
+        >
+          <Button>Send DTMF</Button>
+        </Popover>
       </Space>
     );
   };

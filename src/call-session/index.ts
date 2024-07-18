@@ -149,6 +149,15 @@ abstract class CallSession extends EventEmitter {
     await this.toggleReceive(true);
   }
 
+  public sendDtmf(tones: string, duration?: number, interToneGap?: number) {
+    const senders = this.rtcPeerConnection.getSenders();
+    if (senders.length === 0) {
+      return;
+    }
+    const sender = senders[0];
+    sender.dtmf?.insertDTMF(tones, duration, interToneGap);
+  }
+
   protected dispose() {
     this.rtcPeerConnection?.close();
     this.audioElement?.remove();
