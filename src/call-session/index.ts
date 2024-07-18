@@ -14,6 +14,8 @@ abstract class CallSession extends EventEmitter {
   public state: 'init' | 'ringing' | 'answered' | 'disposed' = 'init';
   public direction: 'inbound' | 'outbound';
 
+  private reqid = 1;
+
   public constructor(softphone: WebPhone) {
     super();
     this.softphone = softphone;
@@ -74,6 +76,29 @@ abstract class CallSession extends EventEmitter {
       Via: `SIP/2.0/WSS ${this.softphone.fakeDomain};branch=${branch()}`,
     });
     this.softphone.send(requestMessage);
+  }
+
+  public async sendJsonMessage(jsonBody: string) {
+    const requestMessage = new RequestMessage(
+      `INFO sip:${this.softphone.sipInfo.domain} SIP/2.0`,
+      {
+        'Call-Id': this.callId,
+        From: this.localPeer,
+        To: this.remotePeer,
+        Via: `SIP/2.0/WSS ${this.softphone.fakeDomain};branch=${branch()}`,
+        'Content-Type': 'application/json;charset=utf-8',
+      },
+      jsonBody,
+    );
+    this.softphone.send(requestMessage, true);
+  }
+
+  public async startRecording() {
+    await this.sendJsonMessage(JSON.stringify({ request: { reqid: this.reqid++, command: 'startcallrecord' } }));
+  }
+
+  public async stopRecording() {
+    await this.sendJsonMessage(JSON.stringify({ request: { reqid: this.reqid++, command: 'stopcallrecord' } }));
   }
 
   protected dispose() {
