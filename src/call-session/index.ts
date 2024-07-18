@@ -110,11 +110,11 @@ abstract class CallSession extends EventEmitter {
       return;
     }
     let sdp = this.rtcPeerConnection.localDescription!.sdp;
-    if (toReceive) {
-      // sdp = sdp.replace(/a=sendonly/g, 'a=sendrecv');
-    } else {
+    // default value is `a=sendrecv`
+    if (!toReceive) {
       sdp = sdp.replace(/a=sendrecv/g, 'a=sendonly');
     }
+    // increase the sdp version
     const res = sdpTransform.parse(sdp);
     this.sdpVersion = Math.max(this.sdpVersion, res.origin.sessionVersion + 1);
     res.origin.sessionVersion = this.sdpVersion++;
