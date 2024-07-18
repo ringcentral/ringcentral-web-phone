@@ -27,74 +27,77 @@ const InboundSession = (props: { session: InboundCallSession }) => {
   const [replyPopoverVisible, setReplyPopoverVisible] = useState(false);
   const [replyText, setReplyText] = useState('On my way');
   const render = () => (
-    <div>
-      <div>
-        <strong>{session.direction}</strong> call from {extractNumber(session.remotePeer)} to{' '}
-        {extractNumber(session.localPeer)} <Tag color="blue">{session.state}</Tag>{' '}
-        {session.state === 'ringing' ? (
-          <Space>
-            <Button onClick={() => session.answer()} type="primary">
-              Answer
-            </Button>
-            <Button onClick={() => session.toVoiceMail()}>To Voicemail</Button>
-            <Popover
-              open={forwardPopoverVisible}
-              onOpenChange={(visible) => setForwardPopoverVisible(visible)}
-              trigger="click"
-              placement="top"
-              content={
-                <Space direction="vertical">
-                  <Input
-                    placeholder="16501234567"
-                    value={forwardToNumber}
-                    onChange={(e) => setForwardToNumber(e.target.value.trim())}
-                  />
-                  <Button
-                    onClick={() => {
-                      session.forward(forwardToNumber);
-                      setForwardPopoverVisible(false);
-                    }}
-                  >
-                    Forward
-                  </Button>
-                </Space>
-              }
-            >
-              <Button>Forward</Button>
-            </Popover>
-            <Popover
-              open={replyPopoverVisible}
-              onOpenChange={(visible) => setReplyPopoverVisible(visible)}
-              trigger="click"
-              placement="top"
-              content={
-                <Space direction="vertical">
-                  <Input
-                    placeholder="16501234567"
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value.trim())}
-                  />
-                  <Button
-                    onClick={() => {
-                      session.reply(replyText);
-                      setReplyPopoverVisible(false);
-                    }}
-                  >
-                    Reply
-                  </Button>
-                </Space>
-              }
-            >
-              <Button>Reply</Button>
-            </Popover>
-            <Button onClick={() => session.decline()} danger>
-              Decline
-            </Button>
-          </Space>
-        ) : null}
-        {session.state === 'answered' ? <AnsweredSession session={session} /> : null}
-      </div>
-    </div>
+    <Space direction="vertical">
+      <Space>
+        <strong>{session.direction}</strong>
+        <span>call from</span>
+        {extractNumber(session.remotePeer)} to
+        {extractNumber(session.localPeer)}
+        <Tag color="blue">{session.state}</Tag>
+      </Space>
+      {session.state === 'ringing' ? (
+        <Space>
+          <Button onClick={() => session.answer()} type="primary">
+            Answer
+          </Button>
+          <Button onClick={() => session.toVoiceMail()}>To Voicemail</Button>
+          <Popover
+            open={forwardPopoverVisible}
+            onOpenChange={(visible) => setForwardPopoverVisible(visible)}
+            trigger="click"
+            placement="top"
+            content={
+              <Space direction="vertical">
+                <Input
+                  placeholder="16501234567"
+                  value={forwardToNumber}
+                  onChange={(e) => setForwardToNumber(e.target.value.trim())}
+                />
+                <Button
+                  onClick={() => {
+                    session.forward(forwardToNumber);
+                    setForwardPopoverVisible(false);
+                  }}
+                >
+                  Forward
+                </Button>
+              </Space>
+            }
+          >
+            <Button>Forward</Button>
+          </Popover>
+          <Popover
+            open={replyPopoverVisible}
+            onOpenChange={(visible) => setReplyPopoverVisible(visible)}
+            trigger="click"
+            placement="top"
+            content={
+              <Space direction="vertical">
+                <Input
+                  placeholder="16501234567"
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value.trim())}
+                />
+                <Button
+                  onClick={() => {
+                    session.reply(replyText);
+                    setReplyPopoverVisible(false);
+                  }}
+                >
+                  Reply
+                </Button>
+              </Space>
+            }
+          >
+            <Button>Reply</Button>
+          </Popover>
+          <Button onClick={() => session.decline()} danger>
+            Decline
+          </Button>
+        </Space>
+      ) : null}
+      {session.state === 'answered' ? <AnsweredSession session={session} /> : null}
+    </Space>
   );
   return auto(render, props);
 };
@@ -103,14 +106,16 @@ const OutboundSession = (props: { session: OutboundCallSession }) => {
   const { session } = props;
   const render = () => {
     return (
-      <div>
-        <div>
-          <strong>{session.direction}</strong> call from {extractNumber(session.localPeer)} to{' '}
+      <Space direction="vertical">
+        <Space>
+          <strong>{session.direction}</strong>
+          <span>call from</span>
+          {extractNumber(session.localPeer)} <span>to</span>
           {extractNumber(session.remotePeer)}
-          <Tag color="blue">{session.state}</Tag>{' '}
-          {session.state === 'answered' ? <AnsweredSession session={session} /> : null}
-        </div>
-      </div>
+          <Tag color="blue">{session.state}</Tag>
+        </Space>
+        {session.state === 'answered' ? <AnsweredSession session={session} /> : null}
+      </Space>
     );
   };
   return auto(render, props);
