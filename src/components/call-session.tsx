@@ -164,11 +164,7 @@ const AnsweredSession = (props: { session: CallSession }) => {
           placement="top"
           content={
             <Space direction="vertical">
-              <Input
-                placeholder="16501234567"
-                value={dtmfString}
-                onChange={(e) => setDtmfString(e.target.value.trim())}
-              />
+              <Input placeholder="123#" value={dtmfString} onChange={(e) => setDtmfString(e.target.value.trim())} />
               <Button
                 onClick={() => {
                   session.sendDtmf(dtmfString);
