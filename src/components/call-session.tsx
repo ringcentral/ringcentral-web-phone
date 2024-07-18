@@ -153,6 +153,8 @@ const AnsweredSession = (props: { session: CallSession }) => {
         </Popover>
         <Button onClick={() => session.startRecording()}>Start Recording</Button>
         <Button onClick={() => session.stopRecording()}>Stop Recording</Button>
+        <Button onClick={() => session.hold()}>Hold</Button>
+        <Button onClick={() => session.unhold()}>Unhold</Button>
       </Space>
     );
   };

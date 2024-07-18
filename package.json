@@ -11,6 +11,7 @@
     "@rc-ex/core": "^1.4.0",
     "blueimp-md5": "^2.19.0",
     "manate": "^0.6.5",
+    "sdp-transform": "^2.14.2",
     "uuid": "^10.0.0",
     "wait-for-async": "^0.6.1",
     "xmldom": "^0.6.0"
