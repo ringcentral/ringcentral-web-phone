@@ -5,6 +5,7 @@ import WebPhone from '../web-phone';
 import store from '../store';
 import type InboundCallSession from '../call-session/inbound';
 import type OutboundCallSession from '../call-session/outbound';
+import { trimPrefix } from '../utils';
 
 const afterLogin = async () => {
   if (store.rcToken === '') {
@@ -16,7 +17,17 @@ const afterLogin = async () => {
   // fetch extension and phone number info
   store.extInfo = await rc.restapi().account().extension().get();
   const numberList = await rc.restapi().account().extension().phoneNumber().get();
-  store.primaryNumber = numberList.records?.find((n) => n.primary)?.phoneNumber ?? '';
+  store.primaryNumber = trimPrefix(numberList.records?.find((n) => n.primary)?.phoneNumber ?? '', '+');
+  if (store.primaryNumber !== '') {
+    store.callerIds.push(store.primaryNumber);
+  }
+  store.callerIds = [
+    ...store.callerIds,
+    ...(numberList.records
+      ?.filter((n) => !n.primary)
+      .filter((n) => n.features?.includes('CallerId'))
+      .map((n) => trimPrefix(n.phoneNumber!, '+')) ?? []),
+  ];
 
   const r = await rc
     .restapi()

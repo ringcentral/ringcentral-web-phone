@@ -5,7 +5,6 @@ This is a complete rewrite of the RingCentral Web Phone SDK.
 
 ## Todo:
 
-- set caller id
 - receive dtmf?
   - Not possible with WebRTC: https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Using_DTMF
 

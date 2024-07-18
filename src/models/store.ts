@@ -15,6 +15,7 @@ export class Store {
   public jwtToken = '';
   public extInfo: GetExtensionInfoResponse;
   public primaryNumber = '';
+  public callerIds: string[] = [];
 
   public webPhone: WebPhone; // reference but do not track. Ref: https://github.com/tylerlong/manate?tab=readme-ov-file#reference-but-do-not-track
   public callSessions: CallSession[] = [];

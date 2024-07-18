@@ -126,7 +126,7 @@ class WebPhone extends EventEmitter {
   }
 
   // make an outbound call
-  public async call(callee: number, callerId?: number) {
+  public async call(callee: string, callerId?: string) {
     const outboundCallSession = manage(new OutboundCallSession(this));
     await outboundCallSession.init();
     await outboundCallSession.call(callee, callerId);

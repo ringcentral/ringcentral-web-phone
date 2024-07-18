@@ -9,7 +9,7 @@ class OutboundCallSession extends CallSession {
     this.direction = 'outbound';
   }
 
-  public async call(callee: number, callerId?: number) {
+  public async call(callee: string, callerId?: string) {
     const offer = await this.rtcPeerConnection.createOffer({ iceRestart: true });
     await this.rtcPeerConnection.setLocalDescription(offer);
 

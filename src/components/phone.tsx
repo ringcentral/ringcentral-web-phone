@@ -1,6 +1,6 @@
 import React from 'react';
 import { auto } from 'manate/react';
-import { Button, Divider, Input, Space, Typography } from 'antd';
+import { Button, Divider, Input, Select, Space, Typography } from 'antd';
 
 import type { Store } from '../models/store';
 import CallSession from './call-session';
@@ -8,6 +8,7 @@ import CallSession from './call-session';
 const Phone = (props: { store: Store }) => {
   const { store } = props;
   const [callee, setCallee] = React.useState<string>('');
+  const [callerId, setCallerId] = React.useState<string>(store.callerIds[0]);
   const render = () => (
     <>
       <Button id="logout-btn" onClick={() => store.logout()}>
@@ -24,10 +25,16 @@ const Phone = (props: { store: Store }) => {
         </Typography.Text>
         <Divider>Outbound Call</Divider>
         <Space>
+          <Select
+            value={callerId}
+            onChange={(value) => setCallerId(value)}
+            style={{ width: '12rem' }}
+            options={store.callerIds.map((n) => ({ value: n, label: <span>{n}</span> }))}
+          />
           <Input placeholder="16501234567" onChange={(e) => setCallee(e.target.value.trim())} value={callee} />
           <Button
             type="primary"
-            onClick={() => store.webPhone.call(parseInt(callee, 10))}
+            onClick={() => store.webPhone.call(callee, callerId)}
             disabled={callee.trim().length < 3}
           >
             Call
