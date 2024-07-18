@@ -24,6 +24,8 @@ const InboundSession = (props: { session: InboundCallSession }) => {
   const { session } = props;
   const [forwardPopoverVisible, setForwardPopoverVisible] = useState(false);
   const [forwardToNumber, setForwardToNumber] = useState('');
+  const [replyPopoverVisible, setReplyPopoverVisible] = useState(false);
+  const [replyText, setReplyText] = useState('On my way');
   const [transferPopoverVisible, setTransferPopoverVisible] = useState(false);
   const [transferToNumber, setTransferToNumber] = useState('');
   const render = () => (
@@ -61,6 +63,31 @@ const InboundSession = (props: { session: InboundCallSession }) => {
               }
             >
               <Button>Forward</Button>
+            </Popover>
+            <Popover
+              open={replyPopoverVisible}
+              onOpenChange={(visible) => setReplyPopoverVisible(visible)}
+              trigger="click"
+              placement="top"
+              content={
+                <Space direction="vertical">
+                  <Input
+                    placeholder="16501234567"
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value.trim())}
+                  />
+                  <Button
+                    onClick={() => {
+                      session.reply(replyText);
+                      setReplyPopoverVisible(false);
+                    }}
+                  >
+                    Reply
+                  </Button>
+                </Space>
+              }
+            >
+              <Button>Reply</Button>
             </Popover>
             <Button onClick={() => session.decline()} danger>
               Decline
