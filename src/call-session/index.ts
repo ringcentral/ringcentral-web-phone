@@ -64,7 +64,7 @@ abstract class CallSession extends EventEmitter {
       }
       const responseMessage = new ResponseMessage(inboundMessage, 200);
       this.softphone.send(responseMessage);
-      if (inboundMessage.body.endsWith('SIP/2.0 200 OK')) {
+      if (inboundMessage.body.trim() === 'SIP/2.0 200 OK') {
         this.softphone.off('message', notifyHandler);
       }
     };
