@@ -5,7 +5,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "lint": "tsc --noEmit ./src/*.ts && eslint --fix '**/*.{ts,tsx,js,jsx}' && prettier --write . && sort-package-json",
-    "serve": "rm -rf .parcel-cache && parcel src/index.html --dist-dir docs --no-hmr"
+    "serve": "rm -rf .parcel-cache && parcel src/index.html src/callback.html --dist-dir docs --no-hmr"
   },
   "dependencies": {
     "@rc-ex/core": "^1.4.0",
