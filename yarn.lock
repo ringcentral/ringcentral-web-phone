@@ -1277,6 +1277,11 @@
     "@types/prop-types" "*"
     csstype "^3.0.2"
 
+"@types/sdp-transform@^2.4.9":
+  version "2.4.9"
+  resolved "https://registry.yarnpkg.com/@types/sdp-transform/-/sdp-transform-2.4.9.tgz#26ef39f487a6909b0512f580b80920a366b27f52"
+  integrity sha512-bVr+/OoZZy7wrHlNcEAAa6PAgKA4BoXPYVN2EijMC5WnGgQ4ZEuixmKnVs2roiAvr7RhIFVH17QD27cojgIZCg==
+
 "@types/urijs@^1.19.25":
   version "1.19.25"
   resolved "https://registry.yarnpkg.com/@types/urijs/-/urijs-1.19.25.tgz#ac92b53e674c3b108decdbe88dc5f444a2f42f6a"

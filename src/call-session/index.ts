@@ -5,6 +5,12 @@ import { RequestMessage, type InboundMessage, ResponseMessage } from '../sip-mes
 import type WebPhone from '../web-phone';
 import { branch, extractAddress, uuid } from '../utils';
 
+interface CallParkResult {
+  code: number;
+  description: string;
+  'park extension': string;
+}
+
 abstract class CallSession extends EventEmitter {
   public softphone: WebPhone;
   public sipMessage: InboundMessage;
@@ -104,6 +110,26 @@ abstract class CallSession extends EventEmitter {
     await this.sendJsonMessage(JSON.stringify({ request: { reqid: this.reqid++, command: 'stopcallrecord' } }));
   }
 
+  public async park(): Promise<CallParkResult> {
+    return new Promise((resolve) => {
+      const reqid = this.reqid++;
+      const parkHandler = (inboundMessage: InboundMessage) => {
+        if (!inboundMessage.subject.startsWith('INFO sip:')) {
+          return;
+        }
+        const response = JSON.parse(inboundMessage.body).response;
+        if (!response || response.reqid !== reqid || response.command !== 'callpark') {
+          return;
+        }
+        this.softphone.off('message', parkHandler);
+        this.dispose();
+        resolve(response.result);
+      };
+      this.softphone.on('message', parkHandler);
+      this.sendJsonMessage(JSON.stringify({ request: { reqid, command: 'callpark' } }));
+    });
+  }
+
   // toggle between a=sendrecv and a=sendonly
   public async toggleReceive(toReceive: boolean) {
     if (!this.rtcPeerConnection?.localDescription) {
@@ -116,8 +142,8 @@ abstract class CallSession extends EventEmitter {
     }
     // increase the sdp version
     const res = sdpTransform.parse(sdp);
-    this.sdpVersion = Math.max(this.sdpVersion, res.origin.sessionVersion + 1);
-    res.origin.sessionVersion = this.sdpVersion++;
+    this.sdpVersion = Math.max(this.sdpVersion, res.origin!.sessionVersion + 1);
+    res.origin!.sessionVersion = this.sdpVersion++;
     sdp = sdpTransform.write(res);
     const requestMessage = new RequestMessage(
       `INVITE sip:${extractAddress(this.remotePeer)} SIP/2.0`,
