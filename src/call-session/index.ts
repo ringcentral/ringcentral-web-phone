@@ -149,6 +149,20 @@ abstract class CallSession extends EventEmitter {
     await this.toggleReceive(true);
   }
 
+  public toggleTrack(enabled: boolean) {
+    this.rtcPeerConnection.getSenders().forEach((sender) => {
+      if (sender.track) {
+        sender.track.enabled = enabled;
+      }
+    });
+  }
+  public async mute() {
+    this.toggleTrack(false);
+  }
+  public async unmute() {
+    this.toggleTrack(true);
+  }
+
   public sendDtmf(tones: string, duration?: number, interToneGap?: number) {
     const senders = this.rtcPeerConnection.getSenders();
     if (senders.length === 0) {

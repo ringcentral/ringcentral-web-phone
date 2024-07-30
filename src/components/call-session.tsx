@@ -162,6 +162,8 @@ const AnsweredSession = (props: { session: CallSession }) => {
         <Button onClick={() => session.stopRecording()}>Stop Recording</Button>
         <Button onClick={() => session.hold()}>Hold</Button>
         <Button onClick={() => session.unhold()}>Unhold</Button>
+        <Button onClick={() => session.mute()}>Mute</Button>
+        <Button onClick={() => session.unmute()}>Unmute</Button>
         <Popover
           open={dtmfPopoverVisible}
           onOpenChange={(visible) => setDtmfPopoverVisible(visible)}
