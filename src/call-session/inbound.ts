@@ -106,6 +106,20 @@ class InboundCallSession extends CallSession {
     );
     this.softphone.send(newMessage);
 
+    // reply 200 to <Msg> Cmd=7, and there are two of them
+    let count = 0;
+    const messageHandler = (inboundMessage: InboundMessage) => {
+      if (inboundMessage.subject.startsWith('MESSAGE sip:')) {
+        const responsMessage = new ResponseMessage(inboundMessage, 200);
+        this.softphone.send(responsMessage);
+        count += 1;
+        if (count >= 2) {
+          this.softphone.off('message', messageHandler);
+        }
+      }
+    };
+    this.softphone.on('message', messageHandler);
+
     this.state = 'answered';
     this.emit('answered');
 
