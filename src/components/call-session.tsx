@@ -125,6 +125,8 @@ const AnsweredSession = (props: { session: CallSession }) => {
   const { session } = props;
   const [transferPopoverVisible, setTransferPopoverVisible] = useState(false);
   const [transferToNumber, setTransferToNumber] = useState('');
+  const [flipPopoverVisible, setFlipPopoverVisible] = useState(false);
+  const [flipToNumber, setFlipToNumber] = useState('');
   const [dtmfPopoverVisible, setDtmfPopoverVisible] = useState(false);
   const [dtmfString, setDtmfString] = useState('');
   const render = () => {
@@ -157,6 +159,31 @@ const AnsweredSession = (props: { session: CallSession }) => {
           }
         >
           <Button>Transfer</Button>
+        </Popover>
+        <Popover
+          open={flipPopoverVisible}
+          onOpenChange={(visible) => setFlipPopoverVisible(visible)}
+          trigger="click"
+          placement="top"
+          content={
+            <Space direction="vertical">
+              <Input
+                placeholder="16501234567"
+                value={flipToNumber}
+                onChange={(e) => setFlipToNumber(e.target.value.trim())}
+              />
+              <Button
+                onClick={() => {
+                  session.flip(flipToNumber);
+                  setFlipPopoverVisible(false);
+                }}
+              >
+                Flip
+              </Button>
+            </Space>
+          }
+        >
+          <Button>Flip</Button>
         </Popover>
         <Button onClick={() => session.startRecording()}>Start Recording</Button>
         <Button onClick={() => session.stopRecording()}>Stop Recording</Button>

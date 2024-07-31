@@ -11,6 +11,13 @@ interface CallParkResult {
   'park extension': string;
 }
 
+interface CallFlipResult {
+  code: number;
+  description: string;
+  number: string;
+  target: string;
+}
+
 abstract class CallSession extends EventEmitter {
   public softphone: WebPhone;
   public sipMessage: InboundMessage;
@@ -110,6 +117,31 @@ abstract class CallSession extends EventEmitter {
     await this.sendJsonMessage(JSON.stringify({ request: { reqid: this.reqid++, command: 'stopcallrecord' } }));
   }
 
+  public async flip(target: string): Promise<CallFlipResult> {
+    return new Promise((resolve) => {
+      const reqid = this.reqid++;
+      const flipHandler = (inboundMessage: InboundMessage) => {
+        if (!inboundMessage.subject.startsWith('INFO sip:')) {
+          return;
+        }
+        const response = JSON.parse(inboundMessage.body).response;
+        if (!response || response.reqid !== reqid || response.command !== 'callflip') {
+          return;
+        }
+        const responseMessage = new ResponseMessage(inboundMessage, 200);
+        this.softphone.send(responseMessage);
+        this.softphone.off('message', flipHandler);
+        if (response.result.code === 0) {
+          // flip success, dispose the call session
+          // this.dispose();
+        }
+        resolve(response.result);
+      };
+      this.softphone.on('message', flipHandler);
+      this.sendJsonMessage(JSON.stringify({ request: { reqid, command: 'callflip', target } }));
+    });
+  }
+
   public async park(): Promise<CallParkResult> {
     return new Promise((resolve) => {
       const reqid = this.reqid++;
@@ -121,6 +153,8 @@ abstract class CallSession extends EventEmitter {
         if (!response || response.reqid !== reqid || response.command !== 'callpark') {
           return;
         }
+        const responseMessage = new ResponseMessage(inboundMessage, 200);
+        this.softphone.send(responseMessage);
         this.softphone.off('message', parkHandler);
         if (response.result.code === 0) {
           // park success, dispose the call session
