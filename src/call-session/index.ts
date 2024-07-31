@@ -131,10 +131,9 @@ abstract class CallSession extends EventEmitter {
         const responseMessage = new ResponseMessage(inboundMessage, 200);
         this.softphone.send(responseMessage);
         this.softphone.off('message', flipHandler);
-        if (response.result.code === 0) {
-          // flip success, dispose the call session
-          // this.dispose();
-        }
+        // note: we can't dispose the call session here
+        // otherwise the caller will not be able to talk to the flip target
+        // after the flip target answers the call, manually dispose the call session
         resolve(response.result);
       };
       this.softphone.on('message', flipHandler);
