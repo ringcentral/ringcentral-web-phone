@@ -122,7 +122,10 @@ abstract class CallSession extends EventEmitter {
           return;
         }
         this.softphone.off('message', parkHandler);
-        this.dispose();
+        if (response.result.code === 0) {
+          // park success, dispose the call session
+          this.dispose();
+        }
         resolve(response.result);
       };
       this.softphone.on('message', parkHandler);
