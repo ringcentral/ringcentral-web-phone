@@ -129,6 +129,9 @@ const AnsweredSession = (props: { session: CallSession }) => {
   const [flipToNumber, setFlipToNumber] = useState('');
   const [dtmfPopoverVisible, setDtmfPopoverVisible] = useState(false);
   const [dtmfString, setDtmfString] = useState('');
+  const [warmTransferMethods, setWarmTransferMethods] = useState<
+    undefined | { complete: () => void; cancel: () => void }
+  >(undefined);
   const render = () => {
     return (
       <Space>
@@ -147,26 +150,49 @@ const AnsweredSession = (props: { session: CallSession }) => {
                 value={transferToNumber}
                 onChange={(e) => setTransferToNumber(e.target.value.trim())}
               />
-              <Button
-                onClick={() => {
-                  session.transfer(transferToNumber);
-                  setTransferPopoverVisible(false);
-                }}
-              >
-                Transer
-              </Button>
-              <Button
-                onClick={async () => {
-                  const completeTransfer = await session.warmTransfer(transferToNumber);
-                  setTransferPopoverVisible(false);
-                  setTimeout(() => {
-                    console.log('Complete transfer');
-                    completeTransfer();
-                  }, 30000); // todo: let user complete transfer
-                }}
-              >
-                Warm Transer
-              </Button>
+
+              {warmTransferMethods && (
+                <>
+                  <Button
+                    onClick={() => {
+                      warmTransferMethods.complete();
+                      setWarmTransferMethods(undefined);
+                      setTransferPopoverVisible(false);
+                    }}
+                  >
+                    Complete
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      warmTransferMethods.cancel();
+                      setWarmTransferMethods(undefined);
+                      setTransferPopoverVisible(false);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </>
+              )}
+              {!warmTransferMethods && (
+                <>
+                  <Button
+                    onClick={() => {
+                      session.transfer(transferToNumber);
+                      setTransferPopoverVisible(false);
+                    }}
+                  >
+                    Transfer
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      const { complete, cancel } = await session.warmTransfer(transferToNumber);
+                      setWarmTransferMethods({ complete, cancel });
+                    }}
+                  >
+                    Warm Transer
+                  </Button>
+                </>
+              )}
             </Space>
           }
         >

@@ -88,13 +88,22 @@ abstract class CallSession extends EventEmitter {
     return this._transfer(`sip:${target}@sip.ringcentral.com`);
   }
 
-  public async warmTransfer(target: string): Promise<() => void> {
+  public async warmTransfer(target: string): Promise<{ complete: () => void; cancel: () => void }> {
     await this.hold();
+    // create a new session and user needs to talk to the target before transfer
     const newSession = await this.softphone.call(target);
-    return async () => {
-      await this._transfer(
-        `"${target}@sip.ringcentral.com" <sip:${target}@sip.ringcentral.com;transport=wss?Replaces=${newSession.callId}%3Bto-tag%3D${extractTag(newSession.remotePeer)}%3Bfrom-tag%3D${extractTag(newSession.localPeer)}>`,
-      );
+    return {
+      // complete the transfer
+      complete: async () => {
+        await this._transfer(
+          `"${target}@sip.ringcentral.com" <sip:${target}@sip.ringcentral.com;transport=wss?Replaces=${newSession.callId}%3Bto-tag%3D${extractTag(newSession.remotePeer)}%3Bfrom-tag%3D${extractTag(newSession.localPeer)}>`,
+        );
+      },
+      // cancel the transfer
+      cancel: async () => {
+        await newSession.hangup();
+        await this.unhold();
+      },
     };
   }
 
