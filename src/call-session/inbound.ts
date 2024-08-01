@@ -6,8 +6,8 @@ import RcMessage from '../rc-message/rc-message';
 import callControlCommands from '../rc-message/call-control-commands';
 
 class InboundCallSession extends CallSession {
-  public constructor(softphone: WebPhone, inviteMessage: InboundMessage) {
-    super(softphone);
+  public constructor(webPhone: WebPhone, inviteMessage: InboundMessage) {
+    super(webPhone);
     this.sipMessage = inviteMessage;
     this.localPeer = inviteMessage.headers.To;
     this.remotePeer = inviteMessage.headers.From;
@@ -21,11 +21,11 @@ class InboundCallSession extends CallSession {
         return;
       }
       if (inboundMessage.subject.startsWith('CANCEL sip:')) {
-        this.softphone.off('message', cancelHandler);
+        this.webPhone.off('message', cancelHandler);
         this.dispose();
       }
     };
-    this.softphone.on('message', cancelHandler);
+    this.webPhone.on('message', cancelHandler);
   }
 
   public async sendRcMessage(cmd: number, body: any = {}) {
@@ -42,22 +42,22 @@ class InboundCallSession extends CallSession {
         Cmd: cmd.toString(),
       },
       {
-        Cln: this.softphone.sipInfo.authorizationId,
+        Cln: this.webPhone.sipInfo.authorizationId,
         ...body,
       },
     );
     const requestSipMessage = new RequestMessage(
       `MESSAGE sip:${newRcMessage.Hdr.To} SIP/2.0`,
       {
-        Via: `SIP/2.0/WSS ${this.softphone.fakeDomain};branch=${branch()}`,
+        Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
         To: `<sip:${newRcMessage.Hdr.To}>`,
-        From: `<sip:${this.softphone.sipInfo.username}@${this.softphone.sipInfo.domain}>;tag=${uuid()}`,
+        From: `<sip:${this.webPhone.sipInfo.username}@${this.webPhone.sipInfo.domain}>;tag=${uuid()}`,
         'Call-ID': this.callId,
         'Content-Type': 'x-rc/agent',
       },
       newRcMessage.toXml(),
     );
-    await this.softphone.send(requestSipMessage);
+    await this.webPhone.send(requestSipMessage);
   }
 
   public async confirmReceive() {
@@ -104,21 +104,21 @@ class InboundCallSession extends CallSession {
       },
       answer.sdp,
     );
-    this.softphone.send(newMessage);
+    this.webPhone.send(newMessage);
 
     // reply 200 to <Msg> Cmd=7, and there are two of them
     let count = 0;
     const messageHandler = (inboundMessage: InboundMessage) => {
       if (inboundMessage.subject.startsWith('MESSAGE sip:')) {
         const responsMessage = new ResponseMessage(inboundMessage, 200);
-        this.softphone.send(responsMessage);
+        this.webPhone.send(responsMessage);
         count += 1;
         if (count >= 2) {
-          this.softphone.off('message', messageHandler);
+          this.webPhone.off('message', messageHandler);
         }
       }
     };
-    this.softphone.on('message', messageHandler);
+    this.webPhone.on('message', messageHandler);
 
     this.state = 'answered';
     this.emit('answered');
@@ -128,11 +128,11 @@ class InboundCallSession extends CallSession {
         return;
       }
       if (inboundMessage.headers.CSeq.endsWith(' BYE')) {
-        this.softphone.off('message', byeHandler);
+        this.webPhone.off('message', byeHandler);
         this.dispose();
       }
     };
-    this.softphone.on('message', byeHandler);
+    this.webPhone.on('message', byeHandler);
   }
 }
 

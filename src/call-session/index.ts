@@ -19,7 +19,7 @@ interface CallFlipResult {
 }
 
 abstract class CallSession extends EventEmitter {
-  public softphone: WebPhone;
+  public webPhone: WebPhone;
   public sipMessage: InboundMessage;
   public localPeer: string;
   public remotePeer: string;
@@ -32,9 +32,9 @@ abstract class CallSession extends EventEmitter {
   private reqid = 1;
   private sdpVersion = 1;
 
-  public constructor(softphone: WebPhone) {
+  public constructor(webPhone: WebPhone) {
     super();
-    this.softphone = softphone;
+    this.webPhone = webPhone;
   }
 
   public get callId() {
@@ -65,23 +65,23 @@ abstract class CallSession extends EventEmitter {
       'Call-Id': this.callId,
       From: this.localPeer,
       To: this.remotePeer,
-      Via: `SIP/2.0/WSS ${this.softphone.fakeDomain};branch=${branch()}`,
+      Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
       'Refer-To': uri,
       'Referred-By': `<${extractAddress(this.localPeer)}>`,
     });
-    this.softphone.send(requestMessage);
+    this.webPhone.send(requestMessage);
     // reply to those NOTIFY messages
     const notifyHandler = (inboundMessage: InboundMessage) => {
       if (!inboundMessage.subject.startsWith('NOTIFY ')) {
         return;
       }
       const responseMessage = new ResponseMessage(inboundMessage, 200);
-      this.softphone.send(responseMessage);
+      this.webPhone.send(responseMessage);
       if (inboundMessage.body.trim() === 'SIP/2.0 200 OK') {
-        this.softphone.off('message', notifyHandler);
+        this.webPhone.off('message', notifyHandler);
       }
     };
-    this.softphone.on('message', notifyHandler);
+    this.webPhone.on('message', notifyHandler);
   }
 
   public async transfer(target: string) {
@@ -91,7 +91,7 @@ abstract class CallSession extends EventEmitter {
   public async warmTransfer(target: string): Promise<{ complete: () => void; cancel: () => void }> {
     await this.hold();
     // create a new session and user needs to talk to the target before transfer
-    const newSession = await this.softphone.call(target);
+    const newSession = await this.webPhone.call(target);
     return {
       // complete the transfer
       complete: async () => {
@@ -108,28 +108,28 @@ abstract class CallSession extends EventEmitter {
   }
 
   public async hangup() {
-    const requestMessage = new RequestMessage(`BYE sip:${this.softphone.sipInfo.domain} SIP/2.0`, {
+    const requestMessage = new RequestMessage(`BYE sip:${this.webPhone.sipInfo.domain} SIP/2.0`, {
       'Call-Id': this.callId,
       From: this.localPeer,
       To: this.remotePeer,
-      Via: `SIP/2.0/WSS ${this.softphone.fakeDomain};branch=${branch()}`,
+      Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
     });
-    this.softphone.send(requestMessage);
+    this.webPhone.send(requestMessage);
   }
 
   public async sendJsonMessage(jsonBody: string) {
     const requestMessage = new RequestMessage(
-      `INFO sip:${this.softphone.sipInfo.domain} SIP/2.0`,
+      `INFO sip:${this.webPhone.sipInfo.domain} SIP/2.0`,
       {
         'Call-Id': this.callId,
         From: this.localPeer,
         To: this.remotePeer,
-        Via: `SIP/2.0/WSS ${this.softphone.fakeDomain};branch=${branch()}`,
+        Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
         'Content-Type': 'application/json;charset=utf-8',
       },
       jsonBody,
     );
-    this.softphone.send(requestMessage, true);
+    this.webPhone.send(requestMessage, true);
   }
 
   public async startRecording() {
@@ -152,14 +152,14 @@ abstract class CallSession extends EventEmitter {
           return;
         }
         const responseMessage = new ResponseMessage(inboundMessage, 200);
-        this.softphone.send(responseMessage);
-        this.softphone.off('message', flipHandler);
+        this.webPhone.send(responseMessage);
+        this.webPhone.off('message', flipHandler);
         // note: we can't dispose the call session here
         // otherwise the caller will not be able to talk to the flip target
         // after the flip target answers the call, manually dispose the call session
         resolve(response.result);
       };
-      this.softphone.on('message', flipHandler);
+      this.webPhone.on('message', flipHandler);
       this.sendJsonMessage(JSON.stringify({ request: { reqid, command: 'callflip', target } }));
     });
   }
@@ -176,15 +176,15 @@ abstract class CallSession extends EventEmitter {
           return;
         }
         const responseMessage = new ResponseMessage(inboundMessage, 200);
-        this.softphone.send(responseMessage);
-        this.softphone.off('message', parkHandler);
+        this.webPhone.send(responseMessage);
+        this.webPhone.off('message', parkHandler);
         if (response.result.code === 0) {
           // park success, dispose the call session
           this.dispose();
         }
         resolve(response.result);
       };
-      this.softphone.on('message', parkHandler);
+      this.webPhone.on('message', parkHandler);
       this.sendJsonMessage(JSON.stringify({ request: { reqid, command: 'callpark' } }));
     });
   }
@@ -210,12 +210,12 @@ abstract class CallSession extends EventEmitter {
         'Call-Id': this.callId,
         From: this.localPeer,
         To: this.remotePeer,
-        Via: `SIP/2.0/WSS ${this.softphone.fakeDomain};branch=${branch()}`,
+        Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
         'Content-Type': 'application/sdp',
       },
       sdp,
     );
-    const replyMessage = await this.softphone.send(requestMessage, true);
+    const replyMessage = await this.webPhone.send(requestMessage, true);
     const ackMessage = new RequestMessage(`ACK ${extractAddress(this.remotePeer)} SIP/2.0`, {
       'Call-Id': this.callId,
       From: this.localPeer,
@@ -223,7 +223,7 @@ abstract class CallSession extends EventEmitter {
       Via: replyMessage.headers.Via,
       CSeq: replyMessage.headers.CSeq.replace(' INVITE', ' ACK'),
     });
-    this.softphone.send(ackMessage);
+    this.webPhone.send(ackMessage);
   }
 
   public async hold() {
