@@ -3,7 +3,7 @@ import sdpTransform from 'sdp-transform';
 import EventEmitter from '../event-emitter';
 import { RequestMessage, type InboundMessage, ResponseMessage } from '../sip-message';
 import type WebPhone from '../web-phone';
-import { branch, extractAddress, uuid } from '../utils';
+import { branch, extractAddress, extractTag, uuid } from '../utils';
 
 interface CallParkResult {
   code: number;
@@ -60,13 +60,13 @@ abstract class CallSession extends EventEmitter {
     };
   }
 
-  public async transfer(target: string) {
+  public async _transfer(uri: string) {
     const requestMessage = new RequestMessage(`REFER sip:${extractAddress(this.remotePeer)} SIP/2.0`, {
       'Call-Id': this.callId,
       From: this.localPeer,
       To: this.remotePeer,
       Via: `SIP/2.0/WSS ${this.softphone.fakeDomain};branch=${branch()}`,
-      'Refer-To': `sip:${target}@sip.ringcentral.com`,
+      'Refer-To': uri,
       'Referred-By': `<${extractAddress(this.localPeer)}>`,
     });
     this.softphone.send(requestMessage);
@@ -82,6 +82,20 @@ abstract class CallSession extends EventEmitter {
       }
     };
     this.softphone.on('message', notifyHandler);
+  }
+
+  public async transfer(target: string) {
+    return this._transfer(`sip:${target}@sip.ringcentral.com`);
+  }
+
+  public async warmTransfer(target: string): Promise<() => void> {
+    await this.hold();
+    const newSession = await this.softphone.call(target);
+    return async () => {
+      await this._transfer(
+        `"${target}@sip.ringcentral.com" <sip:${target}@sip.ringcentral.com;transport=wss?Replaces=${newSession.callId}%3Bto-tag%3D${extractTag(newSession.remotePeer)}%3Bfrom-tag%3D${extractTag(newSession.localPeer)}>`,
+      );
+    };
   }
 
   public async hangup() {

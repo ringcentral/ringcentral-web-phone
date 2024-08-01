@@ -155,6 +155,18 @@ const AnsweredSession = (props: { session: CallSession }) => {
               >
                 Transer
               </Button>
+              <Button
+                onClick={async () => {
+                  const completeTransfer = await session.warmTransfer(transferToNumber);
+                  setTransferPopoverVisible(false);
+                  setTimeout(() => {
+                    console.log('Complete transfer');
+                    completeTransfer();
+                  }, 30000); // todo: let user complete transfer
+                }}
+              >
+                Warm Transer
+              </Button>
             </Space>
           }
         >
