@@ -241,6 +241,7 @@ const AnsweredSession = (props: { session: CallSession }) => {
         >
           Park
         </Button>
+        <Button onClick={() => session.convertToConference()}>Convert to conference</Button>
         <Popover
           open={dtmfPopoverVisible}
           onOpenChange={(visible) => setDtmfPopoverVisible(visible)}

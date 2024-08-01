@@ -248,6 +248,8 @@ abstract class CallSession extends EventEmitter {
     this.toggleTrack(true);
   }
 
+  public async convertToConference() {}
+
   public sendDtmf(tones: string, duration?: number, interToneGap?: number) {
     const senders = this.rtcPeerConnection.getSenders();
     if (senders.length === 0) {
