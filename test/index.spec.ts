@@ -26,7 +26,7 @@ const waitFor = async (condition, pollInterval = 1000, timeout = 10000) => {
 // eslint-disable-next-line max-params
 const login = async (context: BrowserContext, jwtToken: string, ws: any, options: { customHeader?: boolean } = {}) => {
   const page = await context.newPage();
-  
+
   let path = '/';
 
   if (options && options.customHeader) {
@@ -98,19 +98,24 @@ test('home page', async ({ context }) => {
 
 test('allow to configure default headers', async ({ context }) => {
   let wsHandled = false;
-  await login(context, process.env.RC_WP_CALLER_JWT_TOKEN!, (ws) => {
-    ws.on('framesent', async (frame) => {
-      const parsed = sip.Core.Parser.parseMessage(frame.payload, logger);
+  await login(
+    context,
+    process.env.RC_WP_CALLER_JWT_TOKEN!,
+    (ws) => {
+      ws.on('framesent', async (frame) => {
+        const parsed = sip.Core.Parser.parseMessage(frame.payload, logger);
 
-      if (parsed!.method === 'REGISTER') {
-        expect(parsed!.headers['P-Custom-Header'].length).toEqual(1);
-        expect(parsed!.headers['P-Custom-Header'][0].raw).toEqual('CustomValue');
-        wsHandled = true;
-      }
-    });
-  }, {
-    customHeader: true
-  });
+        if (parsed!.method === 'REGISTER') {
+          expect(parsed!.headers['P-Custom-Header'].length).toEqual(1);
+          expect(parsed!.headers['P-Custom-Header'][0].raw).toEqual('CustomValue');
+          wsHandled = true;
+        }
+      });
+    },
+    {
+      customHeader: true,
+    },
+  );
 
   await waitFor(() => wsHandled);
 });
