@@ -133,7 +133,7 @@ $(() => {
   }
 
   function register(data) {
-    webPhone = new WebPhone(data, {
+    const webPhoneConfig: any = {
       enableDscp: true,
       clientId: localStorage.getItem('webPhoneclientId')!,
       audioHelper: {
@@ -150,7 +150,15 @@ $(() => {
       },
       enableQos: true,
       enableMediaReportLogging: true,
-    });
+    };
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('customHeader')) {
+      webPhoneConfig.defaultHeaders = ['P-Custom-Header: CustomValue'];
+    }
+
+    webPhone = new WebPhone(data, webPhoneConfig);
+
     global.webPhone = webPhone; // for debugging
 
     webPhone.userAgent.audioHelper.setVolume(0.3);
