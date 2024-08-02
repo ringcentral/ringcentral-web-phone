@@ -133,7 +133,7 @@ $(() => {
   }
 
   function register(data) {
-    webPhone = new WebPhone(data, {
+    let webPhoneConfig: any = {
       enableDscp: true,
       clientId: localStorage.getItem('webPhoneclientId')!,
       audioHelper: {
@@ -150,7 +150,15 @@ $(() => {
       },
       enableQos: true,
       enableMediaReportLogging: true,
-    });
+    }
+
+    //check page query params for skipClientId and remove from config if found
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('skipClientId')) {
+      delete webPhoneConfig.clientId;
+    }
+
+    webPhone = new WebPhone(data, webPhoneConfig);
     global.webPhone = webPhone; // for debugging
 
     webPhone.userAgent.audioHelper.setVolume(0.3);

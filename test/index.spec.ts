@@ -1,13 +1,43 @@
 import type { BrowserContext } from '@playwright/test';
 import { expect, test } from '@playwright/test';
 import RingCentral from '@rc-ex/core';
+const sip = require("fix-esm").require("sip.js");
+const log = new sip.Core.LoggerFactory();
+const logger = log.getLogger("test.parser");
 
-const login = async (context: BrowserContext, jwtToken: string) => {
+const waitFor = async (condition, pollInterval = 1000, timeout = 10000) => {
+  const startTime = Date.now();
+
+  while (true) {
+    if(Date.now() > startTime + timeout) {
+      throw 'timeout';
+    }
+
+    const result = await condition();
+
+    if(result) {
+      return result;
+    }
+
+    await new Promise(r => setTimeout(r, pollInterval));
+  }
+};
+
+const login = async (context: BrowserContext, jwtToken: string, ws: any, options: any) => {
   const page = await context.newPage();
-  await page.goto('/');
+  
+  let path = '/'
+
+  if (options && options.skipClientId) {
+    path += '?skipClientId=true';
+  }
+
+  await page.goto(path);
   const title = page.locator('h1');
   await expect(title).toHaveText('RingCentral WebPhone Demo');
   await page.screenshot({ path: 'screenshots/before-login.png' });
+
+  page.on('websocket', ws);
 
   await page.fill('input[name="server"]', process.env.RC_WP_SERVER!);
   await page.fill('input[name="clientId"]', process.env.RC_WP_CLIENT_ID!);
@@ -27,9 +57,9 @@ const login = async (context: BrowserContext, jwtToken: string) => {
 
 test('home page', async ({ context }) => {
   // login
-  const callerPage = await login(context, process.env.RC_WP_CALLER_JWT_TOKEN!);
+  const callerPage = await login(context, process.env.RC_WP_CALLER_JWT_TOKEN!, () => {});
   await callerPage.screenshot({ path: 'screenshots/caller-logged-in.png' });
-  const receiverPage = await login(context, process.env.RC_WP_RECEIVER_JWT_TOKEN!);
+  const receiverPage = await login(context, process.env.RC_WP_RECEIVER_JWT_TOKEN!, () => {});
   await receiverPage.screenshot({ path: 'screenshots/receiver-logged-in.png' });
 
   // make the call
@@ -63,4 +93,38 @@ test('home page', async ({ context }) => {
   await receiverPage.waitForTimeout(1000);
   await expect(receiverPage.locator('text=Call In Progress')).toBeHidden();
   await receiverPage.screenshot({ path: 'screenshots/receiver-hung-up.png' });
+});
+
+
+test('send client id during register if set', async ({ context }) => {
+  var wsHandled = false;
+  const callerPage = await login(context, process.env.RC_WP_CALLER_JWT_TOKEN!, (ws) => {
+    ws.on('framesent', async function (frame) {
+      const parsed = sip.Core.Parser.parseMessage(frame.payload, logger);
+
+      if (parsed!.method === 'REGISTER') {
+        expect(parsed!.headers['Client-Id'].length).toEqual(1);
+        expect(parsed!.headers['Client-Id'][0].raw).toEqual(process.env.RC_WP_CLIENT_ID!);
+        wsHandled = true;
+      }
+    });
+  });
+
+  await waitFor(() => wsHandled);
+});
+
+test('skip client id during register if not set', async ({ context }) => {
+  var wsHandled = false;
+  const callerPage = await login(context, process.env.RC_WP_CALLER_JWT_TOKEN!, (ws) => {
+    ws.on('framesent', async function (frame) {
+      const parsed = sip.Core.Parser.parseMessage(frame.payload, logger);
+
+      if (parsed!.method === 'REGISTER') {
+        expect(parsed!.headers['Client-Id']).toBeUndefined();
+        wsHandled = true;
+      }
+    });
+  }, { skipClientId: true });
+
+  await waitFor(() => wsHandled);
 });
