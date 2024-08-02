@@ -6,8 +6,7 @@ This is a complete rewrite of the RingCentral Web Phone SDK.
 ## Breaking changes
 
 This SDK doesn't play ringing audio when there is incoming call or outgoing call. 
-It's up to the application to play the audio.
-
+It's up to the app to play the audio. It's a by design change.
 
 
 ## Notes

@@ -3,7 +3,7 @@ import sdpTransform from 'sdp-transform';
 import EventEmitter from '../event-emitter';
 import { RequestMessage, type InboundMessage, ResponseMessage } from '../sip-message';
 import type WebPhone from '../web-phone';
-import { branch, extractAddress, extractTag, uuid } from '../utils';
+import { branch, extractAddress, extractNumber, extractTag, uuid } from '../utils';
 
 interface CallParkResult {
   code: number;
@@ -42,11 +42,15 @@ abstract class CallSession extends EventEmitter {
   }
 
   public get sessionId() {
-    return this.sipMessage?.headers['p-rc-api-ids'].match(/session-id=(s-[0-9a-fz]+?)/)![1];
+    return this.sipMessage?.headers['p-rc-api-ids'].match(/session-id=(s-[0-9a-fz]+?)$/)![1];
   }
 
   public get partyId() {
-    return this.sipMessage?.headers['p-rc-api-ids'].match(/party-id=(p-[0-9a-fz]+?-\d)/)![1];
+    return this.sipMessage?.headers['p-rc-api-ids'].match(/party-id=(p-[0-9a-fz]+?-\d);/)![1];
+  }
+
+  public get isConference() {
+    return extractNumber(this.remotePeer).startsWith('conf_');
   }
 
   public async init() {
