@@ -18,6 +18,9 @@ It's up to the application to play the audio.
 
 ## Todo:
 
+- release the first version
+- create a demo project for conference
+  - because it is mainly restful api and websockets, it is not part of the SDK
 - receive dtmf?
   - Not possible with WebRTC: https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Using_DTMF
 - integration tests

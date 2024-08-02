@@ -225,11 +225,9 @@ abstract class CallSession extends EventEmitter {
     });
     this.webPhone.send(ackMessage);
   }
-
   public async hold() {
     await this.toggleReceive(false);
   }
-
   public async unhold() {
     await this.toggleReceive(true);
   }
@@ -247,8 +245,6 @@ abstract class CallSession extends EventEmitter {
   public async unmute() {
     this.toggleTrack(true);
   }
-
-  public async convertToConference() {}
 
   public sendDtmf(tones: string, duration?: number, interToneGap?: number) {
     const senders = this.rtcPeerConnection.getSenders();

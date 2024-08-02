@@ -20,7 +20,7 @@ class WebPhone extends EventEmitter {
 
   public fakeDomain = uuid() + '.invalid';
   public fakeEmail = uuid() + '@' + this.fakeDomain;
-  public instanceId;
+  public instanceId: string;
 
   private intervalHandle: NodeJS.Timeout;
   private connected = false;
