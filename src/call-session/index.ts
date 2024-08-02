@@ -41,6 +41,14 @@ abstract class CallSession extends EventEmitter {
     return this.sipMessage?.headers['Call-Id'] ?? uuid();
   }
 
+  public get sessionId() {
+    return this.sipMessage?.headers['p-rc-api-ids'].match(/session-id=(s-[0-9a-fz]+?)/)![1];
+  }
+
+  public get partyId() {
+    return this.sipMessage?.headers['p-rc-api-ids'].match(/party-id=(p-[0-9a-fz]+?-\d)/)![1];
+  }
+
   public async init() {
     this.rtcPeerConnection = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
