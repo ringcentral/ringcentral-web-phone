@@ -1,32 +1,33 @@
 import type { BrowserContext } from '@playwright/test';
 import { expect, test } from '@playwright/test';
 import RingCentral from '@rc-ex/core';
-const sip = require("fix-esm").require("sip.js");
+const sip = require('fix-esm').require('sip.js'); // eslint-disable-line
 const log = new sip.Core.LoggerFactory();
-const logger = log.getLogger("test.parser");
+const logger = log.getLogger('test.parser');
 
 const waitFor = async (condition, pollInterval = 1000, timeout = 10000) => {
   const startTime = Date.now();
 
   while (true) {
-    if(Date.now() > startTime + timeout) {
+    if (Date.now() > startTime + timeout) {
       throw 'timeout';
     }
 
     const result = await condition();
 
-    if(result) {
+    if (result) {
       return result;
     }
 
-    await new Promise(r => setTimeout(r, pollInterval));
+    await new Promise((r) => setTimeout(r, pollInterval)); // eslint-disable-line
   }
 };
 
-const login = async (context: BrowserContext, jwtToken: string, ws: any, options: any) => {
+// eslint-disable-next-line max-params
+const login = async (context: BrowserContext, jwtToken: string, ws: any, options: { skipClientId?: boolean } = {}) => {
   const page = await context.newPage();
-  
-  let path = '/'
+
+  let path = '/';
 
   if (options && options.skipClientId) {
     path += '?skipClientId=true';
@@ -95,11 +96,10 @@ test('home page', async ({ context }) => {
   await receiverPage.screenshot({ path: 'screenshots/receiver-hung-up.png' });
 });
 
-
 test('send client id during register if set', async ({ context }) => {
-  var wsHandled = false;
-  const callerPage = await login(context, process.env.RC_WP_CALLER_JWT_TOKEN!, (ws) => {
-    ws.on('framesent', async function (frame) {
+  let wsHandled = false;
+  await login(context, process.env.RC_WP_CALLER_JWT_TOKEN!, (ws) => {
+    ws.on('framesent', async (frame) => {
       const parsed = sip.Core.Parser.parseMessage(frame.payload, logger);
 
       if (parsed!.method === 'REGISTER') {
@@ -114,17 +114,22 @@ test('send client id during register if set', async ({ context }) => {
 });
 
 test('skip client id during register if not set', async ({ context }) => {
-  var wsHandled = false;
-  const callerPage = await login(context, process.env.RC_WP_CALLER_JWT_TOKEN!, (ws) => {
-    ws.on('framesent', async function (frame) {
-      const parsed = sip.Core.Parser.parseMessage(frame.payload, logger);
+  let wsHandled = false;
+  await login(
+    context,
+    process.env.RC_WP_CALLER_JWT_TOKEN!,
+    (ws) => {
+      ws.on('framesent', async (frame) => {
+        const parsed = sip.Core.Parser.parseMessage(frame.payload, logger);
 
-      if (parsed!.method === 'REGISTER') {
-        expect(parsed!.headers['Client-Id']).toBeUndefined();
-        wsHandled = true;
-      }
-    });
-  }, { skipClientId: true });
+        if (parsed!.method === 'REGISTER') {
+          expect(parsed!.headers['Client-Id']).toBeUndefined();
+          wsHandled = true;
+        }
+      });
+    },
+    { skipClientId: true },
+  );
 
   await waitFor(() => wsHandled);
 });
