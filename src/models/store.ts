@@ -17,6 +17,7 @@ export class Store {
   public extInfo: GetExtensionInfoResponse;
   public primaryNumber = '';
   public callerIds: string[] = [];
+  public confSessionId = '';
 
   public webPhone: WebPhone; // reference but do not track. Ref: https://github.com/tylerlong/manate?tab=readme-ov-file#reference-but-do-not-track
   public callSessions: CallSession[] = [];
@@ -91,6 +92,27 @@ export class Store {
         this.refreshToken = token.refresh_token!;
         afterLogin();
       }
+    });
+  }
+
+  public async startConference() {
+    const rc = new RingCentral({ server: this.server });
+    rc.token = { access_token: this.rcToken };
+    const r = await rc.restapi().account().telephony().conference().post();
+    await this.webPhone.call(r.session!.voiceCallToken!);
+    this.confSessionId = r.session!.id!;
+  }
+
+  public async inviteToConference(target: string) {
+    const callSession = await this.webPhone.call(target);
+    callSession.once('answered', async () => {
+      const rc = new RingCentral({ server: this.server });
+      rc.token = { access_token: this.rcToken };
+      const r = await rc.restapi().account().telephony().sessions(this.confSessionId).parties().bringIn().post({
+        sessionId: callSession.sessionId,
+        partyId: callSession.partyId,
+      });
+      console.log(JSON.stringify(r, null, 2));
     });
   }
 }

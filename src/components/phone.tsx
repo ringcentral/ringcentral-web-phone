@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { auto } from 'manate/react';
-import { Button, Divider, Form, Input, Select, Space, Typography } from 'antd';
+import { Button, Divider, Empty, Form, Input, Select, Space, Typography } from 'antd';
 import type { Managed } from 'manate/models';
 import { autoRun } from 'manate';
 
@@ -71,6 +71,10 @@ const Phone = (props: { store: Managed<Store> }) => {
             <CallSession callSession={callSession} />
           </div>
         ))}
+        {store.callSessions.length === 0 && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No sessions" />}
+        <Divider>Conference</Divider>
+        <Button onClick={() => store.startConference()}>Create a conference</Button>
+        <Button onClick={() => store.inviteToConference('16504306662')}>Invite to conference</Button>
       </Space>
     </>
   );
