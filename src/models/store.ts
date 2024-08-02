@@ -101,16 +101,32 @@ export class Store {
     await this.webPhone.call(r.session!.voiceCallToken!);
   }
 
-  public async inviteToConference(targetNumber: string, confSessionId: string) {
+  public async inviteToConference(targetNumber: string) {
+    const confSession = this.callSessions.find((cs) => cs.isConference);
+    if (!confSession) {
+      return;
+    }
     const callSession = await this.webPhone.call(targetNumber);
     callSession.once('answered', async () => {
       const rc = new RingCentral({ server: this.server });
       rc.token = { access_token: this.rcToken };
-      const r = await rc.restapi().account().telephony().sessions(confSessionId).parties().bringIn().post({
+      await rc.restapi().account().telephony().sessions(confSession.sessionId).parties().bringIn().post({
         sessionId: callSession.sessionId,
         partyId: callSession.partyId,
       });
-      console.log(JSON.stringify(r, null, 2));
+    });
+  }
+
+  public async mergeToConference(callSession: CallSession) {
+    const confSession = this.callSessions.find((cs) => cs.isConference);
+    if (!confSession) {
+      return;
+    }
+    const rc = new RingCentral({ server: this.server });
+    rc.token = { access_token: this.rcToken };
+    await rc.restapi().account().telephony().sessions(confSession.sessionId).parties().bringIn().post({
+      sessionId: callSession.sessionId,
+      partyId: callSession.partyId,
     });
   }
 }

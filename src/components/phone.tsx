@@ -72,8 +72,12 @@ const Phone = (props: { store: Managed<Store> }) => {
           </div>
         ))}
         {store.callSessions.length === 0 && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No sessions" />}
-        <Divider />
-        <Button onClick={() => store.startConference()}>Create a conference</Button>
+        {!store.callSessions.find((s) => s.isConference) && (
+          <>
+            <Divider />
+            <Button onClick={() => store.startConference()}>Start a conference</Button>
+          </>
+        )}
       </Space>
     </>
   );

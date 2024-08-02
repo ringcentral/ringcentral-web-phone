@@ -278,6 +278,15 @@ const AnsweredSession = (props: { session: CallSession }) => {
             <Button>Send DTMF</Button>
           </Popover>
         )}
+        {!session.isConference && store.callSessions.find((s) => s.isConference) && (
+          <Button
+            onClick={() => {
+              store.mergeToConference(session);
+            }}
+          >
+            Merge to Conference
+          </Button>
+        )}
         {session.isConference && (
           <Popover
             open={inviteToConfPopoverVisible}
@@ -293,7 +302,7 @@ const AnsweredSession = (props: { session: CallSession }) => {
                 />
                 <Button
                   onClick={() => {
-                    store.inviteToConference(inviteToConfNumber, session.sessionId);
+                    store.inviteToConference(inviteToConfNumber);
                     setInviteToConfNumber('');
                     setInviteToConfPopoverVisible(false);
                   }}
