@@ -8,6 +8,7 @@ import afterLogin from './after-login';
 const main = async () => {
   store.rcToken = (await localForage.getItem('rcToken')) ?? '';
   store.refreshToken = (await localForage.getItem('refreshToken')) ?? '';
+  store.server = (await localForage.getItem('server')) ?? 'https://platform.ringcentral.com';
   store.clientId = (await localForage.getItem('clientId')) ?? '';
   store.clientSecret = (await localForage.getItem('clientSecret')) ?? '';
   store.jwtToken = (await localForage.getItem('jwtToken')) ?? '';
@@ -16,6 +17,7 @@ const main = async () => {
   const { start } = autoRun(store, () => {
     localForage.setItem('rcToken', store.rcToken);
     localForage.setItem('refreshToken', store.refreshToken);
+    localForage.setItem('server', store.server);
     localForage.setItem('clientId', store.clientId);
     localForage.setItem('clientSecret', store.clientSecret);
     localForage.setItem('jwtToken', store.jwtToken);
@@ -25,6 +27,7 @@ const main = async () => {
   const refreshToken = async () => {
     if (store.rcToken !== '') {
       const rc = new RingCentral({
+        server: store.server,
         clientId: store.clientId,
         clientSecret: store.clientSecret,
       });

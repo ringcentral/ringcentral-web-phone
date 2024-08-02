@@ -10,6 +10,14 @@ const Login = (props: { store: Store }) => {
   const { store } = props;
   const render = () => (
     <Form labelCol={{ span: 8 }} wrapperCol={{ span: 8 }}>
+      <Form.Item label="Server" required>
+        <Input
+          onChange={(e) => {
+            store.server = e.target.value;
+          }}
+          value={store.server}
+        />
+      </Form.Item>
       <Form.Item label="Client ID" required>
         <Input
           onChange={(e) => {
@@ -33,7 +41,7 @@ const Login = (props: { store: Store }) => {
       </Form.Item>
       <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
         <Text type="secondary">
-          Note: Set the app's redirect URI to {window.location.origin + window.location.pathname}
+          Note: Set redirect URI to {window.location.origin + window.location.pathname}
           callback.html
         </Text>
       </Form.Item>

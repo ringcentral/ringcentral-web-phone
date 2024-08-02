@@ -10,6 +10,7 @@ import type CallSession from '../call-session';
 export class Store {
   public rcToken = '';
   public refreshToken = '';
+  public server = 'https://platform.ringcentral.com';
   public clientId = '';
   public clientSecret = '';
   public jwtToken = '';
@@ -29,6 +30,7 @@ export class Store {
 
   public async logout() {
     const rc = new RingCentral({
+      server: this.server,
       clientId: this.clientId,
       clientSecret: this.clientSecret,
     });
@@ -40,11 +42,12 @@ export class Store {
   }
 
   public async jwtFlow() {
-    if (this.clientId === '' || this.clientSecret === '' || this.jwtToken === '') {
-      message.error('Please input client ID, client secret and JWT token');
+    if (this.server === '' || this.clientId === '' || this.clientSecret === '' || this.jwtToken === '') {
+      message.error('Please input server, client ID, client secret and JWT token');
       return;
     }
     const rc = new RingCentral({
+      server: this.server,
       clientId: this.clientId,
       clientSecret: this.clientSecret,
     });
@@ -59,11 +62,12 @@ export class Store {
   }
 
   public async authCodeFlow() {
-    if (this.clientId === '' || this.clientSecret === '') {
-      message.error('Please input client ID and client secret');
+    if (this.server === '' || this.clientId === '' || this.clientSecret === '') {
+      message.error('Please input server, client ID and client secret');
       return;
     }
     const rc = new RingCentral({
+      server: this.server,
       clientId: this.clientId,
       clientSecret: this.clientSecret,
     });
