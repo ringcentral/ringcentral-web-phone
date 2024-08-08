@@ -155,6 +155,9 @@ export function createWebPhoneUserAgent(
   userAgent.removeListener = eventEmitter.removeListener.bind(eventEmitter);
   userAgent.removeAllListeners = eventEmitter.removeAllListeners.bind(eventEmitter);
   userAgent.defaultHeaders = [`P-rc-endpoint-id: ${id}`, `Client-id: ${options.clientId}`];
+  if (options.defaultHeaders) {
+    userAgent.defaultHeaders.push(...options.defaultHeaders);
+  }
   userAgent.regId = options.regId;
   userAgent.media = {};
   userAgent.enableQos = options.enableQos;

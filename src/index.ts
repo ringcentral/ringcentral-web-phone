@@ -93,6 +93,8 @@ export interface WebPhoneOptions {
   builtinEnabled?: boolean;
   /** A function which will be called every time a log is generated. [Reference](https://github.com/onsip/SIP.js/blob/master/docs/api/sip.js.logconnector.md) */
   connector?: LogConnector;
+  /** Default headers to add to SIP messages */
+  defaultHeaders?: string[];
   /** If `true` media will be sent prior to call being answered
    *
    * Set to `true` by default for firefox browser
