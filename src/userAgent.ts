@@ -169,7 +169,7 @@ export function createWebPhoneUserAgent(
   } else {
     userAgent.media = undefined;
   }
-  let registererOptions : RegistererOptions = {
+  let registererOptions: RegistererOptions = {
     regId: userAgent.regId,
     instanceId: userAgent.instanceId,
     extraHeaders: userAgent.defaultHeaders,

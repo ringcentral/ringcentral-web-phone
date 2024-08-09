@@ -23,8 +23,13 @@ const waitFor = async (condition, pollInterval = 1000, timeout = 10000) => {
   }
 };
 
-// eslint-disable-next-line max-params
-const login = async (context: BrowserContext, jwtToken: string, ws: any, options: { customHeader?: boolean, refreshFrequency?: number } = {}) => {
+/* eslint-disable max-params */
+const login = async (
+  context: BrowserContext,
+  jwtToken: string,
+  ws: any,
+  options: { customHeader?: boolean; refreshFrequency?: number } = {},
+) => {
   const page = await context.newPage();
 
   let path = '/';
@@ -59,6 +64,7 @@ const login = async (context: BrowserContext, jwtToken: string, ws: any, options
 
   return page;
 };
+/* eslint-enable max-params */
 
 test('home page', async ({ context }) => {
   // login
@@ -138,15 +144,14 @@ test.only('refresh frequency setting', async ({ context }) => {
         if (parsed.method === 'REGISTER' && typeof firstRegisterAt !== 'undefined') {
           expect(Date.now() - firstRegisterAt).toBeLessThan(30000);
           wsHandled = true;
-        };
+        }
       });
       ws.on('framereceived', async (frame) => {
         const parsed = sip.Core.Parser.parseMessage(frame.payload, logger);
 
         if (parsed.method === 'REGISTER' && parsed.reasonPhrase === 'OK') {
-          let expires = parsed.headers['Contact'][0].parsed.parameters.expires
           firstRegisterAt = Date.now();
-        };
+        }
       });
     },
     {
@@ -156,4 +161,3 @@ test.only('refresh frequency setting', async ({ context }) => {
 
   await waitFor(() => wsHandled, 1000, 65000);
 });
-
