@@ -24,13 +24,17 @@ const waitFor = async (condition, pollInterval = 1000, timeout = 10000) => {
 };
 
 // eslint-disable-next-line max-params
-const login = async (context: BrowserContext, jwtToken: string, ws: any, options: { customHeader?: boolean } = {}) => {
+const login = async (context: BrowserContext, jwtToken: string, ws: any, options: { customHeader?: boolean, refreshFrequency?: number } = {}) => {
   const page = await context.newPage();
 
   let path = '/';
 
   if (options && options.customHeader) {
     path += '?customHeader=true';
+  }
+
+  if (options && options.refreshFrequency) {
+    path += '?refreshFrequency=' + options.refreshFrequency;
   }
 
   await page.goto(path);
@@ -119,3 +123,37 @@ test('allow to configure default headers', async ({ context }) => {
 
   await waitFor(() => wsHandled);
 });
+
+test.only('refresh frequency setting', async ({ context }) => {
+  test.setTimeout(70000);
+  let firstRegisterAt;
+  let wsHandled = false;
+  await login(
+    context,
+    process.env.RC_WP_CALLER_JWT_TOKEN!,
+    (ws) => {
+      ws.on('framesent', async (frame) => {
+        const parsed = sip.Core.Parser.parseMessage(frame.payload, logger);
+
+        if (parsed.method === 'REGISTER' && typeof firstRegisterAt !== 'undefined') {
+          expect(Date.now() - firstRegisterAt).toBeLessThan(30000);
+          wsHandled = true;
+        };
+      });
+      ws.on('framereceived', async (frame) => {
+        const parsed = sip.Core.Parser.parseMessage(frame.payload, logger);
+
+        if (parsed.method === 'REGISTER' && parsed.reasonPhrase === 'OK') {
+          let expires = parsed.headers['Contact'][0].parsed.parameters.expires
+          firstRegisterAt = Date.now();
+        };
+      });
+    },
+    {
+      refreshFrequency: 50,
+    },
+  );
+
+  await waitFor(() => wsHandled, 1000, 65000);
+});
+

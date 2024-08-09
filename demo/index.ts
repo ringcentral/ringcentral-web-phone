@@ -157,6 +157,10 @@ $(() => {
       webPhoneConfig.defaultHeaders = ['P-Custom-Header: CustomValue'];
     }
 
+    if (urlParams.has('refreshFrequency')) {
+      webPhoneConfig.refreshFrequency = parseInt(urlParams.get('refreshFrequency')!, 10);
+    }
+
     webPhone = new WebPhone(data, webPhoneConfig);
 
     global.webPhone = webPhone; // for debugging
