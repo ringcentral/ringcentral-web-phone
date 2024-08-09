@@ -23,7 +23,7 @@ const waitFor = async (condition, pollInterval = 1000, timeout = 10000) => {
   }
 };
 
-// eslint-disable-next-line max-params
+/* eslint-disable max-params */
 const login = async (
   context: BrowserContext,
   jwtToken: string,
@@ -64,6 +64,7 @@ const login = async (
 
   return page;
 };
+/* eslint-enable max-params */
 
 test('home page', async ({ context }) => {
   // login
