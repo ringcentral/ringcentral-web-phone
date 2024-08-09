@@ -28,6 +28,7 @@ const login = async (
   context: BrowserContext,
   jwtToken: string,
   ws: any,
+  options: { customHeader?: boolean; skipClientId?: boolean; refreshFrequency?: number } = {},
 ) => {
   const page = await context.newPage();
 
