@@ -130,7 +130,7 @@ test('allow to configure default headers', async ({ context }) => {
   await waitFor(() => wsHandled);
 });
 
-test.only('refresh frequency setting', async ({ context }) => {
+test('refresh frequency setting', async ({ context }) => {
   test.setTimeout(70000);
   let firstRegisterAt;
   let wsHandled = false;
