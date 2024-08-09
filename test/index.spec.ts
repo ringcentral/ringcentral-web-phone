@@ -24,7 +24,12 @@ const waitFor = async (condition, pollInterval = 1000, timeout = 10000) => {
 };
 
 // eslint-disable-next-line max-params
-const login = async (context: BrowserContext, jwtToken: string, ws: any, options: { customHeader?: boolean, skipClientId?: boolean } = {}) => {
+const login = async (
+  context: BrowserContext,
+  jwtToken: string,
+  ws: any,
+  options: { customHeader?: boolean; skipClientId?: boolean } = {},
+) => {
   const page = await context.newPage();
 
   let path = '/';

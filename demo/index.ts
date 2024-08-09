@@ -152,7 +152,6 @@ $(() => {
       enableMediaReportLogging: true,
     };
 
-
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('customHeader')) {
       webPhoneConfig.defaultHeaders = ['P-Custom-Header: CustomValue'];
