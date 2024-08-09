@@ -152,6 +152,7 @@ $(() => {
       enableMediaReportLogging: true,
     };
 
+<<<<<<< HEAD
     // check page query params for skipClientId and remove from config if found
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('skipClientId')) {
@@ -159,6 +160,15 @@ $(() => {
     }
 
     webPhone = new WebPhone(data, webPhoneConfig);
+=======
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('customHeader')) {
+      webPhoneConfig.defaultHeaders = ['P-Custom-Header: CustomValue'];
+    }
+
+    webPhone = new WebPhone(data, webPhoneConfig);
+
+>>>>>>> 1.x
     global.webPhone = webPhone; // for debugging
 
     webPhone.userAgent.audioHelper.setVolume(0.3);

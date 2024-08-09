@@ -24,13 +24,13 @@ const waitFor = async (condition, pollInterval = 1000, timeout = 10000) => {
 };
 
 // eslint-disable-next-line max-params
-const login = async (context: BrowserContext, jwtToken: string, ws: any, options: { skipClientId?: boolean } = {}) => {
+const login = async (context: BrowserContext, jwtToken: string, ws: any, options: { customHeader?: boolean } = {}) => {
   const page = await context.newPage();
 
   let path = '/';
 
-  if (options && options.skipClientId) {
-    path += '?skipClientId=true';
+  if (options && options.customHeader) {
+    path += '?customHeader=true';
   }
 
   await page.goto(path);
@@ -96,24 +96,7 @@ test('home page', async ({ context }) => {
   await receiverPage.screenshot({ path: 'screenshots/receiver-hung-up.png' });
 });
 
-test('send client id during register if set', async ({ context }) => {
-  let wsHandled = false;
-  await login(context, process.env.RC_WP_CALLER_JWT_TOKEN!, (ws) => {
-    ws.on('framesent', async (frame) => {
-      const parsed = sip.Core.Parser.parseMessage(frame.payload, logger);
-
-      if (parsed!.method === 'REGISTER') {
-        expect(parsed!.headers['Client-Id'].length).toEqual(1);
-        expect(parsed!.headers['Client-Id'][0].raw).toEqual(process.env.RC_WP_CLIENT_ID!);
-        wsHandled = true;
-      }
-    });
-  });
-
-  await waitFor(() => wsHandled);
-});
-
-test('skip client id during register if not set', async ({ context }) => {
+test('allow to configure default headers', async ({ context }) => {
   let wsHandled = false;
   await login(
     context,
@@ -123,12 +106,15 @@ test('skip client id during register if not set', async ({ context }) => {
         const parsed = sip.Core.Parser.parseMessage(frame.payload, logger);
 
         if (parsed!.method === 'REGISTER') {
-          expect(parsed!.headers['Client-Id']).toBeUndefined();
+          expect(parsed!.headers['P-Custom-Header'].length).toEqual(1);
+          expect(parsed!.headers['P-Custom-Header'][0].raw).toEqual('CustomValue');
           wsHandled = true;
         }
       });
     },
-    { skipClientId: true },
+    {
+      customHeader: true,
+    },
   );
 
   await waitFor(() => wsHandled);
