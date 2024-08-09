@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import type { UserAgentOptions, InviterOptions, SessionDescriptionHandlerModifier } from 'sip.js';
+import type { UserAgentOptions, InviterOptions, SessionDescriptionHandlerModifier, RegistererOptions } from 'sip.js';
 import { UserAgent, UserAgentState, Registerer, RegistererState, Inviter, Messager } from 'sip.js';
 import type { IncomingResponse } from 'sip.js/lib/core';
 import type { WebPhoneTransport } from './transport';
@@ -169,11 +169,20 @@ export function createWebPhoneUserAgent(
   } else {
     userAgent.media = undefined;
   }
-  userAgent.registerer = new Registerer(userAgent, {
+  let registererOptions : RegistererOptions = {
     regId: userAgent.regId,
     instanceId: userAgent.instanceId,
     extraHeaders: userAgent.defaultHeaders,
-  });
+  };
+
+  if (typeof options.refreshFrequency !== 'undefined') {
+    registererOptions = {
+      ...registererOptions,
+      refreshFrequency: options.refreshFrequency,
+    };
+  }
+
+  userAgent.registerer = new Registerer(userAgent, registererOptions);
   userAgent.sipInfo = sipInfo;
   userAgent.modifiers = options.modifiers;
   userAgent.constraints = options.mediaConstraints;
