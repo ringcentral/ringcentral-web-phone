@@ -157,8 +157,11 @@ $(() => {
       webPhoneConfig.defaultHeaders = ['P-Custom-Header: CustomValue'];
     }
 
-    webPhone = new WebPhone(data, webPhoneConfig);
+    if (urlParams.has('skipClientId')) {
+      delete webPhoneConfig.clientId;
+    }
 
+    webPhone = new WebPhone(data, webPhoneConfig);
     global.webPhone = webPhone; // for debugging
 
     webPhone.userAgent.audioHelper.setVolume(0.3);

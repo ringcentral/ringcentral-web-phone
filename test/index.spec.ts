@@ -23,14 +23,23 @@ const waitFor = async (condition, pollInterval = 1000, timeout = 10000) => {
   }
 };
 
-// eslint-disable-next-line max-params
-const login = async (context: BrowserContext, jwtToken: string, ws: any, options: { customHeader?: boolean } = {}) => {
+/* eslint-disable max-params */
+const login = async (
+  context: BrowserContext,
+  jwtToken: string,
+  ws: any,
+  options: { customHeader?: boolean; skipClientId?: boolean } = {},
+) => {
   const page = await context.newPage();
 
   let path = '/';
 
   if (options && options.customHeader) {
     path += '?customHeader=true';
+  }
+
+  if (options && options.skipClientId) {
+    path += '?skipClientId=true';
   }
 
   await page.goto(path);
@@ -55,6 +64,7 @@ const login = async (context: BrowserContext, jwtToken: string, ws: any, options
 
   return page;
 };
+/* eslint-enable max-params */
 
 test('home page', async ({ context }) => {
   // login
@@ -115,6 +125,44 @@ test('allow to configure default headers', async ({ context }) => {
     {
       customHeader: true,
     },
+  );
+
+  await waitFor(() => wsHandled);
+});
+
+test('send client id during register if set', async ({ context }) => {
+  let wsHandled = false;
+  await login(context, process.env.RC_WP_CALLER_JWT_TOKEN!, (ws) => {
+    ws.on('framesent', async (frame) => {
+      const parsed = sip.Core.Parser.parseMessage(frame.payload, logger);
+
+      if (parsed!.method === 'REGISTER') {
+        expect(parsed!.headers['Client-Id'].length).toEqual(1);
+        expect(parsed!.headers['Client-Id'][0].raw).toEqual(process.env.RC_WP_CLIENT_ID!);
+        wsHandled = true;
+      }
+    });
+  });
+
+  await waitFor(() => wsHandled);
+});
+
+test('skip client id during register if not set', async ({ context }) => {
+  let wsHandled = false;
+  await login(
+    context,
+    process.env.RC_WP_CALLER_JWT_TOKEN!,
+    (ws) => {
+      ws.on('framesent', async (frame) => {
+        const parsed = sip.Core.Parser.parseMessage(frame.payload, logger);
+
+        if (parsed!.method === 'REGISTER') {
+          expect(parsed!.headers['Client-Id']).toBeUndefined();
+          wsHandled = true;
+        }
+      });
+    },
+    { skipClientId: true },
   );
 
   await waitFor(() => wsHandled);
