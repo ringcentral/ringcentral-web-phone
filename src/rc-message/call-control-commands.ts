@@ -21,14 +21,4 @@ const callControlCommands = {
   ClientReceiveConfirm: 17,
 };
 
-export const callActionNames = [
-  'callhold',
-  'callunold',
-  'calltransfer',
-  'callpark',
-  'startcallrecord',
-  'stopcallrecord',
-  'callflip',
-];
-
 export default callControlCommands;
