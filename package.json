@@ -1,6 +1,6 @@
 {
   "name": "ringcentral-web-phone",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "homepage": "https://github.com/ringcentral/ringcentral-web-phone",
   "bugs": {
     "url": "https://github.com/ringcentral/ringcentral-web-phone/issues"
@@ -38,7 +38,7 @@
   "types": "./lib/src/index.d.ts",
   "scripts": {
     "build": "rm -rf lib && yarn tsc && rm -rf docs && parcel build demo/index.html demo/callback.html --dist-dir docs --public-url ./",
-    "lint": "eslint --fix '**/*.{ts,tsx,js,jsx}' && prettier --write . && sort-package-json",
+    "lint": "tsc --noEmit --target ESNext --moduleResolution bundler ./src/*.ts && eslint --fix '**/*.{ts,tsx,js,jsx}' && prettier --write . && sort-package-json",
     "serve": "rm -rf .parcel-cache && parcel demo/index.html demo/callback.html --dist-dir docs",
     "test": "jest src/mediaStreams.spec.ts",
     "test2": "NODE_OPTIONS=--require=dotenv-override-true/config playwright test test/index.spec.ts --workers=1",

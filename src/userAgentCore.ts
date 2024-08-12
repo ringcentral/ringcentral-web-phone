@@ -67,6 +67,7 @@ function getIncomingInfoContent(message: IncomingRequestMessage): any {
   let ret = {};
   try {
     ret = JSON.parse(message.body);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (e) {
     return {};
   }

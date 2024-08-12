@@ -394,6 +394,7 @@ async function sendInfoAndReceiveResponse(this: WebPhoneSession, command: Comman
 
             try {
               obj = JSON.parse(body);
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
             } catch (e) {
               obj = {};
             }
@@ -698,6 +699,7 @@ async function hold(this: WebPhoneSession): Promise<void> {
     (this as any).logger.log('Hold Initiated');
     await setHold(this, true);
     (this as any).logger.log('Hold completed, held is set to true');
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (e) {
     throw new Error('Hold could not be completed');
   }
@@ -708,6 +710,7 @@ async function unhold(this: WebPhoneSession): Promise<void> {
     (this as any).logger.log('Unhold Initiated');
     await setHold(this, false);
     (this as any).logger.log('Unhold completed, held is set to false');
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (e) {
     throw new Error('Unhold could not be completed');
   }
@@ -971,6 +974,7 @@ function stopMediaStreamStats(session: WebPhoneSession) {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function onLocalHold(this: WebPhoneSession): boolean {
   return this.__localHold!;
 }
