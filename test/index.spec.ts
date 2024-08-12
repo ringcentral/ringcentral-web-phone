@@ -34,16 +34,20 @@ const login = async (
 
   let path = '/';
 
+  const queryParams: string[] = [];
   if (options && options.customHeader) {
-    path += '?customHeader=true';
+    queryParams.push('customHeader=true');
   }
 
   if (options && options.skipClientId) {
-    path += '?skipClientId=true';
+    queryParams.push('skipClientId=true');
   }
 
   if (options && options.refreshFrequency) {
-    path += '?refreshFrequency=' + options.refreshFrequency;
+    queryParams.push('refreshFrequency=' + options.refreshFrequency);
+  }
+  if (queryParams.length > 0) {
+    path += '?' + queryParams.join('&');
   }
 
   await page.goto(path);
