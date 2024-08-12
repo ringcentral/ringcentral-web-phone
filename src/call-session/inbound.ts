@@ -28,7 +28,10 @@ class InboundCallSession extends CallSession {
     this.webPhone.on('message', cancelHandler);
   }
 
-  public async sendRcMessage(cmd: number, body: any = {}) {
+  public async sendRcMessage(
+    cmd: number,
+    body: {} | { RepTp: string; Bdy: string } | { FwdDly: string; Phn: string; PhnTp: string } = {},
+  ) {
     if (!this.sipMessage.headers['P-rc']) {
       return;
     }
