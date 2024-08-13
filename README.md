@@ -2,6 +2,12 @@
 
 This is a complete rewrite of the RingCentral Web Phone SDK.
 
+## Demo
+
+- [Online Demo](chuntaoliu.com/rc-web-phone-demo-2/)
+- [Source Code](https://github.com/tylerlong/rc-web-phone-demo-2)
+
+
 ## Breaking changes
 
 ### API changes
@@ -12,6 +18,7 @@ This is a complete rewrite of the RingCentral Web Phone SDK.
 
 This SDK doesn't play ringing audio when there is incoming call or outgoing call.
 It's up to the app to play the audio. It's a by design change.
+
 
 ## Maintainers Notes
 
