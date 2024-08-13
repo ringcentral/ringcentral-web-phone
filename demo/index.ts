@@ -208,6 +208,10 @@ $(() => {
   }
 
   function onInvite(session: WebPhoneInvitation) {
+    console.log(
+      'Telephony Session Info:',
+      session.request.headers['P-Rc-Api-Ids'] || session.request.headers['p-rc-api-ids'],
+    );
     const $modal = cloneTemplate($incomingTemplate).modal({
       backdrop: 'static',
     });
@@ -554,6 +558,10 @@ $(() => {
     const session = webPhone.userAgent.invite(number, {
       fromNumber: primaryNumber,
       homeCountryId,
+    });
+
+    session.on('accepted', (message) => {
+      console.log('Telephony Session Info:', message.headers['P-Rc-Api-Ids'] || message.headers['p-rc-api-ids']);
     });
 
     onAccepted(session);
