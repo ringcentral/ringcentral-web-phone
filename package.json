@@ -39,7 +39,7 @@
   "scripts": {
     "build": "rm -rf lib && yarn tsc && rm -rf docs && parcel build demo/index.html demo/callback.html --dist-dir docs --public-url ./",
     "lint": "tsc --noEmit --target ESNext --moduleResolution bundler ./src/*.ts && eslint --fix '**/*.{ts,tsx,js,jsx}' && prettier --write . && sort-package-json",
-    "serve": "rm -rf .parcel-cache && parcel demo/index.html demo/callback.html --dist-dir docs",
+    "serve": "rm -rf .parcel-cache && parcel demo/index.html demo/callback.html --dist-dir docs --no-hmr",
     "test": "jest src/mediaStreams.spec.ts",
     "test2": "NODE_OPTIONS=--require=dotenv-override-true/config playwright test test/index.spec.ts --workers=1",
     "test:coverage": "cat .coverage/lcov.info | coveralls -v"
