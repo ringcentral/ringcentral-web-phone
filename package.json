@@ -2,8 +2,12 @@
   "name": "ringcentral-web-phone",
   "version": "2.0.0-beta.1",
   "license": "MIT",
+  "main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
-    "lint": "tsc --noEmit --target ESNext --moduleResolution NodeNext --module NodeNext --skipLibCheck ./src/*.ts && eslint --fix '**/*.{ts,tsx,js,jsx}' && prettier --write . && sort-package-json"
+    "lint": "tsc --noEmit --target ESNext --moduleResolution NodeNext --module NodeNext ./src/*.ts && eslint --fix '**/*.{ts,tsx,js,jsx}' && prettier --write . && sort-package-json",
+    "prepublishOnly": "tsc src/index.ts --declaration --outDir . --target ESNext --moduleResolution NodeNext --module NodeNext",
+    "postpublish": "rm -rf call-session rc-message sip-message event-emitter.* index.* utils.*"
   },
   "dependencies": {
     "blueimp-md5": "^2.19.0",
