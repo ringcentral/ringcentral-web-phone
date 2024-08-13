@@ -4,7 +4,7 @@ This is a complete rewrite of the RingCentral Web Phone SDK.
 
 ## Demo
 
-- [Online Demo](chuntaoliu.com/rc-web-phone-demo-2/)
+- [Online Demo](https://chuntaoliu.com/rc-web-phone-demo-2/)
 - [Source Code](https://github.com/tylerlong/rc-web-phone-demo-2)
 
 
