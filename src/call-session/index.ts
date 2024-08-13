@@ -2,7 +2,7 @@ import sdpTransform from 'sdp-transform';
 
 import EventEmitter from '../event-emitter';
 import { RequestMessage, type InboundMessage, ResponseMessage } from '../sip-message';
-import type WebPhone from '../web-phone';
+import type WebPhone from '..';
 import { branch, extractAddress, extractNumber, extractTag, uuid } from '../utils';
 
 interface CallParkResult {

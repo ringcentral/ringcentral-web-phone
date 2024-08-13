@@ -30,10 +30,3 @@ export const withoutTag = (s: string) => s.replace(/;tag=.*$/, '');
 export const extractAddress = (s: string) => s.match(/<(sip:.+?)>/)![1];
 export const extractNumber = (s: string) => s.match(/<sip:(.+?)@/)![1];
 export const extractTag = (peer: string) => peer.match(/;tag=(.*)/)![1];
-
-export const trimPrefix = (s, prefix) => {
-  if (s.startsWith(prefix)) {
-    return s.slice(prefix.length);
-  }
-  return s;
-};

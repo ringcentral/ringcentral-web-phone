@@ -3,11 +3,9 @@
   "version": "2.0.0-beta.1",
   "license": "MIT",
   "scripts": {
-    "lint": "tsc --noEmit --target ESNext --moduleResolution NodeNext --module NodeNext --skipLibCheck ./src/*.ts && eslint --fix '**/*.{ts,tsx,js,jsx}' && prettier --write . && sort-package-json",
-    "serve": "rm -rf .parcel-cache && parcel src/index.html src/callback.html --dist-dir docs --no-hmr"
+    "lint": "tsc --noEmit --target ESNext --moduleResolution NodeNext --module NodeNext --skipLibCheck ./src/*.ts && eslint --fix '**/*.{ts,tsx,js,jsx}' && prettier --write . && sort-package-json"
   },
   "dependencies": {
-    "@rc-ex/core": "^1.4.0",
     "blueimp-md5": "^2.19.0",
     "manate": "^0.6.5",
     "sdp-transform": "^2.14.2",
@@ -16,36 +14,23 @@
     "xmldom": "^0.6.0"
   },
   "devDependencies": {
-    "@rc-ex/authorize-uri": "^1.1.16",
+    "@rc-ex/core": "^1.4.0",
+    "@types/blueimp-md5": "^2.18.2",
     "@types/node": "^22.2.0",
-    "@types/react-dom": "^18.3.0",
     "@types/sdp-transform": "^2.4.9",
+    "@types/uuid": "^10.0.0",
     "@types/xmldom": "^0.1.34",
     "@typescript-eslint/eslint-plugin": "^8.1.0",
     "@typescript-eslint/parser": "^8.1.0",
-    "antd": "^5.20.1",
-    "buffer": "^6.0.3",
-    "crypto-browserify": "^3.12.0",
-    "dotenv-override-true": "^6.2.2",
     "eslint": "^8.57.0",
     "eslint-config-alloy": "^5.1.2",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
-    "eslint-plugin-react": "^7.35.0",
-    "events": "^3.3.0",
-    "localforage": "^1.10.0",
-    "parcel": "^2.12.0",
     "prettier": "^3.3.3",
-    "process": "^0.11.10",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
     "sort-package-json": "^2.10.0",
-    "stream-browserify": "^3.0.0",
-    "string_decoder": "^1.3.0",
     "tsx": "^4.17.0",
     "ttpt": "^0.10.2",
     "typescript": "^5.5.4",
-    "vm-browserify": "^1.1.2",
     "yarn-upgrade-all": "^0.7.4"
   },
   "yarn-upgrade-all": {

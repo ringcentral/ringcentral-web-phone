@@ -1,5 +1,5 @@
 import { RequestMessage, ResponseMessage, type InboundMessage } from '../sip-message';
-import type WebPhone from '../web-phone';
+import type WebPhone from '..';
 import CallSession from '.';
 import { branch, uuid } from '../utils';
 import RcMessage from '../rc-message/rc-message';
