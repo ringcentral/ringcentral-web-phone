@@ -49,6 +49,14 @@ abstract class CallSession extends EventEmitter {
     return this.sipMessage?.headers['p-rc-api-ids'].match(/party-id=(p-[0-9a-fz]+?-\d);/)![1];
   }
 
+  public get remoteNumber() {
+    return extractNumber(this.remotePeer);
+  }
+
+  public get localNumber() {
+    return extractNumber(this.localPeer);
+  }
+
   public get isConference() {
     return extractNumber(this.remotePeer).startsWith('conf_');
   }
