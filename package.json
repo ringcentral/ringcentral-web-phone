@@ -4,6 +4,10 @@
   "license": "MIT",
   "main": "index.js",
   "types": "index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tylerlong/ringcentral-web-phone-2.git"
+  },
   "scripts": {
     "lint": "tsc --noEmit --target ESNext --moduleResolution NodeNext --module NodeNext ./src/*.ts && eslint --fix '**/*.{ts,tsx,js,jsx}' && prettier --write . && sort-package-json",
     "prepublishOnly": "tsc src/index.ts --declaration --outDir . --target ESNext --moduleResolution NodeNext --module NodeNext",
