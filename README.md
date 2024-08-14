@@ -159,6 +159,15 @@ await inbundCallSession.forward(targetNumber);
 
 #### Reply the call
 
+Optionally, you can tell the server that the user has started replying the call.
+The server will give the user more time to edit the reply message before ending the call session or redirecting the call to voicemail.
+
+```ts
+await inbundCallSession.startReply();
+```
+
+Reply the call with text:
+
 ```ts
 await inbundCallSession.reply(text);
 ```

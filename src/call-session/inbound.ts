@@ -67,8 +67,8 @@ class InboundCallSession extends CallSession {
     this.sendRcMessage(callControlCommands.ClientReceiveConfirm);
   }
 
-  public async toVoiceMail() {
-    this.sendRcMessage(callControlCommands.ClientVoiceMail);
+  public async toVoicemail() {
+    this.sendRcMessage(callControlCommands.ClientVoicemail);
   }
 
   public async decline() {
@@ -79,6 +79,9 @@ class InboundCallSession extends CallSession {
     this.sendRcMessage(callControlCommands.ClientForward, { FwdDly: '0', Phn: target, PhnTp: '3' });
   }
 
+  public async startReply() {
+    this.sendRcMessage(callControlCommands.ClientStartReply);
+  }
   public async reply(text: string) {
     this.sendRcMessage(callControlCommands.ClientReply, { RepTp: '0', Bdy: text });
   }

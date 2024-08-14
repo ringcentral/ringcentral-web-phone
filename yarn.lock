@@ -213,12 +213,12 @@
   resolved "https://registry.yarnpkg.com/@types/blueimp-md5/-/blueimp-md5-2.18.2.tgz#4fd6fb720990b22229c30b3e06f61e6ec2ef92b8"
   integrity sha512-dJ9yRry9Olt5GAWlgCtE5dK9d/Dfhn/V7hna86eEO2Pn76+E8Y0S0n61iEUEGhWXXgtKtHxtZLVNwL8X+vLHzg==
 
-"@types/node@^22.2.0":
-  version "22.2.0"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-22.2.0.tgz#7cf046a99f0ba4d628ad3088cb21f790df9b0c5b"
-  integrity sha512-bm6EG6/pCpkxDf/0gDNDdtDILMOHgaQBVOJGdwsqClnxA3xL6jtMv76rLBc006RVMWbmaf0xbmom4Z/5o2nRkQ==
+"@types/node@^22.3.0":
+  version "22.3.0"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-22.3.0.tgz#7f8da0e2b72c27c4f9bd3cb5ef805209d04d4f9e"
+  integrity sha512-nrWpWVaDZuaVc5X84xJ0vNrLvomM205oQyLsRt7OHNZbSHslcWsvgFR7O7hire2ZonjLrWBbedmotmIlJDVd6g==
   dependencies:
-    undici-types "~6.13.0"
+    undici-types "~6.18.2"
 
 "@types/qs@^6.9.15":
   version "6.9.15"
@@ -445,12 +445,7 @@ color-convert@^2.0.1:
   dependencies:
     color-name "~1.1.4"
 
-color-loggers@^0.2.0:
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/color-loggers/-/color-loggers-0.2.0.tgz#7b142cc18a239fe5285480ce0d8346494c22e861"
-  integrity sha512-Hd0P3uyPhRJS6JgVVEtOFshtahqtqiPbI8VnghcPB+nOcusoWgpkyqKf5tQpMw9mvzqmW790qya+fctSoD9Y1w==
-
-color-loggers@^0.3.1:
+color-loggers@^0.3.1, color-loggers@^0.3.2:
   version "0.3.2"
   resolved "https://registry.yarnpkg.com/color-loggers/-/color-loggers-0.3.2.tgz#04b12224f4ef3f78c1bdfb238f2cee50f72d7e51"
   integrity sha512-asfXyY1/9N+Cxt30jb0PFy5tccybuMnWVc9J8EJuYoJVlcsUshn+pt2QuyUB3BWKMXVvEH8jgLrCFs11Am8QZA==
@@ -1257,12 +1252,12 @@ shebang-regex@^3.0.0:
   resolved "https://registry.yarnpkg.com/shebang-regex/-/shebang-regex-3.0.0.tgz#ae16f1644d873ecad843b0307b143362d4c42172"
   integrity sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==
 
-shell-commands@^0.3.1:
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/shell-commands/-/shell-commands-0.3.1.tgz#bbe172b5ab8b1afa833bab7265f32d399f70e643"
-  integrity sha512-Bf9O2cQFwtfuffuRHkpPWX9yM7MtfUZGEKn0VlDpLgNumUEyBSvPM7+7Z4/5E79ZBnPRi2wKBxtg93vbOGa6qg==
+shell-commands@^0.4.2:
+  version "0.4.2"
+  resolved "https://registry.yarnpkg.com/shell-commands/-/shell-commands-0.4.2.tgz#92baf6c3e7cb747976e025a0e6277e96e8de9b31"
+  integrity sha512-mZ1gjx1IlAYrAfVg1p4B6Osq9UNdOx1USxRmZClKM7i2gueM5352YPT7zGefHFecPPKjWQ5SrAHYItB/6w0AmQ==
   dependencies:
-    color-loggers "^0.2.0"
+    color-loggers "^0.3.2"
 
 side-channel@^1.0.6:
   version "1.0.6"
@@ -1362,13 +1357,13 @@ tsx@^4.17.0:
   optionalDependencies:
     fsevents "~2.3.3"
 
-ttpt@^0.10.2:
-  version "0.10.2"
-  resolved "https://registry.yarnpkg.com/ttpt/-/ttpt-0.10.2.tgz#a3832b28312e78b104512f1f279f6dc7835ccdb9"
-  integrity sha512-1mdD4F2k71d9AtNLpZE7HAx8CK1Py2jZDub7ven3YL1BZCDPJYENghuIq7jnPa7CepxMB2M1b050ixHRF6g56Q==
+ttpt@^0.11.0:
+  version "0.11.0"
+  resolved "https://registry.yarnpkg.com/ttpt/-/ttpt-0.11.0.tgz#9c2bcb1bf19a9c1889d77932baae38d8c5298927"
+  integrity sha512-9eOqwGTlaOjt56bHSNmVPt7uZMUDunprb7wc+L7TXCt2UNQfzmuJpnVe88UaYfH4aQsbAOm7doyyi4dBl++dJg==
   dependencies:
     lodash "^4.17.21"
-    shell-commands "^0.3.1"
+    shell-commands "^0.4.2"
 
 type-check@^0.4.0, type-check@~0.4.0:
   version "0.4.0"
@@ -1387,10 +1382,10 @@ typescript@^5.5.4:
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.5.4.tgz#d9852d6c82bad2d2eda4fd74a5762a8f5909e9ba"
   integrity sha512-Mtq29sKDAEYP7aljRgtPOpTvOfbwRWlS6dPRzwjdE+C0R4brX/GUyhHSecbHMFLNBLcJIPt9nl9yG5TZ1weH+Q==
 
-undici-types@~6.13.0:
-  version "6.13.0"
-  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-6.13.0.tgz#e3e79220ab8c81ed1496b5812471afd7cf075ea5"
-  integrity sha512-xtFJHudx8S2DSoujjMd1WeWvn7KKWFRESZTMeL1RptAYERu29D6jphMjjY+vn96jvN3kVPDNxU/E13VTaXj6jg==
+undici-types@~6.18.2:
+  version "6.18.2"
+  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-6.18.2.tgz#8b678cf939d4fc9ec56be3c68ed69c619dee28b0"
+  integrity sha512-5ruQbENj95yDYJNS3TvcaxPMshV7aizdv/hWYjGIKoANWKjhWNBsr2YEuYZKodQulB1b8l7ILOuDQep3afowQQ==
 
 uri-js@^4.2.2:
   version "4.4.1"

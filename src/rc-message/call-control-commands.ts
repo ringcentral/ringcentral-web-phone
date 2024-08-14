@@ -12,7 +12,7 @@ const callControlCommands = {
   SessionClose: 9,
   // Call control messages from client to server
   ClientForward: 10,
-  ClientVoiceMail: 11,
+  ClientVoicemail: 11,
   ClientReject: 12,
   ClientStartReply: 13,
   ClientReply: 14,
