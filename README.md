@@ -13,7 +13,7 @@ It is NOT yet producion ready. It is still in development.
 
 This SDK assumes that you have basic knowledge of RingCentral Platform. You have created a RingCentral app and you know how to invoke RingCentral APIs. If you don't know how to do that, please read the following document first: https://developers.ringcentral.com/guide/voice/call-log/quick-start. The document is about how to create a RingCentral app and how to use the RingCentral API to access call log data. It is a good starting point for you to understand the RingCentral API. This SDK doesn't use/require call log API, the document is just for you to get familiar with RingCentral API.
 
-This SDKs assumes that you can use RingCentral SDKs to generate RingCentral API access token and manage the token. This SDK assumes that you know how to invoke [Device SIP Registration](https://developers.ringcentral.com/api-reference/Device-SIP-Registration/createSIPRegistration) to get a `SIPInfo` object.
+This SDK assumes that you can use RingCentral SDKs to generate RingCentral API access token and manage the token. This SDK assumes that you know how to invoke [Device SIP Registration](https://developers.ringcentral.com/api-reference/Device-SIP-Registration/createSIPRegistration) to get a `SIPInfo` object.
 
 With `@ringcentral/sdk`, it is done like this:
 
@@ -397,8 +397,15 @@ For a live sample, please refer to https://github.com/tylerlong/rc-web-phone-dem
 
 ### Behavior changes
 
+#### ringing audio
+
 This SDK doesn't play ringing audio when there is incoming call or outgoing call.
 It's up to the app to play the audio. It's a by design change.
+
+#### call forward
+
+SDK 1.x treats forwarding as answering the call and then transfer the call.
+SDK 2.x treats forwarding as sending a SIP message to the SIP server to forward the call.
 
 ## Maintainers Notes
 
@@ -417,4 +424,4 @@ In an ongoing call (either inbound or outbound), client may send special message
 - create some slides to talk about the reasoning for getting rid of SIP.js
 - integration tests
   - better to test the SIP message flow
-- documentation
+- How to decouple SIP from WebRTC?
