@@ -29,7 +29,6 @@ class RcMessage {
 
   public Hdr: HDR;
   public Bdy: BDY;
-  [key: string]: HDR | BDY | Function;
 
   public constructor(Hdr: HDR, Bdy: BDY) {
     this.Hdr = Hdr;

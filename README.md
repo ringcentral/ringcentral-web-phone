@@ -4,12 +4,10 @@ This is a complete rewrite of the RingCentral Web Phone SDK.
 
 It is NOT yet producion ready. It is still in development.
 
-
 ## Demo
 
 - [Online Demo](https://chuntaoliu.com/rc-web-phone-demo-2/)
 - [Source Code](https://github.com/tylerlong/rc-web-phone-demo-2)
-
 
 ## Pre-requisites
 
@@ -41,7 +39,7 @@ const main = async () => {
   await rc.logout(); // Web Phone SDK doesn't need a long-living access token, you MAY logout after getting sipInfo
 };
 main();
-``` 
+```
 
 With `@rc-ex/core`, it is done like this:
 
@@ -78,10 +76,9 @@ main();
 yarn add ringcentral-web-phone@2.0.0-alpha.1
 ```
 
-At the time I am writing this document, the latest version is `2.0.0-alpha.1`. 
+At the time I am writing this document, the latest version is `2.0.0-alpha.1`.
 Please replace it with the latest version.
 Find the latest version here https://www.npmjs.com/package/ringcentral-web-phone
-
 
 ## Initialization
 
@@ -108,7 +105,6 @@ await webPhone.enableDebugMode();
 
 In debug mode, the SDK will print all SIP messages to the console. It is useful for debugging.
 
-
 ## Make an outbound call
 
 ```ts
@@ -119,7 +115,6 @@ const callSession = await webPhone.call(callee, callerId);
 `callerId` is the phone number you want to display on the callee's phone. Format is like `16506668888`.
 
 To get all the `callerId` that you can use, you can call the following API: https://developers.ringcentral.com/api-reference/Phone-Numbers/listExtensionPhoneNumbers. Don't forget to filter the phone numbers that have `"features": [..., "CallerId", ...]`.
-
 
 ## Get inbound call sessions
 
@@ -173,8 +168,9 @@ const response = await inbundCallSession.reply(text);
 ```
 
 After this method call, the call session will be ended for the callee.
-But the call session will not end yet for the caller. And the caller will receive the replied `text` via text-to-speech. 
+But the call session will not end yet for the caller. And the caller will receive the replied `text` via text-to-speech.
 The caller will then have several options:
+
 - press 1 to repeat the message
 - press 2 to leave a voicemail
 - press 3 to reply with "yes"
@@ -185,10 +181,11 @@ The caller will then have several options:
 
 `if (response.Bdy.Sts === '0')`, it means that the caller replied to your message(he/she pressed 3, 4, 5).
 Then you need to check `response.Bdy.Resp`:
+
 - if it's `'1'`, it means that the caller replied with "yes" (he/she pressed 3)
 - if it's `'2'`, it means that the caller replied with "no" (he/she pressed 4)
 - if it's `'3'`, it means that the caller replied with "urgent, please call [number] immediately". (he/she pressed 5)
-  - in this case, there is also an urgent number provided by the caller which can be accessed by `response.Bdy.ExtNfo`. 
+  - in this case, there is also an urgent number provided by the caller which can be accessed by `response.Bdy.ExtNfo`.
 
 Below is some code snippet for your reference:
 
@@ -228,7 +225,6 @@ if (response.Bdy.Sts === '0') {
 
 This SDK doesn't play ringing audio when there is incoming call or outgoing call.
 It's up to the app to play the audio. It's a by design change.
-
 
 ## Maintainers Notes
 
