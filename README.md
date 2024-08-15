@@ -160,7 +160,7 @@ await inbundCallSession.forward(targetNumber);
 #### Reply the call
 
 Optionally, you can tell the server that the user has started replying the call.
-The server will give the user more time to edit the reply message before ending the call session or redirecting the call to voicemail.
+The server will give the user more time to edit the reply message before ending the call or redirecting the call to voicemail.
 
 ```ts
 await inbundCallSession.startReply();
@@ -174,13 +174,14 @@ await inbundCallSession.reply(text);
 
 After this method call, the call session will be ended for the callee.
 But the call session will not end yet for the caller. And the caller will receive the replied `text` via text-to-speech. 
-The caller will have several options:
-1. repeat the message
-2. to leave a voicemail
-3. reply with "yes"
-4. reply with "no"
-5. reply with "urgent, please call immediately"
-6. to disconnect
+The caller will then have several options:
+- press 1 to repeat the message
+- press 2 to leave a voicemail
+- press 3 to reply with "yes"
+- press 4 to reply with "no"
+- press 5 to reply with "urgent, please call immediately"
+  - the caller will be prompted to specify a callback number
+- press 6 to to disconnect
 
 
 ## Breaking changes

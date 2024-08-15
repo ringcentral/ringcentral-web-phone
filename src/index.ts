@@ -34,7 +34,13 @@ class WebPhone extends EventEmitter {
       this.connected = true;
     };
     this.wsc.onmessage = (event) => {
-      this.emit('message', InboundMessage.fromString(event.data));
+      const inboundMessage = InboundMessage.fromString(event.data);
+      this.emit('message', inboundMessage);
+      if (inboundMessage.subject.startsWith('MESSAGE sip:')) {
+        // Auto reply to MESSAGE
+        const responsMessage = new ResponseMessage(inboundMessage, 200);
+        this.send(responsMessage);
+      }
     };
   }
 

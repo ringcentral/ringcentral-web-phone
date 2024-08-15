@@ -82,8 +82,21 @@ class InboundCallSession extends CallSession {
   public async startReply() {
     this.sendRcMessage(callControlCommands.ClientStartReply);
   }
-  public async reply(text: string) {
+  public async reply(text: string): Promise<RcMessage> {
     this.sendRcMessage(callControlCommands.ClientReply, { RepTp: '0', Bdy: text });
+    return new Promise((resolve) => {
+      const sessionCloseHandler = (inboundMessage: InboundMessage) => {
+        if (inboundMessage.subject.startsWith('MESSAGE sip:')) {
+          const rcMessage = RcMessage.fromXml(inboundMessage.body);
+          if (rcMessage.Hdr.Cmd === callControlCommands.SessionClose.toString()) {
+            this.webPhone.off('message', sessionCloseHandler);
+            resolve(rcMessage);
+            // no need to dispose session here, session will dispose unpon CANCEL or BYE
+          }
+        }
+      };
+      this.webPhone.on('message', sessionCloseHandler);
+    });
   }
 
   public async answer() {
@@ -111,20 +124,6 @@ class InboundCallSession extends CallSession {
       answer.sdp,
     );
     this.webPhone.send(newMessage);
-
-    // reply 200 to <Msg> Cmd=7, and there are two of them
-    let count = 0;
-    const messageHandler = (inboundMessage: InboundMessage) => {
-      if (inboundMessage.subject.startsWith('MESSAGE sip:')) {
-        const responsMessage = new ResponseMessage(inboundMessage, 200);
-        this.webPhone.send(responsMessage);
-        count += 1;
-        if (count >= 2) {
-          this.webPhone.off('message', messageHandler);
-        }
-      }
-    };
-    this.webPhone.on('message', messageHandler);
 
     this.state = 'answered';
     this.emit('answered');
