@@ -126,7 +126,7 @@ webPhone.on('inboundCall', (inbundCallSession: InboundCallSession) => {
 });
 ```
 
-### Actions to take on inbound call
+### Actions to take on inbound call session
 
 #### Answer the call
 
@@ -214,6 +214,122 @@ if (response.Bdy.Sts === '0') {
   });
 }
 ```
+
+## Actions to take on answered call sessions
+
+This part applies to both inbound and outbound call sessions.
+Once the call is answered, you can do the following actions:
+
+### Transfer the call
+
+#### "Cold" transfer
+
+It is also called blind transfer. Transfer the call to another number directly, without any introduction or context to the person to whom the call will be transferred (the transferee).
+
+```ts
+await callSession.transfer(targetNumber);
+```
+
+#### "Warm" transfer
+
+The original caller is placed on hold while the person handling the call (the transferor) speaks with the person to whom the call will be transferred (the transferee). The transferor introduces the caller, provides context, and confirms that the transferee is ready to take the call before connecting the two.
+
+```ts
+const { complete, cancel } = await session.warmTransfer(transferToNumber);
+```
+
+After this method call, the current call session will be put on hold.
+A new call session will be created to the `transferToNumber`. Then the transferor will have a chance to talk to the transferee.
+After that, depending on the transferor's decision, the app can call `complete()` to complete the transfer, or call `cancel()` to cancel the transfer.
+
+### Hang up the call
+
+```ts
+await callSession.hangup();
+```
+
+### Start/Stop call recording
+
+```ts
+await callSession.startRecording();
+await callSession.stopRecording();
+```
+
+### Flip the call
+
+```ts
+const result = await callSession.flip(targetNumber);
+```
+
+Most popular use case of call flip is for you to switch the current call to your other devices.
+Let's say you are talking to someone on your desktop, and you want to switch to your mobile phone.
+You can use call flip to achieve this: `await callSession.flip(mobilePhoneNumber)`.
+
+Please note that, after you mobile phone answers the call, you need to **manually** end the call session on your desktop, otherwise you won't be able to talk/listen on your mobile phone.
+
+Please also note that, this SDK allows you to flip the call to any phone number, not just your own phone numbers. But if it is not your number, you probably should transfer the call instead of flipping the call.
+
+A sample result of `flip` is like this:
+
+```json
+{
+  "code": 0,
+  "description": "Succeeded",
+  "number": "+16506668888",
+  "target": "16506668888"
+}
+```
+
+I don't think you need to do anything based on the result. It is just for your information.
+
+### Park the call
+
+```ts
+const result = await callSession.park();
+```
+
+After this method call, the call session will be ended for you. And the remote peer will be put on hold and parked on an extension.
+You will be able to retrieve the parked call by dailing `*[parked-extension]`.
+Sample result:
+
+```json
+{
+  "code": 0,
+  "description": "Succeeded",
+  "park extension": "813"
+}
+```
+
+Take the sample result above as an example, you can retrieve the parked call by dailing `*813`.
+
+### Hold/Unhold the call
+
+```ts
+await callSession.hold();
+await callSession.unhold();
+```
+
+If you put the call on hold, the remote peer will hear hold music. Neither you nor the remote peer can hear each other.
+If you unhold the call, you and the remote peer can hear each other again.
+
+### Mute/Unmute the call
+
+```ts
+await callSession.mute();
+await callSession.unmute();
+```
+
+If you mute the call, the remote peer can't hear you.
+If you unmute the call, the remote peer can hear you again.
+
+### Send DTMF
+
+```ts
+await callSession.sendDTMF(dtmf);
+```
+
+`dtmf` is a string, like `*123#`. Valid characters are `0123456789*#ABCD`.
+`ABCD` are less commonly used but are part of the DTMF standard. They were originally intended for special signaling in military and network control systems.
 
 ## Breaking changes
 

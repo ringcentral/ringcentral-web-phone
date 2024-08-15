@@ -28,41 +28,6 @@ class InboundCallSession extends CallSession {
     this.webPhone.on('message', cancelHandler);
   }
 
-  public async sendRcMessage(
-    cmd: number,
-    body: {} | { RepTp: string; Bdy: string } | { FwdDly: string; Phn: string; PhnTp: string } = {},
-  ) {
-    if (!this.sipMessage.headers['P-rc']) {
-      return;
-    }
-    const rcMessage = RcMessage.fromXml(this.sipMessage.headers['P-rc']);
-    const newRcMessage = new RcMessage(
-      {
-        SID: rcMessage.Hdr.SID,
-        Req: rcMessage.Hdr.Req,
-        From: rcMessage.Hdr.To,
-        To: rcMessage.Hdr.From,
-        Cmd: cmd.toString(),
-      },
-      {
-        Cln: this.webPhone.sipInfo.authorizationId,
-        ...body,
-      },
-    );
-    const requestSipMessage = new RequestMessage(
-      `MESSAGE sip:${newRcMessage.Hdr.To} SIP/2.0`,
-      {
-        Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
-        To: `<sip:${newRcMessage.Hdr.To}>`,
-        From: `<sip:${this.webPhone.sipInfo.username}@${this.webPhone.sipInfo.domain}>;tag=${uuid()}`,
-        'Call-ID': this.callId,
-        'Content-Type': 'x-rc/agent',
-      },
-      newRcMessage.toXml(),
-    );
-    await this.webPhone.send(requestSipMessage);
-  }
-
   public async confirmReceive() {
     this.sendRcMessage(callControlCommands.ClientReceiveConfirm);
   }
@@ -138,6 +103,41 @@ class InboundCallSession extends CallSession {
       }
     };
     this.webPhone.on('message', byeHandler);
+  }
+
+  protected async sendRcMessage(
+    cmd: number,
+    body: {} | { RepTp: string; Bdy: string } | { FwdDly: string; Phn: string; PhnTp: string } = {},
+  ) {
+    if (!this.sipMessage.headers['P-rc']) {
+      return;
+    }
+    const rcMessage = RcMessage.fromXml(this.sipMessage.headers['P-rc']);
+    const newRcMessage = new RcMessage(
+      {
+        SID: rcMessage.Hdr.SID,
+        Req: rcMessage.Hdr.Req,
+        From: rcMessage.Hdr.To,
+        To: rcMessage.Hdr.From,
+        Cmd: cmd.toString(),
+      },
+      {
+        Cln: this.webPhone.sipInfo.authorizationId,
+        ...body,
+      },
+    );
+    const requestSipMessage = new RequestMessage(
+      `MESSAGE sip:${newRcMessage.Hdr.To} SIP/2.0`,
+      {
+        Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
+        To: `<sip:${newRcMessage.Hdr.To}>`,
+        From: `<sip:${this.webPhone.sipInfo.username}@${this.webPhone.sipInfo.domain}>;tag=${uuid()}`,
+        'Call-ID': this.callId,
+        'Content-Type': 'x-rc/agent',
+      },
+      newRcMessage.toXml(),
+    );
+    await this.webPhone.send(requestSipMessage);
   }
 }
 

@@ -80,30 +80,6 @@ abstract class CallSession extends EventEmitter {
     };
   }
 
-  public async _transfer(uri: string) {
-    const requestMessage = new RequestMessage(`REFER sip:${extractAddress(this.remotePeer)} SIP/2.0`, {
-      'Call-Id': this.callId,
-      From: this.localPeer,
-      To: this.remotePeer,
-      Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
-      'Refer-To': uri,
-      'Referred-By': `<${extractAddress(this.localPeer)}>`,
-    });
-    this.webPhone.send(requestMessage);
-    // reply to those NOTIFY messages
-    const notifyHandler = (inboundMessage: InboundMessage) => {
-      if (!inboundMessage.subject.startsWith('NOTIFY ')) {
-        return;
-      }
-      const responseMessage = new ResponseMessage(inboundMessage, 200);
-      this.webPhone.send(responseMessage);
-      if (inboundMessage.body.trim() === 'SIP/2.0 200 OK') {
-        this.webPhone.off('message', notifyHandler);
-      }
-    };
-    this.webPhone.on('message', notifyHandler);
-  }
-
   public async transfer(target: string) {
     return this._transfer(`sip:${target}@sip.ringcentral.com`);
   }
@@ -135,21 +111,6 @@ abstract class CallSession extends EventEmitter {
       Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
     });
     this.webPhone.send(requestMessage);
-  }
-
-  public async sendJsonMessage(jsonBody: string) {
-    const requestMessage = new RequestMessage(
-      `INFO sip:${this.webPhone.sipInfo.domain} SIP/2.0`,
-      {
-        'Call-Id': this.callId,
-        From: this.localPeer,
-        To: this.remotePeer,
-        Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
-        'Content-Type': 'application/json;charset=utf-8',
-      },
-      jsonBody,
-    );
-    this.webPhone.send(requestMessage, true);
   }
 
   public async startRecording() {
@@ -209,8 +170,41 @@ abstract class CallSession extends EventEmitter {
     });
   }
 
+  public async hold() {
+    await this.toggleReceive(false);
+  }
+  public async unhold() {
+    await this.toggleReceive(true);
+  }
+
+  public async mute() {
+    this.toggleTrack(false);
+  }
+  public async unmute() {
+    this.toggleTrack(true);
+  }
+
+  public sendDtmf(tones: string, duration?: number, interToneGap?: number) {
+    const senders = this.rtcPeerConnection.getSenders();
+    if (senders.length === 0) {
+      return;
+    }
+    const sender = senders[0];
+    sender.dtmf?.insertDTMF(tones, duration, interToneGap);
+  }
+
+  // for mute/unmute
+  protected toggleTrack(enabled: boolean) {
+    this.rtcPeerConnection.getSenders().forEach((sender) => {
+      if (sender.track) {
+        sender.track.enabled = enabled;
+      }
+    });
+  }
+
+  // for hold/unhold
   // toggle between a=sendrecv and a=sendonly
-  public async toggleReceive(toReceive: boolean) {
+  protected async toggleReceive(toReceive: boolean) {
     if (!this.rtcPeerConnection?.localDescription) {
       return;
     }
@@ -245,35 +239,6 @@ abstract class CallSession extends EventEmitter {
     });
     this.webPhone.send(ackMessage);
   }
-  public async hold() {
-    await this.toggleReceive(false);
-  }
-  public async unhold() {
-    await this.toggleReceive(true);
-  }
-
-  public toggleTrack(enabled: boolean) {
-    this.rtcPeerConnection.getSenders().forEach((sender) => {
-      if (sender.track) {
-        sender.track.enabled = enabled;
-      }
-    });
-  }
-  public async mute() {
-    this.toggleTrack(false);
-  }
-  public async unmute() {
-    this.toggleTrack(true);
-  }
-
-  public sendDtmf(tones: string, duration?: number, interToneGap?: number) {
-    const senders = this.rtcPeerConnection.getSenders();
-    if (senders.length === 0) {
-      return;
-    }
-    const sender = senders[0];
-    sender.dtmf?.insertDTMF(tones, duration, interToneGap);
-  }
 
   protected dispose() {
     this.rtcPeerConnection?.close();
@@ -281,6 +246,45 @@ abstract class CallSession extends EventEmitter {
     this.mediaStream?.getTracks().forEach((track) => track.stop());
     this.state = 'disposed';
     this.emit('disposed');
+  }
+
+  protected async sendJsonMessage(jsonBody: string) {
+    const requestMessage = new RequestMessage(
+      `INFO sip:${this.webPhone.sipInfo.domain} SIP/2.0`,
+      {
+        'Call-Id': this.callId,
+        From: this.localPeer,
+        To: this.remotePeer,
+        Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
+        'Content-Type': 'application/json;charset=utf-8',
+      },
+      jsonBody,
+    );
+    this.webPhone.send(requestMessage, true);
+  }
+
+  protected async _transfer(uri: string) {
+    const requestMessage = new RequestMessage(`REFER sip:${extractAddress(this.remotePeer)} SIP/2.0`, {
+      'Call-Id': this.callId,
+      From: this.localPeer,
+      To: this.remotePeer,
+      Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
+      'Refer-To': uri,
+      'Referred-By': `<${extractAddress(this.localPeer)}>`,
+    });
+    this.webPhone.send(requestMessage);
+    // reply to those NOTIFY messages
+    const notifyHandler = (inboundMessage: InboundMessage) => {
+      if (!inboundMessage.subject.startsWith('NOTIFY ')) {
+        return;
+      }
+      const responseMessage = new ResponseMessage(inboundMessage, 200);
+      this.webPhone.send(responseMessage);
+      if (inboundMessage.body.trim() === 'SIP/2.0 200 OK') {
+        this.webPhone.off('message', notifyHandler);
+      }
+    };
+    this.webPhone.on('message', notifyHandler);
   }
 }
 
