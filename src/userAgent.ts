@@ -185,6 +185,13 @@ export function createWebPhoneUserAgent(
     };
   }
 
+  if (typeof options.registerTimeout !== 'undefined') {
+    registererOptions = {
+      ...registererOptions,
+      expires: options.registerTimeout,
+    };
+  }
+
   userAgent.registerer = new Registerer(userAgent, registererOptions);
   userAgent.sipInfo = sipInfo;
   userAgent.modifiers = options.modifiers;

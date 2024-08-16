@@ -215,6 +215,10 @@ export interface WebPhoneOptions {
    * @defaultValue 99
    */
   refreshFrequency?: number;
+  /**
+   * Registration expiration time in seconds. default value is 600.
+   */
+  registerTimeout?: number;
   /** Value to provide with "reg-id" Contact parameter. when registering */
   regId?: number;
   /** Factory for SessionDescriptionHandler.
