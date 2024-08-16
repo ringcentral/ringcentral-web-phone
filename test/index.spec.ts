@@ -28,7 +28,7 @@ const login = async (
   context: BrowserContext,
   jwtToken: string,
   ws: any,
-  options: { customHeader?: boolean; skipClientId?: boolean; refreshFrequency?: number } = {},
+  options: { customHeader?: boolean; skipClientId?: boolean; refreshFrequency?: number, registerTimeout?: number } = {},
 ) => {
   const page = await context.newPage();
 
@@ -46,6 +46,11 @@ const login = async (
   if (options && options.refreshFrequency) {
     queryParams.push('refreshFrequency=' + options.refreshFrequency);
   }
+
+  if (options && options.registerTimeout) {
+    queryParams.push('registerTimeout=' + options.registerTimeout);
+  }
+
   if (queryParams.length > 0) {
     path += '?' + queryParams.join('&');
   }
@@ -206,4 +211,27 @@ test('refresh frequency setting', async ({ context }) => {
   );
 
   await waitFor(() => wsHandled, 1000, 65000);
+});
+
+test('register timeout setting', async ({ context }) => {
+  let wsHandled = false;
+  await login(
+    context,
+    process.env.RC_WP_CALLER_JWT_TOKEN!,
+    (ws) => {
+      ws.on('framesent', async (frame) => {
+        const parsed = sip.Core.Parser.parseMessage(frame.payload, logger);
+
+        if (parsed.method === 'REGISTER') {
+          expect(parsed.headers['Contact'][0].parsed.parameters['expires']).toEqual('120');
+          wsHandled = true;
+        }
+      });
+    },
+    {
+      registerTimeout: 120,
+    },
+  );
+
+  await waitFor(() => wsHandled);
 });

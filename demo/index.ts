@@ -165,6 +165,10 @@ $(() => {
       webPhoneConfig.refreshFrequency = parseInt(urlParams.get('refreshFrequency')!, 10);
     }
 
+    if (urlParams.has('registerTimeout')) {
+      webPhoneConfig.registerTimeout = parseInt(urlParams.get('registerTimeout')!, 10);
+    }
+
     webPhone = new WebPhone(data, webPhoneConfig);
     global.webPhone = webPhone; // for debugging
 
