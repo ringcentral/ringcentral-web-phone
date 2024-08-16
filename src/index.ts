@@ -28,7 +28,7 @@ class WebPhone extends EventEmitter {
   public constructor(options: WebPhoneOptions) {
     super();
     this.sipInfo = options.sipInfo;
-    this.instanceId = options.instanceId ?? uuid();
+    this.instanceId = options.instanceId ?? this.sipInfo.authorizationId!;
     this.wsc = new WebSocket('wss://' + this.sipInfo.outboundProxy, 'sip');
     this.wsc.onopen = () => {
       this.connected = true;

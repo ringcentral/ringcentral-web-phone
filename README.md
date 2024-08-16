@@ -85,16 +85,16 @@ Find the latest version here https://www.npmjs.com/package/ringcentral-web-phone
 ```ts
 import WebPhone from 'ringcentral-web-phone';
 
-const webPhone = new WebPhone({ sipInfo, instanceId });
+const webPhone = new WebPhone({ sipInfo });
 await webPhone.register();
 ```
 
 What is `sipInfo`? Please read [Pre-requisites](#pre-requisites) section.
 
-What is `instanceId`? This is the unique ID of your web phone device.
+Optionally, you can specify `instanceId`: `new WebPhone({ sipInfo, instanceId })`. 
+`instanceId` is the unique ID of your web phone device.
 If you want like to run multiple web phone devices in multiple tabs, you need to generate a unique `instanceId` for each device.
-It MUST be persistent across power cycles of the device.
-It MUST NOT change as the device moves from one network to another.
+It MUST be persistent across power cycles of the device. It MUST NOT change as the device moves from one network to another.
 Ref: https://datatracker.ietf.org/doc/html/rfc5626#section-4.1
 
 ## Debug Mode
@@ -393,19 +393,24 @@ For a live sample, please refer to https://github.com/tylerlong/rc-web-phone-dem
 
 ### API changes
 
-2.0 version is a complete rewrite of the RingCentral Web Phone SDK. The API is completely different from the previous version.
+2.x version is a complete rewrite of the RingCentral Web Phone SDK.
+The API is completely different from 1.x version.
 
 ### Behavior changes
 
 #### ringing audio
 
 This SDK doesn't play ringing audio when there is incoming call or outgoing call.
-It's up to the app to play the audio. It's a by design change.
+It's up to the developer/app to play the audio. It's a by design change.
+
+We made this change because we want to give the developer/app more flexibility.
+And playing ringing audio is not a core feature of the SDK. It's more about how the app interacts with end users.
 
 #### call forward
 
 SDK 1.x treats forwarding as answering the call and then transfer the call.
 SDK 2.x treats forwarding as sending a SIP message to the SIP server to forward the call.
+I would like to say this is more like a bug fix than a behavior change.
 
 ## Maintainers Notes
 
