@@ -91,11 +91,18 @@ await webPhone.register();
 
 What is `sipInfo`? Please read [Pre-requisites](#pre-requisites) section.
 
-Optionally, you can specify `instanceId`: `new WebPhone({ sipInfo, instanceId })`. 
+Optionally, you can specify `instanceId`: `new WebPhone({ sipInfo, instanceId })`.
 `instanceId` is the unique ID of your web phone device.
+
 If you want like to run multiple web phone devices in multiple tabs, you need to generate a unique `instanceId` for each device.
 It MUST be persistent across power cycles of the device. It MUST NOT change as the device moves from one network to another.
 Ref: https://datatracker.ietf.org/doc/html/rfc5626#section-4.1
+
+If you start two web phone instances with the same `instanceId`, only the second instance will work. SIP server will not route calls to the first instance. (The first instance will still be able to make outbound calls, but it will not receive inbound calls.)
+
+If you don't specify `instanceId`, the SDK by default will use `sipInfo.authorizationId` as `instanceId`. Which means, if you don't specify `instanceId`, you should only run one web phone instance in one tab.
+
+If you start two web phone instances with different `instanceId`, both instances will work. SIP server will send messages to both instances.
 
 ## Debug Mode
 
@@ -139,6 +146,9 @@ await inbundCallSession.answer();
 ```ts
 await inbundCallSession.decline();
 ```
+
+Please note that, decline the inbound call will not terminate the call session for the caller immediately.
+The caller will hear the ringback tone for a while until he/she hears "I am sorry, no one is available to take your call. Thank you for calling. Goodbye." And the call will not reach your voicemail.
 
 #### Send the call to voicemail
 
