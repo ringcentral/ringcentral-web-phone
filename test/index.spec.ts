@@ -101,7 +101,11 @@ test('decline inbound call', async ({ context }) => {
     await window.inboundCalls[0].decline();
   });
   await calleePage.waitForTimeout(1000);
+
+  // caller
   expect(callerMessages.length).toBe(0);
+
+  // callee
   expect(calleeMessages.length).toBe(6);
   expect(calleeMessages[0].subject.startsWith('MESSAGE sip:')).toBeTruthy();
   expect(calleeMessages[1].subject).toBe('SIP/2.0 100 Trying');
