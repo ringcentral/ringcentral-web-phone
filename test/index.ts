@@ -2,15 +2,13 @@ import RingCentral from '@rc-ex/core';
 
 import WebPhone from '../src';
 
-const main = async () => {
+global.initWebPhone = async (jwt: string) => {
   const rc = new RingCentral({
     server: process.env.RINGCENTRAL_SERVER_URL,
     clientId: process.env.RINGCENTRAL_CLIENT_ID,
     clientSecret: process.env.RINGCENTRAL_CLIENT_SECRET,
   });
-  await rc.authorize({
-    jwt: process.env.RINGCENTRAL_JWT_TOKEN!,
-  });
+  await rc.authorize({ jwt });
   const r = await rc
     .restapi()
     .clientInfo()
@@ -23,4 +21,3 @@ const main = async () => {
   const webPhone = new WebPhone({ sipInfo });
   global.webPhone = webPhone;
 };
-main();
