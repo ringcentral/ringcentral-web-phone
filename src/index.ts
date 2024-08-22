@@ -40,7 +40,7 @@ class WebPhone extends EventEmitter {
       this.emit('message', inboundMessage);
       if (inboundMessage.subject.startsWith('MESSAGE sip:')) {
         // Auto reply to MESSAGE
-        const responsMessage = new ResponseMessage(inboundMessage, 200);
+        const responsMessage = new ResponseMessage(inboundMessage, { responseCode: 200 });
         this.send(responsMessage);
       }
     };
@@ -84,9 +84,9 @@ class WebPhone extends EventEmitter {
       this.emit('inboundCall', inboundCallSession);
 
       // tell SIP server that we are ringing
-      let tempMesage = new ResponseMessage(inboundMessage, 100);
+      let tempMesage = new ResponseMessage(inboundMessage, { responseCode: 100 });
       this.send(tempMesage);
-      tempMesage = new ResponseMessage(inboundMessage, 180);
+      tempMesage = new ResponseMessage(inboundMessage, { responseCode: 180 });
       this.send(tempMesage);
 
       // if we don't send this, toVoicemail() will not work

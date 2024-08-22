@@ -134,7 +134,7 @@ abstract class CallSession extends EventEmitter {
         if (!response || response.reqid !== reqid || response.command !== 'callflip') {
           return;
         }
-        const responseMessage = new ResponseMessage(inboundMessage, 200);
+        const responseMessage = new ResponseMessage(inboundMessage, { responseCode: 200 });
         this.webPhone.send(responseMessage);
         this.webPhone.off('message', flipHandler);
         // note: we can't dispose the call session here
@@ -158,7 +158,7 @@ abstract class CallSession extends EventEmitter {
         if (!response || response.reqid !== reqid || response.command !== 'callpark') {
           return;
         }
-        const responseMessage = new ResponseMessage(inboundMessage, 200);
+        const responseMessage = new ResponseMessage(inboundMessage, { responseCode: 200 });
         this.webPhone.send(responseMessage);
         this.webPhone.off('message', parkHandler);
         if (response.result.code === 0) {
@@ -280,7 +280,7 @@ abstract class CallSession extends EventEmitter {
       if (!inboundMessage.subject.startsWith('NOTIFY ')) {
         return;
       }
-      const responseMessage = new ResponseMessage(inboundMessage, 200);
+      const responseMessage = new ResponseMessage(inboundMessage, { responseCode: 200 });
       this.webPhone.send(responseMessage);
       if (inboundMessage.body.trim() === 'SIP/2.0 200 OK') {
         this.webPhone.off('message', notifyHandler);

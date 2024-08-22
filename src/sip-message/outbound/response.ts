@@ -3,8 +3,14 @@ import responseCodes from '../response-codes';
 import type InboundMessage from '../inbound';
 
 class ResponseMessage extends OutboundMessage {
-  // eslint-disable-next-line max-params
-  public constructor(inboundMessage: InboundMessage, responseCode: number, headers = {}, body = '') {
+  public constructor(
+    inboundMessage: InboundMessage,
+    {
+      responseCode,
+      headers = {},
+      body = '',
+    }: { responseCode: number; headers?: { [key: string]: string }; body?: string },
+  ) {
     super(undefined, { ...headers }, body);
     this.subject = `SIP/2.0 ${responseCode} ${responseCodes[responseCode]}`;
     const keys = ['Via', 'From', 'To', 'Call-Id', 'CSeq'];

@@ -82,14 +82,13 @@ class InboundCallSession extends CallSession {
       setTimeout(() => resolve(false), 3000);
     });
 
-    const newMessage = new ResponseMessage(
-      this.sipMessage,
-      200,
-      {
+    const newMessage = new ResponseMessage(this.sipMessage, {
+      responseCode: 200,
+      headers: {
         'Content-Type': 'application/sdp',
       },
-      answer.sdp,
-    );
+      body: answer.sdp,
+    });
     this.webPhone.send(newMessage);
 
     this.state = 'answered';
