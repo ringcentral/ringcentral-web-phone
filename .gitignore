@@ -3,3 +3,5 @@ node_modules/
 .parcel-cache/
 docs/
 dev-notes.md
+dist/
+test-results/

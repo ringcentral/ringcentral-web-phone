@@ -1,3 +1,5 @@
 --ignore-dir=node_modules
 --ignore-file=match:/^yarn\.lock$/
 --ignore-dir=docs
+--ignore-dir=dist
+--ignore-dir=test-results

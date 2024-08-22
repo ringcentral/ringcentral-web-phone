@@ -11,7 +11,9 @@
   "scripts": {
     "lint": "tsc --noEmit --target ESNext --moduleResolution NodeNext --module NodeNext ./src/*.ts && eslint --fix '**/*.{ts,tsx,js,jsx}' && prettier --write . && sort-package-json",
     "prepublishOnly": "tsc src/index.ts --declaration --outDir . --target ESNext --moduleResolution NodeNext --module NodeNext",
-    "postpublish": "rm -rf call-session rc-message sip-message event-emitter.* index.* utils.*"
+    "postpublish": "rm -rf call-session rc-message sip-message event-emitter.* index.* utils.*",
+    "serve": "rm -rf .parcel-cache && parcel test/index.html --no-hmr",
+    "test": "NODE_OPTIONS=--require=dotenv-override-true/config playwright test test/index.spec.ts --workers=1"
   },
   "dependencies": {
     "blueimp-md5": "^2.19.0",
@@ -22,6 +24,7 @@
     "xmldom": "^0.6.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.46.1",
     "@rc-ex/core": "^1.4.0",
     "@types/blueimp-md5": "^2.18.2",
     "@types/node": "^22.5.0",
@@ -30,11 +33,15 @@
     "@types/xmldom": "^0.1.34",
     "@typescript-eslint/eslint-plugin": "^8.2.0",
     "@typescript-eslint/parser": "^8.2.0",
+    "buffer": "^5.5.0||^6.0.0",
+    "dotenv-override-true": "^6.2.2",
     "eslint": "^8.57.0",
     "eslint-config-alloy": "^5.1.2",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
+    "parcel": "^2.12.0",
     "prettier": "^3.3.3",
+    "process": "^0.11.10",
     "sort-package-json": "^2.10.1",
     "tsx": "^4.17.0",
     "ttpt": "^0.11.1",

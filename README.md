@@ -437,6 +437,4 @@ In an ongoing call (either inbound or outbound), client may send special message
 ### Todo:
 
 - create some slides to talk about the reasoning for getting rid of SIP.js
-- integration tests
-  - better to test the SIP message flow
 - How to decouple SIP from WebRTC?
