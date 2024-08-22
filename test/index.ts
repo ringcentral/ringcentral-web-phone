@@ -21,6 +21,6 @@ const main = async () => {
   const sipInfo = r.sipInfo![0];
   await rc.revoke();
   const webPhone = new WebPhone({ sipInfo });
-  await webPhone.register();
+  global.webPhone = webPhone;
 };
 main();
