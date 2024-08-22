@@ -1,5 +1,7 @@
 import { DOMParser } from 'xmldom';
 
+const domParser = new DOMParser();
+
 interface HDR {
   [key: string]: string | undefined;
 }
@@ -13,7 +15,7 @@ class RcMessage {
     if (xmlStr.startsWith('P-rc: ')) {
       xmlStr = xmlStr.substring(6);
     }
-    const xmlDoc = new DOMParser().parseFromString(xmlStr, 'text/xml');
+    const xmlDoc = domParser.parseFromString(xmlStr, 'text/xml');
     const rcMessage = new RcMessage({}, {});
     for (const tag of ['Hdr', 'Bdy']) {
       rcMessage[tag] = {};
