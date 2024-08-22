@@ -1,4 +1,5 @@
-import { RequestMessage, type InboundMessage } from '../sip-message';
+import RequestMessage from '../sip-message/outbound/request';
+import type InboundMessage from '../sip-message/inbound';
 import type WebPhone from '..';
 import CallSession from '.';
 import { extractAddress, withoutTag, branch, generateAuthorization, uuid } from '../utils';

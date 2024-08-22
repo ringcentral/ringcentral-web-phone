@@ -2,8 +2,10 @@ import type SipInfoResponse from '@rc-ex/core/lib/definitions/SipInfoResponse';
 import waitFor from 'wait-for-async';
 import { manage } from 'manate';
 
-import type { OutboundMessage } from './sip-message';
-import { InboundMessage, RequestMessage, ResponseMessage } from './sip-message';
+import type OutboundMessage from './sip-message/outbound';
+import InboundMessage from './sip-message/inbound';
+import RequestMessage from './sip-message/outbound/request';
+import ResponseMessage from './sip-message/outbound/response';
 import { branch, generateAuthorization, uuid } from './utils';
 import InboundCallSession from './call-session/inbound';
 import OutboundCallSession from './call-session/outbound';

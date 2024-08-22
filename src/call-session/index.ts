@@ -1,7 +1,9 @@
 import sdpTransform from 'sdp-transform';
 
 import EventEmitter from '../event-emitter';
-import { RequestMessage, type InboundMessage, ResponseMessage } from '../sip-message';
+import RequestMessage from '../sip-message/outbound/request';
+import ResponseMessage from '../sip-message/outbound/response';
+import type InboundMessage from '../sip-message/inbound';
 import type WebPhone from '..';
 import { branch, extractAddress, extractNumber, extractTag, uuid } from '../utils';
 

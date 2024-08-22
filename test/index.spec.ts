@@ -1,7 +1,9 @@
 import type { BrowserContext } from '@playwright/test';
 import { expect, test } from '@playwright/test';
 
-import { InboundMessage, type SipMessage } from '../src/sip-message';
+import InboundMessage from '../src/sip-message/inbound';
+import OutboundMessage from '../src/sip-message/outbound';
+import type SipMessage from '../src/sip-message';
 import type WebPhone from '../src';
 import RcMessage from '../src/rc-message/rc-message';
 import callControlCommands from '../src/rc-message/call-control-commands';
@@ -30,7 +32,7 @@ const register = async ({ context, jwt }: { context: BrowserContext; jwt: string
   }, jwt);
   const messages: SipMessage[] = [];
   page.once('websocket', (ws) => {
-    ws.on('framesent', (frame) => messages.push(InboundMessage.fromString(frame.payload as string)));
+    ws.on('framesent', (frame) => messages.push(OutboundMessage.fromString(frame.payload as string)));
     ws.on('framereceived', (frame) => messages.push(InboundMessage.fromString(frame.payload as string)));
   });
   await page.evaluate(async () => {
@@ -49,6 +51,14 @@ test('registration', async ({ context }) => {
     'REGISTER sip:sip.ringcentral.com SIP/2.0',
     'SIP/2.0 100 Trying',
     'SIP/2.0 200 OK',
+  ]);
+  expect(messages.map((m) => m.direction)).toEqual([
+    'outbound',
+    'inbound',
+    'inbound',
+    'outbound',
+    'inbound',
+    'inbound',
   ]);
 });
 
@@ -79,6 +89,16 @@ test('call', async ({ context }) => {
     'SIP/2.0 200 OK',
     `ACK sip:${calleeNumber}@sip.ringcentral.com SIP/2.0`,
   ]);
+  expect(callerMessages.map((m) => m.direction)).toEqual([
+    'outbound',
+    'inbound',
+    'inbound',
+    'outbound',
+    'inbound',
+    'inbound',
+    'inbound',
+    'outbound',
+  ]);
 
   // callee
   expect(calleeMessages.length).toBe(6);
@@ -88,6 +108,14 @@ test('call', async ({ context }) => {
   expect(calleeMessages[3].subject.startsWith('MESSAGE sip:')).toBeTruthy();
   expect(calleeMessages[4].subject).toBe('SIP/2.0 100 Trying');
   expect(calleeMessages[5].subject).toBe('SIP/2.0 200 OK');
+  expect(calleeMessages.map((m) => m.direction)).toEqual([
+    'inbound',
+    'outbound',
+    'outbound',
+    'outbound',
+    'inbound',
+    'inbound',
+  ]);
 
   const rcMessage = RcMessage.fromXml(calleeMessages[3].body);
   expect(rcMessage.Hdr.Cmd).toBe(callControlCommands.ClientReceiveConfirm.toString());
@@ -113,6 +141,14 @@ test('decline inbound call', async ({ context }) => {
   expect(calleeMessages[3].subject.startsWith('MESSAGE sip:')).toBeTruthy();
   expect(calleeMessages[4].subject).toBe('SIP/2.0 200 OK');
   expect(calleeMessages[5].subject.startsWith('CANCEL sip:')).toBeTruthy();
+  expect(calleeMessages.map((m) => m.direction)).toEqual([
+    'outbound',
+    'inbound',
+    'inbound',
+    'inbound',
+    'outbound',
+    'inbound',
+  ]);
 
   let rcMessage = RcMessage.fromXml(calleeMessages[0].body);
   expect(rcMessage.Hdr.Cmd).toBe(callControlCommands.ClientReject.toString());
