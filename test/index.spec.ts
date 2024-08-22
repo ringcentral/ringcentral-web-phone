@@ -5,6 +5,8 @@ import { InboundMessage, type SipMessage } from '../src/sip-message';
 import type WebPhone from '../src';
 import RcMessage from '../src/rc-message/rc-message';
 import callControlCommands from '../src/rc-message/call-control-commands';
+import type OutboundCallSession from '../src/call-session/outbound';
+import type InboundCallSession from '../src/call-session/inbound';
 
 const callerJwt = process.env.RINGCENTRAL_JWT_TOKEN!;
 const calleeJwt = process.env.RINGCENTRAL_JWT_TOKEN_2!;
@@ -15,6 +17,8 @@ declare global {
   interface Window {
     webPhone: WebPhone;
     initWebPhone: (jwt: string) => Promise<void>;
+    outboundCalls: OutboundCallSession[];
+    inboundCalls: InboundCallSession[];
   }
 }
 
@@ -48,15 +52,20 @@ test('registration', async ({ context }) => {
   ]);
 });
 
-test('call', async ({ context }) => {
+const call = async ({ context }: { context: BrowserContext }) => {
   const { page: callerPage, messages: callerMessages } = await register({ context, jwt: callerJwt });
-  const { messages: calleeMessages } = await register({ context, jwt: calleeJwt });
+  const { page: calleePage, messages: calleeMessages } = await register({ context, jwt: calleeJwt });
   callerMessages.length = 0;
   calleeMessages.length = 0;
   await callerPage.evaluate(async (calleeNumber) => {
     await window.webPhone.call(calleeNumber);
   }, calleeNumber);
   await callerPage.waitForTimeout(1000);
+  return { callerPage, calleePage, callerMessages, calleeMessages };
+};
+
+test('call', async ({ context }) => {
+  const { callerMessages, calleeMessages } = await call({ context });
 
   // caller
   expect(callerMessages.length).toBe(8);
@@ -82,4 +91,27 @@ test('call', async ({ context }) => {
 
   const rcMessage = RcMessage.fromXml(calleeMessages[3].body);
   expect(rcMessage.Hdr.Cmd).toBe(callControlCommands.ClientReceiveConfirm.toString());
+});
+
+test('decline inbound call', async ({ context }) => {
+  const { calleePage, callerMessages, calleeMessages } = await call({ context });
+  callerMessages.length = 0;
+  calleeMessages.length = 0;
+  await calleePage.evaluate(async () => {
+    await window.inboundCalls[0].decline();
+  });
+  await calleePage.waitForTimeout(1000);
+  expect(callerMessages.length).toBe(0);
+  expect(calleeMessages.length).toBe(6);
+  expect(calleeMessages[0].subject.startsWith('MESSAGE sip:')).toBeTruthy();
+  expect(calleeMessages[1].subject).toBe('SIP/2.0 100 Trying');
+  expect(calleeMessages[2].subject).toBe('SIP/2.0 200 OK');
+  expect(calleeMessages[3].subject.startsWith('MESSAGE sip:')).toBeTruthy();
+  expect(calleeMessages[4].subject).toBe('SIP/2.0 200 OK');
+  expect(calleeMessages[5].subject.startsWith('CANCEL sip:')).toBeTruthy();
+
+  let rcMessage = RcMessage.fromXml(calleeMessages[0].body);
+  expect(rcMessage.Hdr.Cmd).toBe(callControlCommands.ClientReject.toString());
+  rcMessage = RcMessage.fromXml(calleeMessages[3].body);
+  expect(rcMessage.Hdr.Cmd).toBe(callControlCommands.SessionClose.toString());
 });

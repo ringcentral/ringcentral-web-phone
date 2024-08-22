@@ -341,6 +341,42 @@ await callSession.sendDTMF(dtmf);
 `dtmf` is a string, like `*123#`. Valid characters are `0123456789*#ABCD`.
 `ABCD` are less commonly used but are part of the DTMF standard. They were originally intended for special signaling in military and network control systems.
 
+## Events
+
+You may subscribe to events, examples:
+
+```ts
+
+webPhone.on('message', (inboundMessage: InboundMessage) => {
+  // do something with the inbound SIP message
+});
+```
+
+```ts
+callSession.on('disposed', () => {
+  // do something when the call session is disposed
+});
+```
+
+### WebPhone Events
+
+- message
+  - new inbound SIP message, payload type: [InboundMessage](./src/sip-message/inbound/index.ts)
+- inboundCall
+  - new inbound call session, payload type: [InboundCallSession](./src/call-session/inbound.ts)
+- outboundCall
+  - new outbound call session, payload type: [OutboundCallSession](./src/call-session/outbound.ts)
+
+### CallSession Events
+
+- ringing
+  - no payload
+- answered
+  - no payload
+- disposed
+  - no payload
+
+
 ## Conference
 
 Conference is out of the scope of this SDK. Because conferences are mainly done with Restful API.

@@ -20,4 +20,12 @@ global.initWebPhone = async (jwt: string) => {
   await rc.revoke();
   const webPhone = new WebPhone({ sipInfo });
   global.webPhone = webPhone;
+  global.inboundCalls = [];
+  global.outboundCalls = [];
+  webPhone.on('inboundCall', (call) => {
+    global.inboundCalls.push(call);
+  });
+  webPhone.on('outboundCall', (call) => {
+    global.outboundCalls.push(call);
+  });
 };
