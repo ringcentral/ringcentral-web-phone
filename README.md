@@ -470,8 +470,16 @@ rename `.env.sample` to `.env` and fill in the correct values.
 You will need two RingCentral extensions to test the SDK, one as the caller and the other as the callee.
 You will need one more number to test call forwarding/transferring.
 
+To run all tests:
+
 ```
 yarn test
+```
+
+To run a test file:
+
+```
+yarn test test/inbound/forward.spec.ts
 ```
 
 ### Two kinds of special messages

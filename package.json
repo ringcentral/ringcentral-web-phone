@@ -13,7 +13,7 @@
     "prepublishOnly": "tsc src/index.ts --declaration --outDir . --target ESNext --moduleResolution NodeNext --module NodeNext",
     "postpublish": "rm -rf call-session rc-message sip-message event-emitter.* index.* utils.*",
     "serve": "rm -rf .parcel-cache && parcel test/index.html --no-hmr",
-    "test": "NODE_OPTIONS=--require=dotenv-override-true/config playwright test test/index.spec.ts --workers=1"
+    "test": "NODE_OPTIONS=--require=dotenv-override-true/config playwright test --workers=1"
   },
   "dependencies": {
     "blueimp-md5": "^2.19.0",
