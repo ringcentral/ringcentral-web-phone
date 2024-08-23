@@ -65,7 +65,7 @@ abstract class CallSession extends EventEmitter {
 
   public async init() {
     this.rtcPeerConnection = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+      iceServers: this.webPhone.sipInfo.stunServers?.map((url) => ({ urls: `stun:${url}` })) ?? [],
     });
     this.mediaStream = await navigator.mediaDevices.getUserMedia({
       video: false,
