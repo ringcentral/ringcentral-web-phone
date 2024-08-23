@@ -55,7 +55,7 @@ class InboundCallSession extends CallSession {
       const sessionCloseHandler = async (inboundMessage: InboundMessage) => {
         if (inboundMessage.subject.startsWith('MESSAGE sip:')) {
           const rcMessage = await RcMessage.fromXml(inboundMessage.body);
-          if (rcMessage.Hdr.Cmd === callControlCommands.SessionClose.toString()) {
+          if (rcMessage.headers.Cmd === callControlCommands.SessionClose.toString()) {
             this.webPhone.off('message', sessionCloseHandler);
             resolve(rcMessage);
             // no need to dispose session here, session will dispose unpon CANCEL or BYE
@@ -116,10 +116,10 @@ class InboundCallSession extends CallSession {
     const rcMessage = await RcMessage.fromXml(this.sipMessage.headers['P-rc']);
     const newRcMessage = new RcMessage(
       {
-        SID: rcMessage.Hdr.SID,
-        Req: rcMessage.Hdr.Req,
-        From: rcMessage.Hdr.To,
-        To: rcMessage.Hdr.From,
+        SID: rcMessage.headers.SID,
+        Req: rcMessage.headers.Req,
+        From: rcMessage.headers.To,
+        To: rcMessage.headers.From,
         Cmd: cmd.toString(),
       },
       {
@@ -128,10 +128,10 @@ class InboundCallSession extends CallSession {
       },
     );
     const requestSipMessage = new RequestMessage(
-      `MESSAGE sip:${newRcMessage.Hdr.To} SIP/2.0`,
+      `MESSAGE sip:${newRcMessage.headers.To} SIP/2.0`,
       {
         Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
-        To: `<sip:${newRcMessage.Hdr.To}>`,
+        To: `<sip:${newRcMessage.headers.To}>`,
         From: `<sip:${this.webPhone.sipInfo.username}@${this.webPhone.sipInfo.domain}>;tag=${uuid()}`,
         'Call-ID': this.callId,
         'Content-Type': 'x-rc/agent',

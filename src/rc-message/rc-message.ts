@@ -28,22 +28,22 @@ class RcMessage {
     return new RcMessage(parsed.Msg.Hdr.$, parsed.Msg.Bdy.$);
   }
 
-  public Hdr: HDR;
-  public Bdy: BDY;
+  public headers: HDR;
+  public body: BDY;
 
   public constructor(Hdr: HDR, Bdy: BDY) {
-    this.Hdr = Hdr;
-    this.Bdy = Bdy;
+    this.headers = Hdr;
+    this.body = Bdy;
   }
 
   public toXml() {
     const xml = builder.buildObject({
       Msg: {
         Hdr: {
-          $: this.Hdr,
+          $: this.headers,
         },
         Bdy: {
-          $: this.Bdy,
+          $: this.body,
         },
       },
     });

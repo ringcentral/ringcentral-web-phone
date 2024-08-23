@@ -118,7 +118,7 @@ test('call', async ({ context }) => {
   ]);
 
   const rcMessage = await RcMessage.fromXml(calleeMessages[3].body);
-  expect(rcMessage.Hdr.Cmd).toBe(callControlCommands.ClientReceiveConfirm.toString());
+  expect(rcMessage.headers.Cmd).toBe(callControlCommands.ClientReceiveConfirm.toString());
 });
 
 test('decline inbound call', async ({ context }) => {
@@ -151,7 +151,7 @@ test('decline inbound call', async ({ context }) => {
   ]);
 
   let rcMessage = await RcMessage.fromXml(calleeMessages[0].body);
-  expect(rcMessage.Hdr.Cmd).toBe(callControlCommands.ClientReject.toString());
+  expect(rcMessage.headers.Cmd).toBe(callControlCommands.ClientReject.toString());
   rcMessage = await RcMessage.fromXml(calleeMessages[3].body);
-  expect(rcMessage.Hdr.Cmd).toBe(callControlCommands.SessionClose.toString());
+  expect(rcMessage.headers.Cmd).toBe(callControlCommands.SessionClose.toString());
 });
