@@ -493,3 +493,4 @@ In an ongoing call (either inbound or outbound), client may send special message
 - create some slides to talk about the reasoning for getting rid of SIP.js
 - How to decouple SIP from WebRTC?
 - Test cases, reuse sipInfo
+- Dispose after every test case?
