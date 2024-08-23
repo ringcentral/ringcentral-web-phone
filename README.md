@@ -189,22 +189,22 @@ The caller will then have several options:
   - the caller will be prompted to specify a callback number
 - press 6 to to disconnect
 
-`if (response.Bdy.Sts === '0')`, it means that the caller replied to your message(he/she pressed 3, 4, 5).
-Then you need to check `response.Bdy.Resp`:
+`if (response.body.Sts === '0')`, it means that the caller replied to your message(he/she pressed 3, 4, 5).
+Then you need to check `response.body.Resp`:
 
 - if it's `'1'`, it means that the caller replied with "yes" (he/she pressed 3)
 - if it's `'2'`, it means that the caller replied with "no" (he/she pressed 4)
 - if it's `'3'`, it means that the caller replied with "urgent, please call [number] immediately". (he/she pressed 5)
-  - in this case, there is also an urgent number provided by the caller which can be accessed by `response.Bdy.ExtNfo`.
+  - in this case, there is also an urgent number provided by the caller which can be accessed by `response.body.ExtNfo`.
 
 Below is some code snippet for your reference:
 
 ```ts
 const response = await session.reply('I am busy now, can I call you back later?');
-if (response.Bdy.Sts === '0') {
-  const message = `${response.Bdy.Phn} ${response.Bdy.Nm}`;
+if (response.body.Sts === '0') {
+  const message = `${response.body.Phn} ${response.body.Nm}`;
   let description = '';
-  switch (response.Bdy.Resp) {
+  switch (response.body.Resp) {
     case '1':
       description = 'Yes';
       break;
@@ -212,7 +212,7 @@ if (response.Bdy.Sts === '0') {
       description = 'No';
       break;
     case '3':
-      description = `Urgent, please call ${response.Bdy.ExtNfo} immediately!`;
+      description = `Urgent, please call ${response.body.ExtNfo} immediately!`;
       break;
     default:
       break;

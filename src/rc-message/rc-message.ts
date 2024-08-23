@@ -31,9 +31,9 @@ class RcMessage {
   public headers: HDR;
   public body: BDY;
 
-  public constructor(Hdr: HDR, Bdy: BDY) {
-    this.headers = Hdr;
-    this.body = Bdy;
+  public constructor(headers: HDR, body: BDY) {
+    this.headers = headers;
+    this.body = body;
   }
 
   public toXml() {
