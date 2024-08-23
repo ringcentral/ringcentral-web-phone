@@ -50,35 +50,19 @@ class WebPhone extends EventEmitter {
     if (!this.connected) {
       await waitFor({ interval: 100, condition: () => this.connected });
     }
-    const sipRegister = async () => {
-      const requestMessage = new RequestMessage(`REGISTER sip:${this.sipInfo.domain} SIP/2.0`, {
-        'Call-Id': uuid(),
-        Contact: `<sip:${this.fakeEmail};transport=wss>;+sip.instance="<urn:uuid:${this.instanceId}>";expires=60`,
-        From: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>;tag=${uuid()}`,
-        To: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>`,
-        Via: `SIP/2.0/WSS ${this.fakeDomain};branch=${branch()}`,
-      });
-      const inboundMessage = await this.send(requestMessage, true);
-      const wwwAuth = inboundMessage.headers['Www-Authenticate'] || inboundMessage!.headers['WWW-Authenticate'];
-      if (wwwAuth) {
-        const nonce = wwwAuth.match(/, nonce="(.+?)"/)![1];
-        const newMessage = requestMessage.fork();
-        newMessage.headers.Authorization = generateAuthorization(this.sipInfo, nonce, 'REGISTER');
-        await this.send(newMessage, true);
-      } else if (inboundMessage.subject.startsWith('SIP/2.0 603 ')) {
-        throw new Error('Registration failed: ' + inboundMessage.subject);
-      }
-    };
-    await sipRegister();
+    await this.sipRegister();
     if (this.intervalHandle) {
       clearInterval(this.intervalHandle);
     }
     this.intervalHandle = setInterval(
       () => {
-        sipRegister();
+        this.sipRegister();
       },
       1 * 55 * 1000, // refresh registration every 55 seconds, otherwise WS will disconnect
     );
+
+    // listen for incoming calls
+    // todo: what if register called multiple times?
     this.on('message', (inboundMessage) => {
       if (!inboundMessage.subject.startsWith('INVITE sip:')) {
         return;
@@ -110,6 +94,7 @@ class WebPhone extends EventEmitter {
   public async revoke() {
     clearInterval(this.intervalHandle);
     this.removeAllListeners();
+    await this.sipRegister(0);
     this.wsc.close();
   }
 
@@ -143,6 +128,26 @@ class WebPhone extends EventEmitter {
     await outboundCallSession.call(callee, callerId);
     this.emit('outboundCall', outboundCallSession);
     return outboundCallSession;
+  }
+
+  private async sipRegister(expires = 60) {
+    const requestMessage = new RequestMessage(`REGISTER sip:${this.sipInfo.domain} SIP/2.0`, {
+      'Call-Id': uuid(),
+      Contact: `<sip:${this.fakeEmail};transport=wss>;+sip.instance="<urn:uuid:${this.instanceId}>";expires=${expires}`,
+      From: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>;tag=${uuid()}`,
+      To: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>`,
+      Via: `SIP/2.0/WSS ${this.fakeDomain};branch=${branch()}`,
+    });
+    const inboundMessage = await this.send(requestMessage, true);
+    const wwwAuth = inboundMessage.headers['Www-Authenticate'] || inboundMessage!.headers['WWW-Authenticate'];
+    if (wwwAuth) {
+      const nonce = wwwAuth.match(/, nonce="(.+?)"/)![1];
+      const newMessage = requestMessage.fork();
+      newMessage.headers.Authorization = generateAuthorization(this.sipInfo, nonce, 'REGISTER');
+      await this.send(newMessage, true);
+    } else if (inboundMessage.subject.startsWith('SIP/2.0 603 ')) {
+      throw new Error('Registration failed: ' + inboundMessage.subject);
+    }
   }
 }
 
