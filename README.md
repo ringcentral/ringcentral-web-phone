@@ -460,7 +460,19 @@ I would like to say this is more like a bug fix than a behavior change.
 
 Content below is for the maintainers of this project.
 
+### References
+
 - ref: https://www.ietf.org/rfc/rfc3261.txt
+
+### How to test
+
+rename `.env.sample` to `.env` and fill in the correct values.
+You will need two RingCentral extensions to test the SDK, one as the caller and the other as the callee.
+You will need one more number to test call forwarding/transferring.
+
+```
+yarn test
+```
 
 ### Two kinds of special messages
 

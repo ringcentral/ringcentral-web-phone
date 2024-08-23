@@ -10,10 +10,11 @@ import callControlCommands from '../src/rc-message/call-control-commands';
 import type OutboundCallSession from '../src/call-session/outbound';
 import type InboundCallSession from '../src/call-session/inbound';
 
-const callerJwt = process.env.RINGCENTRAL_JWT_TOKEN!;
-const calleeJwt = process.env.RINGCENTRAL_JWT_TOKEN_2!;
-// const callerNumber = process.env.PHONE_NUMBER!;
-const calleeNumber = process.env.PHONE_NUMBER_2!;
+const callerJwt = process.env.CALLER_JWT_TOKEN!;
+const calleeJwt = process.env.CALLEE_JWT_TOKEN!;
+// const callerNumber = process.env.CALLER_NUMBER!;
+const calleeNumber = process.env.CALLEE_NUMBER!;
+const anotherNumber = process.env.ANOTHER_NUMBER!;
 
 declare global {
   interface Window {
@@ -41,7 +42,7 @@ const register = async ({ context, jwt }: { context: BrowserContext; jwt: string
   return { page, messages };
 };
 
-test.skip('registration', async ({ context }) => {
+test('registration', async ({ context }) => {
   const { messages } = await register({ context, jwt: callerJwt });
   expect(messages.length).toBe(6);
   expect(messages.map((m) => m.subject)).toEqual([
@@ -74,7 +75,7 @@ const call = async ({ context }: { context: BrowserContext }) => {
   return { callerPage, calleePage, callerMessages, calleeMessages };
 };
 
-test.skip('call', async ({ context }) => {
+test('call', async ({ context }) => {
   const { callerMessages, calleeMessages } = await call({ context });
 
   // caller
@@ -121,7 +122,7 @@ test.skip('call', async ({ context }) => {
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.ClientReceiveConfirm.toString());
 });
 
-test.skip('decline inbound call', async ({ context }) => {
+test('decline inbound call', async ({ context }) => {
   const { calleePage, callerMessages, calleeMessages } = await call({ context });
   callerMessages.length = 0;
   calleeMessages.length = 0;
@@ -156,7 +157,7 @@ test.skip('decline inbound call', async ({ context }) => {
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.SessionClose.toString());
 });
 
-test.skip('answer inbound call', async ({ context }) => {
+test('answer inbound call', async ({ context }) => {
   const { calleePage, callerMessages, calleeMessages } = await call({ context });
   callerMessages.length = 0;
   calleeMessages.length = 0;
@@ -179,7 +180,7 @@ test.skip('answer inbound call', async ({ context }) => {
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.AlreadyProcessed.toString());
 });
 
-test('to voicemail', async ({ context }) => {
+test('inbound call to voicemail', async ({ context }) => {
   const { calleePage, callerMessages, calleeMessages } = await call({ context });
   callerMessages.length = 0;
   calleeMessages.length = 0;
@@ -209,6 +210,40 @@ test('to voicemail', async ({ context }) => {
   expect(calleeMessages[5].subject.startsWith('CANCEL sip:')).toBeTruthy();
   let rcMessage = await RcMessage.fromXml(calleeMessages[0].body);
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.ClientVoicemail.toString());
+  rcMessage = await RcMessage.fromXml(calleeMessages[3].body);
+  expect(rcMessage.headers.Cmd).toBe(callControlCommands.SessionClose.toString());
+});
+
+test('forward inbound call', async ({ context }) => {
+  const { calleePage, callerMessages, calleeMessages } = await call({ context });
+  callerMessages.length = 0;
+  calleeMessages.length = 0;
+  await calleePage.evaluate(async (anotherNumber) => {
+    await window.inboundCalls[0].forward(anotherNumber);
+  }, anotherNumber);
+  await calleePage.waitForTimeout(1000);
+
+  // caller
+  expect(callerMessages.length).toBe(0);
+
+  // callee
+  expect(calleeMessages.length).toBe(6);
+  expect(calleeMessages.map((m) => m.direction)).toEqual([
+    'outbound',
+    'inbound',
+    'inbound',
+    'inbound',
+    'outbound',
+    'inbound',
+  ]);
+  expect(calleeMessages[0].subject.startsWith('MESSAGE sip:')).toBeTruthy();
+  expect(calleeMessages[1].subject).toBe('SIP/2.0 100 Trying');
+  expect(calleeMessages[2].subject).toBe('SIP/2.0 200 OK');
+  expect(calleeMessages[3].subject.startsWith('MESSAGE sip:')).toBeTruthy();
+  expect(calleeMessages[4].subject).toBe('SIP/2.0 200 OK');
+  expect(calleeMessages[5].subject.startsWith('CANCEL sip:')).toBeTruthy();
+  let rcMessage = await RcMessage.fromXml(calleeMessages[0].body);
+  expect(rcMessage.headers.Cmd).toBe(callControlCommands.ClientForward.toString());
   rcMessage = await RcMessage.fromXml(calleeMessages[3].body);
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.SessionClose.toString());
 });
