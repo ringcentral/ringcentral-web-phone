@@ -1,6 +1,15 @@
-import { DOMParser } from 'xmldom';
+import xml2js from 'xml2js';
 
-const domParser = new DOMParser();
+const parser = new xml2js.Parser({
+  explicitArray: false,
+});
+
+const builder = new xml2js.Builder({
+  renderOpts: {
+    pretty: false,
+  },
+  headless: true,
+});
 
 interface HDR {
   [key: string]: string | undefined;
@@ -10,23 +19,13 @@ interface BDY {
 }
 
 class RcMessage {
-  public static fromXml(_xmlStr: string) {
+  public static async fromXml(_xmlStr: string) {
     let xmlStr = _xmlStr;
     if (xmlStr.startsWith('P-rc: ')) {
       xmlStr = xmlStr.substring(6);
     }
-    const xmlDoc = domParser.parseFromString(xmlStr, 'text/xml');
-    const rcMessage = new RcMessage({}, {});
-    for (const tag of ['Hdr', 'Bdy']) {
-      rcMessage[tag] = {};
-      const element = xmlDoc.getElementsByTagName(tag)[0];
-      // eslint-disable-next-line @typescript-eslint/prefer-for-of
-      for (let i = 0; i < element.attributes.length; i++) {
-        const attr = element.attributes[i];
-        (rcMessage[tag] as HDR | BDY)[attr.nodeName] = attr.nodeValue as string;
-      }
-    }
-    return rcMessage;
+    const parsed = await parser.parseStringPromise(xmlStr);
+    return new RcMessage(parsed.Msg.Hdr.$, parsed.Msg.Bdy.$);
   }
 
   public Hdr: HDR;
@@ -38,18 +37,17 @@ class RcMessage {
   }
 
   public toXml() {
-    return (
-      '<Msg>' +
-      ['Hdr', 'Bdy']
-        .map(
-          (Tag) =>
-            `<${Tag} ${Object.keys(this[Tag])
-              .map((Attr) => `${Attr}="${(this[Tag] as HDR | BDY)[Attr]}"`)
-              .join(' ')}/>`,
-        )
-        .join('') +
-      '</Msg>'
-    );
+    const xml = builder.buildObject({
+      Msg: {
+        Hdr: {
+          $: this.Hdr,
+        },
+        Bdy: {
+          $: this.Bdy,
+        },
+      },
+    });
+    return xml;
   }
 }
 

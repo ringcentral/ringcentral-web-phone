@@ -52,9 +52,9 @@ class InboundCallSession extends CallSession {
   public async reply(text: string): Promise<RcMessage> {
     this.sendRcMessage(callControlCommands.ClientReply, { RepTp: '0', Bdy: text });
     return new Promise((resolve) => {
-      const sessionCloseHandler = (inboundMessage: InboundMessage) => {
+      const sessionCloseHandler = async (inboundMessage: InboundMessage) => {
         if (inboundMessage.subject.startsWith('MESSAGE sip:')) {
-          const rcMessage = RcMessage.fromXml(inboundMessage.body);
+          const rcMessage = await RcMessage.fromXml(inboundMessage.body);
           if (rcMessage.Hdr.Cmd === callControlCommands.SessionClose.toString()) {
             this.webPhone.off('message', sessionCloseHandler);
             resolve(rcMessage);
@@ -113,7 +113,7 @@ class InboundCallSession extends CallSession {
     if (!this.sipMessage.headers['P-rc']) {
       return;
     }
-    const rcMessage = RcMessage.fromXml(this.sipMessage.headers['P-rc']);
+    const rcMessage = await RcMessage.fromXml(this.sipMessage.headers['P-rc']);
     const newRcMessage = new RcMessage(
       {
         SID: rcMessage.Hdr.SID,

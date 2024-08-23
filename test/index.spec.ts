@@ -117,7 +117,7 @@ test('call', async ({ context }) => {
     'inbound',
   ]);
 
-  const rcMessage = RcMessage.fromXml(calleeMessages[3].body);
+  const rcMessage = await RcMessage.fromXml(calleeMessages[3].body);
   expect(rcMessage.Hdr.Cmd).toBe(callControlCommands.ClientReceiveConfirm.toString());
 });
 
@@ -150,8 +150,8 @@ test('decline inbound call', async ({ context }) => {
     'inbound',
   ]);
 
-  let rcMessage = RcMessage.fromXml(calleeMessages[0].body);
+  let rcMessage = await RcMessage.fromXml(calleeMessages[0].body);
   expect(rcMessage.Hdr.Cmd).toBe(callControlCommands.ClientReject.toString());
-  rcMessage = RcMessage.fromXml(calleeMessages[3].body);
+  rcMessage = await RcMessage.fromXml(calleeMessages[3].body);
   expect(rcMessage.Hdr.Cmd).toBe(callControlCommands.SessionClose.toString());
 });

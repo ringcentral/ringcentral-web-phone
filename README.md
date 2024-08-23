@@ -346,7 +346,6 @@ await callSession.sendDTMF(dtmf);
 You may subscribe to events, examples:
 
 ```ts
-
 webPhone.on('message', (inboundMessage: InboundMessage) => {
   // do something with the inbound SIP message
 });
@@ -375,7 +374,6 @@ callSession.on('disposed', () => {
   - no payload
 - disposed
   - no payload
-
 
 ## Conference
 
