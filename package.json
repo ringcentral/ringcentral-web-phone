@@ -16,6 +16,7 @@
     "test": "NODE_OPTIONS=--require=dotenv-override-true/config playwright test --workers=1"
   },
   "dependencies": {
+    "@rc-ex/core": "^1.4.0",
     "blueimp-md5": "^2.19.0",
     "manate": "^0.6.5",
     "sdp-transform": "^2.14.2",
@@ -25,7 +26,6 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.46.1",
-    "@rc-ex/core": "^1.4.0",
     "@types/blueimp-md5": "^2.18.2",
     "@types/node": "^22.5.0",
     "@types/sdp-transform": "^2.4.9",

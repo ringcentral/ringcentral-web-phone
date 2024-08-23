@@ -28,7 +28,7 @@ class OutboundCallSession extends CallSession {
       `INVITE sip:${callee}@${this.webPhone.sipInfo.domain} SIP/2.0`,
       {
         'Call-Id': uuid(),
-        Contact: `<sip:${this.webPhone.fakeEmail};transport=wss>;expires=600`,
+        Contact: `<sip:${this.webPhone.fakeEmail};transport=wss>;expires=60`,
         From: `<sip:${this.webPhone.sipInfo.username}@${this.webPhone.sipInfo.domain}>;tag=${uuid()}`,
         To: `<sip:${callee}@${this.webPhone.sipInfo.domain}>`,
         Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,

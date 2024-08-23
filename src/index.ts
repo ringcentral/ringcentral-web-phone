@@ -53,7 +53,7 @@ class WebPhone extends EventEmitter {
     const sipRegister = async () => {
       const requestMessage = new RequestMessage(`REGISTER sip:${this.sipInfo.domain} SIP/2.0`, {
         'Call-Id': uuid(),
-        Contact: `<sip:${this.fakeEmail};transport=wss>;+sip.instance="<urn:uuid:${this.instanceId}>";expires=600`,
+        Contact: `<sip:${this.fakeEmail};transport=wss>;+sip.instance="<urn:uuid:${this.instanceId}>";expires=60`,
         From: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>;tag=${uuid()}`,
         To: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>`,
         Via: `SIP/2.0/WSS ${this.fakeDomain};branch=${branch()}`,
@@ -70,11 +70,14 @@ class WebPhone extends EventEmitter {
       }
     };
     await sipRegister();
+    if (this.intervalHandle) {
+      clearInterval(this.intervalHandle);
+    }
     this.intervalHandle = setInterval(
       () => {
         sipRegister();
       },
-      1 * 60 * 1000, // refresh registration every 1 minute, otherwise WS will disconnect
+      1 * 55 * 1000, // refresh registration every 55 seconds, otherwise WS will disconnect
     );
     this.on('message', (inboundMessage) => {
       if (!inboundMessage.subject.startsWith('INVITE sip:')) {
