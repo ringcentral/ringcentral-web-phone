@@ -16,18 +16,18 @@ declare global {
   }
 }
 
-export const callerJwt = process.env.CALLER_JWT_TOKEN!;
-export const calleeJwt = process.env.CALLEE_JWT_TOKEN!;
+export const callerSipInfo = process.env.CALLER_SIP_INFO!;
+export const calleeSipInfo = process.env.CALLEE_SIP_INFO!;
 export const callerNumber = process.env.CALLER_NUMBER!;
 export const calleeNumber = process.env.CALLEE_NUMBER!;
 export const anotherNumber = process.env.ANOTHER_NUMBER!;
 
-export const register = async ({ context, jwt }: { context: BrowserContext; jwt: string }) => {
+export const register = async ({ context, sipInfo }: { context: BrowserContext; sipInfo: string }) => {
   const page = await context.newPage();
   await page.goto('/');
-  await page.evaluate(async (jwt) => {
-    await window.initWebPhone(jwt);
-  }, jwt);
+  await page.evaluate(async (sipInfo) => {
+    await window.initWebPhone(sipInfo);
+  }, sipInfo);
   const messages: SipMessage[] = [];
   page.once('websocket', (ws) => {
     ws.on('framesent', (frame) => messages.push(OutboundMessage.fromString(frame.payload as string)));
@@ -40,8 +40,8 @@ export const register = async ({ context, jwt }: { context: BrowserContext; jwt:
 };
 
 export const call = async ({ context }: { context: BrowserContext }) => {
-  const { page: callerPage, messages: callerMessages } = await register({ context, jwt: callerJwt });
-  const { page: calleePage, messages: calleeMessages } = await register({ context, jwt: calleeJwt });
+  const { page: callerPage, messages: callerMessages } = await register({ context, sipInfo: callerSipInfo });
+  const { page: calleePage, messages: calleeMessages } = await register({ context, sipInfo: calleeSipInfo });
   callerMessages.length = 0;
   calleeMessages.length = 0;
   await callerPage.evaluate(
