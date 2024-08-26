@@ -16,7 +16,7 @@ testTwoPages('forward inbound call', async ({ callerResource, calleeResource }) 
   expect(callerMessages.length).toBe(0);
 
   // callee
-  expect(calleeMessages.length).toBe(6);
+  expect(calleeMessages.length).toBe(7);
   expect(calleeMessages.map((m) => m.direction)).toEqual([
     'outbound',
     'inbound',
@@ -24,6 +24,7 @@ testTwoPages('forward inbound call', async ({ callerResource, calleeResource }) 
     'inbound',
     'outbound',
     'inbound',
+    'outbound',
   ]);
   expect(calleeMessages[0].subject.startsWith('MESSAGE sip:')).toBeTruthy();
   expect(calleeMessages[1].subject).toBe('SIP/2.0 100 Trying');
@@ -31,6 +32,7 @@ testTwoPages('forward inbound call', async ({ callerResource, calleeResource }) 
   expect(calleeMessages[3].subject.startsWith('MESSAGE sip:')).toBeTruthy();
   expect(calleeMessages[4].subject).toBe('SIP/2.0 200 OK');
   expect(calleeMessages[5].subject.startsWith('CANCEL sip:')).toBeTruthy();
+  expect(calleeMessages[6].subject).toBe('SIP/2.0 200 OK');
   let rcMessage = await RcMessage.fromXml(calleeMessages[0].body);
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.ClientForward.toString());
   rcMessage = await RcMessage.fromXml(calleeMessages[3].body);

@@ -46,6 +46,7 @@ export const testOnePage = test.extend<{ pageResource: PageResource }>({
     await page.evaluate(async () => {
       await window.teardown();
     });
+    await page.waitForTimeout(1000); // wait for the teardown to finish
   },
 });
 
@@ -71,6 +72,7 @@ export const testTwoPages = test.extend<{
     await page.evaluate(async () => {
       await window.teardown();
     });
+    await page.waitForTimeout(1000); // wait for the teardown to finish
   },
   calleeResource: async ({ context }, use) => {
     const page = await context.newPage();
@@ -90,6 +92,7 @@ export const testTwoPages = test.extend<{
     await page.evaluate(async () => {
       await window.teardown();
     });
+    await page.waitForTimeout(1000); // wait for the teardown to finish
   },
 });
 

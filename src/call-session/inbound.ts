@@ -18,12 +18,14 @@ class InboundCallSession extends CallSession {
     this.emit('ringing');
 
     // caller can cancel the call
-    const cancelHandler = (inboundMessage: InboundMessage) => {
+    const cancelHandler = async (inboundMessage: InboundMessage) => {
       if (inboundMessage.headers['Call-Id'] !== this.callId) {
         return;
       }
       if (inboundMessage.subject.startsWith('CANCEL sip:')) {
         this.webPhone.off('message', cancelHandler);
+        const responseMessage = new ResponseMessage(inboundMessage, { responseCode: 200 });
+        await this.webPhone.send(responseMessage);
         this.dispose();
       }
     };
