@@ -1,11 +1,11 @@
 import { expect } from '@playwright/test';
 
-import { calleeNumber, callerNumber, quickCall, testTwoPages } from './common';
+import { calleeNumber, callerNumber, call, testTwoPages } from './common';
 import RcMessage from '../src/rc-message/rc-message';
 import callControlCommands from '../src/rc-message/call-control-commands';
 
 testTwoPages('call', async ({ callerResource, calleeResource }) => {
-  const { callerMessages, calleeMessages } = await quickCall(callerResource, calleeResource, true);
+  const { callerMessages, calleeMessages } = await call(callerResource, calleeResource, true);
 
   // caller
   expect(callerMessages.length).toBe(8);

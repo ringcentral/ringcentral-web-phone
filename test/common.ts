@@ -96,7 +96,7 @@ export const testTwoPages = test.extend<{
   },
 });
 
-export const quickCall = async (callerResource: PageResource, calleeResource: PageResource, keepMessages = false) => {
+export const call = async (callerResource: PageResource, calleeResource: PageResource, keepMessages = false) => {
   const { page: callerPage, messages: callerMessages } = callerResource;
   const { page: calleePage, messages: calleeMessages } = calleeResource;
   await callerPage.evaluate(
@@ -110,5 +110,16 @@ export const quickCall = async (callerResource: PageResource, calleeResource: Pa
     callerMessages.length = 0;
     calleeMessages.length = 0;
   }
+  return { callerPage, calleePage, callerMessages, calleeMessages };
+};
+
+export const callAndAnswer = async (callerResource: PageResource, calleeResource: PageResource) => {
+  const { callerPage, calleePage, callerMessages, calleeMessages } = await call(callerResource, calleeResource);
+  await calleePage.evaluate(async () => {
+    await window.inboundCalls[0].answer();
+  });
+  await callerPage.waitForTimeout(1000);
+  callerMessages.length = 0;
+  calleeMessages.length = 0;
   return { callerPage, calleePage, callerMessages, calleeMessages };
 };

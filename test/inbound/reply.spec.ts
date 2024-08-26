@@ -1,11 +1,11 @@
 import { expect } from '@playwright/test';
 
-import { anotherNumber, quickCall, testTwoPages } from '../common';
+import { anotherNumber, call, testTwoPages } from '../common';
 import RcMessage from '../../src/rc-message/rc-message';
 import callControlCommands from '../../src/rc-message/call-control-commands';
 
 testTwoPages('start reply', async ({ callerResource, calleeResource }) => {
-  const { calleePage, callerMessages, calleeMessages } = await quickCall(callerResource, calleeResource);
+  const { calleePage, callerMessages, calleeMessages } = await call(callerResource, calleeResource);
 
   // start reply
   await calleePage.evaluate(async () => {
@@ -27,7 +27,7 @@ testTwoPages('start reply', async ({ callerResource, calleeResource }) => {
 });
 
 testTwoPages('reply with yes', async ({ callerResource, calleeResource }) => {
-  const { callerPage, calleePage, callerMessages, calleeMessages } = await quickCall(callerResource, calleeResource);
+  const { callerPage, calleePage, callerMessages, calleeMessages } = await call(callerResource, calleeResource);
 
   // start reply
   await calleePage.evaluate(async () => {
@@ -81,7 +81,7 @@ testTwoPages('reply with yes', async ({ callerResource, calleeResource }) => {
 });
 
 testTwoPages('reply with urgent', async ({ callerResource, calleeResource }) => {
-  const { callerPage, calleePage, callerMessages, calleeMessages } = await quickCall(callerResource, calleeResource);
+  const { callerPage, calleePage, callerMessages, calleeMessages } = await call(callerResource, calleeResource);
 
   // start reply
   await calleePage.evaluate(async () => {
