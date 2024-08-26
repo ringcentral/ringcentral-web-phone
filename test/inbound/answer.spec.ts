@@ -1,13 +1,12 @@
-import test, { expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 
 import RcMessage from '../../src/rc-message/rc-message';
 import callControlCommands from '../../src/rc-message/call-control-commands';
-import { call } from '../common';
+import { quickCall, testTwoPages } from '../common';
 
-test('answer inbound call', async ({ context }) => {
-  const { calleePage, callerMessages, calleeMessages } = await call({ context });
-  callerMessages.length = 0;
-  calleeMessages.length = 0;
+testTwoPages('answer inbound call', async ({ callerResource, calleeResource }) => {
+  const { calleePage, callerMessages, calleeMessages } = await quickCall(callerResource, calleeResource);
+
   await calleePage.evaluate(async () => {
     await window.inboundCalls[0].answer();
   });

@@ -1,13 +1,11 @@
-import test, { expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 
-import { anotherNumber, call } from '../common';
+import { anotherNumber, quickCall, testTwoPages } from '../common';
 import RcMessage from '../../src/rc-message/rc-message';
 import callControlCommands from '../../src/rc-message/call-control-commands';
 
-test('start reply', async ({ context }) => {
-  const { calleePage, callerMessages, calleeMessages } = await call({ context });
-  callerMessages.length = 0;
-  calleeMessages.length = 0;
+testTwoPages('start reply', async ({ callerResource, calleeResource }) => {
+  const { calleePage, callerMessages, calleeMessages } = await quickCall(callerResource, calleeResource);
 
   // start reply
   await calleePage.evaluate(async () => {
@@ -28,8 +26,8 @@ test('start reply', async ({ context }) => {
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.ClientStartReply.toString());
 });
 
-test('reply with yes', async ({ context }) => {
-  const { callerPage, calleePage, callerMessages, calleeMessages } = await call({ context });
+testTwoPages('reply with yes', async ({ callerResource, calleeResource }) => {
+  const { callerPage, calleePage, callerMessages, calleeMessages } = await quickCall(callerResource, calleeResource);
 
   // start reply
   await calleePage.evaluate(async () => {
@@ -80,8 +78,8 @@ test('reply with yes', async ({ context }) => {
   expect(rcMessage.body.Resp).toBe('1');
 });
 
-test('reply with urgent', async ({ context }) => {
-  const { callerPage, calleePage, callerMessages, calleeMessages } = await call({ context });
+testTwoPages('reply with urgent', async ({ callerResource, calleeResource }) => {
+  const { callerPage, calleePage, callerMessages, calleeMessages } = await quickCall(callerResource, calleeResource);
 
   // start reply
   await calleePage.evaluate(async () => {

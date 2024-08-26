@@ -1,9 +1,12 @@
-import test, { expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 
-import { register, callerSipInfo } from './common';
+import { testOnePage } from './common';
 
-test('registration', async ({ context }) => {
-  const { messages } = await register({ context, sipInfo: callerSipInfo });
+testOnePage('register', async ({ pageResource }) => {
+  const { page, messages } = pageResource;
+  await page.evaluate(async () => {
+    await window.webPhone.register();
+  });
   expect(messages.length).toBe(6);
   expect(messages.map((m) => m.subject)).toEqual([
     'REGISTER sip:sip.ringcentral.com SIP/2.0',
@@ -21,13 +24,17 @@ test('registration', async ({ context }) => {
     'inbound',
     'inbound',
   ]);
+  expect(messages[0].headers.Contact.endsWith(';expires=60')).toBeTruthy();
 });
 
-test('revoke', async ({ context }) => {
-  const { messages, page } = await register({ context, sipInfo: callerSipInfo });
+testOnePage('dispose', async ({ pageResource }) => {
+  const { page, messages } = pageResource;
+  await page.evaluate(async () => {
+    await window.webPhone.register();
+  });
   messages.length = 0;
   await page.evaluate(async () => {
-    await window.webPhone.revoke();
+    await window.webPhone.dispose();
   });
   await page.waitForTimeout(2000);
   expect(messages.length).toBe(6);
@@ -47,4 +54,5 @@ test('revoke', async ({ context }) => {
     'inbound',
     'inbound',
   ]);
+  expect(messages[0].headers.Contact.endsWith(';expires=0')).toBeTruthy();
 });

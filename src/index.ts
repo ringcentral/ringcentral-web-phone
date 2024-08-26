@@ -26,6 +26,7 @@ class WebPhone extends EventEmitter {
 
   private intervalHandle: NodeJS.Timeout;
   private connected = false;
+  private disposed = false;
 
   public constructor(options: WebPhoneOptions) {
     super();
@@ -91,7 +92,11 @@ class WebPhone extends EventEmitter {
     };
   }
 
-  public async revoke() {
+  public async dispose() {
+    if (this.disposed) {
+      return;
+    }
+    this.disposed = true;
     clearInterval(this.intervalHandle);
     this.removeAllListeners();
     await this.sipRegister(0);

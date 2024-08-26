@@ -1,13 +1,12 @@
-import test, { expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 
-import { anotherNumber, call } from '../common';
+import { anotherNumber, quickCall, testTwoPages } from '../common';
 import RcMessage from '../../src/rc-message/rc-message';
 import callControlCommands from '../../src/rc-message/call-control-commands';
 
-test('forward inbound call', async ({ context }) => {
-  const { calleePage, callerMessages, calleeMessages } = await call({ context });
-  callerMessages.length = 0;
-  calleeMessages.length = 0;
+testTwoPages('forward inbound call', async ({ callerResource, calleeResource }) => {
+  const { calleePage, callerMessages, calleeMessages } = await quickCall(callerResource, calleeResource);
+
   await calleePage.evaluate(async (anotherNumber) => {
     await window.inboundCalls[0].forward(anotherNumber);
   }, anotherNumber);
