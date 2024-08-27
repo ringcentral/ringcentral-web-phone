@@ -1,12 +1,10 @@
-import type SipInfoResponse from '@rc-ex/core/lib/definitions/SipInfoResponse';
 import waitFor from 'wait-for-async';
-import { manage } from 'manate';
-import type { Managed } from 'manate/models';
 
 import type OutboundMessage from './sip-message/outbound';
 import InboundMessage from './sip-message/inbound';
 import RequestMessage from './sip-message/outbound/request';
 import ResponseMessage from './sip-message/outbound/response';
+import type { SipInfo } from './utils';
 import { branch, generateAuthorization, uuid } from './utils';
 import InboundCallSession from './call-session/inbound';
 import OutboundCallSession from './call-session/outbound';
@@ -14,19 +12,19 @@ import EventEmitter from './event-emitter';
 import type CallSession from './call-session';
 
 interface WebPhoneOptions {
-  sipInfo: SipInfoResponse;
+  sipInfo: SipInfo;
   instanceId?: string; // ref: https://docs.oracle.com/cd/E95618_01/html/sbc_scz810_acliconfiguration/GUID-B2A15693-DA4A-4E24-86D4-58B19435F4DA.htm
 }
 
 class WebPhone extends EventEmitter {
-  public sipInfo: SipInfoResponse;
+  public sipInfo: SipInfo;
   public wsc: WebSocket;
 
   public fakeDomain = uuid() + '.invalid';
   public fakeEmail = uuid() + '@' + this.fakeDomain;
   public instanceId: string;
 
-  public callSessions: Managed<CallSession>[];
+  public callSessions: CallSession[] = [];
 
   private intervalHandle: NodeJS.Timeout;
   private connected = false;
@@ -36,7 +34,6 @@ class WebPhone extends EventEmitter {
     super();
     this.sipInfo = options.sipInfo;
     this.instanceId = options.instanceId ?? this.sipInfo.authorizationId!;
-    this.callSessions = manage([]);
     this.wsc = new WebSocket('wss://' + this.sipInfo.outboundProxy, 'sip');
     this.wsc.onopen = () => {
       this.connected = true;
@@ -89,8 +86,9 @@ class WebPhone extends EventEmitter {
       if (!inboundMessage.subject.startsWith('INVITE sip:')) {
         return;
       }
-      const inboundCallSession = manage(new InboundCallSession(this, inboundMessage));
-      this.callSessions.push(inboundCallSession);
+      this.callSessions.push(new InboundCallSession(this, inboundMessage));
+      // write it this way so that it will be compatible with manate, inboundCallSession will be managed
+      const inboundCallSession = this.callSessions[this.callSessions.length - 1] as InboundCallSession;
       this.emit('inboundCall', inboundCallSession);
 
       // tell SIP server that we are ringing
@@ -150,10 +148,11 @@ class WebPhone extends EventEmitter {
 
   // make an outbound call
   public async call(callee: string, callerId?: string) {
-    const outboundCallSession = manage(new OutboundCallSession(this));
+    this.callSessions.push(new OutboundCallSession(this));
+    // write it this way so that it will be compatible with manate, outboundCallSession will be managed
+    const outboundCallSession = this.callSessions[this.callSessions.length - 1] as OutboundCallSession;
     await outboundCallSession.init();
     await outboundCallSession.call(callee, callerId);
-    this.callSessions.push(outboundCallSession);
     this.emit('outboundCall', outboundCallSession);
     return outboundCallSession;
   }

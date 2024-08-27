@@ -1,6 +1,6 @@
 {
   "name": "ringcentral-web-phone",
-  "version": "2.0.0-alpha.8",
+  "version": "2.0.0-alpha.9",
   "repository": {
     "type": "git",
     "url": "https://github.com/tylerlong/ringcentral-web-phone-2.git"
@@ -16,9 +16,7 @@
     "test": "NODE_OPTIONS=--require=dotenv-override-true/config playwright test --workers=1"
   },
   "dependencies": {
-    "@rc-ex/core": "^1.4.0",
     "blueimp-md5": "^2.19.0",
-    "manate": "^0.7.1",
     "sdp-transform": "^2.14.2",
     "uuid": "^10.0.0",
     "wait-for-async": "^0.6.1",
