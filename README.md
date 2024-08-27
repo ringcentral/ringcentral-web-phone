@@ -13,7 +13,7 @@ It is NOT yet producion ready. It is still in development.
 
 This SDK assumes that you have basic knowledge of RingCentral Platform. You have created a RingCentral app and you know how to invoke RingCentral APIs. If you don't know how to do that, please read the following document first: https://developers.ringcentral.com/guide/voice/call-log/quick-start. The document is about how to create a RingCentral app and how to use the RingCentral API to access call log data. It is a good starting point for you to understand the RingCentral API. This SDK doesn't use/require call log API, the document is just for you to get familiar with RingCentral API.
 
-This SDK assumes that you can use RingCentral SDKs to generate RingCentral API access token and manage the token. This SDK assumes that you know how to invoke [Device SIP Registration](https://developers.ringcentral.com/api-reference/Device-SIP-Registration/createSIPRegistration) to get a `SIPInfo` object.
+This SDK assumes that you know how to invoke [Device SIP Registration](https://developers.ringcentral.com/api-reference/Device-SIP-Registration/createSIPRegistration) to get a `sipInfo` object.
 
 With `@ringcentral/sdk`, it is done like this:
 
@@ -36,7 +36,9 @@ const main = async () => {
   const jsonData = await r.json();
   const sipInfo = jsonData.sipInfo[0];
   console.log(sipInfo); // this is what we need
-  await rc.logout(); // Web Phone SDK doesn't need a long-living access token, you MAY logout after getting sipInfo
+
+  const deviceId = jsonData.device.id; // Web Phone SDK doesn't need `deviceId`, just for your information.
+  await rc.logout(); // Web Phone SDK doesn't need a long-living Restful API access token, you MAY logout
 };
 main();
 ```
@@ -65,10 +67,16 @@ const main = async () => {
     });
   const sipInfo = r.sipInfo![0];
   console.log(sipInfo); // this is what we need
-  await rc.revoke(); // Web Phone SDK doesn't need a long-living access token, you MAY logout after getting sipInfo
+
+  const deviceId = r.device!.id; // Web Phone SDK doesn't need `deviceId`, just for your information.
+  await rc.revoke(); // Web Phone SDK doesn't need a long-living Restful API access token, you MAY logout
 };
 main();
 ```
+
+Please note that, you may save and re-use `sipInfo` for a long time. You don't need to invoke `Device SIP Registration` every time you start the web phone.
+
+In the sample code above, I also showed you how to get the `deviceId`. Web Phone SDK doesn't need `deviceId`, it is just for your information. Just in case you may need it for [RingCentral Call Control API](https://developers.ringcentral.com/api-reference/Call-Control/createCallOutCallSession).
 
 ## Installation
 
