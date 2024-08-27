@@ -1,6 +1,6 @@
 {
   "name": "ringcentral-web-phone",
-  "version": "2.0.0-alpha.7",
+  "version": "2.0.0-alpha.8",
   "repository": {
     "type": "git",
     "url": "https://github.com/tylerlong/ringcentral-web-phone-2.git"
@@ -48,7 +48,7 @@
     "stream-browserify": "^3.0.0",
     "string_decoder": "^1.3.0",
     "timers-browserify": "^2.0.12",
-    "tsx": "^4.18.0",
+    "tsx": "^4.19.0",
     "ttpt": "^0.12.0",
     "typescript": "^5.5.4",
     "yarn-upgrade-all": "^0.7.4"

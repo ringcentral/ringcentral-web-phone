@@ -504,4 +504,3 @@ In an ongoing call (either inbound or outbound), client may send special message
 - How to decouple SIP from WebRTC?
 - generate api reference
 - outbound call after sipRegister(0)?
-- properly handle BYE/CANCEL to dispose

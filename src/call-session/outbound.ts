@@ -70,20 +70,6 @@ class OutboundCallSession extends CallSession {
       }
     };
     this.webPhone.on('message', answerHandler);
-
-    // when the call is terminated
-    this.once('answered', async () => {
-      const byeHandler = (inboundMessage: InboundMessage) => {
-        if (inboundMessage.headers['Call-Id'] !== this.callId) {
-          return;
-        }
-        if (inboundMessage.headers.CSeq.endsWith(' BYE')) {
-          this.webPhone.off('message', byeHandler);
-          this.dispose();
-        }
-      };
-      this.webPhone.on('message', byeHandler);
-    });
   }
 
   public async cancel() {

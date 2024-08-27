@@ -16,18 +16,6 @@ class InboundCallSession extends CallSession {
     this.direction = 'inbound';
     this.state = 'ringing';
     this.emit('ringing');
-
-    // caller can cancel the call
-    const cancelHandler = async (inboundMessage: InboundMessage) => {
-      if (inboundMessage.headers['Call-Id'] !== this.callId) {
-        return;
-      }
-      if (inboundMessage.subject.startsWith('CANCEL sip:')) {
-        this.webPhone.off('message', cancelHandler);
-        this.dispose();
-      }
-    };
-    this.webPhone.on('message', cancelHandler);
   }
 
   public async confirmReceive() {
@@ -93,17 +81,6 @@ class InboundCallSession extends CallSession {
 
     this.state = 'answered';
     this.emit('answered');
-
-    const byeHandler = (inboundMessage: InboundMessage) => {
-      if (inboundMessage.headers['Call-Id'] !== this.callId) {
-        return;
-      }
-      if (inboundMessage.headers.CSeq.endsWith(' BYE')) {
-        this.webPhone.off('message', byeHandler);
-        this.dispose();
-      }
-    };
-    this.webPhone.on('message', byeHandler);
   }
 
   protected async sendRcMessage(

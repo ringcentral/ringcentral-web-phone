@@ -158,6 +158,9 @@ abstract class CallSession extends EventEmitter {
         this.webPhone.off('message', parkHandler);
         if (response.result.code === 0) {
           // park success, dispose the call session
+          // this one is special, normally we can dispose call sessions based on inbound/outbound BYE/CANCEL messages
+          // But server side won't send us any BYE/CANCEL upon call park success
+          // so we have to explicitly dispose the call session here
           this.dispose();
         }
         resolve(response.result);
@@ -188,6 +191,14 @@ abstract class CallSession extends EventEmitter {
     }
     const sender = senders[0];
     sender.dtmf?.insertDTMF(tones, duration, interToneGap);
+  }
+
+  public dispose() {
+    this.rtcPeerConnection?.close();
+    this.audioElement?.remove();
+    this.mediaStream?.getTracks().forEach((track) => track.stop());
+    this.state = 'disposed';
+    this.emit('disposed');
   }
 
   // for mute/unmute
@@ -235,14 +246,6 @@ abstract class CallSession extends EventEmitter {
       CSeq: replyMessage.headers.CSeq.replace(' INVITE', ' ACK'),
     });
     this.webPhone.send(ackMessage);
-  }
-
-  protected dispose() {
-    this.rtcPeerConnection?.close();
-    this.audioElement?.remove();
-    this.mediaStream?.getTracks().forEach((track) => track.stop());
-    this.state = 'disposed';
-    this.emit('disposed');
   }
 
   protected async sendJsonMessage(jsonBody: string) {
