@@ -2,7 +2,6 @@ import sdpTransform from 'sdp-transform';
 
 import EventEmitter from '../event-emitter';
 import RequestMessage from '../sip-message/outbound/request';
-import ResponseMessage from '../sip-message/outbound/response';
 import type InboundMessage from '../sip-message/inbound';
 import type WebPhone from '..';
 import { branch, extractAddress, extractNumber, extractTag, uuid } from '../utils';
@@ -134,8 +133,6 @@ abstract class CallSession extends EventEmitter {
         if (!response || response.reqid !== reqid || response.command !== 'callflip') {
           return;
         }
-        const responseMessage = new ResponseMessage(inboundMessage, { responseCode: 200 });
-        this.webPhone.send(responseMessage);
         this.webPhone.off('message', flipHandler);
         // note: we can't dispose the call session here
         // otherwise the caller will not be able to talk to the flip target
@@ -158,8 +155,6 @@ abstract class CallSession extends EventEmitter {
         if (!response || response.reqid !== reqid || response.command !== 'callpark') {
           return;
         }
-        const responseMessage = new ResponseMessage(inboundMessage, { responseCode: 200 });
-        this.webPhone.send(responseMessage);
         this.webPhone.off('message', parkHandler);
         if (response.result.code === 0) {
           // park success, dispose the call session
@@ -275,18 +270,6 @@ abstract class CallSession extends EventEmitter {
       'Referred-By': `<${extractAddress(this.localPeer)}>`,
     });
     this.webPhone.send(requestMessage);
-    // reply to those NOTIFY messages
-    const notifyHandler = (inboundMessage: InboundMessage) => {
-      if (!inboundMessage.subject.startsWith('NOTIFY ')) {
-        return;
-      }
-      const responseMessage = new ResponseMessage(inboundMessage, { responseCode: 200 });
-      this.webPhone.send(responseMessage);
-      if (inboundMessage.body.trim() === 'SIP/2.0 200 OK') {
-        this.webPhone.off('message', notifyHandler);
-      }
-    };
-    this.webPhone.on('message', notifyHandler);
   }
 }
 

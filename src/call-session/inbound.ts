@@ -24,8 +24,6 @@ class InboundCallSession extends CallSession {
       }
       if (inboundMessage.subject.startsWith('CANCEL sip:')) {
         this.webPhone.off('message', cancelHandler);
-        const responseMessage = new ResponseMessage(inboundMessage, { responseCode: 200 });
-        await this.webPhone.send(responseMessage);
         this.dispose();
       }
     };

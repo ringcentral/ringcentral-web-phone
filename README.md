@@ -494,7 +494,6 @@ In an ongoing call (either inbound or outbound), client may send special message
 
 - create some slides to talk about the reasoning for getting rid of SIP.js
 - How to decouple SIP from WebRTC?
-- Dispose after every test case?
-  - call webPhone.dispose();
 - generate api reference
 - outbound call after sipRegister(0)?
+- properly handle BYE/CANCEL to dispose
