@@ -13,16 +13,16 @@ testTwoPages('caller hang up', async ({ callerResource, calleeResource }) => {
   await callerPage.evaluate(async () => {
     await window.outboundCalls[0].hangup();
   });
-  await callerPage.waitForTimeout(1000);
+  await callerPage.waitForTimeout(500);
 
   // caller
-  expect(callerMessages.length).toBe(2);
+  expect(callerMessages).toHaveLength(2);
   expect(callerMessages.map((m) => m.direction)).toEqual(['outbound', 'inbound']);
   expect(callerMessages[0].subject.startsWith('BYE sip:')).toBeTruthy();
   expect(callerMessages[1].subject).toBe('SIP/2.0 200 OK');
 
   // callee
-  expect(calleeMessages.length).toBe(4);
+  expect(calleeMessages).toHaveLength(4);
   expect(calleeMessages.map((m) => m.direction)).toEqual(['inbound', 'outbound', 'inbound', 'outbound']);
   expect(calleeMessages[0].subject.startsWith('BYE sip:')).toBeTruthy();
   expect(calleeMessages[1].subject).toBe('SIP/2.0 200 OK');

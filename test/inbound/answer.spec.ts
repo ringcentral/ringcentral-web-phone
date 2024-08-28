@@ -10,13 +10,13 @@ testTwoPages('answer inbound call', async ({ callerResource, calleeResource }) =
   await calleePage.evaluate(async () => {
     await window.inboundCalls[0].answer();
   });
-  await calleePage.waitForTimeout(1000);
+  await calleePage.waitForTimeout(500);
 
   // caller
-  expect(callerMessages.length).toBe(0);
+  expect(callerMessages).toHaveLength(0);
 
   // callee
-  expect(calleeMessages.length).toBe(4);
+  expect(calleeMessages).toHaveLength(4);
   expect(calleeMessages.map((m) => m.direction)).toEqual(['outbound', 'inbound', 'inbound', 'outbound']);
   expect(calleeMessages[0].subject).toBe('SIP/2.0 200 OK');
   expect(calleeMessages[1].subject.startsWith('ACK sip:')).toBeTruthy();

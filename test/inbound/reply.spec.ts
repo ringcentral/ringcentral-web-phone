@@ -11,13 +11,13 @@ testTwoPages('start reply', async ({ callerResource, calleeResource }) => {
   await calleePage.evaluate(async () => {
     await window.inboundCalls[0].startReply();
   });
-  await calleePage.waitForTimeout(1000);
+  await calleePage.waitForTimeout(500);
 
   // caller
-  expect(callerMessages.length).toBe(0);
+  expect(callerMessages).toHaveLength(0);
 
   // callee
-  expect(calleeMessages.length).toBe(3);
+  expect(calleeMessages).toHaveLength(3);
   expect(calleeMessages.map((m) => m.direction)).toEqual(['outbound', 'inbound', 'inbound']);
   expect(calleeMessages[0].subject.startsWith('MESSAGE sip:')).toBeTruthy();
   expect(calleeMessages[1].subject).toBe('SIP/2.0 100 Trying');
@@ -35,7 +35,7 @@ testTwoPages('reply with yes', async ({ callerResource, calleeResource }) => {
   await calleePage.evaluate(async () => {
     await window.inboundCalls[0].startReply();
   });
-  await calleePage.waitForTimeout(1000);
+  await calleePage.waitForTimeout(500);
 
   // reply
   callerMessages.length = 0;
@@ -45,19 +45,19 @@ testTwoPages('reply with yes', async ({ callerResource, calleeResource }) => {
   calleePage.evaluate(async () => {
     await window.inboundCalls[0].reply('Hello world!');
   });
-  await calleePage.waitForTimeout(1000);
+  await calleePage.waitForTimeout(500);
 
   // caller press '3': Yes
   await callerPage.evaluate(async () => {
     await window.outboundCalls[0].sendDtmf('3');
   });
-  await callerPage.waitForTimeout(1000);
+  await callerPage.waitForTimeout(500);
 
   // caller
-  expect(callerMessages.length).toBe(0);
+  expect(callerMessages).toHaveLength(0);
 
   // callee
-  expect(calleeMessages.length).toBe(7);
+  expect(calleeMessages).toHaveLength(7);
   expect(calleeMessages.map((m) => m.direction)).toEqual([
     'outbound',
     'inbound',
@@ -91,7 +91,7 @@ testTwoPages('reply with urgent', async ({ callerResource, calleeResource }) => 
   await calleePage.evaluate(async () => {
     await window.inboundCalls[0].startReply();
   });
-  await calleePage.waitForTimeout(1000);
+  await calleePage.waitForTimeout(500);
 
   // reply
   callerMessages.length = 0;
@@ -101,13 +101,13 @@ testTwoPages('reply with urgent', async ({ callerResource, calleeResource }) => 
   calleePage.evaluate(async () => {
     await window.inboundCalls[0].reply('Hello world!');
   });
-  await calleePage.waitForTimeout(1000);
+  await calleePage.waitForTimeout(500);
 
   // caller press '5': Urgent
   await callerPage.evaluate(async () => {
     window.outboundCalls[0].sendDtmf('5');
   });
-  await callerPage.waitForTimeout(1000);
+  await callerPage.waitForTimeout(500);
   // caller specify callback number
   await callerPage.evaluate(async (anotherNumber) => {
     window.outboundCalls[0].sendDtmf(`${anotherNumber}#`);
@@ -117,13 +117,13 @@ testTwoPages('reply with urgent', async ({ callerResource, calleeResource }) => 
   await callerPage.evaluate(async () => {
     window.outboundCalls[0].sendDtmf('1');
   });
-  await callerPage.waitForTimeout(1000);
+  await callerPage.waitForTimeout(500);
 
   // caller
-  expect(callerMessages.length).toBe(0);
+  expect(callerMessages).toHaveLength(0);
 
   // callee
-  expect(calleeMessages.length).toBe(7);
+  expect(calleeMessages).toHaveLength(7);
   expect(calleeMessages.map((m) => m.direction)).toEqual([
     'outbound',
     'inbound',

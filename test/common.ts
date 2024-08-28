@@ -46,7 +46,7 @@ export const testOnePage = test.extend<{ pageResource: PageResource }>({
     await page.evaluate(async () => {
       await window.teardown();
     });
-    await page.waitForTimeout(1000); // wait for the teardown to finish
+    await page.waitForTimeout(500); // wait for the teardown to finish
   },
 });
 
@@ -72,7 +72,7 @@ export const testTwoPages = test.extend<{
     await page.evaluate(async () => {
       await window.teardown();
     });
-    await page.waitForTimeout(1000); // wait for the teardown to finish
+    await page.waitForTimeout(500); // wait for the teardown to finish
   },
   calleeResource: async ({ context }, use) => {
     const page = await context.newPage();
@@ -92,7 +92,7 @@ export const testTwoPages = test.extend<{
     await page.evaluate(async () => {
       await window.teardown();
     });
-    await page.waitForTimeout(1000); // wait for the teardown to finish
+    await page.waitForTimeout(500); // wait for the teardown to finish
   },
 });
 
@@ -105,7 +105,7 @@ export const call = async (callerResource: PageResource, calleeResource: PageRes
     },
     { calleeNumber, callerNumber },
   );
-  await callerPage.waitForTimeout(1000);
+  await callerPage.waitForTimeout(500);
   if (!keepMessages) {
     callerMessages.length = 0;
     calleeMessages.length = 0;
@@ -118,7 +118,7 @@ export const callAndAnswer = async (callerResource: PageResource, calleeResource
   await calleePage.evaluate(async () => {
     await window.inboundCalls[0].answer();
   });
-  await callerPage.waitForTimeout(1000);
+  await callerPage.waitForTimeout(500);
   callerMessages.length = 0;
   calleeMessages.length = 0;
   return { callerPage, calleePage, callerMessages, calleeMessages };

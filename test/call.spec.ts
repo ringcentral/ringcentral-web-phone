@@ -8,7 +8,7 @@ testTwoPages('call', async ({ callerResource, calleeResource }) => {
   const { callerPage, calleePage, callerMessages, calleeMessages } = await call(callerResource, calleeResource, true);
 
   // caller
-  expect(callerMessages.length).toBe(8);
+  expect(callerMessages).toHaveLength(8);
   expect(callerMessages.map((m) => m.subject)).toEqual([
     `INVITE sip:${calleeNumber}@sip.ringcentral.com SIP/2.0`,
     'SIP/2.0 100 Trying',
@@ -31,7 +31,7 @@ testTwoPages('call', async ({ callerResource, calleeResource }) => {
   ]);
 
   // callee
-  expect(calleeMessages.length).toBe(6);
+  expect(calleeMessages).toHaveLength(6);
   expect(calleeMessages[0].subject.startsWith('INVITE sip:')).toBeTruthy();
   expect(calleeMessages[1].subject).toBe('SIP/2.0 100 Trying');
   expect(calleeMessages[2].subject).toBe('SIP/2.0 180 Ringing');
