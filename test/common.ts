@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { BrowserContext, Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
 
 import type SipMessage from '../src/sip-message';
@@ -29,24 +29,46 @@ interface PageResource {
   messages: SipMessage[];
 }
 
+const setupPage = async ({
+  context,
+  register = true,
+  sipInfo,
+}: {
+  context: BrowserContext;
+  register?: boolean;
+  sipInfo: string;
+}) => {
+  const page = await context.newPage();
+  await page.goto('/');
+  const messages: SipMessage[] = [];
+  page.once('websocket', (ws) => {
+    ws.on('framesent', (frame) => messages.push(OutboundMessage.fromString(frame.payload as string)));
+    ws.on('framereceived', (frame) => messages.push(InboundMessage.fromString(frame.payload as string)));
+  });
+  await page.evaluate(async (sipInfo) => {
+    await window.setup(sipInfo);
+  }, sipInfo);
+  if (register) {
+    await page.evaluate(async () => {
+      await window.webPhone.register();
+    });
+  }
+  messages.length = 0;
+  return { page, messages };
+};
+
+const teardownPage = async (page: Page) => {
+  await page.evaluate(async () => {
+    await window.teardown();
+  });
+  await page.waitForTimeout(500);
+};
+
 export const testOnePage = test.extend<{ pageResource: PageResource }>({
   pageResource: async ({ context }, use) => {
-    const page = await context.newPage();
-    await page.goto('/');
-    const messages: SipMessage[] = [];
-    page.once('websocket', (ws) => {
-      ws.on('framesent', (frame) => messages.push(OutboundMessage.fromString(frame.payload as string)));
-      ws.on('framereceived', (frame) => messages.push(InboundMessage.fromString(frame.payload as string)));
-    });
-    await page.evaluate(async (sipInfo) => {
-      await window.setup(sipInfo);
-    }, callerSipInfo);
+    const { page, messages } = await setupPage({ context, sipInfo: callerSipInfo, register: false });
     await use({ page, messages });
-    messages.length = 0;
-    await page.evaluate(async () => {
-      await window.teardown();
-    });
-    await page.waitForTimeout(500); // wait for the teardown to finish
+    await teardownPage(page);
   },
 });
 
@@ -55,44 +77,14 @@ export const testTwoPages = test.extend<{
   calleeResource: PageResource;
 }>({
   callerResource: async ({ context }, use) => {
-    const page = await context.newPage();
-    await page.goto('/');
-    const messages: SipMessage[] = [];
-    page.once('websocket', (ws) => {
-      ws.on('framesent', (frame) => messages.push(OutboundMessage.fromString(frame.payload as string)));
-      ws.on('framereceived', (frame) => messages.push(InboundMessage.fromString(frame.payload as string)));
-    });
-    await page.evaluate(async (callerSipInfo) => {
-      await window.setup(callerSipInfo);
-      await window.webPhone.register();
-    }, callerSipInfo);
-    messages.length = 0;
+    const { page, messages } = await setupPage({ context, sipInfo: callerSipInfo });
     await use({ page, messages });
-    messages.length = 0;
-    await page.evaluate(async () => {
-      await window.teardown();
-    });
-    await page.waitForTimeout(500); // wait for the teardown to finish
+    await teardownPage(page);
   },
   calleeResource: async ({ context }, use) => {
-    const page = await context.newPage();
-    await page.goto('/');
-    const messages: SipMessage[] = [];
-    page.once('websocket', (ws) => {
-      ws.on('framesent', (frame) => messages.push(OutboundMessage.fromString(frame.payload as string)));
-      ws.on('framereceived', (frame) => messages.push(InboundMessage.fromString(frame.payload as string)));
-    });
-    await page.evaluate(async (calleeSipInfo) => {
-      await window.setup(calleeSipInfo);
-      await window.webPhone.register();
-    }, calleeSipInfo);
-    messages.length = 0;
+    const { page, messages } = await setupPage({ context, sipInfo: calleeSipInfo });
     await use({ page, messages });
-    messages.length = 0;
-    await page.evaluate(async () => {
-      await window.teardown();
-    });
-    await page.waitForTimeout(500); // wait for the teardown to finish
+    await teardownPage(page);
   },
 });
 
