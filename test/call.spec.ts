@@ -52,5 +52,6 @@ testTwoPages('call', async ({ callerResource, calleeResource }) => {
   rcMessage = await RcMessage.fromXml(calleeMessages[3].body);
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.ClientReceiveConfirm.toString());
 
-  await assertCallCount({ callerPage, callerCount: 1, calleePage, calleeCount: 1 });
+  await assertCallCount(callerPage, 1);
+  await assertCallCount(calleePage, 1);
 });

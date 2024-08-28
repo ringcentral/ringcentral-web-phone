@@ -32,5 +32,6 @@ testTwoPages('cold transfer', async ({ callerResource, calleeResource }) => {
   expect(subjects[5]).toMatch(/^SIP\/2.0 200 OK$/);
   expect(subjects[6]).toMatch(/^BYE sip:/);
   expect(subjects[7]).toMatch(/^SIP\/2.0 200 OK$/);
-  await assertCallCount({ callerPage, callerCount: 1, calleePage, calleeCount: 0 });
+  await assertCallCount(callerPage, 1);
+  await assertCallCount(calleePage, 0);
 });

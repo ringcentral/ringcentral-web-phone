@@ -31,5 +31,6 @@ testTwoPages('caller hang up', async ({ callerResource, calleeResource }) => {
   const rcMessage = await RcMessage.fromXml(calleeMessages[2].body);
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.ServerFreeResources.toString());
 
-  await assertCallCount({ callerPage, callerCount: 0, calleePage, calleeCount: 0 });
+  await assertCallCount(callerPage, 0);
+  await assertCallCount(calleePage, 0);
 });

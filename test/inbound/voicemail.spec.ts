@@ -39,5 +39,6 @@ testTwoPages('inbound call to voicemail', async ({ callerResource, calleeResourc
   rcMessage = await RcMessage.fromXml(calleeMessages[3].body);
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.SessionClose.toString());
 
-  await assertCallCount({ callerPage, callerCount: 1, calleePage, calleeCount: 0 });
+  await assertCallCount(callerPage, 1);
+  await assertCallCount(calleePage, 0);
 });

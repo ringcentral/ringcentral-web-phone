@@ -1,9 +1,10 @@
 import { autoRun, manage } from 'manate';
 
 import WebPhone from '../src';
+import { uuid } from '../src/utils';
 
 global.setup = async (sipInfo: string) => {
-  const webPhone = new WebPhone({ sipInfo: JSON.parse(sipInfo) });
+  const webPhone = new WebPhone({ sipInfo: JSON.parse(sipInfo), instanceId: uuid() });
   global.webPhone = manage(webPhone);
   const { start, stop } = autoRun(global.webPhone, () => {
     global.inboundCalls = webPhone.callSessions.filter((call) => call.direction === 'inbound');

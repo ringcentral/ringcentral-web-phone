@@ -25,7 +25,8 @@ testTwoPages('start reply', async ({ callerResource, calleeResource }) => {
   const rcMessage = await RcMessage.fromXml(calleeMessages[0].body);
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.ClientStartReply.toString());
 
-  await assertCallCount({ callerPage, callerCount: 1, calleePage, calleeCount: 1 });
+  await assertCallCount(callerPage, 1);
+  await assertCallCount(calleePage, 1);
 });
 
 testTwoPages('reply with yes', async ({ callerResource, calleeResource }) => {
@@ -81,7 +82,8 @@ testTwoPages('reply with yes', async ({ callerResource, calleeResource }) => {
   expect(rcMessage.body.Sts).toBe('0');
   expect(rcMessage.body.Resp).toBe('1');
 
-  await assertCallCount({ callerPage, callerCount: 1, calleePage, calleeCount: 0 });
+  await assertCallCount(callerPage, 1);
+  await assertCallCount(calleePage, 0);
 });
 
 testTwoPages('reply with urgent', async ({ callerResource, calleeResource }) => {
@@ -148,5 +150,6 @@ testTwoPages('reply with urgent', async ({ callerResource, calleeResource }) => 
   expect(rcMessage.body.Resp).toBe('3');
   expect(rcMessage.body.ExtNfo).toBe(anotherNumber);
 
-  await assertCallCount({ callerPage, callerCount: 1, calleePage, calleeCount: 0 });
+  await assertCallCount(callerPage, 1);
+  await assertCallCount(calleePage, 0);
 });

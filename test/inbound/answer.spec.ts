@@ -3,6 +3,7 @@ import { expect } from '@playwright/test';
 import RcMessage from '../../src/rc-message/rc-message';
 import callControlCommands from '../../src/rc-message/call-control-commands';
 import { call, testTwoPages, assertCallCount } from '../common';
+import { assert } from 'console';
 
 testTwoPages('answer inbound call', async ({ callerResource, calleeResource }) => {
   const { callerPage, calleePage, callerMessages, calleeMessages } = await call(callerResource, calleeResource);
@@ -25,5 +26,6 @@ testTwoPages('answer inbound call', async ({ callerResource, calleeResource }) =
   const rcMessage = await RcMessage.fromXml(calleeMessages[2].body);
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.AlreadyProcessed.toString());
 
-  await assertCallCount({ callerPage, callerCount: 1, calleePage, calleeCount: 1 });
+  await assertCallCount(callerPage, 1);
+  await assertCallCount(calleePage, 1);
 });

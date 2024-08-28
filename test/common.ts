@@ -103,19 +103,7 @@ export const callAndAnswer = async (callerResource: PageResource, calleeResource
   return { callerPage, calleePage, callerMessages, calleeMessages };
 };
 
-export const assertCallCount = async ({
-  callerPage,
-  callerCount,
-  calleePage,
-  calleeCount,
-}: {
-  callerPage: Page;
-  callerCount: number;
-  calleePage: Page;
-  calleeCount: number;
-}) => {
-  const callerCalls = await callerPage.evaluate(() => window.outboundCalls);
-  const calleeCalls = await calleePage.evaluate(() => window.inboundCalls);
-  expect(callerCalls).toHaveLength(callerCount);
-  expect(calleeCalls).toHaveLength(calleeCount);
+export const assertCallCount = async (page: Page, count: number) => {
+  const callsCount = await page.evaluate(() => window.webPhone.callSessions.length);
+  expect(callsCount).toBe(count);
 };
