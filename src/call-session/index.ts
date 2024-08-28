@@ -51,15 +51,15 @@ abstract class CallSession extends EventEmitter {
   }
 
   public get remoteNumber() {
-    return extractNumber(this.remotePeer);
+    return this.remotePeer ? extractNumber(this.remotePeer) : '';
   }
 
   public get localNumber() {
-    return extractNumber(this.localPeer);
+    return this.localPeer ? extractNumber(this.localPeer) : '';
   }
 
   public get isConference() {
-    return extractNumber(this.remotePeer).startsWith('conf_');
+    return this.remotePeer ? extractNumber(this.remotePeer).startsWith('conf_') : false;
   }
 
   public async init() {
