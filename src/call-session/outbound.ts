@@ -41,6 +41,10 @@ class OutboundCallSession extends CallSession {
     }
 
     const inboundMessage = await this.webPhone.send(inviteMessage, true);
+    if (inboundMessage.subject.startsWith('SIP/2.0 403 ')) {
+      // for exmaple, webPhone.sipRegister(0) has been called
+      return;
+    }
     const proxyAuthenticate = inboundMessage.headers['Proxy-Authenticate'];
     const nonce = proxyAuthenticate.match(/, nonce="(.+?)"/)![1];
     const newMessage = inviteMessage.fork();

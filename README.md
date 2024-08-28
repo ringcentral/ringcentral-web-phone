@@ -498,9 +498,14 @@ Before an incoming call is answered, client may send special messages with **XML
 
 In an ongoing call (either inbound or outbound), client may send special messages with **JSON** body to startCallRecord/stopCallRecord/flip/park the call.
 
+### webPhone.sipRegister(0)
+
+Register the SIP client with expires time 0. It means that the SIP client will be unregistered immediately after the registration.
+After this method call, no incoming call will be received. If you try to make an outbound call, you will get a `SIP/2.0 403 Forbidden` response.
+
 ### Todo:
 
 - create some slides to talk about the reasoning for getting rid of SIP.js
 - How to decouple SIP from WebRTC?
 - generate api reference
-- outbound call after sipRegister(0)?
+- can I use track/stream to detect outbound call answered event?
