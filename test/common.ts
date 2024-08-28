@@ -29,15 +29,7 @@ interface PageResource {
   messages: SipMessage[];
 }
 
-const setupPage = async ({
-  context,
-  register = true,
-  sipInfo,
-}: {
-  context: BrowserContext;
-  register?: boolean;
-  sipInfo: string;
-}) => {
+const setupPage = async ({ context, sipInfo }: { context: BrowserContext; sipInfo: string }) => {
   const page = await context.newPage();
   await page.goto('/');
   const messages: SipMessage[] = [];
@@ -48,11 +40,6 @@ const setupPage = async ({
   await page.evaluate(async (sipInfo) => {
     await window.setup(sipInfo);
   }, sipInfo);
-  if (register) {
-    await page.evaluate(async () => {
-      await window.webPhone.register();
-    });
-  }
   messages.length = 0;
   return { page, messages };
 };
@@ -66,7 +53,7 @@ const teardownPage = async (page: Page) => {
 
 export const testOnePage = test.extend<{ pageResource: PageResource }>({
   pageResource: async ({ context }, use) => {
-    const { page, messages } = await setupPage({ context, sipInfo: callerSipInfo, register: false });
+    const { page, messages } = await setupPage({ context, sipInfo: callerSipInfo });
     await use({ page, messages });
     await teardownPage(page);
   },

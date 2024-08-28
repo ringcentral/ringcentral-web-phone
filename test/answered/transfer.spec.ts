@@ -33,10 +33,4 @@ testTwoPages('cold transfer', async ({ callerResource, calleeResource }) => {
   expect(subjects[6]).toMatch(/^BYE sip:/);
   expect(subjects[7]).toMatch(/^SIP\/2.0 200 OK$/);
   await assertCallCount({ callerPage, callerCount: 1, calleePage, calleeCount: 0 });
-
-  // properly cleanup
-  await callerPage.evaluate(async () => {
-    await window.outboundCalls[0].hangup();
-  });
-  await callerPage.waitForTimeout(500);
 });
