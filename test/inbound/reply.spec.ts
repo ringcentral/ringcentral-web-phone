@@ -1,11 +1,11 @@
 import { expect } from '@playwright/test';
 
-import { anotherNumber, call, testTwoPages } from '../common';
+import { anotherNumber, assertCallCount, call, testTwoPages } from '../common';
 import RcMessage from '../../src/rc-message/rc-message';
 import callControlCommands from '../../src/rc-message/call-control-commands';
 
 testTwoPages('start reply', async ({ callerResource, calleeResource }) => {
-  const { calleePage, callerMessages, calleeMessages } = await call(callerResource, calleeResource);
+  const { callerPage, calleePage, callerMessages, calleeMessages } = await call(callerResource, calleeResource);
 
   // start reply
   await calleePage.evaluate(async () => {
@@ -24,6 +24,8 @@ testTwoPages('start reply', async ({ callerResource, calleeResource }) => {
   expect(calleeMessages[2].subject).toBe('SIP/2.0 200 OK');
   const rcMessage = await RcMessage.fromXml(calleeMessages[0].body);
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.ClientStartReply.toString());
+
+  await assertCallCount({ callerPage, callerCount: 1, calleePage, calleeCount: 1 });
 });
 
 testTwoPages('reply with yes', async ({ callerResource, calleeResource }) => {
@@ -78,6 +80,8 @@ testTwoPages('reply with yes', async ({ callerResource, calleeResource }) => {
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.SessionClose.toString());
   expect(rcMessage.body.Sts).toBe('0');
   expect(rcMessage.body.Resp).toBe('1');
+
+  await assertCallCount({ callerPage, callerCount: 1, calleePage, calleeCount: 0 });
 });
 
 testTwoPages('reply with urgent', async ({ callerResource, calleeResource }) => {
@@ -143,4 +147,6 @@ testTwoPages('reply with urgent', async ({ callerResource, calleeResource }) => 
   expect(rcMessage.body.Sts).toBe('0');
   expect(rcMessage.body.Resp).toBe('3');
   expect(rcMessage.body.ExtNfo).toBe(anotherNumber);
+
+  await assertCallCount({ callerPage, callerCount: 1, calleePage, calleeCount: 0 });
 });

@@ -1,11 +1,14 @@
 import { expect } from '@playwright/test';
 
-import { callAndAnswer, testTwoPages } from '../common';
+import { assertCallCount, callAndAnswer, testTwoPages } from '../common';
 import RcMessage from '../../src/rc-message/rc-message';
 import callControlCommands from '../../src/rc-message/call-control-commands';
 
 testTwoPages('caller hang up', async ({ callerResource, calleeResource }) => {
-  const { callerPage, callerMessages, calleeMessages } = await callAndAnswer(callerResource, calleeResource);
+  const { callerPage, calleePage, callerMessages, calleeMessages } = await callAndAnswer(
+    callerResource,
+    calleeResource,
+  );
 
   await callerPage.evaluate(async () => {
     await window.outboundCalls[0].hangup();
@@ -27,4 +30,6 @@ testTwoPages('caller hang up', async ({ callerResource, calleeResource }) => {
   expect(calleeMessages[3].subject).toBe('SIP/2.0 200 OK');
   const rcMessage = await RcMessage.fromXml(calleeMessages[2].body);
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.ServerFreeResources.toString());
+
+  await assertCallCount({ callerPage, callerCount: 0, calleePage, calleeCount: 0 });
 });

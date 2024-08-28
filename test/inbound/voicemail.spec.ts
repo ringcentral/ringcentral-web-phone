@@ -1,11 +1,11 @@
 import { expect } from '@playwright/test';
 
-import { call, testTwoPages } from '../common';
+import { assertCallCount, call, testTwoPages } from '../common';
 import RcMessage from '../../src/rc-message/rc-message';
 import callControlCommands from '../../src/rc-message/call-control-commands';
 
 testTwoPages('inbound call to voicemail', async ({ callerResource, calleeResource }) => {
-  const { calleePage, callerMessages, calleeMessages } = await call(callerResource, calleeResource);
+  const { callerPage, calleePage, callerMessages, calleeMessages } = await call(callerResource, calleeResource);
 
   await calleePage.evaluate(async () => {
     await window.inboundCalls[0].toVoicemail();
@@ -38,4 +38,6 @@ testTwoPages('inbound call to voicemail', async ({ callerResource, calleeResourc
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.ClientVoicemail.toString());
   rcMessage = await RcMessage.fromXml(calleeMessages[3].body);
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.SessionClose.toString());
+
+  await assertCallCount({ callerPage, callerCount: 1, calleePage, calleeCount: 0 });
 });

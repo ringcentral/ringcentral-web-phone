@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 import type SipMessage from '../src/sip-message';
 import OutboundMessage from '../src/sip-message/outbound';
@@ -122,4 +122,21 @@ export const callAndAnswer = async (callerResource: PageResource, calleeResource
   callerMessages.length = 0;
   calleeMessages.length = 0;
   return { callerPage, calleePage, callerMessages, calleeMessages };
+};
+
+export const assertCallCount = async ({
+  callerPage,
+  callerCount,
+  calleePage,
+  calleeCount,
+}: {
+  callerPage: Page;
+  callerCount: number;
+  calleePage: Page;
+  calleeCount: number;
+}) => {
+  const callerCalls = await callerPage.evaluate(() => window.outboundCalls);
+  const calleeCalls = await calleePage.evaluate(() => window.inboundCalls);
+  expect(callerCalls).toHaveLength(callerCount);
+  expect(calleeCalls).toHaveLength(calleeCount);
 };

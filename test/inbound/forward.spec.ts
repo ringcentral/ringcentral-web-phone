@@ -1,11 +1,11 @@
 import { expect } from '@playwright/test';
 
-import { anotherNumber, call, testTwoPages } from '../common';
+import { anotherNumber, assertCallCount, call, testTwoPages } from '../common';
 import RcMessage from '../../src/rc-message/rc-message';
 import callControlCommands from '../../src/rc-message/call-control-commands';
 
 testTwoPages('forward inbound call', async ({ callerResource, calleeResource }) => {
-  const { calleePage, callerMessages, calleeMessages } = await call(callerResource, calleeResource);
+  const { callerPage, calleePage, callerMessages, calleeMessages } = await call(callerResource, calleeResource);
 
   await calleePage.evaluate(async (anotherNumber) => {
     await window.inboundCalls[0].forward(anotherNumber);
@@ -37,4 +37,6 @@ testTwoPages('forward inbound call', async ({ callerResource, calleeResource }) 
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.ClientForward.toString());
   rcMessage = await RcMessage.fromXml(calleeMessages[3].body);
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.SessionClose.toString());
+
+  await assertCallCount({ callerPage, callerCount: 1, calleePage, calleeCount: 0 });
 });

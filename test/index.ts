@@ -1,19 +1,21 @@
+import { autoRun, manage } from 'manate';
+
 import WebPhone from '../src';
 
 global.setup = async (sipInfo: string) => {
   const webPhone = new WebPhone({ sipInfo: JSON.parse(sipInfo) });
-  global.webPhone = webPhone;
-  global.inboundCalls = [];
-  global.outboundCalls = [];
-  webPhone.on('inboundCall', (call) => {
-    global.inboundCalls.push(call);
+  global.webPhone = manage(webPhone);
+  const { start, stop } = autoRun(global.webPhone, () => {
+    global.inboundCalls = webPhone.callSessions.filter((call) => call.direction === 'inbound');
+    global.outboundCalls = webPhone.callSessions.filter((call) => call.direction === 'outbound');
   });
-  webPhone.on('outboundCall', (call) => {
-    global.outboundCalls.push(call);
-  });
+  start();
+  global.stopAutoRun = stop;
 };
 
 global.teardown = async () => {
+  global.stopAutoRun();
+  global.stopAutoRun = undefined;
   await global.webPhone.dispose();
   global.webPhone = undefined;
   global.inboundCalls = undefined;
