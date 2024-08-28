@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { anotherNumber, assertCallCount, callAndAnswer, testTwoPages } from '../common';
+import { anotherNumber, assertCallCount, callAndAnswer, testTwoPages } from '../../common';
 
 testTwoPages('cold transfer', async ({ callerResource, calleeResource }) => {
   const { callerPage, calleePage, callerMessages, calleeMessages } = await callAndAnswer(

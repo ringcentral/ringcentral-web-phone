@@ -1,8 +1,8 @@
 import { expect } from '@playwright/test';
 
-import { calleeNumber, callerNumber, call, testTwoPages, assertCallCount } from './common';
-import RcMessage from '../src/rc-message/rc-message';
-import callControlCommands from '../src/rc-message/call-control-commands';
+import { calleeNumber, callerNumber, call, testTwoPages, assertCallCount } from '../common';
+import RcMessage from '../../src/rc-message/rc-message';
+import callControlCommands from '../../src/rc-message/call-control-commands';
 
 testTwoPages('call', async ({ callerResource, calleeResource }) => {
   const { callerPage, calleePage, callerMessages, calleeMessages } = await call(callerResource, calleeResource, true);
