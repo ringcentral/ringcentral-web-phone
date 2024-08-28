@@ -5,7 +5,7 @@ import RcMessage from '../src/rc-message/rc-message';
 import callControlCommands from '../src/rc-message/call-control-commands';
 
 testTwoPages('call', async ({ callerResource, calleeResource }) => {
-  const { callerMessages, calleeMessages } = await call(callerResource, calleeResource, true);
+  const { callerPage, calleePage, callerMessages, calleeMessages } = await call(callerResource, calleeResource, true);
 
   // caller
   expect(callerMessages.length).toBe(8);
@@ -29,6 +29,10 @@ testTwoPages('call', async ({ callerResource, calleeResource }) => {
     'inbound',
     'outbound',
   ]);
+  const callerCount = await callerPage.evaluate(async () => {
+    return window.webPhone.callSessions.length;
+  });
+  expect(callerCount).toBe(1);
 
   // callee
   expect(calleeMessages.length).toBe(6);
@@ -51,4 +55,8 @@ testTwoPages('call', async ({ callerResource, calleeResource }) => {
   expect(rcMessage.body.ToPhn?.substring(1)).toBe(calleeNumber); // rcMessage.body.ToPhn starts with '+'
   rcMessage = await RcMessage.fromXml(calleeMessages[3].body);
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.ClientReceiveConfirm.toString());
+  const calleeCount = await calleePage.evaluate(async () => {
+    return window.webPhone.callSessions.length;
+  });
+  expect(calleeCount).toBe(1);
 });
