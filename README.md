@@ -508,4 +508,3 @@ After this method call, no incoming call will be received. If you try to make an
 - create some slides to talk about the reasoning for getting rid of SIP.js
 - How to decouple SIP from WebRTC?
 - generate api reference
-- can I use track/stream to detect outbound call answered event?

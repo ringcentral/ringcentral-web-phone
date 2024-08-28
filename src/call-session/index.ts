@@ -224,7 +224,7 @@ abstract class CallSession extends EventEmitter {
     res.origin!.sessionVersion = this.sdpVersion++;
     sdp = sdpTransform.write(res);
     const requestMessage = new RequestMessage(
-      `INVITE sip:${extractAddress(this.remotePeer)} SIP/2.0`,
+      `INVITE ${extractAddress(this.remotePeer)} SIP/2.0`,
       {
         'Call-Id': this.callId,
         From: this.localPeer,
@@ -261,7 +261,7 @@ abstract class CallSession extends EventEmitter {
   }
 
   protected async _transfer(uri: string) {
-    const requestMessage = new RequestMessage(`REFER sip:${extractAddress(this.remotePeer)} SIP/2.0`, {
+    const requestMessage = new RequestMessage(`REFER ${extractAddress(this.remotePeer)} SIP/2.0`, {
       'Call-Id': this.callId,
       From: this.localPeer,
       To: this.remotePeer,
