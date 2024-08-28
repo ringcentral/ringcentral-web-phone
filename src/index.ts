@@ -148,11 +148,12 @@ class WebPhone extends EventEmitter {
 
   // make an outbound call
   public async call(callee: string, callerId?: string) {
-    this.callSessions.push(new OutboundCallSession(this));
-    // write it this way so that it will be compatible with manate, outboundCallSession will be managed
-    const outboundCallSession = this.callSessions[this.callSessions.length - 1] as OutboundCallSession;
+    let outboundCallSession = new OutboundCallSession(this);
     await outboundCallSession.init();
     await outboundCallSession.call(callee, callerId);
+    this.callSessions.push(outboundCallSession);
+    // write it this way so that it will be compatible with manate, outboundCallSession will be managed
+    outboundCallSession = this.callSessions[this.callSessions.length - 1] as OutboundCallSession;
     this.emit('outboundCall', outboundCallSession);
     return outboundCallSession;
   }
