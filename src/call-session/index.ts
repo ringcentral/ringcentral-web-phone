@@ -110,7 +110,7 @@ abstract class CallSession extends EventEmitter {
       To: this.remotePeer,
       Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
     });
-    this.webPhone.send(requestMessage);
+    await this.webPhone.send(requestMessage, true);
   }
 
   public async startRecording(): Promise<CommandResult> {
@@ -122,48 +122,19 @@ abstract class CallSession extends EventEmitter {
   }
 
   public async flip(target: string): Promise<FlipResult> {
-    return new Promise((resolve) => {
-      const reqid = this.reqid++;
-      const flipHandler = (inboundMessage: InboundMessage) => {
-        if (!inboundMessage.subject.startsWith('INFO sip:')) {
-          return;
-        }
-        const response = JSON.parse(inboundMessage.body).response;
-        if (!response || response.reqid !== reqid || response.command !== 'callflip') {
-          return;
-        }
-        this.webPhone.off('message', flipHandler);
-        // note: we can't dispose the call session here
-        // otherwise the caller will not be able to talk to the flip target
-        // after the flip target answers the call, manually dispose the call session
-        resolve(response.result);
-      };
-      this.webPhone.on('message', flipHandler);
-      this.sendJsonMessage('callflip', { target });
-    });
+    const flipResult = await this.sendJsonMessage<FlipResult>('callflip', { target });
+    // note: we can't dispose the call session here
+    // otherwise the caller will not be able to talk to the flip target
+    // after the flip target answers the call, manually dispose the call session
+    return flipResult;
   }
 
   public async park(): Promise<ParkResult> {
-    return new Promise((resolve) => {
-      const reqid = this.reqid++;
-      const parkHandler = (inboundMessage: InboundMessage) => {
-        if (!inboundMessage.subject.startsWith('INFO sip:')) {
-          return;
-        }
-        const response = JSON.parse(inboundMessage.body).response;
-        if (!response || response.reqid !== reqid || response.command !== 'callpark') {
-          return;
-        }
-        this.webPhone.off('message', parkHandler);
-        if (response.result.code === 0) {
-          // park success, hang up
-          this.hangup();
-        }
-        resolve(response.result);
-      };
-      this.webPhone.on('message', parkHandler);
-      this.sendJsonMessage('callpark');
-    });
+    const parkResult = await this.sendJsonMessage<ParkResult>('callpark');
+    if (parkResult.code === 0) {
+      await this.hangup();
+    }
+    return parkResult;
   }
 
   public async hold() {
@@ -244,7 +215,10 @@ abstract class CallSession extends EventEmitter {
     this.webPhone.send(ackMessage);
   }
 
-  protected async sendJsonMessage<T>(command: string, args: { [key: string]: string } = {}) {
+  protected async sendJsonMessage<T>(
+    command: 'callpark' | 'callflip' | 'startcallrecord' | 'stopcallrecord',
+    args: { [key: string]: string } = {},
+  ) {
     const reqid = this.reqid++;
     const jsonBody = JSON.stringify({ request: { reqid, command, ...args } });
     const requestMessage = new RequestMessage(
