@@ -22,3 +22,5 @@ const callControlCommands = {
 };
 
 export default callControlCommands;
+// ref: https://git.ringcentral.com/pjac/pjac/-/blob/master/pjac_fw/bl/telco/call_control_sip.py
+// ref: https://git.ringcentral.com/pjac/pjac/-/blob/master/pjac_fw/bl/telco/call_control/commands.py

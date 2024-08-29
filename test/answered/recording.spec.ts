@@ -8,15 +8,15 @@ testTwoPages('start/stop recording', async ({ callerResource, calleeResource }) 
     calleeResource,
   );
 
-  await callerPage.evaluate(async () => {
-    await window.outboundCalls[0].startRecording();
+  const startResult = await callerPage.evaluate(async () => {
+    return await window.outboundCalls[0].startRecording();
   });
-  await callerPage.waitForTimeout(5000);
+  expect(startResult.code).toBe(0);
 
-  await callerPage.evaluate(async () => {
-    await window.outboundCalls[0].stopRecording();
+  const stopResult = await callerPage.evaluate(async () => {
+    return await window.outboundCalls[0].stopRecording();
   });
-  await callerPage.waitForTimeout(5000);
+  expect(stopResult.code).toBe(0);
 
   // caller
   const messages = callerMessages.map((m) => m.shortString);
@@ -26,6 +26,7 @@ testTwoPages('start/stop recording', async ({ callerResource, calleeResource }) 
   expect(messages[1]).toMatch(/^inbound - SIP\/2.0 200 OK/);
   expect(messages[2]).toMatch(/^inbound - INFO sip:/); // result
   expect(messages[3]).toMatch(/^outbound - SIP\/2.0 200 OK/);
+
   // stop recording
   expect(messages[4]).toMatch(/^outbound - INFO sip:/);
   expect(messages[5]).toMatch(/^inbound - SIP\/2.0 200 OK/);

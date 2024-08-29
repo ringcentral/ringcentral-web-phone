@@ -6,18 +6,17 @@ import type InboundMessage from '../sip-message/inbound';
 import type WebPhone from '..';
 import { branch, extractAddress, extractNumber, extractTag, uuid } from '../utils';
 
-interface CallParkResult {
+interface CommandResult {
   code: number;
   description: string;
-  'park extension': string;
 }
-
-interface CallFlipResult {
-  code: number;
-  description: string;
+type ParkResult = CommandResult & {
+  'park extension': string;
+};
+type FlipResult = CommandResult & {
   number: string;
   target: string;
-}
+};
 
 abstract class CallSession extends EventEmitter {
   public webPhone: WebPhone;
@@ -114,15 +113,15 @@ abstract class CallSession extends EventEmitter {
     this.webPhone.send(requestMessage);
   }
 
-  public async startRecording() {
-    await this.sendJsonMessage(JSON.stringify({ request: { reqid: this.reqid++, command: 'startcallrecord' } }));
+  public async startRecording(): Promise<CommandResult> {
+    return await this.sendJsonMessage('startcallrecord');
   }
 
-  public async stopRecording() {
-    await this.sendJsonMessage(JSON.stringify({ request: { reqid: this.reqid++, command: 'stopcallrecord' } }));
+  public async stopRecording(): Promise<CommandResult> {
+    return await this.sendJsonMessage('stopcallrecord');
   }
 
-  public async flip(target: string): Promise<CallFlipResult> {
+  public async flip(target: string): Promise<FlipResult> {
     return new Promise((resolve) => {
       const reqid = this.reqid++;
       const flipHandler = (inboundMessage: InboundMessage) => {
@@ -140,11 +139,11 @@ abstract class CallSession extends EventEmitter {
         resolve(response.result);
       };
       this.webPhone.on('message', flipHandler);
-      this.sendJsonMessage(JSON.stringify({ request: { reqid, command: 'callflip', target } }));
+      this.sendJsonMessage('callflip', { target });
     });
   }
 
-  public async park(): Promise<CallParkResult> {
+  public async park(): Promise<ParkResult> {
     return new Promise((resolve) => {
       const reqid = this.reqid++;
       const parkHandler = (inboundMessage: InboundMessage) => {
@@ -163,7 +162,7 @@ abstract class CallSession extends EventEmitter {
         resolve(response.result);
       };
       this.webPhone.on('message', parkHandler);
-      this.sendJsonMessage(JSON.stringify({ request: { reqid, command: 'callpark' } }));
+      this.sendJsonMessage('callpark');
     });
   }
 
@@ -245,7 +244,9 @@ abstract class CallSession extends EventEmitter {
     this.webPhone.send(ackMessage);
   }
 
-  protected async sendJsonMessage(jsonBody: string) {
+  protected async sendJsonMessage<T>(command: string, args: { [key: string]: string } = {}) {
+    const reqid = this.reqid++;
+    const jsonBody = JSON.stringify({ request: { reqid, command, ...args } });
     const requestMessage = new RequestMessage(
       `INFO sip:${this.webPhone.sipInfo.domain} SIP/2.0`,
       {
@@ -257,7 +258,21 @@ abstract class CallSession extends EventEmitter {
       },
       jsonBody,
     );
-    this.webPhone.send(requestMessage, true);
+    await this.webPhone.send(requestMessage, true);
+    return new Promise<T>((resolve) => {
+      const resultHandler = (inboundMessage: InboundMessage) => {
+        if (!inboundMessage.subject.startsWith('INFO sip:')) {
+          return;
+        }
+        const response = JSON.parse(inboundMessage.body).response;
+        if (!response || response.reqid !== reqid || response.command !== command) {
+          return;
+        }
+        this.webPhone.off('message', resultHandler);
+        resolve(response.result);
+      };
+      this.webPhone.on('message', resultHandler);
+    });
   }
 
   protected async _transfer(uri: string) {
