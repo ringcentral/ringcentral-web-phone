@@ -42,6 +42,10 @@ class SipMessage {
     ].join('\r\n');
     return r;
   }
+
+  public get shortString() {
+    return `${this.direction} - ${this.subject}`;
+  }
 }
 
 export default SipMessage;

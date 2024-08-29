@@ -15,6 +15,7 @@ declare global {
     teardown: () => Promise<void>;
     outboundCalls: OutboundCallSession[];
     inboundCalls: InboundCallSession[];
+    transferActions: { complete: () => Promise<void>; cancel: () => Promise<void> };
   }
 }
 

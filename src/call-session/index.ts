@@ -85,7 +85,7 @@ abstract class CallSession extends EventEmitter {
     return this._transfer(`sip:${target}@sip.ringcentral.com`);
   }
 
-  public async warmTransfer(target: string): Promise<{ complete: () => void; cancel: () => void }> {
+  public async warmTransfer(target: string): Promise<{ complete: () => Promise<void>; cancel: () => Promise<void> }> {
     await this.hold();
     // create a new session and user needs to talk to the target before transfer
     const newSession = await this.webPhone.call(target);

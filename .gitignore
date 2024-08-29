@@ -5,3 +5,4 @@ docs/
 dev-notes.md
 dist/
 test-results/
+.DS_Store
