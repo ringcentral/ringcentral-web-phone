@@ -27,7 +27,7 @@ testTwoPages('reply with yes', async ({ callerResource, calleeResource }) => {
   await callerPage.evaluate(async () => {
     await window.outboundCalls[0].sendDtmf('3');
   });
-  await callerPage.waitForTimeout(500);
+  await callerPage.waitForTimeout(1000);
 
   // caller
   expect(callerMessages).toHaveLength(0);

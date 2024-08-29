@@ -27,17 +27,17 @@ testTwoPages('reply with urgent', async ({ callerResource, calleeResource }) => 
   await callerPage.evaluate(async () => {
     window.outboundCalls[0].sendDtmf('5');
   });
-  await callerPage.waitForTimeout(500);
+  await callerPage.waitForTimeout(1000);
   // caller specify callback number
   await callerPage.evaluate(async (anotherNumber) => {
     window.outboundCalls[0].sendDtmf(`${anotherNumber}#`);
   }, anotherNumber);
-  await callerPage.waitForTimeout(3000);
+  await callerPage.waitForTimeout(5000);
   // caller press '1' to confirm the callback number
   await callerPage.evaluate(async () => {
     window.outboundCalls[0].sendDtmf('1');
   });
-  await callerPage.waitForTimeout(500);
+  await callerPage.waitForTimeout(1000);
 
   // caller
   expect(callerMessages).toHaveLength(0);

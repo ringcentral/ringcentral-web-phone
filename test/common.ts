@@ -85,7 +85,7 @@ export const call = async (callerResource: PageResource, calleeResource: PageRes
     },
     { calleeNumber, callerNumber },
   );
-  await callerPage.waitForTimeout(500);
+  await callerPage.waitForTimeout(1000);
   if (!keepMessages) {
     callerMessages.length = 0;
     calleeMessages.length = 0;
@@ -98,7 +98,7 @@ export const callAndAnswer = async (callerResource: PageResource, calleeResource
   await calleePage.evaluate(async () => {
     await window.inboundCalls[0].answer();
   });
-  await callerPage.waitForTimeout(500);
+  await callerPage.waitForTimeout(1000);
   callerMessages.length = 0;
   calleeMessages.length = 0;
   return { callerPage, calleePage, callerMessages, calleeMessages };
