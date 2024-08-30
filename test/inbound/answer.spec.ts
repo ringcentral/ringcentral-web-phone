@@ -3,7 +3,6 @@ import { expect } from '@playwright/test';
 import RcMessage from '../../src/rc-message/rc-message';
 import callControlCommands from '../../src/rc-message/call-control-commands';
 import { call, testTwoPages, assertCallCount } from '../common';
-import { assert } from 'console';
 
 testTwoPages('answer inbound call', async ({ callerResource, calleeResource }) => {
   const { callerPage, calleePage, callerMessages, calleeMessages } = await call(callerResource, calleeResource);

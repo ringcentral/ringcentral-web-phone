@@ -40,7 +40,7 @@ class OutboundCallSession extends CallSession {
       inviteMessage.headers['P-Asserted-Identity'] = `sip:${callerId}@${this.webPhone.sipInfo.domain}`;
     }
 
-    const inboundMessage = await this.webPhone.send(inviteMessage, true);
+    const inboundMessage = await this.webPhone.request(inviteMessage);
     if (inboundMessage.subject.startsWith('SIP/2.0 403 ')) {
       // for exmaple, webPhone.sipRegister(0) has been called
       return;
@@ -49,7 +49,7 @@ class OutboundCallSession extends CallSession {
     const nonce = proxyAuthenticate.match(/, nonce="(.+?)"/)![1];
     const newMessage = inviteMessage.fork();
     newMessage.headers['Proxy-Authorization'] = generateAuthorization(this.webPhone.sipInfo, nonce, 'INVITE');
-    const progressMessage = await this.webPhone.send(newMessage, true);
+    const progressMessage = await this.webPhone.request(newMessage);
     this.sipMessage = progressMessage;
     this.state = 'ringing';
     this.emit('ringing');
@@ -70,7 +70,7 @@ class OutboundCallSession extends CallSession {
           Via: this.sipMessage.headers.Via,
           CSeq: this.sipMessage.headers.CSeq.replace(' INVITE', ' ACK'),
         });
-        await this.webPhone.send(ackMessage);
+        await this.webPhone.reply(ackMessage);
       }
     };
     this.webPhone.on('message', answerHandler);
@@ -84,7 +84,7 @@ class OutboundCallSession extends CallSession {
       Via: this.sipMessage.headers.Via,
       CSeq: this.sipMessage.headers.CSeq.replace(' INVITE', ' CANCEL'),
     });
-    await this.webPhone.send(requestMessage);
+    await this.webPhone.request(requestMessage);
   }
 }
 

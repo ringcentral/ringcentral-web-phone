@@ -441,11 +441,9 @@ You could create it on-the-fly or you can find an existing call session.
 
 For a live sample, please refer to https://github.com/tylerlong/rc-web-phone-demo-2
 
-
 ## Recover from network outage
 
 If you believe your app just recovered from network outage and the underlying websocket connection is broken, you may call `webPhone.regsiter()` to re-register the SIP client. It will create a brand new websocket connection to the SIP server.
-
 
 ## Breaking changes
 
@@ -469,7 +467,6 @@ And playing ringing audio is not a core feature of the SDK. It's more about how 
 SDK 1.x treats forwarding as answering the call and then transfer the call.
 SDK 2.x treats forwarding as sending a SIP message to the SIP server to forward the call.
 I would like to say this is more like a bug fix than a behavior change.
-
 
 ## Maintainers Notes
 
@@ -515,8 +512,5 @@ After this method call, no incoming call will be received. If you try to make an
 - create some slides to talk about the reasoning for getting rid of SIP.js
 - How to decouple SIP from WebRTC?
 - generate api reference
-- every SIP request must await for response
-  - change `send` to `request` and `reply`. former requires response, latter doesn't
 - every api call must await for status ready
   - so that in test cases we don't need to wait for timeout
-- How to recover from network issue?

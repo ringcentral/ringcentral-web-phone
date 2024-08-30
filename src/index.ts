@@ -46,9 +46,9 @@ class WebPhone extends EventEmitter {
 
       // tell SIP server that we are ringing
       let tempMesage = new ResponseMessage(inboundMessage, { responseCode: 100 });
-      await this.send(tempMesage);
+      await this.reply(tempMesage);
       tempMesage = new ResponseMessage(inboundMessage, { responseCode: 180 });
-      await this.send(tempMesage);
+      await this.reply(tempMesage);
 
       // if we don't send this, toVoicemail() will not work
       inboundCallSession.confirmReceive();
@@ -78,7 +78,7 @@ class WebPhone extends EventEmitter {
       ) {
         // Auto reply 200 OK to MESSAGE, BYE, CANCEL, INFO, NOTIFY
         const responsMessage = new ResponseMessage(inboundMessage, { responseCode: 200 });
-        await this.send(responsMessage);
+        await this.reply(responsMessage);
       }
       // either inbound BYE/CANCEL or server reply to outbound BYE/CANCEL
       if (inboundMessage.headers.CSeq.endsWith(' BYE') || inboundMessage.headers.CSeq.endsWith(' CANCEL')) {
@@ -126,8 +126,25 @@ class WebPhone extends EventEmitter {
     this.wsc.close();
   }
 
+  public async call(callee: string, callerId?: string) {
+    this.callSessions.push(new OutboundCallSession(this));
+    // write it this way so that it will be compatible with manate, outboundCallSession will be managed
+    const outboundCallSession = this.callSessions[this.callSessions.length - 1] as OutboundCallSession;
+    this.emit('outboundCall', outboundCallSession);
+    await outboundCallSession.init();
+    await outboundCallSession.call(callee, callerId);
+    return outboundCallSession;
+  }
+
+  public async request(message: OutboundMessage): Promise<InboundMessage> {
+    return this._send(message, true);
+  }
+  public async reply(message: OutboundMessage): Promise<void> {
+    await this._send(message, false);
+  }
+
   // send a SIP message to SIP server
-  public send(message: OutboundMessage, waitForReply = false): Promise<InboundMessage> {
+  private _send(message: OutboundMessage, waitForReply = false): Promise<InboundMessage> {
     this.wsc.send(message.toString());
     if (!waitForReply) {
       return new Promise<InboundMessage>((resolve) => {
@@ -150,15 +167,6 @@ class WebPhone extends EventEmitter {
   }
 
   // make an outbound call
-  public async call(callee: string, callerId?: string) {
-    this.callSessions.push(new OutboundCallSession(this));
-    // write it this way so that it will be compatible with manate, outboundCallSession will be managed
-    const outboundCallSession = this.callSessions[this.callSessions.length - 1] as OutboundCallSession;
-    this.emit('outboundCall', outboundCallSession);
-    await outboundCallSession.init();
-    await outboundCallSession.call(callee, callerId);
-    return outboundCallSession;
-  }
 
   private async sipRegister(expires = 60) {
     const requestMessage = new RequestMessage(`REGISTER sip:${this.sipInfo.domain} SIP/2.0`, {
@@ -168,13 +176,13 @@ class WebPhone extends EventEmitter {
       To: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>`,
       Via: `SIP/2.0/WSS ${this.fakeDomain};branch=${branch()}`,
     });
-    const inboundMessage = await this.send(requestMessage, true);
+    const inboundMessage = await this.request(requestMessage);
     const wwwAuth = inboundMessage.headers['Www-Authenticate'] || inboundMessage!.headers['WWW-Authenticate'];
     if (wwwAuth) {
       const nonce = wwwAuth.match(/, nonce="(.+?)"/)![1];
       const newMessage = requestMessage.fork();
       newMessage.headers.Authorization = generateAuthorization(this.sipInfo, nonce, 'REGISTER');
-      await this.send(newMessage, true);
+      await this.request(newMessage);
     } else if (inboundMessage.subject.startsWith('SIP/2.0 603 ')) {
       throw new Error('Registration failed: ' + inboundMessage.subject);
     }
