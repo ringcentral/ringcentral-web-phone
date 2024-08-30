@@ -34,7 +34,7 @@ const setupPage = async ({ context, sipInfo }: { context: BrowserContext; sipInf
   const page = await context.newPage();
   await page.goto('/');
   const messages: SipMessage[] = [];
-  // we do not use page.once, because client side may call register() multiple times
+  // we do not use page.once here, because client side may call register() multiple times
   page.on('websocket', (ws) => {
     ws.on('framesent', (frame) => messages.push(OutboundMessage.fromString(frame.payload as string)));
     ws.on('framereceived', (frame) => messages.push(InboundMessage.fromString(frame.payload as string)));

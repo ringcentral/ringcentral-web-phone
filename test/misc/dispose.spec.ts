@@ -3,31 +3,18 @@ import { expect } from '@playwright/test';
 import { testOnePage } from '../common';
 
 testOnePage('dispose', async ({ pageResource }) => {
-  const { page, messages } = pageResource;
-  await page.evaluate(async () => {
-    await window.webPhone.register();
-  });
-  messages.length = 0;
+  const { page, messages: sipMessages } = pageResource;
   await page.evaluate(async () => {
     await window.webPhone.dispose();
   });
-  await page.waitForTimeout(500);
+  const messages = sipMessages.map((m) => m.shortString);
   expect(messages).toHaveLength(6);
-  expect(messages.map((m) => m.subject)).toEqual([
-    'REGISTER sip:sip.ringcentral.com SIP/2.0',
-    'SIP/2.0 100 Trying',
-    'SIP/2.0 401 Unauthorized',
-    'REGISTER sip:sip.ringcentral.com SIP/2.0',
-    'SIP/2.0 100 Trying',
-    'SIP/2.0 200 OK',
-  ]);
-  expect(messages.map((m) => m.direction)).toEqual([
-    'outbound',
-    'inbound',
-    'inbound',
-    'outbound',
-    'inbound',
-    'inbound',
-  ]);
-  expect(messages[0].headers.Contact.endsWith(';expires=0')).toBeTruthy();
+  expect(messages).toHaveLength(6);
+  expect(messages[0]).toMatch(/^outbound - REGISTER sip:/);
+  expect(messages[1]).toMatch(/^inbound - SIP\/2.0 100 Trying$/);
+  expect(messages[2]).toMatch(/^inbound - SIP\/2.0 401 Unauthorized$/);
+  expect(messages[3]).toMatch(/^outbound - REGISTER sip:/);
+  expect(messages[4]).toMatch(/^inbound - SIP\/2.0 100 Trying$/);
+  expect(messages[5]).toMatch(/^inbound - SIP\/2.0 200 OK$/);
+  expect(sipMessages[0].headers.Contact.endsWith(';expires=0')).toBeTruthy();
 });

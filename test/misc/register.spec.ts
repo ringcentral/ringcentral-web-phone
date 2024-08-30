@@ -6,6 +6,7 @@ testOnePage('register', async ({ pageResource }) => {
   const { page, messages: sipMessages } = pageResource;
   await page.evaluate(async () => {
     // register AGAIN, because in setup code there is already a register
+    // in case of network outage or recover from sleep, we may need to register again
     await window.webPhone.register();
   });
   const messages = sipMessages.map((m) => m.shortString);
