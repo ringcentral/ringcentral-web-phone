@@ -27,7 +27,7 @@ class WebPhone extends EventEmitter {
   public callSessions: CallSession[] = [];
 
   private intervalHandle: NodeJS.Timeout;
-  private state: 'init' | 'connected' | 'disposed' = 'init';
+  private state: 'init' | 'connecting' | 'connected' | 'disposed' = 'init';
 
   public constructor(options: WebPhoneOptions) {
     super();
@@ -56,7 +56,12 @@ class WebPhone extends EventEmitter {
   }
 
   public async register() {
-    this.state = 'init'; // in case register() is called again
+    // in case register() is called again
+    if (this.wsc) {
+      this.wsc.close();
+    }
+
+    this.state = 'connecting';
     this.wsc = new WebSocket('wss://' + this.sipInfo.outboundProxy, 'sip');
     this.wsc.onopen = () => {
       this.state = 'connected';

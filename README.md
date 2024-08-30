@@ -441,6 +441,12 @@ You could create it on-the-fly or you can find an existing call session.
 
 For a live sample, please refer to https://github.com/tylerlong/rc-web-phone-demo-2
 
+
+## Recover from network outage
+
+If you believe your app just recovered from network outage and the underlying websocket connection is broken, you may call `webPhone.regsiter()` to re-register the SIP client. It will create a brand new websocket connection to the SIP server.
+
+
 ## Breaking changes
 
 ### API changes
@@ -463,6 +469,7 @@ And playing ringing audio is not a core feature of the SDK. It's more about how 
 SDK 1.x treats forwarding as answering the call and then transfer the call.
 SDK 2.x treats forwarding as sending a SIP message to the SIP server to forward the call.
 I would like to say this is more like a bug fix than a behavior change.
+
 
 ## Maintainers Notes
 
