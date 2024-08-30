@@ -27,16 +27,39 @@ class WebPhone extends EventEmitter {
   public callSessions: CallSession[] = [];
 
   private intervalHandle: NodeJS.Timeout;
-  private connected = false;
-  private disposed = false;
+  private state: 'init' | 'connected' | 'disposed' = 'init';
 
   public constructor(options: WebPhoneOptions) {
     super();
     this.sipInfo = options.sipInfo;
     this.instanceId = options.instanceId ?? this.sipInfo.authorizationId!;
+
+    // listen for incoming calls
+    this.on('message', async (inboundMessage: InboundMessage) => {
+      if (!inboundMessage.subject.startsWith('INVITE sip:')) {
+        return;
+      }
+      this.callSessions.push(new InboundCallSession(this, inboundMessage));
+      // write it this way so that it will be compatible with manate, inboundCallSession will be managed
+      const inboundCallSession = this.callSessions[this.callSessions.length - 1] as InboundCallSession;
+      this.emit('inboundCall', inboundCallSession);
+
+      // tell SIP server that we are ringing
+      let tempMesage = new ResponseMessage(inboundMessage, { responseCode: 100 });
+      await this.send(tempMesage);
+      tempMesage = new ResponseMessage(inboundMessage, { responseCode: 180 });
+      await this.send(tempMesage);
+
+      // if we don't send this, toVoicemail() will not work
+      inboundCallSession.confirmReceive();
+    });
+  }
+
+  public async register() {
+    this.state = 'init'; // in case register() is called again
     this.wsc = new WebSocket('wss://' + this.sipInfo.outboundProxy, 'sip');
     this.wsc.onopen = () => {
-      this.connected = true;
+      this.state = 'connected';
     };
     this.wsc.onmessage = async (event) => {
       const inboundMessage = InboundMessage.fromString(event.data);
@@ -63,12 +86,8 @@ class WebPhone extends EventEmitter {
         }
       }
     };
-  }
 
-  public async register() {
-    if (!this.connected) {
-      await waitFor({ interval: 100, condition: () => this.connected });
-    }
+    await waitFor({ interval: 100, condition: () => this.state === 'connected' });
     await this.sipRegister();
     if (this.intervalHandle) {
       clearInterval(this.intervalHandle);
@@ -79,27 +98,6 @@ class WebPhone extends EventEmitter {
       },
       1 * 55 * 1000, // refresh registration every 55 seconds, otherwise WS will disconnect
     );
-
-    // listen for incoming calls
-    // todo: what if register called multiple times?
-    this.on('message', async (inboundMessage: InboundMessage) => {
-      if (!inboundMessage.subject.startsWith('INVITE sip:')) {
-        return;
-      }
-      this.callSessions.push(new InboundCallSession(this, inboundMessage));
-      // write it this way so that it will be compatible with manate, inboundCallSession will be managed
-      const inboundCallSession = this.callSessions[this.callSessions.length - 1] as InboundCallSession;
-      this.emit('inboundCall', inboundCallSession);
-
-      // tell SIP server that we are ringing
-      let tempMesage = new ResponseMessage(inboundMessage, { responseCode: 100 });
-      await this.send(tempMesage);
-      tempMesage = new ResponseMessage(inboundMessage, { responseCode: 180 });
-      await this.send(tempMesage);
-
-      // if we don't send this, toVoicemail() will not work
-      inboundCallSession.confirmReceive();
-    });
   }
 
   // to print all SIP messages to console
@@ -113,10 +111,10 @@ class WebPhone extends EventEmitter {
   }
 
   public async dispose() {
-    if (this.disposed) {
+    if (this.state === 'disposed') {
       return;
     }
-    this.disposed = true;
+    this.state = 'disposed';
     clearInterval(this.intervalHandle);
     this.removeAllListeners();
     await this.sipRegister(0);

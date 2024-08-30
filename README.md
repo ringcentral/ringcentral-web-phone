@@ -508,7 +508,8 @@ After this method call, no incoming call will be received. If you try to make an
 - create some slides to talk about the reasoning for getting rid of SIP.js
 - How to decouple SIP from WebRTC?
 - generate api reference
-- every web request must await for response
+- every SIP request must await for response
   - change `send` to `request` and `reply`. former requires response, latter doesn't
 - every api call must await for status ready
   - so that in test cases we don't need to wait for timeout
+- How to recover from network issue?
