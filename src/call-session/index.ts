@@ -242,10 +242,10 @@ abstract class CallSession extends EventEmitter {
         if (!response || response.reqid !== reqid || response.command !== command) {
           return;
         }
-        this.webPhone.off('message', resultHandler);
+        this.webPhone.off('inboundMessage', resultHandler);
         resolve(response.result);
       };
-      this.webPhone.on('message', resultHandler);
+      this.webPhone.on('inboundMessage', resultHandler);
     });
   }
 

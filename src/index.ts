@@ -35,7 +35,7 @@ class WebPhone extends EventEmitter {
     this.instanceId = options.instanceId ?? this.sipInfo.authorizationId!;
 
     // listen for incoming calls
-    this.on('message', async (inboundMessage: InboundMessage) => {
+    this.on('inboundMessage', async (inboundMessage: InboundMessage) => {
       if (!inboundMessage.subject.startsWith('INVITE sip:')) {
         return;
       }
@@ -68,7 +68,7 @@ class WebPhone extends EventEmitter {
     };
     this.wsc.onmessage = async (event) => {
       const inboundMessage = InboundMessage.fromString(event.data);
-      this.emit('message', inboundMessage);
+      this.emit('inboundMessage', inboundMessage);
       if (
         inboundMessage.subject.startsWith('MESSAGE sip:') ||
         inboundMessage.subject.startsWith('BYE sip:') ||
@@ -107,12 +107,8 @@ class WebPhone extends EventEmitter {
 
   // to print all SIP messages to console
   public async enableDebugMode() {
-    this.on('message', (message) => console.log(`Receiving...(${new Date()})\n` + message.toString()));
-    const wscSend = this.wsc.send.bind(this.wsc);
-    this.wsc.send = (message) => {
-      console.log(`Sending...(${new Date()})\n` + message);
-      return wscSend(message);
-    };
+    this.on('inboundMessage', (message) => console.log(`Receiving...(${new Date()})\n` + message.toString()));
+    this.on('outboundMessage', (message) => console.log(`Sending...(${new Date()})\n` + message.toString()));
   }
 
   public async dispose() {
@@ -146,6 +142,7 @@ class WebPhone extends EventEmitter {
   // send a SIP message to SIP server
   private _send(message: OutboundMessage, waitForReply = false): Promise<InboundMessage> {
     this.wsc.send(message.toString());
+    this.emit('outboundMessage', message);
     if (!waitForReply) {
       return new Promise<InboundMessage>((resolve) => {
         resolve(new InboundMessage());
@@ -159,10 +156,10 @@ class WebPhone extends EventEmitter {
         if (inboundMessage.subject.startsWith('SIP/2.0 100 ')) {
           return; // ignore
         }
-        this.off('message', messageListerner);
+        this.off('inboundMessage', messageListerner);
         resolve(inboundMessage);
       };
-      this.on('message', messageListerner);
+      this.on('inboundMessage', messageListerner);
     });
   }
 

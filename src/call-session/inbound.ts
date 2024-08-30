@@ -6,6 +6,7 @@ import CallSession from '.';
 import { branch, uuid } from '../utils';
 import RcMessage from '../rc-message/rc-message';
 import callControlCommands from '../rc-message/call-control-commands';
+import type OutboundMessage from '../sip-message/outbound';
 
 class InboundCallSession extends CallSession {
   public constructor(webPhone: WebPhone, inviteMessage: InboundMessage) {
@@ -24,6 +25,16 @@ class InboundCallSession extends CallSession {
 
   public async toVoicemail() {
     await this.sendRcMessage(callControlCommands.ClientVoicemail);
+    // wait for outbound reply to CANCEL
+    return new Promise<void>((resolve) => {
+      const handler = async (outboundMessage: OutboundMessage) => {
+        if (outboundMessage.headers['Call-Id'] === this.callId && outboundMessage.headers.CSeq.endsWith(' CANCEL')) {
+          this.webPhone.off('outboundMessage', handler);
+          resolve();
+        }
+      };
+      this.webPhone.on('outboundMessage', handler);
+    });
   }
 
   public async decline() {
@@ -44,13 +55,13 @@ class InboundCallSession extends CallSession {
         if (inboundMessage.subject.startsWith('MESSAGE sip:')) {
           const rcMessage = await RcMessage.fromXml(inboundMessage.body);
           if (rcMessage.headers.Cmd === callControlCommands.SessionClose.toString()) {
-            this.webPhone.off('message', sessionCloseHandler);
+            this.webPhone.off('inboundMessage', sessionCloseHandler);
             resolve(rcMessage);
             // no need to dispose session here, session will dispose unpon CANCEL or BYE
           }
         }
       };
-      this.webPhone.on('message', sessionCloseHandler);
+      this.webPhone.on('inboundMessage', sessionCloseHandler);
     });
   }
 

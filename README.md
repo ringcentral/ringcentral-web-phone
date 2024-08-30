@@ -354,7 +354,7 @@ await callSession.sendDTMF(dtmf);
 You may subscribe to events, examples:
 
 ```ts
-webPhone.on('message', (inboundMessage: InboundMessage) => {
+webPhone.on('inboundMessage', (inboundMessage: InboundMessage) => {
   // do something with the inbound SIP message
 });
 ```
@@ -367,8 +367,10 @@ callSession.on('disposed', () => {
 
 ### WebPhone Events
 
-- message
+- inboundMessage
   - new inbound SIP message, payload type: [InboundMessage](./src/sip-message/inbound/index.ts)
+- outboundMessage
+  - new outbound SIP message, payload type: [OutboundMessage](./src/sip-message/outbound/index.ts)
 - inboundCall
   - new inbound call session, payload type: [InboundCallSession](./src/call-session/inbound.ts)
 - outboundCall
