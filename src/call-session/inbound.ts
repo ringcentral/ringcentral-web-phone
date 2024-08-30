@@ -19,26 +19,26 @@ class InboundCallSession extends CallSession {
   }
 
   public async confirmReceive() {
-    this.sendRcMessage(callControlCommands.ClientReceiveConfirm);
+    await this.sendRcMessage(callControlCommands.ClientReceiveConfirm);
   }
 
   public async toVoicemail() {
-    this.sendRcMessage(callControlCommands.ClientVoicemail);
+    await this.sendRcMessage(callControlCommands.ClientVoicemail);
   }
 
   public async decline() {
-    this.sendRcMessage(callControlCommands.ClientReject);
+    await this.sendRcMessage(callControlCommands.ClientReject);
   }
 
   public async forward(target: string) {
-    this.sendRcMessage(callControlCommands.ClientForward, { FwdDly: '0', Phn: target, PhnTp: '3' });
+    await this.sendRcMessage(callControlCommands.ClientForward, { FwdDly: '0', Phn: target, PhnTp: '3' });
   }
 
   public async startReply() {
-    this.sendRcMessage(callControlCommands.ClientStartReply);
+    await this.sendRcMessage(callControlCommands.ClientStartReply);
   }
   public async reply(text: string): Promise<RcMessage> {
-    this.sendRcMessage(callControlCommands.ClientReply, { RepTp: '0', Bdy: text });
+    await this.sendRcMessage(callControlCommands.ClientReply, { RepTp: '0', Bdy: text });
     return new Promise((resolve) => {
       const sessionCloseHandler = async (inboundMessage: InboundMessage) => {
         if (inboundMessage.subject.startsWith('MESSAGE sip:')) {
@@ -77,7 +77,7 @@ class InboundCallSession extends CallSession {
       },
       body: answer.sdp,
     });
-    this.webPhone.send(newMessage);
+    await this.webPhone.send(newMessage);
 
     this.state = 'answered';
     this.emit('answered');
@@ -115,7 +115,7 @@ class InboundCallSession extends CallSession {
       },
       newRcMessage.toXml(),
     );
-    await this.webPhone.send(requestSipMessage);
+    await this.webPhone.send(requestSipMessage, true);
   }
 }
 

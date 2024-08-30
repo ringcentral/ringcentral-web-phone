@@ -212,7 +212,7 @@ abstract class CallSession extends EventEmitter {
       Via: replyMessage.headers.Via,
       CSeq: replyMessage.headers.CSeq.replace(' INVITE', ' ACK'),
     });
-    this.webPhone.send(ackMessage);
+    await this.webPhone.send(ackMessage);
   }
 
   protected async sendJsonMessage<T>(
@@ -258,7 +258,7 @@ abstract class CallSession extends EventEmitter {
       'Refer-To': uri,
       'Referred-By': `<${extractAddress(this.localPeer)}>`,
     });
-    this.webPhone.send(requestMessage);
+    await this.webPhone.send(requestMessage);
   }
 }
 

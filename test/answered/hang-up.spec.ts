@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import waitFor from 'wait-for-async';
 
 import { assertCallCount, callAndAnswer, testTwoPages } from '../common';
 import RcMessage from '../../src/rc-message/rc-message';
@@ -19,9 +20,16 @@ testTwoPages('caller hang up', async ({ callerResource, calleeResource }) => {
   expect(callerMessages.map((m) => m.direction)).toEqual(['outbound', 'inbound']);
   expect(callerMessages[0].subject.startsWith('BYE sip:')).toBeTruthy();
   expect(callerMessages[1].subject).toBe('SIP/2.0 200 OK');
+  await assertCallCount(callerPage, 0);
 
   // callee
-  expect(calleeMessages).toHaveLength(4);
+  await waitFor({
+    interval: 100,
+    condition: () => {
+      const lastMessage = calleeMessages[calleeMessages.length - 1];
+      return lastMessage && lastMessage.subject === 'SIP/2.0 200 OK' && lastMessage.headers.CSeq.endsWith(' MESSAGE');
+    },
+  });
   const messages = calleeMessages.map((m) => m.shortString);
   expect(messages).toHaveLength(4);
   expect(messages[0]).toMatch(/^inbound - BYE sip:/);
@@ -30,7 +38,5 @@ testTwoPages('caller hang up', async ({ callerResource, calleeResource }) => {
   expect(messages[3]).toMatch(/^outbound - SIP\/2.0 200 OK$/);
   const rcMessage = await RcMessage.fromXml(calleeMessages[2].body);
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.ServerFreeResources.toString());
-
-  await assertCallCount(callerPage, 0);
   await assertCallCount(calleePage, 0);
 });

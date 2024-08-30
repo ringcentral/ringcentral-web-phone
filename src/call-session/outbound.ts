@@ -57,7 +57,7 @@ class OutboundCallSession extends CallSession {
     this.remotePeer = progressMessage.headers.To;
 
     // when the call is answered
-    const answerHandler = (message: InboundMessage) => {
+    const answerHandler = async (message: InboundMessage) => {
       if (message.headers.CSeq === this.sipMessage.headers.CSeq) {
         this.webPhone.off('message', answerHandler);
         this.state = 'answered';
@@ -70,7 +70,7 @@ class OutboundCallSession extends CallSession {
           Via: this.sipMessage.headers.Via,
           CSeq: this.sipMessage.headers.CSeq.replace(' INVITE', ' ACK'),
         });
-        this.webPhone.send(ackMessage);
+        await this.webPhone.send(ackMessage);
       }
     };
     this.webPhone.on('message', answerHandler);
@@ -84,7 +84,7 @@ class OutboundCallSession extends CallSession {
       Via: this.sipMessage.headers.Via,
       CSeq: this.sipMessage.headers.CSeq.replace(' INVITE', ' CANCEL'),
     });
-    this.webPhone.send(requestMessage);
+    await this.webPhone.send(requestMessage);
   }
 }
 

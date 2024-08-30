@@ -38,7 +38,7 @@ class WebPhone extends EventEmitter {
     this.wsc.onopen = () => {
       this.connected = true;
     };
-    this.wsc.onmessage = (event) => {
+    this.wsc.onmessage = async (event) => {
       const inboundMessage = InboundMessage.fromString(event.data);
       this.emit('message', inboundMessage);
       if (
@@ -50,7 +50,7 @@ class WebPhone extends EventEmitter {
       ) {
         // Auto reply 200 OK to MESSAGE, BYE, CANCEL, INFO, NOTIFY
         const responsMessage = new ResponseMessage(inboundMessage, { responseCode: 200 });
-        this.send(responsMessage);
+        await this.send(responsMessage);
       }
       // either inbound BYE/CANCEL or server reply to outbound BYE/CANCEL
       if (inboundMessage.headers.CSeq.endsWith(' BYE') || inboundMessage.headers.CSeq.endsWith(' CANCEL')) {
@@ -82,7 +82,7 @@ class WebPhone extends EventEmitter {
 
     // listen for incoming calls
     // todo: what if register called multiple times?
-    this.on('message', (inboundMessage) => {
+    this.on('message', async (inboundMessage: InboundMessage) => {
       if (!inboundMessage.subject.startsWith('INVITE sip:')) {
         return;
       }
@@ -93,9 +93,9 @@ class WebPhone extends EventEmitter {
 
       // tell SIP server that we are ringing
       let tempMesage = new ResponseMessage(inboundMessage, { responseCode: 100 });
-      this.send(tempMesage);
+      await this.send(tempMesage);
       tempMesage = new ResponseMessage(inboundMessage, { responseCode: 180 });
-      this.send(tempMesage);
+      await this.send(tempMesage);
 
       // if we don't send this, toVoicemail() will not work
       inboundCallSession.confirmReceive();
