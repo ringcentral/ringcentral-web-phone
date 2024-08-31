@@ -83,7 +83,7 @@ class WebPhone extends EventEmitter {
       // either inbound BYE/CANCEL or server reply to outbound BYE/CANCEL
       if (inboundMessage.headers.CSeq.endsWith(' BYE') || inboundMessage.headers.CSeq.endsWith(' CANCEL')) {
         const index = this.callSessions.findIndex(
-          (callSession) => callSession.callId === inboundMessage.headers['Call-ID'],
+          (callSession) => callSession.callId === inboundMessage.headers['Call-Id'],
         );
         if (index !== -1) {
           this.callSessions[index].dispose();
@@ -167,7 +167,7 @@ class WebPhone extends EventEmitter {
 
   private async sipRegister(expires = 60) {
     const requestMessage = new RequestMessage(`REGISTER sip:${this.sipInfo.domain} SIP/2.0`, {
-      'Call-ID': uuid(),
+      'Call-Id': uuid(),
       Contact: `<sip:${this.fakeEmail};transport=wss>;+sip.instance="<urn:uuid:${this.instanceId}>";expires=${expires}`,
       From: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>;tag=${uuid()}`,
       To: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>`,

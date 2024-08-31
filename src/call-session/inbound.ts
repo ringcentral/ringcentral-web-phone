@@ -28,7 +28,7 @@ class InboundCallSession extends CallSession {
     // wait for outbound reply to CANCEL
     return new Promise<void>((resolve) => {
       const handler = async (outboundMessage: OutboundMessage) => {
-        if (outboundMessage.headers['Call-ID'] === this.callId && outboundMessage.headers.CSeq.endsWith(' CANCEL')) {
+        if (outboundMessage.headers['Call-Id'] === this.callId && outboundMessage.headers.CSeq.endsWith(' CANCEL')) {
           this.webPhone.off('outboundMessage', handler);
           resolve();
         }
@@ -42,7 +42,7 @@ class InboundCallSession extends CallSession {
     // wait for outbound reply to CANCEL
     return new Promise<void>((resolve) => {
       const handler = async (outboundMessage: OutboundMessage) => {
-        if (outboundMessage.headers['Call-ID'] === this.callId && outboundMessage.headers.CSeq.endsWith(' CANCEL')) {
+        if (outboundMessage.headers['Call-Id'] === this.callId && outboundMessage.headers.CSeq.endsWith(' CANCEL')) {
           this.webPhone.off('outboundMessage', handler);
           resolve();
         }
@@ -131,7 +131,7 @@ class InboundCallSession extends CallSession {
         Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
         To: `<sip:${newRcMessage.headers.To}>`,
         From: `<sip:${this.webPhone.sipInfo.username}@${this.webPhone.sipInfo.domain}>;tag=${uuid()}`,
-        'Call-ID': this.callId,
+        'Call-Id': this.callId,
         'Content-Type': 'x-rc/agent',
       },
       newRcMessage.toXml(),

@@ -21,7 +21,7 @@ testTwoPages('call', async ({ callerResource, calleeResource }) => {
     `outbound - ACK sip:${calleeNumber}@sip.ringcentral.com SIP/2.0`,
   ]);
   await assertCallCount(callerPage, 1);
-  expect(new Set(callerMessages.map((m) => m.headers['Call-ID'])).size).toBe(1);
+  expect(new Set(callerMessages.map((m) => m.headers['Call-Id'])).size).toBe(1);
 
   // callee
   messages = calleeMessages.map((m) => m.shortString);
@@ -38,5 +38,5 @@ testTwoPages('call', async ({ callerResource, calleeResource }) => {
   rcMessage = await RcMessage.fromXml(calleeMessages[3].body);
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.ClientReceiveConfirm.toString());
   await assertCallCount(calleePage, 1);
-  expect(new Set(calleeMessages.map((m) => m.headers['Call-ID'])).size).toBe(1);
+  expect(new Set(calleeMessages.map((m) => m.headers['Call-Id'])).size).toBe(1);
 });

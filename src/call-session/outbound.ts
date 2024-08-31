@@ -27,7 +27,7 @@ class OutboundCallSession extends CallSession {
     const inviteMessage = new RequestMessage(
       `INVITE sip:${callee}@${this.webPhone.sipInfo.domain} SIP/2.0`,
       {
-        'Call-ID': uuid(),
+        'Call-Id': uuid(),
         Contact: `<sip:${this.webPhone.fakeEmail};transport=wss>;expires=60`,
         From: `<sip:${this.webPhone.sipInfo.username}@${this.webPhone.sipInfo.domain}>;tag=${uuid()}`,
         To: `<sip:${callee}@${this.webPhone.sipInfo.domain}>`,
@@ -64,7 +64,7 @@ class OutboundCallSession extends CallSession {
         this.emit('answered');
         this.rtcPeerConnection.setRemoteDescription({ type: 'answer', sdp: message.body });
         const ackMessage = new RequestMessage(`ACK ${extractAddress(this.remotePeer)} SIP/2.0`, {
-          'Call-ID': this.callId,
+          'Call-Id': this.callId,
           From: this.localPeer,
           To: this.remotePeer,
           Via: this.sipMessage.headers.Via,
@@ -78,7 +78,7 @@ class OutboundCallSession extends CallSession {
 
   public async cancel() {
     const requestMessage = new RequestMessage(`CANCEL ${extractAddress(this.remotePeer)} SIP/2.0`, {
-      'Call-ID': this.callId,
+      'Call-Id': this.callId,
       From: this.localPeer,
       To: withoutTag(this.remotePeer),
       Via: this.sipMessage.headers.Via,

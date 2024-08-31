@@ -38,7 +38,7 @@ abstract class CallSession extends EventEmitter {
   }
 
   public get callId() {
-    return this.sipMessage?.headers['Call-ID'] ?? uuid();
+    return this.sipMessage?.headers['Call-Id'] ?? uuid();
   }
 
   public get sessionId() {
@@ -105,7 +105,7 @@ abstract class CallSession extends EventEmitter {
 
   public async hangup() {
     const requestMessage = new RequestMessage(`BYE sip:${this.webPhone.sipInfo.domain} SIP/2.0`, {
-      'Call-ID': this.callId,
+      'Call-Id': this.callId,
       From: this.localPeer,
       To: this.remotePeer,
       Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
@@ -196,7 +196,7 @@ abstract class CallSession extends EventEmitter {
     const requestMessage = new RequestMessage(
       `INVITE ${extractAddress(this.remotePeer)} SIP/2.0`,
       {
-        'Call-ID': this.callId,
+        'Call-Id': this.callId,
         From: this.localPeer,
         To: this.remotePeer,
         Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
@@ -206,7 +206,7 @@ abstract class CallSession extends EventEmitter {
     );
     const replyMessage = await this.webPhone.request(requestMessage);
     const ackMessage = new RequestMessage(`ACK ${extractAddress(this.remotePeer)} SIP/2.0`, {
-      'Call-ID': this.callId,
+      'Call-Id': this.callId,
       From: this.localPeer,
       To: this.remotePeer,
       Via: replyMessage.headers.Via,
@@ -224,7 +224,7 @@ abstract class CallSession extends EventEmitter {
     const requestMessage = new RequestMessage(
       `INFO sip:${this.webPhone.sipInfo.domain} SIP/2.0`,
       {
-        'Call-ID': this.callId,
+        'Call-Id': this.callId,
         From: this.localPeer,
         To: this.remotePeer,
         Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
@@ -251,7 +251,7 @@ abstract class CallSession extends EventEmitter {
 
   protected async _transfer(uri: string) {
     const requestMessage = new RequestMessage(`REFER ${extractAddress(this.remotePeer)} SIP/2.0`, {
-      'Call-ID': this.callId,
+      'Call-Id': this.callId,
       From: this.localPeer,
       To: this.remotePeer,
       Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
