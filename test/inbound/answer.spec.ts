@@ -14,17 +14,16 @@ testTwoPages('answer inbound call', async ({ callerResource, calleeResource }) =
 
   // caller
   expect(callerMessages).toHaveLength(0);
+  await assertCallCount(callerPage, 1);
 
   // callee
-  expect(calleeMessages).toHaveLength(4);
-  expect(calleeMessages.map((m) => m.direction)).toEqual(['outbound', 'inbound', 'inbound', 'outbound']);
-  expect(calleeMessages[0].subject).toBe('SIP/2.0 200 OK');
-  expect(calleeMessages[1].subject.startsWith('ACK sip:')).toBeTruthy();
-  expect(calleeMessages[2].subject.startsWith('MESSAGE sip:')).toBeTruthy();
-  expect(calleeMessages[3].subject).toBe('SIP/2.0 200 OK');
+  const messages = calleeMessages.map((m) => m.shortString);
+  expect(messages).toHaveLength(4);
+  expect(messages[0]).toMatch(/^outbound - SIP\/2.0 200 OK$/);
+  expect(messages[1]).toMatch(/^inbound - ACK sip:/);
+  expect(messages[2]).toMatch(/^inbound - MESSAGE sip:/);
+  expect(messages[3]).toMatch(/^outbound - SIP\/2.0 200 OK$/);
   const rcMessage = await RcMessage.fromXml(calleeMessages[2].body);
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.AlreadyProcessed.toString());
-
-  await assertCallCount(callerPage, 1);
   await assertCallCount(calleePage, 1);
 });

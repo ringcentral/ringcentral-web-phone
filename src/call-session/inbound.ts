@@ -28,7 +28,7 @@ class InboundCallSession extends CallSession {
     // wait for outbound reply to CANCEL
     return new Promise<void>((resolve) => {
       const handler = async (outboundMessage: OutboundMessage) => {
-        if (outboundMessage.headers['Call-Id'] === this.callId && outboundMessage.headers.CSeq.endsWith(' CANCEL')) {
+        if (outboundMessage.headers['Call-ID'] === this.callId && outboundMessage.headers.CSeq.endsWith(' CANCEL')) {
           this.webPhone.off('outboundMessage', handler);
           resolve();
         }
@@ -39,6 +39,16 @@ class InboundCallSession extends CallSession {
 
   public async decline() {
     await this.sendRcMessage(callControlCommands.ClientReject);
+    // wait for outbound reply to CANCEL
+    return new Promise<void>((resolve) => {
+      const handler = async (outboundMessage: OutboundMessage) => {
+        if (outboundMessage.headers['Call-ID'] === this.callId && outboundMessage.headers.CSeq.endsWith(' CANCEL')) {
+          this.webPhone.off('outboundMessage', handler);
+          resolve();
+        }
+      };
+      this.webPhone.on('outboundMessage', handler);
+    });
   }
 
   public async forward(target: string) {

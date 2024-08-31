@@ -30,7 +30,17 @@ interface PageResource {
   messages: SipMessage[];
 }
 
-const setupPage = async ({ context, sipInfo }: { context: BrowserContext; sipInfo: string }) => {
+const setupPage = async ({
+  context,
+  sipInfo,
+  name,
+  debug,
+}: {
+  context: BrowserContext;
+  sipInfo: string;
+  name: string;
+  debug?: boolean;
+}) => {
   const page = await context.newPage();
   await page.goto('/');
   const messages: SipMessage[] = [];
@@ -39,6 +49,11 @@ const setupPage = async ({ context, sipInfo }: { context: BrowserContext; sipInf
     ws.on('framesent', (frame) => messages.push(OutboundMessage.fromString(frame.payload as string)));
     ws.on('framereceived', (frame) => messages.push(InboundMessage.fromString(frame.payload as string)));
   });
+  if (debug) {
+    page.on('console', (msg) => {
+      console.log(`\n[${name}] ${msg.text()}`);
+    });
+  }
   await page.evaluate(async (sipInfo) => {
     await window.setup(sipInfo);
   }, sipInfo);
@@ -55,7 +70,7 @@ const teardownPage = async (page: Page) => {
 
 export const testOnePage = test.extend<{ pageResource: PageResource }>({
   pageResource: async ({ context }, use) => {
-    const { page, messages } = await setupPage({ context, sipInfo: callerSipInfo });
+    const { page, messages } = await setupPage({ context, sipInfo: callerSipInfo, name: 'user' });
     await use({ page, messages });
     await teardownPage(page);
   },
@@ -66,12 +81,12 @@ export const testTwoPages = test.extend<{
   calleeResource: PageResource;
 }>({
   callerResource: async ({ context }, use) => {
-    const { page, messages } = await setupPage({ context, sipInfo: callerSipInfo });
+    const { page, messages } = await setupPage({ context, sipInfo: callerSipInfo, name: 'caller' });
     await use({ page, messages });
     await teardownPage(page);
   },
   calleeResource: async ({ context }, use) => {
-    const { page, messages } = await setupPage({ context, sipInfo: calleeSipInfo });
+    const { page, messages } = await setupPage({ context, sipInfo: calleeSipInfo, name: 'callee' });
     await use({ page, messages });
     await teardownPage(page);
   },

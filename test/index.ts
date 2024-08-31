@@ -11,6 +11,7 @@ global.setup = async (sipInfo: string) => {
     global.outboundCalls = webPhone.callSessions.filter((call) => call.direction === 'outbound');
   });
   start();
+  await webPhone.enableDebugMode();
   await webPhone.register();
   global.stopAutoRun = stop;
 };

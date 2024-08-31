@@ -16,7 +16,6 @@ testTwoPages('decline inbound call', async ({ callerResource, calleeResource }) 
   await assertCallCount(callerPage, 1);
 
   // callee
-  await calleePage.waitForTimeout(1000);
   const messages = calleeMessages.map((m) => m.shortString);
   expect(messages).toHaveLength(7);
   expect(messages[0]).toMatch(/^outbound - MESSAGE sip:/);
