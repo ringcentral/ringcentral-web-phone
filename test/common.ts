@@ -70,7 +70,7 @@ const teardownPage = async (page: Page) => {
 
 export const testOnePage = test.extend<{ pageResource: PageResource }>({
   pageResource: async ({ context }, use) => {
-    const { page, messages } = await setupPage({ context, sipInfo: callerSipInfo, name: 'user' });
+    const { page, messages } = await setupPage({ context, sipInfo: callerSipInfo, name: 'user', debug: false });
     await use({ page, messages });
     await teardownPage(page);
   },
@@ -81,12 +81,12 @@ export const testTwoPages = test.extend<{
   calleeResource: PageResource;
 }>({
   callerResource: async ({ context }, use) => {
-    const { page, messages } = await setupPage({ context, sipInfo: callerSipInfo, name: 'caller' });
+    const { page, messages } = await setupPage({ context, sipInfo: callerSipInfo, name: 'caller', debug: false });
     await use({ page, messages });
     await teardownPage(page);
   },
   calleeResource: async ({ context }, use) => {
-    const { page, messages } = await setupPage({ context, sipInfo: calleeSipInfo, name: 'callee' });
+    const { page, messages } = await setupPage({ context, sipInfo: calleeSipInfo, name: 'callee', debug: false });
     await use({ page, messages });
     await teardownPage(page);
   },

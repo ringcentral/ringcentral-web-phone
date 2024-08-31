@@ -4,14 +4,13 @@ import WebPhone from '../src';
 import { uuid } from '../src/utils';
 
 global.setup = async (sipInfo: string) => {
-  const webPhone = new WebPhone({ sipInfo: JSON.parse(sipInfo), instanceId: uuid() });
+  const webPhone = new WebPhone({ sipInfo: JSON.parse(sipInfo), instanceId: uuid(), debug: true });
   global.webPhone = manage(webPhone);
   const { start, stop } = autoRun(global.webPhone, () => {
     global.inboundCalls = webPhone.callSessions.filter((call) => call.direction === 'inbound');
     global.outboundCalls = webPhone.callSessions.filter((call) => call.direction === 'outbound');
   });
   start();
-  await webPhone.enableDebugMode();
   await webPhone.register();
   global.stopAutoRun = stop;
 };

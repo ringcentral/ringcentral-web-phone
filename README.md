@@ -112,10 +112,11 @@ If you don't specify `instanceId`, the SDK by default will use `sipInfo.authoriz
 
 If you start two web phone instances with different `instanceId`, both instances will work. SIP server will send messages to both instances.
 
+
 ## Debug Mode
 
 ```ts
-await webPhone.enableDebugMode();
+const webPhone = new WebPhone({ sipInfo, debug: true });
 ```
 
 In debug mode, the SDK will print all SIP messages to the console. It is useful for debugging.
@@ -508,6 +509,12 @@ In an ongoing call (either inbound or outbound), client may send special message
 
 Register the SIP client with expires time 0. It means that the SIP client will be unregistered immediately after the registration.
 After this method call, no incoming call will be received. If you try to make an outbound call, you will get a `SIP/2.0 403 Forbidden` response.
+
+
+### Call-Id
+
+SIP headers are case insensitive. SIP server INVITE message uses Call-Id, so this project uses Call-Id.
+Caller send INVITE, specify a Call-Id A; Callee receive INVITE, there is a Call-Id B. I find that A and B are different.
 
 ### Todo:
 

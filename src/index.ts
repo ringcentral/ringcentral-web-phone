@@ -14,15 +14,17 @@ import type CallSession from './call-session';
 interface WebPhoneOptions {
   sipInfo: SipInfo;
   instanceId?: string; // ref: https://docs.oracle.com/cd/E95618_01/html/sbc_scz810_acliconfiguration/GUID-B2A15693-DA4A-4E24-86D4-58B19435F4DA.htm
+  debug?: boolean;
 }
 
 class WebPhone extends EventEmitter {
   public sipInfo: SipInfo;
-  public wsc: WebSocket;
+  public instanceId: string;
+  public debug: boolean;
 
+  public wsc: WebSocket;
   public fakeDomain = uuid() + '.invalid';
   public fakeEmail = uuid() + '@' + this.fakeDomain;
-  public instanceId: string;
 
   public callSessions: CallSession[] = [];
 
@@ -33,6 +35,7 @@ class WebPhone extends EventEmitter {
     super();
     this.sipInfo = options.sipInfo;
     this.instanceId = options.instanceId ?? this.sipInfo.authorizationId!;
+    this.debug = options.debug ?? false;
 
     // listen for incoming calls
     this.on('inboundMessage', async (inboundMessage: InboundMessage) => {
@@ -63,10 +66,20 @@ class WebPhone extends EventEmitter {
 
     this.state = 'connecting';
     this.wsc = new WebSocket('wss://' + this.sipInfo.outboundProxy, 'sip');
+    if (this.debug) {
+      const wscSend = this.wsc.send.bind(this.wsc);
+      this.wsc.send = (message) => {
+        console.log(`Sending...(${new Date()})\n` + message);
+        return wscSend(message);
+      };
+    }
     this.wsc.onopen = () => {
       this.state = 'connected';
     };
     this.wsc.onmessage = async (event) => {
+      if (this.debug) {
+        console.log(`Receiving...(${new Date()})\n` + event.data);
+      }
       const inboundMessage = InboundMessage.fromString(event.data);
       this.emit('inboundMessage', inboundMessage);
       if (
@@ -103,12 +116,6 @@ class WebPhone extends EventEmitter {
       },
       1 * 55 * 1000, // refresh registration every 55 seconds, otherwise WS will disconnect
     );
-  }
-
-  // to print all SIP messages to console
-  public async enableDebugMode() {
-    this.on('inboundMessage', (message) => console.log(`Receiving...(${new Date()})\n` + message.toString()));
-    this.on('outboundMessage', (message) => console.log(`Sending...(${new Date()})\n` + message.toString()));
   }
 
   public async dispose() {
