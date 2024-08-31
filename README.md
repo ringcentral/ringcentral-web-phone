@@ -512,7 +512,8 @@ After this method call, no incoming call will be received. If you try to make an
 ### Call-Id
 
 SIP headers are case insensitive. SIP server INVITE message uses Call-Id, so this project uses Call-Id.
-Caller send INVITE, specify a Call-Id A; Callee receive INVITE, there is a Call-Id B. I find that A and B are different.
+
+Caller outbound INVITE and callee inbound INVITE don't have the same Call-Id. They are different. I am not sure it is a bug or not.
 
 ### Todo:
 
@@ -521,5 +522,4 @@ Caller send INVITE, specify a Call-Id A; Callee receive INVITE, there is a Call-
 - generate api reference
 - every api call must await for status ready
   - so that in test cases we don't need to wait for timeout
-- caller invite Call-Id different from callee invite Call-Id?
 - test case will fail if callee running in a browser tab
