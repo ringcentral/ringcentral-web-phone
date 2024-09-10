@@ -69,13 +69,13 @@ abstract class CallSession extends EventEmitter {
       video: false,
       audio: true,
     });
-    this.mediaStream.getTracks().forEach((track) => this.rtcPeerConnection.addTrack(track, this.mediaStream));
+    this.mediaStream.getAudioTracks().forEach((track) => this.rtcPeerConnection.addTrack(track, this.mediaStream));
     this.rtcPeerConnection.ontrack = (event) => {
       const remoteStream = event.streams[0];
       this.audioElement = document.createElement('audio') as HTMLAudioElement;
       this.audioElement.autoplay = true;
       this.audioElement.hidden = true;
-      document.body.appendChild(this.audioElement);
+      document.body.appendChild(this.audioElement); // todo: no need to append to body?
       this.audioElement.srcObject = remoteStream;
     };
   }
@@ -152,17 +152,14 @@ abstract class CallSession extends EventEmitter {
   }
 
   public sendDtmf(tones: string, duration?: number, interToneGap?: number) {
-    const senders = this.rtcPeerConnection.getSenders();
-    if (senders.length === 0) {
-      return;
+    for (const sender of this.rtcPeerConnection.getSenders()) {
+      sender.dtmf?.insertDTMF(tones, duration, interToneGap);
     }
-    const sender = senders[0];
-    sender.dtmf?.insertDTMF(tones, duration, interToneGap);
   }
 
   public dispose() {
     this.rtcPeerConnection?.close();
-    this.audioElement?.remove();
+    this.audioElement?.parentNode?.removeChild(this.audioElement);
     this.mediaStream?.getTracks().forEach((track) => track.stop());
     this.state = 'disposed';
     this.emit('disposed');

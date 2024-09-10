@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import waitFor from 'wait-for-async';
 
 import { assertCallCount, call, testTwoPages } from '../../common';
 import RcMessage from '../../../src/rc-message/rc-message';
@@ -11,7 +12,6 @@ testTwoPages('reply with yes', async ({ callerResource, calleeResource }) => {
   await calleePage.evaluate(async () => {
     await window.inboundCalls[0].startReply();
   });
-  await calleePage.waitForTimeout(500);
 
   // reply
   callerMessages.length = 0;
@@ -21,18 +21,17 @@ testTwoPages('reply with yes', async ({ callerResource, calleeResource }) => {
   calleePage.evaluate(async () => {
     await window.inboundCalls[0].reply('Hello world!');
   });
-  await calleePage.waitForTimeout(500);
 
   // caller press '3': Yes
   await callerPage.evaluate(async () => {
     await window.outboundCalls[0].sendDtmf('3');
   });
-  await callerPage.waitForTimeout(1000);
 
   // caller
   expect(callerMessages).toHaveLength(0);
 
   // callee
+  await waitFor({ condition: () => calleeMessages.length >= 7 });
   expect(calleeMessages).toHaveLength(7);
   expect(calleeMessages.map((m) => m.direction)).toEqual([
     'outbound',
