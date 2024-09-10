@@ -59,13 +59,6 @@ const setupPage = async ({
     });
     ws.on('framesent', (frame) => {
       const outboundMessage = OutboundMessage.fromString(frame.payload as string);
-      if (
-        outboundMessage.subject === 'SIP/2.0 200 OK' &&
-        messages.length > 0 &&
-        !messages.find((m) => m.headers.CSeq === outboundMessage.headers.CSeq)
-      ) {
-        return; // corresponding inbound message is not for this instance
-      }
       messages.push(outboundMessage);
     });
   });

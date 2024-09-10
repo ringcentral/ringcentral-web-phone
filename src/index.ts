@@ -10,6 +10,7 @@ import InboundCallSession from './call-session/inbound';
 import OutboundCallSession from './call-session/outbound';
 import EventEmitter from './event-emitter';
 import type CallSession from './call-session';
+import RcMessage from './rc-message/rc-message';
 
 interface WebPhoneOptions {
   sipInfo: SipInfo;
@@ -77,10 +78,16 @@ class WebPhone extends EventEmitter {
       this.state = 'connected';
     };
     this.wsc.onmessage = async (event) => {
+      const inboundMessage = InboundMessage.fromString(event.data);
+      if (inboundMessage.subject.startsWith('MESSAGE sip:')) {
+        const rcMessage = await RcMessage.fromXml(inboundMessage.body);
+        if (rcMessage.body.Cln && rcMessage.body.Cln !== this.sipInfo.authorizationId) {
+          return; // the message is not for this instance
+        }
+      }
       if (this.debug) {
         console.log(`Receiving...(${new Date()})\n` + event.data);
       }
-      const inboundMessage = InboundMessage.fromString(event.data);
       this.emit('inboundMessage', inboundMessage);
       if (
         inboundMessage.subject.startsWith('MESSAGE sip:') ||
@@ -90,8 +97,7 @@ class WebPhone extends EventEmitter {
         inboundMessage.subject.startsWith('NOTIFY sip:')
       ) {
         // Auto reply 200 OK to MESSAGE, BYE, CANCEL, INFO, NOTIFY
-        const responsMessage = new ResponseMessage(inboundMessage, { responseCode: 200 });
-        await this.reply(responsMessage);
+        await this.reply(new ResponseMessage(inboundMessage, { responseCode: 200 }));
       }
       // either inbound BYE/CANCEL or server reply to outbound BYE/CANCEL
       if (inboundMessage.headers.CSeq.endsWith(' BYE') || inboundMessage.headers.CSeq.endsWith(' CANCEL')) {
