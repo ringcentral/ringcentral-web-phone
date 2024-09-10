@@ -7,6 +7,7 @@ import InboundMessage from '../src/sip-message/inbound';
 import type WebPhone from '../src';
 import type OutboundCallSession from '../src/call-session/outbound';
 import type InboundCallSession from '../src/call-session/inbound';
+import RcMessage from '../src/rc-message/rc-message';
 
 declare global {
   interface Window {
@@ -46,8 +47,27 @@ const setupPage = async ({
   const messages: SipMessage[] = [];
   // we do not use page.once here, because client side may call register() multiple times
   page.on('websocket', (ws) => {
-    ws.on('framesent', (frame) => messages.push(OutboundMessage.fromString(frame.payload as string)));
-    ws.on('framereceived', (frame) => messages.push(InboundMessage.fromString(frame.payload as string)));
+    ws.on('framereceived', async (frame) => {
+      const inboundMessage = InboundMessage.fromString(frame.payload as string);
+      if (inboundMessage.subject.startsWith('MESSAGE ')) {
+        const rcMessage = await RcMessage.fromXml(inboundMessage.body);
+        if (rcMessage.body.Cln && rcMessage.body.Cln !== JSON.parse(sipInfo).authorizationId) {
+          return; // the message is not for this instance
+        }
+      }
+      messages.push(inboundMessage);
+    });
+    ws.on('framesent', (frame) => {
+      const outboundMessage = OutboundMessage.fromString(frame.payload as string);
+      if (
+        outboundMessage.subject === 'SIP/2.0 200 OK' &&
+        messages.length > 0 &&
+        !messages.find((m) => m.headers.CSeq === outboundMessage.headers.CSeq)
+      ) {
+        return; // corresponding inbound message is not for this instance
+      }
+      messages.push(outboundMessage);
+    });
   });
   if (debug) {
     page.on('console', (msg) => {

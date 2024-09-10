@@ -518,9 +518,11 @@ SIP headers are case insensitive. SIP server INVITE message uses Call-Id, so thi
 Caller outbound INVITE and callee inbound INVITE don't have the same Call-Id. They are different. I am not sure it is a bug or not.
 
 
-### AuthorizationId
+### multiple instances
 
-Every time you get a new `sipInfo`, you will get a new `authorizationId`. So different instances will have different `authorizationId`.
+Every time you get a new `sipInfo`, you will get a new `authorizationId`. So different instances will have different `authorizationId`, unless you share the same `sipInfo`.
+
+If there are 3 instances, after an incoming call is answered, each instance will receive 3 messages with Cmd="7" with different Cln="xxx". "xxx" here is authorizationId.
 
 
 ### Todo:
@@ -530,5 +532,3 @@ Every time you get a new `sipInfo`, you will get a new `authorizationId`. So dif
 - generate api reference
 - every api call must await for status ready
   - so that in test cases we don't need to wait for timeout
-- test case will fail if callee running in a browser tab
-  - I find that, if there are 3 instances, each instance will receive 3 messages about Cmd="7" with different Cln="xxx". "xxx" here is authorizationId.
