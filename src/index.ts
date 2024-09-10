@@ -129,6 +129,7 @@ class WebPhone extends EventEmitter {
     this.wsc.close();
   }
 
+  // make an outbound call
   public async call(callee: string, callerId?: string) {
     this.callSessions.push(new OutboundCallSession(this));
     // write it this way so that it will be compatible with manate, outboundCallSession will be managed
@@ -169,8 +170,6 @@ class WebPhone extends EventEmitter {
       this.on('inboundMessage', messageListerner);
     });
   }
-
-  // make an outbound call
 
   private async sipRegister(expires = 60) {
     const requestMessage = new RequestMessage(`REGISTER sip:${this.sipInfo.domain} SIP/2.0`, {
