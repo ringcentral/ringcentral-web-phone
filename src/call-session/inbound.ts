@@ -53,6 +53,16 @@ class InboundCallSession extends CallSession {
 
   public async forward(target: string) {
     await this.sendRcMessage(callControlCommands.ClientForward, { FwdDly: '0', Phn: target, PhnTp: '3' });
+    // wait for the final SIP message
+    return new Promise<void>((resolve) => {
+      const handler = async (inboundMessage: InboundMessage) => {
+        if (inboundMessage.subject.startsWith('CANCEL sip:')) {
+          this.webPhone.off('inboundMessage', handler);
+          resolve();
+        }
+      };
+      this.webPhone.on('inboundMessage', handler);
+    });
   }
 
   public async startReply() {
@@ -102,6 +112,20 @@ class InboundCallSession extends CallSession {
 
     this.state = 'answered';
     this.emit('answered');
+
+    // wait for the final SIP message
+    return new Promise<void>((resolve) => {
+      const handler = async (inboundMessage: InboundMessage) => {
+        if (inboundMessage.subject.startsWith('MESSAGE sip:')) {
+          const rcMessage = await RcMessage.fromXml(inboundMessage.body);
+          if (rcMessage.headers.Cmd === callControlCommands.AlreadyProcessed.toString()) {
+            this.webPhone.off('inboundMessage', handler);
+            resolve();
+          }
+        }
+      };
+      this.webPhone.on('inboundMessage', handler);
+    });
   }
 
   protected async sendRcMessage(

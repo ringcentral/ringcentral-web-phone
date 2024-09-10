@@ -10,7 +10,6 @@ testTwoPages('forward inbound call', async ({ callerResource, calleeResource }) 
   await calleePage.evaluate(async (anotherNumber) => {
     await window.inboundCalls[0].forward(anotherNumber);
   }, anotherNumber);
-  await calleePage.waitForTimeout(500);
 
   // caller
   expect(callerMessages).toHaveLength(0);
