@@ -1,5 +1,3 @@
-import waitFor from 'wait-for-async';
-
 import type OutboundMessage from './sip-message/outbound';
 import InboundMessage from './sip-message/inbound';
 import RequestMessage from './sip-message/outbound/request';
@@ -60,23 +58,7 @@ class WebPhone extends EventEmitter {
   }
 
   public async register() {
-    // in case register() is called again
-    if (this.wsc) {
-      this.wsc.close();
-    }
-
-    this.state = 'connecting';
-    this.wsc = new WebSocket('wss://' + this.sipInfo.outboundProxy, 'sip');
-    if (this.debug) {
-      const wscSend = this.wsc.send.bind(this.wsc);
-      this.wsc.send = (message) => {
-        console.log(`Sending...(${new Date()})\n` + message);
-        return wscSend(message);
-      };
-    }
-    this.wsc.onopen = () => {
-      this.state = 'connected';
-    };
+    await this.connectWS();
     this.wsc.onmessage = async (event) => {
       const inboundMessage = InboundMessage.fromString(event.data);
       if (inboundMessage.subject.startsWith('MESSAGE sip:')) {
@@ -111,7 +93,6 @@ class WebPhone extends EventEmitter {
       }
     };
 
-    await waitFor({ interval: 100, condition: () => this.state === 'connected' });
     await this.sipRegister();
     if (this.intervalHandle) {
       clearInterval(this.intervalHandle);
@@ -195,6 +176,28 @@ class WebPhone extends EventEmitter {
     } else if (inboundMessage.subject.startsWith('SIP/2.0 603 ')) {
       throw new Error('Registration failed: ' + inboundMessage.subject);
     }
+  }
+
+  private async connectWS() {
+    // in case register() is called again
+    if (this.wsc) {
+      this.wsc.close();
+    }
+    this.state = 'connecting';
+    this.wsc = new WebSocket('wss://' + this.sipInfo.outboundProxy, 'sip');
+    if (this.debug) {
+      const wscSend = this.wsc.send.bind(this.wsc);
+      this.wsc.send = (message) => {
+        console.log(`Sending...(${new Date()})\n` + message);
+        return wscSend(message);
+      };
+    }
+    return new Promise<void>((resolve) => {
+      this.wsc.onopen = () => {
+        this.state = 'connected';
+        resolve();
+      };
+    });
   }
 }
 

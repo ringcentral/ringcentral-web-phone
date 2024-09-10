@@ -11,7 +11,6 @@ testTwoPages('start reply', async ({ callerResource, calleeResource }) => {
   await calleePage.evaluate(async () => {
     await window.inboundCalls[0].startReply();
   });
-  await calleePage.waitForTimeout(500);
 
   // caller
   expect(callerMessages).toHaveLength(0);

@@ -23,13 +23,7 @@ testTwoPages('caller hang up', async ({ callerResource, calleeResource }) => {
   await assertCallCount(callerPage, 0);
 
   // callee
-  await waitFor({
-    interval: 100,
-    condition: () => {
-      const lastMessage = calleeMessages[calleeMessages.length - 1];
-      return lastMessage && lastMessage.subject === 'SIP/2.0 200 OK' && lastMessage.headers.CSeq.endsWith(' MESSAGE');
-    },
-  });
+  await waitFor({ condition: () => calleeMessages.length >= 4, interval: 100 });
   const messages = calleeMessages.map((m) => m.shortString);
   expect(messages).toHaveLength(4);
   expect(messages[0]).toMatch(/^inbound - BYE sip:/);
