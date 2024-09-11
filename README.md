@@ -81,10 +81,10 @@ In the sample code above, I also showed you how to get the `deviceId`. Web Phone
 ## Installation
 
 ```
-yarn add ringcentral-web-phone@2.0.0-alpha.1
+yarn add ringcentral-web-phone@2.0.0-alpha.16
 ```
 
-At the time I am writing this document, the latest version is `2.0.0-alpha.1`.
+At the time I am writing this document, the latest version is `2.0.0-alpha.16`.
 Please replace it with the latest version.
 Find the latest version here https://www.npmjs.com/package/ringcentral-web-phone
 

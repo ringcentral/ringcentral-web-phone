@@ -75,7 +75,6 @@ abstract class CallSession extends EventEmitter {
       this.audioElement = document.createElement('audio') as HTMLAudioElement;
       this.audioElement.autoplay = true;
       this.audioElement.hidden = true;
-      document.body.appendChild(this.audioElement); // todo: no need to append to body?
       this.audioElement.srcObject = remoteStream;
     };
   }
@@ -159,7 +158,6 @@ abstract class CallSession extends EventEmitter {
 
   public dispose() {
     this.rtcPeerConnection?.close();
-    this.audioElement?.parentNode?.removeChild(this.audioElement);
     this.mediaStream?.getTracks().forEach((track) => track.stop());
     this.state = 'disposed';
     this.emit('disposed');
