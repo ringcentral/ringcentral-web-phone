@@ -13,9 +13,11 @@ testTwoPages('warm transfer', async ({ callerResource, calleeResource }) => {
   }, anotherNumber);
   await calleePage.waitForTimeout(3000);
   await calleePage.evaluate(async () => await window.transferActions.complete());
-  await calleePage.waitForTimeout(3000);
 
+  // caller
   expect(callerMessages).toHaveLength(0);
+
+  // callee
   calleeMessages.splice(0, 4); // 4 messages is for hold
   calleeMessages.splice(0, 8); // 8 message is for outbound call
   const messages = calleeMessages.map((m) => m.shortString);

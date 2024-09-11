@@ -9,7 +9,6 @@ testTwoPages('cold transfer', async ({ callerResource, calleeResource }) => {
   await calleePage.evaluate(async (anotherNumber) => {
     await window.inboundCalls[0].transfer(anotherNumber);
   }, anotherNumber);
-  await calleePage.waitForTimeout(3000); // wait for transfer to complete
 
   expect(callerMessages).toHaveLength(0);
   expect(calleeMessages).toHaveLength(8);

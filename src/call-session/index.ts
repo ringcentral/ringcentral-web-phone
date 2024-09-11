@@ -256,6 +256,17 @@ abstract class CallSession extends EventEmitter {
       'Referred-By': `<${extractAddress(this.localPeer)}>`,
     });
     await this.webPhone.request(requestMessage);
+
+    // wait for the final SIP message
+    return new Promise<void>((resolve) => {
+      const handler = async (inboundMessage: InboundMessage) => {
+        if (inboundMessage.subject.startsWith('BYE sip:') && inboundMessage.headers['Call-Id'] === this.callId) {
+          this.webPhone.off('inboundMessage', handler);
+          resolve();
+        }
+      };
+      this.webPhone.on('inboundMessage', handler);
+    });
   }
 }
 
