@@ -79,6 +79,10 @@ const teardownPage = async (page: Page) => {
   await page.evaluate(async () => {
     await window.teardown();
   });
+
+  // very important, wait for teardown to complete
+  // othwerwise, after lots of tests, some exiting instances running in browser may stop working
+  await page.waitForTimeout(1000);
 };
 
 export const testOnePage = test.extend<{ pageResource: PageResource }>({
