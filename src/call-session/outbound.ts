@@ -56,24 +56,28 @@ class OutboundCallSession extends CallSession {
     this.localPeer = progressMessage.headers.From;
     this.remotePeer = progressMessage.headers.To;
 
-    // when the call is answered
-    const answerHandler = async (message: InboundMessage) => {
-      if (message.headers.CSeq === this.sipMessage.headers.CSeq) {
-        this.webPhone.off('inboundMessage', answerHandler);
-        this.state = 'answered';
-        this.emit('answered');
-        this.rtcPeerConnection.setRemoteDescription({ type: 'answer', sdp: message.body });
-        const ackMessage = new RequestMessage(`ACK ${extractAddress(this.remotePeer)} SIP/2.0`, {
-          'Call-Id': this.callId,
-          From: this.localPeer,
-          To: this.remotePeer,
-          Via: this.sipMessage.headers.Via,
-          CSeq: this.sipMessage.headers.CSeq.replace(' INVITE', ' ACK'),
-        });
-        await this.webPhone.reply(ackMessage);
-      }
-    };
-    this.webPhone.on('inboundMessage', answerHandler);
+    // wait for the call to be answered
+    // by SIP server design, this happens immediately, evev if the callee has not received the INVITE
+    return new Promise<void>((resolve) => {
+      const answerHandler = async (message: InboundMessage) => {
+        if (message.headers.CSeq === this.sipMessage.headers.CSeq) {
+          this.webPhone.off('inboundMessage', answerHandler);
+          this.state = 'answered';
+          this.emit('answered');
+          this.rtcPeerConnection.setRemoteDescription({ type: 'answer', sdp: message.body });
+          const ackMessage = new RequestMessage(`ACK ${extractAddress(this.remotePeer)} SIP/2.0`, {
+            'Call-Id': this.callId,
+            From: this.localPeer,
+            To: this.remotePeer,
+            Via: this.sipMessage.headers.Via,
+            CSeq: this.sipMessage.headers.CSeq.replace(' INVITE', ' ACK'),
+          });
+          await this.webPhone.reply(ackMessage);
+          resolve();
+        }
+      };
+      this.webPhone.on('inboundMessage', answerHandler);
+    });
   }
 
   public async cancel() {

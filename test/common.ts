@@ -1,5 +1,6 @@
 import type { BrowserContext, Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
+import waitFor from 'wait-for-async';
 
 import type SipMessage from '../src/sip-message';
 import OutboundMessage from '../src/sip-message/outbound';
@@ -113,7 +114,12 @@ export const call = async (callerResource: PageResource, calleeResource: PageRes
     },
     { calleeNumber, callerNumber },
   );
-  await callerPage.waitForTimeout(1000);
+
+  // wait for the call to reach the callee
+  // by SIP server design, caller will receive 200 OK immediately, even if the callee has not received the INVITE
+  // So we need to wait for the callee to receive the INVITE
+  await waitFor({ interval: 1000 });
+
   if (!keepMessages) {
     callerMessages.length = 0;
     calleeMessages.length = 0;
