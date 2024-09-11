@@ -528,3 +528,7 @@ If there are 3 instances, after an incoming call is answered, each instance will
 - create some slides to talk about the reasoning for getting rid of SIP.js
 - How to decouple SIP from WebRTC?
 - generate api reference
+- Bug: when I run the test multiple times, an instance running in a real browser tab stops working. It stops receiving messages from the SIP server. But it still receives INVITE messages from the SIP sever.
+  - refresh the page fixes the issue
+  - maybe it's caused by re-register.
+  - maybe it's caused by I don't rely to messages not for me?
