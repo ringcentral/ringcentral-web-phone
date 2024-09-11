@@ -528,8 +528,3 @@ If there are 3 instances, after an incoming call is answered, each instance will
 - create some slides to talk about the reasoning for getting rid of SIP.js
 - How to decouple SIP from WebRTC?
 - generate api reference
-- every api call must await for status ready
-  - so that in test cases we don't need to wait for timeout
-- after test, there are lots of pending inbound calls in browser tab for callee
-  - cannot reproduce any more
-  - I think it is because, exception in test case, didn't dispose
