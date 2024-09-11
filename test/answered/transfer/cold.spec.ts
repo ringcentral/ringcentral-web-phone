@@ -10,7 +10,11 @@ testTwoPages('cold transfer', async ({ callerResource, calleeResource }) => {
     await window.inboundCalls[0].transfer(anotherNumber);
   }, anotherNumber);
 
+  // caller
   expect(callerMessages).toHaveLength(0);
+  await assertCallCount(callerPage, 1);
+
+  // callee
   expect(calleeMessages).toHaveLength(8);
   expect(calleeMessages.map((m) => m.direction)).toEqual([
     'outbound',
@@ -31,6 +35,5 @@ testTwoPages('cold transfer', async ({ callerResource, calleeResource }) => {
   expect(subjects[5]).toMatch(/^SIP\/2.0 200 OK$/);
   expect(subjects[6]).toMatch(/^BYE sip:/);
   expect(subjects[7]).toMatch(/^SIP\/2.0 200 OK$/);
-  await assertCallCount(callerPage, 1);
   await assertCallCount(calleePage, 0);
 });

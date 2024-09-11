@@ -78,7 +78,6 @@ const teardownPage = async (page: Page) => {
   await page.evaluate(async () => {
     await window.teardown();
   });
-  await page.waitForTimeout(500);
 };
 
 export const testOnePage = test.extend<{ pageResource: PageResource }>({
@@ -127,7 +126,6 @@ export const callAndAnswer = async (callerResource: PageResource, calleeResource
   await calleePage.evaluate(async () => {
     await window.inboundCalls[0].answer();
   });
-  await callerPage.waitForTimeout(1000);
   callerMessages.length = 0;
   calleeMessages.length = 0;
   return { callerPage, calleePage, callerMessages, calleeMessages };

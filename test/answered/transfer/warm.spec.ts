@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import waitFor from 'wait-for-async';
 
 import { anotherNumber, assertCallCount, callAndAnswer, testTwoPages } from '../../common';
 
@@ -11,11 +12,15 @@ testTwoPages('warm transfer', async ({ callerResource, calleeResource }) => {
     const { complete, cancel } = await window.inboundCalls[0].warmTransfer(anotherNumber);
     window.transferActions = { complete, cancel };
   }, anotherNumber);
-  await calleePage.waitForTimeout(3000);
+
+  // wait for the transferee to answer the call
+  await waitFor({ interval: 1000 });
+
   await calleePage.evaluate(async () => await window.transferActions.complete());
 
   // caller
   expect(callerMessages).toHaveLength(0);
+  await assertCallCount(callerPage, 1);
 
   // callee
   calleeMessages.splice(0, 4); // 4 messages is for hold
@@ -32,6 +37,5 @@ testTwoPages('warm transfer', async ({ callerResource, calleeResource }) => {
   expect(messages[7]).toMatch(/^outbound - SIP\/2.0 200 OK$/);
   expect(messages[8]).toMatch(/^inbound - BYE sip:/); // BYE from the caller
   expect(messages[9]).toMatch(/^outbound - SIP\/2.0 200 OK$/);
-  await assertCallCount(callerPage, 1);
   await assertCallCount(calleePage, 0);
 });
