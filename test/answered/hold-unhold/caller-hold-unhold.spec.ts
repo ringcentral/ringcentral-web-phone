@@ -11,7 +11,6 @@ testTwoPages('caller hold/unhold', async ({ callerResource, calleeResource }) =>
   await callerPage.evaluate(async () => {
     await window.outboundCalls[0].hold();
   });
-  await callerPage.waitForTimeout(1000);
 
   // caller
   let messages = callerMessages.map((m) => m.shortString);
@@ -33,7 +32,6 @@ testTwoPages('caller hold/unhold', async ({ callerResource, calleeResource }) =>
   await callerPage.evaluate(async () => {
     await window.outboundCalls[0].unhold();
   });
-  await callerPage.waitForTimeout(1000);
 
   // caller
   messages = callerMessages.map((m) => m.shortString);

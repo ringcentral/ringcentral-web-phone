@@ -11,7 +11,6 @@ testTwoPages('callee hold/unhold', async ({ callerResource, calleeResource }) =>
   await calleePage.evaluate(async () => {
     await window.inboundCalls[0].hold();
   });
-  await calleePage.waitForTimeout(500);
 
   // callee
   let messages = calleeMessages.map((m) => m.shortString);
@@ -33,7 +32,6 @@ testTwoPages('callee hold/unhold', async ({ callerResource, calleeResource }) =>
   await calleePage.evaluate(async () => {
     await window.inboundCalls[0].unhold();
   });
-  await calleePage.waitForTimeout(500);
 
   // callee
   messages = calleeMessages.map((m) => m.shortString);

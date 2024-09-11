@@ -26,11 +26,15 @@ testTwoPages('reply with urgent', async ({ callerResource, calleeResource }) => 
   await callerPage.evaluate(async () => {
     window.outboundCalls[0].sendDtmf('5');
   });
+
   // caller specify callback number
   await callerPage.evaluate(async (anotherNumber) => {
     window.outboundCalls[0].sendDtmf(`${anotherNumber}#`);
   }, anotherNumber);
+
+  // wait for sever to repeat the callback number
   await waitFor({ interval: 3000 });
+
   // caller press '1' to confirm the callback number
   await callerPage.evaluate(async () => {
     window.outboundCalls[0].sendDtmf('1');
