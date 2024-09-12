@@ -1,15 +1,12 @@
-import type OutboundMessage from './sip-message/outbound';
-import InboundMessage from './sip-message/inbound';
-import RequestMessage from './sip-message/outbound/request';
+import type InboundMessage from './sip-message/inbound';
 import ResponseMessage from './sip-message/outbound/response';
 import type { SipInfo } from './utils';
-import { branch, fakeDomain, fakeEmail, generateAuthorization, uuid } from './utils';
 import InboundCallSession from './call-session/inbound';
 import OutboundCallSession from './call-session/outbound';
 import EventEmitter from './event-emitter';
 import type CallSession from './call-session';
-import RcMessage from './rc-message/rc-message';
 import SIPClient from './sip-client';
+import type OutboundMessage from './sip-message/outbound';
 
 interface WebPhoneOptions {
   sipInfo: SipInfo;
@@ -57,30 +54,20 @@ class WebPhone extends EventEmitter {
     });
   }
 
+  public async reply(message: ResponseMessage) {
+    await this.sipClient.reply(message);
+  }
+  public async request(message: ResponseMessage) {
+    return await this.sipClient.request(message);
+  }
+
   public async register() {
     await this.sipClient.connect();
-    this.sipClient.wsc.onmessage = async (event) => {
-      const inboundMessage = InboundMessage.fromString(event.data);
-      if (inboundMessage.subject.startsWith('MESSAGE sip:')) {
-        const rcMessage = await RcMessage.fromXml(inboundMessage.body);
-        if (rcMessage.body.Cln && rcMessage.body.Cln !== this.sipInfo.authorizationId) {
-          return; // the message is not for this instance
-        }
-      }
-      if (this.debug) {
-        console.log(`Receiving...(${new Date()})\n` + event.data);
-      }
+    this.sipClient.on('outboundMessage', (message: OutboundMessage) => {
+      this.emit('outboundMessage', message);
+    });
+    this.sipClient.on('inboundMessage', (inboundMessage: InboundMessage) => {
       this.emit('inboundMessage', inboundMessage);
-      if (
-        inboundMessage.subject.startsWith('MESSAGE sip:') ||
-        inboundMessage.subject.startsWith('BYE sip:') ||
-        inboundMessage.subject.startsWith('CANCEL sip:') ||
-        inboundMessage.subject.startsWith('INFO sip:') ||
-        inboundMessage.subject.startsWith('NOTIFY sip:')
-      ) {
-        // Auto reply 200 OK to MESSAGE, BYE, CANCEL, INFO, NOTIFY
-        await this.reply(new ResponseMessage(inboundMessage, { responseCode: 200 }));
-      }
       // either inbound BYE/CANCEL or server reply to outbound BYE/CANCEL
       if (inboundMessage.headers.CSeq.endsWith(' BYE') || inboundMessage.headers.CSeq.endsWith(' CANCEL')) {
         const index = this.callSessions.findIndex(
@@ -91,15 +78,15 @@ class WebPhone extends EventEmitter {
           this.callSessions.splice(index, 1);
         }
       }
-    };
+    });
 
-    await this.sipRegister();
+    await this.sipClient.register();
     if (this.intervalHandle) {
       clearInterval(this.intervalHandle);
     }
     this.intervalHandle = setInterval(
       () => {
-        this.sipRegister();
+        this.sipClient.register();
       },
       1 * 55 * 1000, // refresh registration every 55 seconds, otherwise WS will disconnect
     );
@@ -108,13 +95,7 @@ class WebPhone extends EventEmitter {
   public async dispose() {
     clearInterval(this.intervalHandle);
     this.removeAllListeners();
-
-    // in case dispose() is called twice
-    if (this.sipClient.wsc.readyState === WebSocket.OPEN) {
-      await this.sipRegister(0);
-    }
-
-    this.sipClient.dispose();
+    await this.sipClient.dispose();
   }
 
   // make an outbound call
@@ -126,60 +107,6 @@ class WebPhone extends EventEmitter {
     await outboundCallSession.init();
     await outboundCallSession.call(callee, callerId);
     return outboundCallSession;
-  }
-
-  public async request(message: OutboundMessage): Promise<InboundMessage> {
-    return this._send(message, true);
-  }
-  public async reply(message: OutboundMessage): Promise<void> {
-    await this._send(message, false);
-  }
-
-  // send a SIP message to SIP server
-  private _send(message: OutboundMessage, waitForReply = false): Promise<InboundMessage> {
-    this.sipClient.wsc.send(message.toString());
-    this.emit('outboundMessage', message);
-    if (!waitForReply) {
-      return new Promise<InboundMessage>((resolve) => {
-        resolve(new InboundMessage());
-      });
-    }
-    return new Promise<InboundMessage>((resolve) => {
-      const messageListerner = (inboundMessage: InboundMessage) => {
-        if (inboundMessage.headers.CSeq !== message.headers.CSeq) {
-          return;
-        }
-        if (inboundMessage.subject.startsWith('SIP/2.0 100 ')) {
-          return; // ignore
-        }
-        this.off('inboundMessage', messageListerner);
-        resolve(inboundMessage);
-      };
-      this.on('inboundMessage', messageListerner);
-    });
-  }
-
-  private async sipRegister(expires = 60) {
-    if (this.sipClient.wsc.readyState === WebSocket.CLOSED) {
-      await this.sipClient.connect();
-    }
-    const requestMessage = new RequestMessage(`REGISTER sip:${this.sipInfo.domain} SIP/2.0`, {
-      'Call-Id': uuid(),
-      Contact: `<sip:${fakeEmail};transport=wss>;+sip.instance="<urn:uuid:${this.instanceId}>";expires=${expires}`,
-      From: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>;tag=${uuid()}`,
-      To: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>`,
-      Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
-    });
-    const inboundMessage = await this.request(requestMessage);
-    const wwwAuth = inboundMessage.headers['Www-Authenticate'] || inboundMessage!.headers['WWW-Authenticate'];
-    if (wwwAuth) {
-      const nonce = wwwAuth.match(/, nonce="(.+?)"/)![1];
-      const newMessage = requestMessage.fork();
-      newMessage.headers.Authorization = generateAuthorization(this.sipInfo, nonce, 'REGISTER');
-      await this.request(newMessage);
-    } else if (inboundMessage.subject.startsWith('SIP/2.0 603 ')) {
-      throw new Error('Registration failed: ' + inboundMessage.subject);
-    }
   }
 }
 

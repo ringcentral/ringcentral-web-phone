@@ -445,7 +445,8 @@ For a live sample, please refer to https://github.com/tylerlong/rc-web-phone-dem
 
 ## Recover from network outage
 
-If you believe your app just recovered from network outage and the underlying websocket connection is broken, you may call `webPhone.regsiter()` to re-register the SIP client. It will create a brand new websocket connection to the SIP server.
+If you believe your app just recovered from network outage and the underlying websocket connection is broken, you may call `webPhone.regsiter()` to re-register the SIP client.
+It will create a brand new websocket connection to the SIP server.
 
 ## Breaking changes
 
