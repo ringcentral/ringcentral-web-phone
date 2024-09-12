@@ -22,7 +22,6 @@ class WebPhone extends EventEmitter {
   public instanceId: string;
   public debug: boolean;
 
-  // public wsc: WebSocket;
   public sipClient: SIPClient;
 
   public callSessions: CallSession[] = [];
@@ -115,7 +114,7 @@ class WebPhone extends EventEmitter {
       await this.sipRegister(0);
     }
 
-    this.sipClient.wsc.close();
+    this.sipClient.dispose();
   }
 
   // make an outbound call
@@ -182,26 +181,6 @@ class WebPhone extends EventEmitter {
       throw new Error('Registration failed: ' + inboundMessage.subject);
     }
   }
-
-  // private async connectWS() {
-  //   // in case register() is called again
-  //   if (this.wsc) {
-  //     this.wsc.close();
-  //   }
-  //   this.wsc = new WebSocket('wss://' + this.sipInfo.outboundProxy, 'sip');
-  //   if (this.debug) {
-  //     const wscSend = this.wsc.send.bind(this.wsc);
-  //     this.wsc.send = (message) => {
-  //       console.log(`Sending...(${new Date()})\n` + message);
-  //       return wscSend(message);
-  //     };
-  //   }
-  //   return new Promise<void>((resolve) => {
-  //     this.wsc.onopen = () => {
-  //       resolve();
-  //     };
-  //   });
-  // }
 }
 
 export default WebPhone;

@@ -11,8 +11,6 @@ class SIPClient extends EventEmitter {
   public sipInfo: SipInfo;
   private debug: boolean;
 
-  private intervalHandle: NodeJS.Timeout;
-
   public constructor(options: SIPClientOptions) {
     super();
     this.sipInfo = options.sipInfo;
@@ -36,6 +34,10 @@ class SIPClient extends EventEmitter {
         resolve();
       };
     });
+  }
+
+  public dispose() {
+    this.wsc.close();
   }
 }
 
