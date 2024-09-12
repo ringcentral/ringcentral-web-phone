@@ -94,7 +94,7 @@ Find the latest version here https://www.npmjs.com/package/ringcentral-web-phone
 import WebPhone from 'ringcentral-web-phone';
 
 const webPhone = new WebPhone({ sipInfo });
-await webPhone.register();
+await webPhone.start();
 ```
 
 What is `sipInfo`? Please read [Pre-requisites](#pre-requisites) section.
@@ -445,7 +445,7 @@ For a live sample, please refer to https://github.com/tylerlong/rc-web-phone-dem
 
 ## Recover from network outage
 
-If you believe your app just recovered from network outage and the underlying websocket connection is broken, you may call `webPhone.regsiter()` to re-register the SIP client.
+If you believe your app just recovered from network outage and the underlying websocket connection is broken, you may call `webPhone.start()`.
 It will create a brand new websocket connection to the SIP server.
 
 ## Breaking changes
@@ -507,7 +507,7 @@ Before an incoming call is answered, client may send special messages with **XML
 
 In an ongoing call (either inbound or outbound), client may send special messages with **JSON** body to startCallRecord/stopCallRecord/flip/park the call.
 
-### webPhone.sipRegister(0)
+### webPhone unregister
 
 Register the SIP client with expires time 0. It means that the SIP client will be unregistered immediately after the registration.
 After this method call, no incoming call will be received. If you try to make an outbound call, you will get a `SIP/2.0 403 Forbidden` response.

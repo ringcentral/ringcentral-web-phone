@@ -1,25 +1,17 @@
 import type InboundMessage from './sip-message/inbound';
 import ResponseMessage from './sip-message/outbound/response';
-import type { SipInfo } from './utils';
 import InboundCallSession from './call-session/inbound';
 import OutboundCallSession from './call-session/outbound';
 import EventEmitter from './event-emitter';
 import type CallSession from './call-session';
 import SIPClient from './sip-client';
 import type OutboundMessage from './sip-message/outbound';
-
-interface WebPhoneOptions {
-  sipInfo: SipInfo;
-  instanceId?: string; // ref: https://docs.oracle.com/cd/E95618_01/html/sbc_scz810_acliconfiguration/GUID-B2A15693-DA4A-4E24-86D4-58B19435F4DA.htm
-  debug?: boolean;
-}
+import type { SipInfo, WebPhoneOptions } from './types';
 
 class WebPhone extends EventEmitter {
   public sipInfo: SipInfo;
   public sipClient: SIPClient;
   public callSessions: CallSession[] = [];
-
-  private intervalHandle: NodeJS.Timeout;
 
   public constructor(options: WebPhoneOptions) {
     super();
@@ -69,22 +61,11 @@ class WebPhone extends EventEmitter {
     return await this.sipClient.request(message);
   }
 
-  public async register() {
-    await this.sipClient.connect();
-    await this.sipClient.register();
-    if (this.intervalHandle) {
-      clearInterval(this.intervalHandle);
-    }
-    this.intervalHandle = setInterval(
-      () => {
-        this.sipClient.register();
-      },
-      1 * 55 * 1000, // refresh registration every 55 seconds, otherwise WS will disconnect
-    );
+  public async start() {
+    await this.sipClient.start();
   }
 
   public async dispose() {
-    clearInterval(this.intervalHandle);
     this.removeAllListeners();
     await this.sipClient.dispose();
   }

@@ -1,17 +1,10 @@
 import { v4 } from 'uuid';
 import md5 from 'blueimp-md5';
 
+import type { SipInfo } from './types';
+
 export const uuid = () => v4();
 export const branch = () => 'z9hG4bK-' + uuid();
-
-export interface SipInfo {
-  authorizationId: string;
-  domain: string;
-  outboundProxy: string;
-  username: string;
-  password: string;
-  stunServers: string[];
-}
 
 const generateResponse = (sipInfo: SipInfo, endpoint: string, nonce: string) => {
   const ha1 = md5(`${sipInfo.authorizationId}:${sipInfo.domain}:${sipInfo.password}`);

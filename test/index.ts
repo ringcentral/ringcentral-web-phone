@@ -10,7 +10,7 @@ global.setup = async (sipInfo: string) => {
     global.outboundCalls = webPhone.callSessions.filter((call) => call.direction === 'outbound');
   });
   start();
-  await webPhone.register();
+  await webPhone.start();
   global.stopAutoRun = stop;
 };
 

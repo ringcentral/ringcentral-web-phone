@@ -4,13 +4,8 @@ import InboundMessage from './sip-message/inbound';
 import type OutboundMessage from './sip-message/outbound';
 import RequestMessage from './sip-message/outbound/request';
 import ResponseMessage from './sip-message/outbound/response';
-import { branch, fakeDomain, fakeEmail, generateAuthorization, uuid, type SipInfo } from './utils';
-
-interface SIPClientOptions {
-  sipInfo: SipInfo;
-  instanceId?: string;
-  debug?: boolean;
-}
+import type { SipInfo, WebPhoneOptions } from './types';
+import { branch, fakeDomain, fakeEmail, generateAuthorization, uuid } from './utils';
 
 class SIPClient extends EventEmitter {
   public wsc: WebSocket;
@@ -18,11 +13,27 @@ class SIPClient extends EventEmitter {
   public instanceId: string;
   private debug: boolean;
 
-  public constructor(options: SIPClientOptions) {
+  private intervalHandle: NodeJS.Timeout;
+
+  public constructor(options: WebPhoneOptions) {
     super();
     this.sipInfo = options.sipInfo;
     this.instanceId = options.instanceId ?? this.sipInfo.authorizationId!;
     this.debug = options.debug ?? false;
+  }
+
+  public async start() {
+    await this.connect();
+    await this.register();
+    if (this.intervalHandle) {
+      clearInterval(this.intervalHandle);
+    }
+    this.intervalHandle = setInterval(
+      () => {
+        this.register();
+      },
+      1 * 55 * 1000, // refresh registration every 55 seconds, otherwise WS will disconnect
+    );
   }
 
   public async connect() {
@@ -70,6 +81,8 @@ class SIPClient extends EventEmitter {
   }
 
   public async dispose() {
+    clearInterval(this.intervalHandle);
+    this.removeAllListeners();
     // in case dispose() is called twice
     if (this.wsc.readyState === WebSocket.OPEN) {
       await this.unregister();
