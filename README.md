@@ -528,3 +528,4 @@ If there are 3 instances, after an incoming call is answered, each instance will
 - create some slides to talk about the reasoning for getting rid of SIP.js
 - How to decouple SIP from WebRTC?
 - generate api reference
+- test recovery from computer sleep

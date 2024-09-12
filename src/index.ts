@@ -109,11 +109,11 @@ class WebPhone extends EventEmitter {
     if (this.state === 'disposed') {
       return;
     }
-    this.state = 'disposed';
     clearInterval(this.intervalHandle);
     this.removeAllListeners();
     await this.sipRegister(0);
     this.wsc.close();
+    this.state = 'disposed';
   }
 
   // make an outbound call
@@ -159,6 +159,9 @@ class WebPhone extends EventEmitter {
   }
 
   private async sipRegister(expires = 60) {
+    if (this.wsc.readyState === WebSocket.CLOSED) {
+      await this.connectWS();
+    }
     const requestMessage = new RequestMessage(`REGISTER sip:${this.sipInfo.domain} SIP/2.0`, {
       'Call-Id': uuid(),
       Contact: `<sip:${this.fakeEmail};transport=wss>;+sip.instance="<urn:uuid:${this.instanceId}>";expires=${expires}`,
