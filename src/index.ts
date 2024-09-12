@@ -45,20 +45,13 @@ class WebPhone extends EventEmitter {
 
       // tell SIP server that we are ringing
       let tempMesage = new ResponseMessage(inboundMessage, { responseCode: 100 });
-      await this.reply(tempMesage);
+      await this.sipClient.reply(tempMesage);
       tempMesage = new ResponseMessage(inboundMessage, { responseCode: 180 });
-      await this.reply(tempMesage);
+      await this.sipClient.reply(tempMesage);
 
       // if we don't send this, toVoicemail() will not work
       inboundCallSession.confirmReceive();
     });
-  }
-
-  public async reply(message: ResponseMessage) {
-    await this.sipClient.reply(message);
-  }
-  public async request(message: ResponseMessage) {
-    return await this.sipClient.request(message);
   }
 
   public async start() {

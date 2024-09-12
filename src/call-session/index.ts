@@ -109,7 +109,7 @@ abstract class CallSession extends EventEmitter {
       To: this.remotePeer,
       Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
     });
-    await this.webPhone.request(requestMessage);
+    await this.webPhone.sipClient.request(requestMessage);
   }
 
   public async startRecording(): Promise<CommandResult> {
@@ -201,7 +201,7 @@ abstract class CallSession extends EventEmitter {
       },
       sdp,
     );
-    const replyMessage = await this.webPhone.request(requestMessage);
+    const replyMessage = await this.webPhone.sipClient.request(requestMessage);
     const ackMessage = new RequestMessage(`ACK ${extractAddress(this.remotePeer)} SIP/2.0`, {
       'Call-Id': this.callId,
       From: this.localPeer,
@@ -209,7 +209,7 @@ abstract class CallSession extends EventEmitter {
       Via: replyMessage.headers.Via,
       CSeq: replyMessage.headers.CSeq.replace(' INVITE', ' ACK'),
     });
-    await this.webPhone.reply(ackMessage);
+    await this.webPhone.sipClient.reply(ackMessage);
   }
 
   protected async sendJsonMessage<T>(
@@ -229,7 +229,7 @@ abstract class CallSession extends EventEmitter {
       },
       jsonBody,
     );
-    await this.webPhone.request(requestMessage);
+    await this.webPhone.sipClient.request(requestMessage);
     return new Promise<T>((resolve) => {
       const resultHandler = (inboundMessage: InboundMessage) => {
         if (!inboundMessage.subject.startsWith('INFO sip:')) {
@@ -255,7 +255,7 @@ abstract class CallSession extends EventEmitter {
       'Refer-To': uri,
       'Referred-By': `<${extractAddress(this.localPeer)}>`,
     });
-    await this.webPhone.request(requestMessage);
+    await this.webPhone.sipClient.request(requestMessage);
 
     // wait for the final SIP message
     return new Promise<void>((resolve) => {

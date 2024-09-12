@@ -108,7 +108,7 @@ class InboundCallSession extends CallSession {
       },
       body: answer.sdp,
     });
-    await this.webPhone.reply(newMessage);
+    await this.webPhone.sipClient.reply(newMessage);
 
     this.state = 'answered';
     this.emit('answered');
@@ -160,7 +160,7 @@ class InboundCallSession extends CallSession {
       },
       newRcMessage.toXml(),
     );
-    await this.webPhone.request(requestSipMessage);
+    await this.webPhone.sipClient.request(requestSipMessage);
   }
 }
 
