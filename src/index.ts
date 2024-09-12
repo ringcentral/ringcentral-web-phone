@@ -9,6 +9,7 @@ import OutboundCallSession from './call-session/outbound';
 import EventEmitter from './event-emitter';
 import type CallSession from './call-session';
 import RcMessage from './rc-message/rc-message';
+import SIPClient from './sip-client';
 
 interface WebPhoneOptions {
   sipInfo: SipInfo;
@@ -21,7 +22,8 @@ class WebPhone extends EventEmitter {
   public instanceId: string;
   public debug: boolean;
 
-  public wsc: WebSocket;
+  // public wsc: WebSocket;
+  public sipClient: SIPClient;
 
   public callSessions: CallSession[] = [];
 
@@ -32,6 +34,8 @@ class WebPhone extends EventEmitter {
     this.sipInfo = options.sipInfo;
     this.instanceId = options.instanceId ?? this.sipInfo.authorizationId!;
     this.debug = options.debug ?? false;
+
+    this.sipClient = new SIPClient({ sipInfo: this.sipInfo, debug: this.debug });
 
     // listen for incoming calls
     this.on('inboundMessage', async (inboundMessage: InboundMessage) => {
@@ -55,8 +59,8 @@ class WebPhone extends EventEmitter {
   }
 
   public async register() {
-    await this.connectWS();
-    this.wsc.onmessage = async (event) => {
+    await this.sipClient.connect();
+    this.sipClient.wsc.onmessage = async (event) => {
       const inboundMessage = InboundMessage.fromString(event.data);
       if (inboundMessage.subject.startsWith('MESSAGE sip:')) {
         const rcMessage = await RcMessage.fromXml(inboundMessage.body);
@@ -107,11 +111,11 @@ class WebPhone extends EventEmitter {
     this.removeAllListeners();
 
     // in case dispose() is called twice
-    if (this.wsc.readyState === WebSocket.OPEN) {
+    if (this.sipClient.wsc.readyState === WebSocket.OPEN) {
       await this.sipRegister(0);
     }
 
-    this.wsc.close();
+    this.sipClient.wsc.close();
   }
 
   // make an outbound call
@@ -134,7 +138,7 @@ class WebPhone extends EventEmitter {
 
   // send a SIP message to SIP server
   private _send(message: OutboundMessage, waitForReply = false): Promise<InboundMessage> {
-    this.wsc.send(message.toString());
+    this.sipClient.wsc.send(message.toString());
     this.emit('outboundMessage', message);
     if (!waitForReply) {
       return new Promise<InboundMessage>((resolve) => {
@@ -157,8 +161,8 @@ class WebPhone extends EventEmitter {
   }
 
   private async sipRegister(expires = 60) {
-    if (this.wsc.readyState === WebSocket.CLOSED) {
-      await this.connectWS();
+    if (this.sipClient.wsc.readyState === WebSocket.CLOSED) {
+      await this.sipClient.connect();
     }
     const requestMessage = new RequestMessage(`REGISTER sip:${this.sipInfo.domain} SIP/2.0`, {
       'Call-Id': uuid(),
@@ -179,25 +183,25 @@ class WebPhone extends EventEmitter {
     }
   }
 
-  private async connectWS() {
-    // in case register() is called again
-    if (this.wsc) {
-      this.wsc.close();
-    }
-    this.wsc = new WebSocket('wss://' + this.sipInfo.outboundProxy, 'sip');
-    if (this.debug) {
-      const wscSend = this.wsc.send.bind(this.wsc);
-      this.wsc.send = (message) => {
-        console.log(`Sending...(${new Date()})\n` + message);
-        return wscSend(message);
-      };
-    }
-    return new Promise<void>((resolve) => {
-      this.wsc.onopen = () => {
-        resolve();
-      };
-    });
-  }
+  // private async connectWS() {
+  //   // in case register() is called again
+  //   if (this.wsc) {
+  //     this.wsc.close();
+  //   }
+  //   this.wsc = new WebSocket('wss://' + this.sipInfo.outboundProxy, 'sip');
+  //   if (this.debug) {
+  //     const wscSend = this.wsc.send.bind(this.wsc);
+  //     this.wsc.send = (message) => {
+  //       console.log(`Sending...(${new Date()})\n` + message);
+  //       return wscSend(message);
+  //     };
+  //   }
+  //   return new Promise<void>((resolve) => {
+  //     this.wsc.onopen = () => {
+  //       resolve();
+  //     };
+  //   });
+  // }
 }
 
 export default WebPhone;
