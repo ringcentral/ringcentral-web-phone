@@ -2,7 +2,7 @@ import RequestMessage from '../sip-message/outbound/request';
 import type InboundMessage from '../sip-message/inbound';
 import type WebPhone from '..';
 import CallSession from '.';
-import { extractAddress, withoutTag, branch, generateAuthorization, uuid } from '../utils';
+import { extractAddress, withoutTag, branch, generateAuthorization, uuid, fakeDomain, fakeEmail } from '../utils';
 
 class OutboundCallSession extends CallSession {
   public constructor(webPhone: WebPhone) {
@@ -28,10 +28,10 @@ class OutboundCallSession extends CallSession {
       `INVITE sip:${callee}@${this.webPhone.sipInfo.domain} SIP/2.0`,
       {
         'Call-Id': uuid(),
-        Contact: `<sip:${this.webPhone.fakeEmail};transport=wss>;expires=60`,
+        Contact: `<sip:${fakeEmail};transport=wss>;expires=60`,
         From: `<sip:${this.webPhone.sipInfo.username}@${this.webPhone.sipInfo.domain}>;tag=${uuid()}`,
         To: `<sip:${callee}@${this.webPhone.sipInfo.domain}>`,
-        Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
+        Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
         'Content-Type': 'application/sdp',
       },
       this.rtcPeerConnection.localDescription!.sdp!,

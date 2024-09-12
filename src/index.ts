@@ -3,7 +3,7 @@ import InboundMessage from './sip-message/inbound';
 import RequestMessage from './sip-message/outbound/request';
 import ResponseMessage from './sip-message/outbound/response';
 import type { SipInfo } from './utils';
-import { branch, generateAuthorization, uuid } from './utils';
+import { branch, fakeDomain, fakeEmail, generateAuthorization, uuid } from './utils';
 import InboundCallSession from './call-session/inbound';
 import OutboundCallSession from './call-session/outbound';
 import EventEmitter from './event-emitter';
@@ -22,8 +22,6 @@ class WebPhone extends EventEmitter {
   public debug: boolean;
 
   public wsc: WebSocket;
-  public fakeDomain = uuid() + '.invalid';
-  public fakeEmail = uuid() + '@' + this.fakeDomain;
 
   public callSessions: CallSession[] = [];
 
@@ -164,10 +162,10 @@ class WebPhone extends EventEmitter {
     }
     const requestMessage = new RequestMessage(`REGISTER sip:${this.sipInfo.domain} SIP/2.0`, {
       'Call-Id': uuid(),
-      Contact: `<sip:${this.fakeEmail};transport=wss>;+sip.instance="<urn:uuid:${this.instanceId}>";expires=${expires}`,
+      Contact: `<sip:${fakeEmail};transport=wss>;+sip.instance="<urn:uuid:${this.instanceId}>";expires=${expires}`,
       From: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>;tag=${uuid()}`,
       To: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>`,
-      Via: `SIP/2.0/WSS ${this.fakeDomain};branch=${branch()}`,
+      Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
     });
     const inboundMessage = await this.request(requestMessage);
     const wwwAuth = inboundMessage.headers['Www-Authenticate'] || inboundMessage!.headers['WWW-Authenticate'];

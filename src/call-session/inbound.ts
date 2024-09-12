@@ -3,7 +3,7 @@ import ResponseMessage from '../sip-message/outbound/response';
 import type InboundMessage from '../sip-message/inbound';
 import type WebPhone from '..';
 import CallSession from '.';
-import { branch, uuid } from '../utils';
+import { branch, fakeDomain, uuid } from '../utils';
 import RcMessage from '../rc-message/rc-message';
 import callControlCommands from '../rc-message/call-control-commands';
 import type OutboundMessage from '../sip-message/outbound';
@@ -152,7 +152,7 @@ class InboundCallSession extends CallSession {
     const requestSipMessage = new RequestMessage(
       `MESSAGE sip:${newRcMessage.headers.To} SIP/2.0`,
       {
-        Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
+        Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
         To: `<sip:${newRcMessage.headers.To}>`,
         From: `<sip:${this.webPhone.sipInfo.username}@${this.webPhone.sipInfo.domain}>;tag=${uuid()}`,
         'Call-Id': this.callId,

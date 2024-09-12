@@ -4,7 +4,7 @@ import EventEmitter from '../event-emitter';
 import RequestMessage from '../sip-message/outbound/request';
 import type InboundMessage from '../sip-message/inbound';
 import type WebPhone from '..';
-import { branch, extractAddress, extractNumber, extractTag, uuid } from '../utils';
+import { branch, extractAddress, extractNumber, extractTag, fakeDomain, uuid } from '../utils';
 
 interface CommandResult {
   code: number;
@@ -107,7 +107,7 @@ abstract class CallSession extends EventEmitter {
       'Call-Id': this.callId,
       From: this.localPeer,
       To: this.remotePeer,
-      Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
+      Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
     });
     await this.webPhone.request(requestMessage);
   }
@@ -196,7 +196,7 @@ abstract class CallSession extends EventEmitter {
         'Call-Id': this.callId,
         From: this.localPeer,
         To: this.remotePeer,
-        Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
+        Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
         'Content-Type': 'application/sdp',
       },
       sdp,
@@ -224,7 +224,7 @@ abstract class CallSession extends EventEmitter {
         'Call-Id': this.callId,
         From: this.localPeer,
         To: this.remotePeer,
-        Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
+        Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
         'Content-Type': 'application/json;charset=utf-8',
       },
       jsonBody,
@@ -251,7 +251,7 @@ abstract class CallSession extends EventEmitter {
       'Call-Id': this.callId,
       From: this.localPeer,
       To: this.remotePeer,
-      Via: `SIP/2.0/WSS ${this.webPhone.fakeDomain};branch=${branch()}`,
+      Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
       'Refer-To': uri,
       'Referred-By': `<${extractAddress(this.localPeer)}>`,
     });
