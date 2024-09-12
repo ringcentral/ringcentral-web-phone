@@ -16,11 +16,7 @@ interface WebPhoneOptions {
 
 class WebPhone extends EventEmitter {
   public sipInfo: SipInfo;
-  public instanceId: string;
-  public debug: boolean;
-
   public sipClient: SIPClient;
-
   public callSessions: CallSession[] = [];
 
   private intervalHandle: NodeJS.Timeout;
@@ -28,13 +24,25 @@ class WebPhone extends EventEmitter {
   public constructor(options: WebPhoneOptions) {
     super();
     this.sipInfo = options.sipInfo;
-    this.instanceId = options.instanceId ?? this.sipInfo.authorizationId!;
-    this.debug = options.debug ?? false;
+    this.sipClient = new SIPClient(options);
 
-    this.sipClient = new SIPClient({ sipInfo: this.sipInfo, debug: this.debug });
+    this.sipClient.on('outboundMessage', (message: OutboundMessage) => {
+      this.emit('outboundMessage', message);
+    });
+    this.sipClient.on('inboundMessage', async (inboundMessage: InboundMessage) => {
+      this.emit('inboundMessage', inboundMessage);
+      // either inbound BYE/CANCEL or server reply to outbound BYE/CANCEL
+      if (inboundMessage.headers.CSeq.endsWith(' BYE') || inboundMessage.headers.CSeq.endsWith(' CANCEL')) {
+        const index = this.callSessions.findIndex(
+          (callSession) => callSession.callId === inboundMessage.headers['Call-Id'],
+        );
+        if (index !== -1) {
+          this.callSessions[index].dispose();
+          this.callSessions.splice(index, 1);
+        }
+      }
 
-    // listen for incoming calls
-    this.on('inboundMessage', async (inboundMessage: InboundMessage) => {
+      // listen for incoming calls
       if (!inboundMessage.subject.startsWith('INVITE sip:')) {
         return;
       }
@@ -63,23 +71,6 @@ class WebPhone extends EventEmitter {
 
   public async register() {
     await this.sipClient.connect();
-    this.sipClient.on('outboundMessage', (message: OutboundMessage) => {
-      this.emit('outboundMessage', message);
-    });
-    this.sipClient.on('inboundMessage', (inboundMessage: InboundMessage) => {
-      this.emit('inboundMessage', inboundMessage);
-      // either inbound BYE/CANCEL or server reply to outbound BYE/CANCEL
-      if (inboundMessage.headers.CSeq.endsWith(' BYE') || inboundMessage.headers.CSeq.endsWith(' CANCEL')) {
-        const index = this.callSessions.findIndex(
-          (callSession) => callSession.callId === inboundMessage.headers['Call-Id'],
-        );
-        if (index !== -1) {
-          this.callSessions[index].dispose();
-          this.callSessions.splice(index, 1);
-        }
-      }
-    });
-
     await this.sipClient.register();
     if (this.intervalHandle) {
       clearInterval(this.intervalHandle);
