@@ -5,7 +5,6 @@ import OutboundCallSession from './call-session/outbound';
 import EventEmitter from './event-emitter';
 import type CallSession from './call-session';
 import SIPClient from './sip-client';
-import type OutboundMessage from './sip-message/outbound';
 import type { SipInfo, WebPhoneOptions } from './types';
 
 class WebPhone extends EventEmitter {
@@ -18,11 +17,7 @@ class WebPhone extends EventEmitter {
     this.sipInfo = options.sipInfo;
     this.sipClient = new SIPClient(options);
 
-    this.sipClient.on('outboundMessage', (message: OutboundMessage) => {
-      this.emit('outboundMessage', message);
-    });
     this.sipClient.on('inboundMessage', async (inboundMessage: InboundMessage) => {
-      this.emit('inboundMessage', inboundMessage);
       // either inbound BYE/CANCEL or server reply to outbound BYE/CANCEL
       if (inboundMessage.headers.CSeq.endsWith(' BYE') || inboundMessage.headers.CSeq.endsWith(' CANCEL')) {
         const index = this.callSessions.findIndex(

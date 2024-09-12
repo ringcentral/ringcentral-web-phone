@@ -61,7 +61,7 @@ class OutboundCallSession extends CallSession {
     return new Promise<void>((resolve) => {
       const answerHandler = async (message: InboundMessage) => {
         if (message.headers.CSeq === this.sipMessage.headers.CSeq) {
-          this.webPhone.off('inboundMessage', answerHandler);
+          this.webPhone.sipClient.off('inboundMessage', answerHandler);
           this.state = 'answered';
           this.emit('answered');
           this.rtcPeerConnection.setRemoteDescription({ type: 'answer', sdp: message.body });
@@ -76,7 +76,7 @@ class OutboundCallSession extends CallSession {
           resolve();
         }
       };
-      this.webPhone.on('inboundMessage', answerHandler);
+      this.webPhone.sipClient.on('inboundMessage', answerHandler);
     });
   }
 

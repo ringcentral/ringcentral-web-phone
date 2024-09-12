@@ -354,7 +354,7 @@ await callSession.sendDTMF(dtmf);
 You may subscribe to events, examples:
 
 ```ts
-webPhone.on('inboundMessage', (inboundMessage: InboundMessage) => {
+webPhone.sipClient.on('inboundMessage', (inboundMessage: InboundMessage) => {
   // do something with the inbound SIP message
 });
 ```
@@ -367,10 +367,6 @@ callSession.on('disposed', () => {
 
 ### WebPhone Events
 
-- inboundMessage
-  - new inbound SIP message, payload type: [InboundMessage](./src/sip-message/inbound/index.ts)
-- outboundMessage
-  - new outbound SIP message, payload type: [OutboundMessage](./src/sip-message/outbound/index.ts)
 - inboundCall
   - new inbound call session, payload type: [InboundCallSession](./src/call-session/inbound.ts)
 - outboundCall
@@ -379,11 +375,9 @@ callSession.on('disposed', () => {
 ### CallSession Events
 
 - ringing
-  - no payload
 - answered
-  - no payload
 - disposed
-  - no payload
+
 
 ## Conference
 
@@ -474,6 +468,12 @@ I would like to say this is more like a bug fix than a behavior change.
 ## Maintainers Notes
 
 Content below is for the maintainers of this project.
+
+## webPhone vs webPhone.sipClient
+
+`webPhone` is mainly about call sessions and WebRTC.
+`webPhone.sipClient` is mainly about SIP messages.
+We would like to decouple these two. So that we can run `sipClient` in a shared worker or a service worker.
 
 ### References
 

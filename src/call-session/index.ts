@@ -239,10 +239,10 @@ abstract class CallSession extends EventEmitter {
         if (!response || response.reqid !== reqid || response.command !== command) {
           return;
         }
-        this.webPhone.off('inboundMessage', resultHandler);
+        this.webPhone.sipClient.off('inboundMessage', resultHandler);
         resolve(response.result);
       };
-      this.webPhone.on('inboundMessage', resultHandler);
+      this.webPhone.sipClient.on('inboundMessage', resultHandler);
     });
   }
 
@@ -261,11 +261,11 @@ abstract class CallSession extends EventEmitter {
     return new Promise<void>((resolve) => {
       const handler = async (inboundMessage: InboundMessage) => {
         if (inboundMessage.subject.startsWith('BYE sip:') && inboundMessage.headers['Call-Id'] === this.callId) {
-          this.webPhone.off('inboundMessage', handler);
+          this.webPhone.sipClient.off('inboundMessage', handler);
           resolve();
         }
       };
-      this.webPhone.on('inboundMessage', handler);
+      this.webPhone.sipClient.on('inboundMessage', handler);
     });
   }
 }
