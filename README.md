@@ -354,8 +354,8 @@ await callSession.sendDTMF(dtmf);
 You may subscribe to events, examples:
 
 ```ts
-webPhone.sipClient.on('inboundMessage', (inboundMessage: InboundMessage) => {
-  // do something with the inbound SIP message
+webPhone.on('inboundCall', (inboundCall: InboundCallSession) => {
+  // do something with the inbound call
 });
 ```
 
