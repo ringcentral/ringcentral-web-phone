@@ -4,18 +4,18 @@ import InboundCallSession from './call-session/inbound';
 import OutboundCallSession from './call-session/outbound';
 import EventEmitter from './event-emitter';
 import type CallSession from './call-session';
-import SIPClient from './sip-client';
-import type { SipInfo, WebPhoneOptions } from './types';
+import SipClient from './sip-client';
+import type { ISipClient, SipInfo, WebPhoneOptions } from './types';
 
 class WebPhone extends EventEmitter {
   public sipInfo: SipInfo;
-  public sipClient: SIPClient;
+  public sipClient: ISipClient;
   public callSessions: CallSession[] = [];
 
   public constructor(options: WebPhoneOptions) {
     super();
     this.sipInfo = options.sipInfo;
-    this.sipClient = new SIPClient(options);
+    this.sipClient = options.sipClient ?? new SipClient(options);
 
     this.sipClient.on('inboundMessage', async (inboundMessage: InboundMessage) => {
       // either inbound BYE/CANCEL or server reply to outbound BYE/CANCEL

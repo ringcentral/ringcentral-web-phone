@@ -4,10 +4,10 @@ import InboundMessage from './sip-message/inbound';
 import type OutboundMessage from './sip-message/outbound';
 import RequestMessage from './sip-message/outbound/request';
 import ResponseMessage from './sip-message/outbound/response';
-import type { SipInfo, WebPhoneOptions } from './types';
+import type { ISipClient, SipInfo, SipClientOptions } from './types';
 import { branch, fakeDomain, fakeEmail, generateAuthorization, uuid } from './utils';
 
-class SIPClient extends EventEmitter {
+class SipClient extends EventEmitter implements ISipClient {
   public wsc: WebSocket;
   public sipInfo: SipInfo;
   public instanceId: string;
@@ -15,7 +15,7 @@ class SIPClient extends EventEmitter {
 
   private intervalHandle: NodeJS.Timeout;
 
-  public constructor(options: WebPhoneOptions) {
+  public constructor(options: SipClientOptions) {
     super();
     this.sipInfo = options.sipInfo;
     this.instanceId = options.instanceId ?? this.sipInfo.authorizationId!;
@@ -116,10 +116,10 @@ class SIPClient extends EventEmitter {
     await this.register(0);
   }
 
-  public async request(message: OutboundMessage): Promise<InboundMessage> {
+  public async request(message: RequestMessage): Promise<InboundMessage> {
     return this._send(message, true);
   }
-  public async reply(message: OutboundMessage): Promise<void> {
+  public async reply(message: ResponseMessage): Promise<void> {
     await this._send(message, false);
   }
   private _send(message: OutboundMessage, waitForReply = false): Promise<InboundMessage> {
@@ -146,4 +146,4 @@ class SIPClient extends EventEmitter {
   }
 }
 
-export default SIPClient;
+export default SipClient;
