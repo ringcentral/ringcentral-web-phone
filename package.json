@@ -1,6 +1,6 @@
 {
   "name": "ringcentral-web-phone",
-  "version": "2.0.0-alpha.17",
+  "version": "2.0.0-alpha.18",
   "repository": {
     "type": "git",
     "url": "https://github.com/tylerlong/ringcentral-web-phone-2.git"
@@ -11,7 +11,7 @@
   "scripts": {
     "lint": "tsc --noEmit --target ESNext --moduleResolution NodeNext --module NodeNext ./src/*.ts && eslint --fix '**/*.{ts,tsx,js,jsx}' && prettier --write . && sort-package-json",
     "prepublishOnly": "yarn lint && yarn test && tsc src/index.ts --declaration --outDir . --target ESNext --moduleResolution NodeNext --module NodeNext",
-    "postpublish": "rm -rf call-session rc-message sip-message event-emitter.* index.* utils.*",
+    "postpublish": "rm -rf call-session rc-message sip-message event-emitter.* index.* utils.* sip-client.* types.*",
     "serve": "rm -rf .parcel-cache && parcel test/index.html --no-hmr",
     "test": "NODE_OPTIONS=--require=dotenv-override-true/config playwright test --workers=1"
   },

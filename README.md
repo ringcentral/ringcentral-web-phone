@@ -378,7 +378,6 @@ callSession.on('disposed', () => {
 - answered
 - disposed
 
-
 ## Conference
 
 Conference is out of the scope of this SDK. Because conferences are mainly done with Restful API.
