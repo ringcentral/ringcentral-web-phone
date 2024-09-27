@@ -18,7 +18,7 @@ type FlipResult = CommandResult & {
   target: string;
 };
 
-abstract class CallSession extends EventEmitter {
+class CallSession extends EventEmitter {
   public webPhone: WebPhone;
   public sipMessage: InboundMessage;
   public localPeer: string;
