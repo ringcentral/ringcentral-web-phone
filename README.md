@@ -4,6 +4,20 @@ This is a complete rewrite of the RingCentral Web Phone SDK.
 
 It is NOT yet producion ready. It is still in development.
 
+## Why rewrite?
+
+### SIP.js is no longer actively maintained
+The last release of SIP.js was in October 2022, and it hasn't been updated since. Depending on an unmaintained library poses risks, including potential incompatibility with future browser updates and WebRTC changes. By moving away from SIP.js, we ensure that our SDK remains compatible with evolving web standards.
+
+### SIP.js lacks support for essential RingCentral features
+SIP.js was not built with RingCentral’s specific requirements in mind. To support critical functionalities like confirming receipt, sending calls to voicemail, declining, forwarding, replying, call recording (start/stop), call flipping, and parking, we had to patch SIP.js heavily. Managing these patches was inefficient, and developing our own signaling library is a more sustainable approach.
+
+### SIP signaling is simple enough to implement in-house
+SIP signaling itself is a relatively straightforward protocol. By implementing the SIP signaling in-house, we can avoid the overhead and complexity introduced by SIP.js while gaining full control over the signaling flow.
+
+### Decoupling SIP signaling from WebRTC
+SIP.js tightly couples SIP signaling with WebRTC. By decoupling these two components, we allow you to run a web phone with a rea/dummy SIP client, which is essential for scenarios where you need to run multiple web phones in multiple tabs. Please refer to the [Shared Worker](#mutiple-instances-and-shared-worker) section for more information.
+
 ## Demo
 
 - [Online Demo](https://chuntaoliu.com/rc-web-phone-demo-2/)
@@ -473,14 +487,13 @@ If you want all of the web phones to work properly, you need to assign them diff
 If you don't know what is `instanceId`, please read [Initialization](#initialization) section.
 
 But there is a limit of how many instances you can run for each extension. What if the user opens too many tabs?
-A better solution is to have one tab run and "real" phone while all other tabs run "dummy" phones. Dummy phones don't register itself to RingCentral Server. Real phone syncs its state to all dummy phones so that dummy phones is always in sync with the real phone.
+A better solution is to have one tab run a "real" phone while all other tabs run "dummy" phones. Dummy phones don't register itself to RingCentral Server. Real phone syncs its state to all dummy phones so that dummy phones are always in sync with the real phone.
 When user performs an action on a dummy phone, the dummy phone forwards the action to the real phone. The real phone then performs the action and syncs the state back to all dummy phones.
 
 In order to achieve this, you will need to use [SharedWorker](https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker).
 
-1. Real phone sends state to SharedWorker. SharedWorker sends state to all dummy phones. Dummy phones update their state and UI.
-2. When end user performs an action, dummy phones forward the action to SharedWorker. SharedWorker forwards the action to real phone.
-3. Real phone performs the action and update its state. Go back to step 1.
+1. The real phone sends state to SharedWorker. SharedWorker sends state to all dummy phones. Dummy phones update their state and UI. So that dummy phones look identical to the real phone.
+2. When end user performs an action on a dummy phone, the dummy phone forwards the action to SharedWorker. SharedWorker forwards the action to the real phone. The real phone performs the action and update its state. Go to step 1.
 
 When the real phone quits (tab closing, navigating to another page, etc), a dummy phone will be prompted to a real phone.
 
@@ -491,7 +504,9 @@ This way, there is always one and only one real phone. All other phones are dumm
 A real phone is initiated like this:
 
 ```ts
-new WebPhone({ sipInfo });
+import SipClient from 'ringcentral-web-phone/sip-client';
+
+new WebPhone({ sipInfo, sipClient: new SipClient(sipInfo) });
 ```
 
 A dummy phone is initiated like this:
@@ -579,4 +594,3 @@ If there are 3 instances, after an incoming call is answered, each instance will
 - create some slides to talk about the reasoning for getting rid of SIP.js
 - generate api reference
 - test recovery from computer sleep
-- Update the demo for shared worker
