@@ -466,7 +466,56 @@ SDK 1.x treats forwarding as answering the call and then transfer the call.
 SDK 2.x treats forwarding as sending a SIP message to the SIP server to forward the call.
 I would like to say this is more like a bug fix than a behavior change.
 
-## Maintainers Notes
+## Mutiple instances and shared worker
+
+Some application allows users to open multiple tabs to run multiple instances.
+If you want all of the web phones to work properly, you need to assign them different `instanceId`.
+If you don't know what is `instanceId`, please read [Initialization](#initialization) section.
+
+But there is a limit of how many instances you can run for each extension. What if the user opens too many tabs?
+A better solution is to have one tab run and "real" phone while all other tabs run "dummy" phones. Dummy phones don't register itself to RingCentral Server. Real phone syncs its state to all dummy phones so that dummy phones is always in sync with the real phone.
+When user performs an action on a dummy phone, the dummy phone forwards the action to the real phone. The real phone then performs the action and syncs the state back to all dummy phones.
+
+In order to achieve this, you will need to use [SharedWorker](https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker).
+
+1. Real phone sends state to SharedWorker. SharedWorker sends state to all dummy phones. Dummy phones update their state and UI.
+2. When end user performs an action, dummy phones forward the action to SharedWorker. SharedWorker forwards the action to real phone.
+3. Real phone performs the action and update its state. Go back to step 1.
+
+When the real phone quits (tab closing, navigating to another page, etc), a dummy phone will be prompted to a real phone.
+
+This way, there is always one and only one real phone. All other phones are dummy phones. Dummy phones always look identical to a real phone because they will always get the latest state of a real phone. All actions are performed by the real phone.
+
+### Technical details
+
+A real phone is initiated like this:
+
+```ts
+new WebPhone({ sipInfo });
+```
+
+A dummy phone is initiated like this:
+
+```ts
+import { DummySipClient } from 'ringcentral-web-phone/sip-client';
+
+new WebPhone({ sipInfo, sipClient: new DummySipClient() });
+```
+
+You may need to re-initiate a dummy phone to a real phone when the previous real phone quits.
+
+A `DummySipClient` doesn't register itself to RingCentral Server. It doesn't send any SIP messages to RingCentral Server. It does nothing.
+
+You will need to implement a SharedWorker to:
+
+- sync the state from the real phone to all dummy phones.
+- forward actions from dummy phones to the real phone.
+
+A working sample is here https://github.com/tylerlong/rc-web-phone-demo-2/tree/shared-worker
+
+You may run mutiple tabs to see how it works.
+
+# Maintainers Notes
 
 Content below is for the maintainers of this project.
 

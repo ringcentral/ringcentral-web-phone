@@ -146,4 +146,20 @@ class SipClient extends EventEmitter implements ISipClient {
   }
 }
 
+// this is for multiple instances with shared worker, dummy phones do not talk to SIP server at all
+export class DummySipClient extends EventEmitter implements ISipClient {
+  private static inboundMessage: InboundMessage = new InboundMessage();
+  public constructor() {
+    super();
+  }
+  public async start() {}
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async request(message: RequestMessage) {
+    return DummySipClient.inboundMessage;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async reply(message: ResponseMessage) {}
+  public async dispose() {}
+}
+
 export default SipClient;
