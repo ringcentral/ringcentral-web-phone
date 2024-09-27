@@ -54,6 +54,17 @@ class WebPhone extends EventEmitter {
   }
 
   public async dispose() {
+    // properly dispose all call sessions
+    for (const callSession of this.callSessions) {
+      if (callSession.state === 'answered') {
+        await callSession.hangup();
+      } else if (callSession.direction === 'inbound') {
+        await (callSession as InboundCallSession).decline();
+      } else {
+        await (callSession as OutboundCallSession).cancel();
+      }
+      // callSession.dispose() will be auto triggered by the above methods
+    }
     this.removeAllListeners();
     await this.sipClient.dispose();
   }

@@ -15,16 +15,6 @@ global.setup = async (sipInfo: string) => {
 };
 
 global.teardown = async () => {
-  for (const call of global.webPhone.callSessions) {
-    if (call.state === 'answered') {
-      await call.hangup();
-    } else if (call.direction === 'inbound') {
-      await call.decline();
-    } else {
-      // outbound
-      await call.cancel();
-    }
-  }
   global.stopAutoRun();
   global.stopAutoRun = undefined;
   await global.webPhone.dispose();

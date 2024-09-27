@@ -1,6 +1,6 @@
 {
   "name": "ringcentral-web-phone",
-  "version": "2.0.0-alpha.20",
+  "version": "2.0.0-alpha.21",
   "repository": {
     "type": "git",
     "url": "https://github.com/tylerlong/ringcentral-web-phone-2.git"
@@ -24,7 +24,7 @@
   "devDependencies": {
     "@playwright/test": "^1.47.2",
     "@types/blueimp-md5": "^2.18.2",
-    "@types/node": "^22.7.3",
+    "@types/node": "^22.7.4",
     "@types/sdp-transform": "^2.4.9",
     "@types/uuid": "^10.0.0",
     "@types/xml2js": "^0.4.14",

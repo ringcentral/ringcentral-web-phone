@@ -7,15 +7,19 @@ It is NOT yet producion ready. It is still in development.
 ## Why rewrite?
 
 ### SIP.js is no longer actively maintained
+
 The last release of SIP.js was in October 2022, and it hasn't been updated since. Depending on an unmaintained library poses risks, including potential incompatibility with future browser updates and WebRTC changes. By moving away from SIP.js, we ensure that our SDK remains compatible with evolving web standards.
 
 ### SIP.js lacks support for essential RingCentral features
+
 SIP.js was not built with RingCentral’s specific requirements in mind. To support critical functionalities like confirming receipt, sending calls to voicemail, declining, forwarding, replying, call recording (start/stop), call flipping, and parking, we had to patch SIP.js heavily. Managing these patches was inefficient, and developing our own signaling library is a more sustainable approach.
 
 ### SIP signaling is simple enough to implement in-house
+
 SIP signaling itself is a relatively straightforward protocol. By implementing the SIP signaling in-house, we can avoid the overhead and complexity introduced by SIP.js while gaining full control over the signaling flow.
 
 ### Decoupling SIP signaling from WebRTC
+
 SIP.js tightly couples SIP signaling with WebRTC. By decoupling these two components, we allow you to run a web phone with a rea/dummy SIP client, which is essential for scenarios where you need to run multiple web phones in multiple tabs. Please refer to the [Shared Worker](#mutiple-instances-and-shared-worker) section for more information.
 
 ## Demo
@@ -506,7 +510,13 @@ A real phone is initiated like this:
 ```ts
 import SipClient from 'ringcentral-web-phone/sip-client';
 
-new WebPhone({ sipInfo, sipClient: new SipClient(sipInfo) });
+new WebPhone({ sipInfo, sipClient: new SipClient({ sipInfo }) });
+```
+
+Or even simpler:
+
+```ts
+new WebPhone({ sipInfo });
 ```
 
 A dummy phone is initiated like this:
@@ -526,13 +536,9 @@ You will need to implement a SharedWorker to:
 - sync the state from the real phone to all dummy phones.
 - forward actions from dummy phones to the real phone.
 
-
 ### Sample SharedWorker
 
 ```ts
-/// <reference lib="webworker" />
-
-declare let self: SharedWorkerGlobalScope;
 const dummyPorts = new Set<MessagePort>();
 let realPort: MessagePort | undefined;
 
@@ -552,7 +558,7 @@ self.onconnect = (e) => {
       if (port !== realPort && syncCache) {
         port.postMessage(syncCache);
       }
-    } 
+    }
     // a tab closed
     else if (e.data.type === 'close') {
       if (port === realPort) {
@@ -582,9 +588,6 @@ self.onconnect = (e) => {
     }
   };
 };
-
-// We need an export to force this file to act like a module, so TS will let us re-type `self`
-export default null;
 ```
 
 ### Sample client code
@@ -602,7 +605,6 @@ worker.port.onmessage = (e) => {
   }
 };
 ```
-
 
 ### Working sample
 
