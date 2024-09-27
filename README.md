@@ -526,8 +526,87 @@ You will need to implement a SharedWorker to:
 - sync the state from the real phone to all dummy phones.
 - forward actions from dummy phones to the real phone.
 
-A working sample is here https://github.com/tylerlong/rc-web-phone-demo-2/tree/shared-worker
 
+### Sample SharedWorker
+
+```ts
+/// <reference lib="webworker" />
+
+declare let self: SharedWorkerGlobalScope;
+const dummyPorts = new Set<MessagePort>();
+let realPort: MessagePort | undefined;
+
+let syncCache: any;
+self.onconnect = (e) => {
+  const port = e.ports[0];
+  if (realPort) {
+    dummyPorts.add(port);
+    port.postMessage({ type: 'role', role: 'dummy' });
+  } else {
+    realPort = port;
+    port.postMessage({ type: 'role', role: 'real' });
+  }
+  port.onmessage = (e) => {
+    // a new dummy is ready to receive state
+    if (e.data.type === 'ready') {
+      if (port !== realPort && syncCache) {
+        port.postMessage(syncCache);
+      }
+    } 
+    // a tab closed
+    else if (e.data.type === 'close') {
+      if (port === realPort) {
+        realPort = undefined;
+
+        // if real closes, all call sessions are over.
+        dummyPorts.forEach((dummyPort) => dummyPort.postMessage({ type: 'sync', jsonStr: '[]' }));
+
+        // prompt a dummy to be a real
+        if (dummyPorts.size > 0) {
+          realPort = Array.from(dummyPorts)[0];
+          dummyPorts.delete(realPort);
+          realPort.postMessage({ type: 'role', role: 'real' });
+        }
+      } else {
+        dummyPorts.delete(port);
+      }
+    } else if (e.data.type === 'action') {
+      // forward action to real
+      if (realPort) {
+        realPort.postMessage(e.data);
+      }
+    } else if (e.data.type === 'sync') {
+      // sync state to all dummies
+      syncCache = e.data;
+      dummyPorts.forEach((dummyPort) => dummyPort.postMessage(e.data));
+    }
+  };
+};
+
+// We need an export to force this file to act like a module, so TS will let us re-type `self`
+export default null;
+```
+
+### Sample client code
+
+```ts
+worker.port.onmessage = (e) => {
+  if (e.data.type === 'role') {
+    // role assigned/updated
+    store.role = e.data.role;
+    // you may need to (re-)initiate the web phone
+  } else if (store.role === 'real' && e.data.type === 'action') {
+    // real gets action from dummy
+  } else if (store.role === 'dummy' && e.data.type === 'sync') {
+    // dummy gets state from real
+  }
+};
+```
+
+
+### Working sample
+
+A fully working sample is here https://github.com/tylerlong/rc-web-phone-demo-2/tree/shared-worker
 You may run mutiple tabs to see how it works.
 
 # Maintainers Notes
