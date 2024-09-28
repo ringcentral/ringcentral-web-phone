@@ -6,6 +6,8 @@ It is NOT yet producion ready. It is still in development.
 
 ## Why rewrite?
 
+The rewriting is to get rid of SIP.js.
+
 ### SIP.js is no longer actively maintained
 
 The last release of SIP.js was in October 2022, and it hasn't been updated since. Depending on an unmaintained library poses risks, including potential incompatibility with future browser updates and WebRTC changes. By moving away from SIP.js, we ensure that our SDK remains compatible with evolving web standards.
@@ -20,7 +22,7 @@ SIP signaling itself is a relatively straightforward protocol. By implementing t
 
 ### Decoupling SIP signaling from WebRTC
 
-SIP.js tightly couples SIP signaling with WebRTC. By decoupling these two components, we allow you to run a web phone with a rea/dummy SIP client, which is essential for scenarios where you need to run multiple web phones in multiple tabs. Please refer to the [Shared Worker](#mutiple-instances-and-shared-worker) section for more information.
+SIP.js tightly couples SIP signaling with WebRTC. By decoupling these two components, we allow you to run a web phone with a real/dummy SIP client, which is essential for scenarios where you need to run multiple web phones in multiple tabs. Please refer to the [Shared Worker](#mutiple-instances-and-shared-worker) section for more information.
 
 ## Demo
 
@@ -94,15 +96,16 @@ main();
 
 Please note that, you may save and re-use `sipInfo` for a long time. You don't need to invoke `Device SIP Registration` every time you start the web phone.
 
-In the sample code above, I also showed you how to get the `deviceId`. Web Phone SDK doesn't need `deviceId`, it is just for your information. Just in case you may need it for [RingCentral Call Control API](https://developers.ringcentral.com/api-reference/Call-Control/createCallOutCallSession).
+In the sample code above, I also showed you how to get the `deviceId`. Web Phone SDK doesn't need `deviceId`, it is just for your information. 
+Just in case you may need it for [RingCentral Call Control API](https://developers.ringcentral.com/api-reference/Call-Control/createCallOutCallSession).
 
 ## Installation
 
 ```
-yarn add ringcentral-web-phone@2.0.0-alpha.16
+yarn add ringcentral-web-phone@2.0.0-alpha.21
 ```
 
-At the time I am writing this document, the latest version is `2.0.0-alpha.16`.
+At the time I am writing this document, the latest version is `2.0.0-alpha.21`.
 Please replace it with the latest version.
 Find the latest version here https://www.npmjs.com/package/ringcentral-web-phone
 
@@ -427,14 +430,12 @@ Make a call to the number you want to invite to the conference:
 const callSession = await this.webPhone.call(targetNumber);
 ```
 
-Whenever the call is answered, you can bring in the call to the conference:
+Then you can bring in the call to the conference.
 
 ```ts
-callSession.once('answered', async () => {
-  await rc.restapi().account().telephony().sessions(confSession.sessionId).parties().bringIn().post({
-    sessionId: callSession.sessionId,
-    partyId: callSession.partyId,
-  });
+await rc.restapi().account().telephony().sessions(confSession.sessionId).parties().bringIn().post({
+  sessionId: callSession.sessionId,
+  partyId: callSession.partyId,
 });
 ```
 
@@ -454,12 +455,13 @@ You could create it on-the-fly or you can find an existing call session.
 
 ### A live sample
 
-For a live sample, please refer to https://github.com/tylerlong/rc-web-phone-demo-2
+https://github.com/tylerlong/rc-web-phone-demo-2 provides conference features. 
+You may create conference, invite a number to the conference, merge an existing call to the conference, etc.
 
 ## Recover from network outage
 
 If you believe your app just recovered from network outage and the underlying websocket connection is broken, you may call `webPhone.start()`.
-It will create a brand new websocket connection to the SIP server.
+It will create a brand new websocket connection to the SIP server and re-register the SIP client.
 
 ## Breaking changes
 
@@ -483,6 +485,12 @@ And playing ringing audio is not a core feature of the SDK. It's more about how 
 SDK 1.x treats forwarding as answering the call and then transfer the call.
 SDK 2.x treats forwarding as sending a SIP message to the SIP server to forward the call.
 I would like to say this is more like a bug fix than a behavior change.
+
+#### `<audio />`
+
+SDK 1.x requires you to provide `<audio />` elements to play remote audio.
+SDK 2.x will create `<audio />` elements on demand. You don't need to provide `<audio />` elements.
+
 
 ## Mutiple instances and shared worker
 
@@ -513,7 +521,7 @@ import SipClient from 'ringcentral-web-phone/sip-client';
 new WebPhone({ sipInfo, sipClient: new SipClient({ sipInfo }) });
 ```
 
-Or even simpler:
+Or even simpler (since `sipClient` is optional with default value `new SipClient({ sipInfo })`):
 
 ```ts
 new WebPhone({ sipInfo });
@@ -606,6 +614,18 @@ worker.port.onmessage = (e) => {
 };
 ```
 
+### A sample action processing code
+
+```ts
+public async transfer(callId: string, transferToNumber: string) {
+  if (this.role === 'dummy') {
+    worker.port.postMessage({ type: 'action', name: 'transfer', args: { callId, transferToNumber } });
+    return;
+  }
+  await this.webPhone.callSessions.find((cs) => cs.callId === callId)!.transfer(transferToNumber);
+}
+```
+
 ### Working sample
 
 A fully working sample is here https://github.com/tylerlong/rc-web-phone-demo-2/tree/shared-worker
@@ -618,8 +638,8 @@ Content below is for the maintainers of this project.
 ## webPhone vs webPhone.sipClient
 
 `webPhone` is mainly about call sessions and WebRTC.
-`webPhone.sipClient` is mainly about SIP messages.
-We would like to decouple these two. So that we can run `sipClient` in a shared worker or a service worker.
+`webPhone.sipClient` is mainly about SIP signaling.
+We would like to decouple these two.
 
 ### References
 
@@ -672,6 +692,5 @@ If there are 3 instances, after an incoming call is answered, each instance will
 
 ## Todo:
 
-- create some slides to talk about the reasoning for getting rid of SIP.js
 - generate api reference
 - test recovery from computer sleep
