@@ -32,23 +32,15 @@ testTwoPages('reply with yes', async ({ callerResource, calleeResource }) => {
 
   // callee
   await waitFor({ condition: () => calleeMessages.length >= 7 });
-  expect(calleeMessages).toHaveLength(7);
-  expect(calleeMessages.map((m) => m.direction)).toEqual([
-    'outbound',
-    'inbound',
-    'inbound',
-    'inbound',
-    'outbound',
-    'inbound',
-    'outbound',
-  ]);
-  expect(calleeMessages[0].subject.startsWith('MESSAGE sip:')).toBeTruthy();
-  expect(calleeMessages[1].subject).toBe('SIP/2.0 100 Trying');
-  expect(calleeMessages[2].subject).toBe('SIP/2.0 200 OK');
-  expect(calleeMessages[3].subject.startsWith('CANCEL sip:')).toBeTruthy();
-  expect(calleeMessages[4].subject).toBe('SIP/2.0 200 OK');
-  expect(calleeMessages[5].subject.startsWith('MESSAGE sip:')).toBeTruthy();
-  expect(calleeMessages[6].subject).toBe('SIP/2.0 200 OK');
+  const messages = calleeMessages.map((m) => m.shortString);
+  expect(messages).toHaveLength(7);
+  expect(messages[0]).toMatch(/^outbound - MESSAGE sip:/);
+  expect(messages[1]).toMatch(/^inbound - SIP\/2.0 100 Trying$/);
+  expect(messages[2]).toMatch(/^inbound - SIP\/2.0 200 OK$/);
+  expect(messages[3]).toMatch(/^inbound - CANCEL sip:/);
+  expect(messages[4]).toMatch(/^outbound - SIP\/2.0 200 OK$/);
+  expect(messages[5]).toMatch(/^inbound - MESSAGE sip:/);
+  expect(messages[6]).toMatch(/^outbound - SIP\/2.0 200 OK$/);
   let rcMessage = await RcMessage.fromXml(calleeMessages[0].body);
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.ClientReply.toString());
   rcMessage = await RcMessage.fromXml(calleeMessages[5].body);
