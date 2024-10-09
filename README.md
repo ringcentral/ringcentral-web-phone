@@ -2,8 +2,6 @@
 
 This is a complete rewrite of the RingCentral Web Phone SDK.
 
-It is NOT yet producion ready. It is still in development.
-
 ## Why rewrite?
 
 The rewriting is to get rid of SIP.js.
@@ -102,10 +100,10 @@ Just in case you may need it for [RingCentral Call Control API](https://develope
 ## Installation
 
 ```
-yarn add ringcentral-web-phone@2.0.0-alpha.21
+yarn add ringcentral-web-phone@2.0.0-beta.1
 ```
 
-At the time I am writing this document, the latest version is `2.0.0-alpha.21`.
+At the time I am writing this document, the latest version is `2.0.0-beta.1`.
 Please replace it with the latest version.
 Find the latest version here https://www.npmjs.com/package/ringcentral-web-phone
 
