@@ -16,15 +16,15 @@ testTwoPages('caller hang up', async ({ callerResource, calleeResource }) => {
   });
 
   // caller
-  expect(callerMessages).toHaveLength(2);
-  expect(callerMessages.map((m) => m.direction)).toEqual(['outbound', 'inbound']);
-  expect(callerMessages[0].subject.startsWith('BYE sip:')).toBeTruthy();
-  expect(callerMessages[1].subject).toBe('SIP/2.0 200 OK');
+  let messages = callerMessages.map((m) => m.shortString);
+  expect(messages).toHaveLength(2);
+  expect(messages[0]).toMatch(/^outbound - BYE sip:/);
+  expect(messages[1]).toMatch(/^inbound - SIP\/2.0 200 OK$/);
   await assertCallCount(callerPage, 0);
 
   // callee
   await waitFor({ condition: () => calleeMessages.length >= 4 });
-  const messages = calleeMessages.map((m) => m.shortString);
+  messages = calleeMessages.map((m) => m.shortString);
   expect(messages).toHaveLength(4);
   expect(messages[0]).toMatch(/^inbound - BYE sip:/);
   expect(messages[1]).toMatch(/^outbound - SIP\/2.0 200 OK$/);

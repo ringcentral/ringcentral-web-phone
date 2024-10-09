@@ -25,7 +25,7 @@ testTwoPages('call', async ({ callerResource, calleeResource }) => {
 
   // callee
   messages = calleeMessages.map((m) => m.shortString);
-  expect(calleeMessages).toHaveLength(6);
+  expect(messages).toHaveLength(6);
   expect(messages[0]).toMatch(/^inbound - INVITE sip:/);
   expect(messages[1]).toMatch(/^outbound - SIP\/2.0 100 Trying$/);
   expect(messages[2]).toMatch(/^outbound - SIP\/2.0 180 Ringing$/);

@@ -16,11 +16,11 @@ testTwoPages('start reply', async ({ callerResource, calleeResource }) => {
   expect(callerMessages).toHaveLength(0);
 
   // callee
-  expect(calleeMessages).toHaveLength(3);
-  expect(calleeMessages.map((m) => m.direction)).toEqual(['outbound', 'inbound', 'inbound']);
-  expect(calleeMessages[0].subject.startsWith('MESSAGE sip:')).toBeTruthy();
-  expect(calleeMessages[1].subject).toBe('SIP/2.0 100 Trying');
-  expect(calleeMessages[2].subject).toBe('SIP/2.0 200 OK');
+  const messages = calleeMessages.map((m) => m.shortString);
+  expect(messages).toHaveLength(3);
+  expect(messages[0]).toMatch(/^outbound - MESSAGE sip:/);
+  expect(messages[1]).toMatch(/^inbound - SIP\/2.0 100 Trying$/);
+  expect(messages[2]).toMatch(/^inbound - SIP\/2.0 200 OK$/);
   const rcMessage = await RcMessage.fromXml(calleeMessages[0].body);
   expect(rcMessage.headers.Cmd).toBe(callControlCommands.ClientStartReply.toString());
 

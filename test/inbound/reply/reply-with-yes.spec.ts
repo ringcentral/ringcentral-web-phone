@@ -22,6 +22,8 @@ testTwoPages('reply with yes', async ({ callerResource, calleeResource }) => {
     await window.inboundCalls[0].reply('Hello world!');
   });
 
+  // wait for audio to play to caller
+  await waitFor({ interval: 1000 });
   // caller press '3': Yes
   await callerPage.evaluate(async () => {
     await window.outboundCalls[0].sendDtmf('3');
