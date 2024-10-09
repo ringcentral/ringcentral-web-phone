@@ -96,7 +96,7 @@ main();
 
 Please note that, you may save and re-use `sipInfo` for a long time. You don't need to invoke `Device SIP Registration` every time you start the web phone.
 
-In the sample code above, I also showed you how to get the `deviceId`. Web Phone SDK doesn't need `deviceId`, it is just for your information. 
+In the sample code above, I also showed you how to get the `deviceId`. Web Phone SDK doesn't need `deviceId`, it is just for your information.
 Just in case you may need it for [RingCentral Call Control API](https://developers.ringcentral.com/api-reference/Call-Control/createCallOutCallSession).
 
 ## Installation
@@ -455,7 +455,7 @@ You could create it on-the-fly or you can find an existing call session.
 
 ### A live sample
 
-https://github.com/tylerlong/rc-web-phone-demo-2 provides conference features. 
+https://github.com/tylerlong/rc-web-phone-demo-2 provides conference features.
 You may create conference, invite a number to the conference, merge an existing call to the conference, etc.
 
 ## Recover from network outage
@@ -490,7 +490,6 @@ I would like to say this is more like a bug fix than a behavior change.
 
 SDK 1.x requires you to provide `<audio />` elements to play remote audio.
 SDK 2.x will create `<audio />` elements on demand. You don't need to provide `<audio />` elements.
-
 
 ## Mutiple instances and shared worker
 
