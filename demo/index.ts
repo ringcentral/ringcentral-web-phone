@@ -34,6 +34,21 @@ $(() => {
   let outboundCall = true;
   let confSessionId = '';
 
+  const $form = cloneTemplate($loginTemplate);
+  const $authForm = cloneTemplate($authFlowTemplate);
+
+  const $server = $authForm.find('input[name=server]').eq(0);
+  const $clientId = $authForm.find('input[name=clientId]').eq(0);
+  const $clientSecret = $authForm.find('input[name=clientSecret]').eq(0);
+  const $jwtToken = $form.find('input[name=jwtToken]').eq(0);
+  const $logLevel = $authForm.find('select[name=logLevel]').eq(0);
+
+  $server.val(localStorage.getItem('webPhoneServer') || SDK.server.sandbox);
+  $clientId.val(localStorage.getItem('webPhoneclientId') || '');
+  $clientSecret.val(localStorage.getItem('webPhoneclientSecret') || '');
+  $jwtToken.val(localStorage.getItem('webPhoneJwtToken') || '');
+  $logLevel.val(localStorage.getItem('webPhoneLogLevel') || logLevel);
+
   /**
    * @param {jQuery|HTMLElement} $tpl
    * @return {jQuery|HTMLElement}
@@ -59,6 +74,7 @@ $(() => {
         return postLogin(server, clientId, clientSecret, jwtToken, ll);
       })
       .catch((e) => {
+        console.log('JWT Token login failed, trying password flow');
         console.error(e.stack || e);
       });
   }
@@ -132,8 +148,10 @@ $(() => {
       });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function register(data) {
-    webPhone = new WebPhone(data, {
+    console.log('create webPhone: ', global.sipProvisionInfo);
+    webPhone = new WebPhone(global.sipProvisionInfo, {
       enableDscp: true,
       clientId: localStorage.getItem('webPhoneclientId')!,
       audioHelper: {
@@ -662,20 +680,7 @@ $(() => {
   }
 
   function makeLoginForm() {
-    const $form = cloneTemplate($loginTemplate);
-    const $authForm = cloneTemplate($authFlowTemplate);
-
-    const $server = $authForm.find('input[name=server]').eq(0);
-    const $clientId = $authForm.find('input[name=clientId]').eq(0);
-    const $clientSecret = $authForm.find('input[name=clientSecret]').eq(0);
-    const $jwtToken = $form.find('input[name=jwtToken]').eq(0);
-    const $logLevel = $authForm.find('select[name=logLevel]').eq(0);
-
-    $server.val(localStorage.getItem('webPhoneServer') || SDK.server.sandbox);
-    $clientId.val(localStorage.getItem('webPhoneclientId') || '');
-    $clientSecret.val(localStorage.getItem('webPhoneclientSecret') || '');
-    $jwtToken.val(localStorage.getItem('webPhoneJwtToken') || '');
-    $logLevel.val(localStorage.getItem('webPhoneLogLevel') || logLevel);
+    onPrepare();
 
     $form.on('submit', (e) => {
       console.log('Normal Flow');
@@ -697,6 +702,31 @@ $(() => {
 
     $app.empty().append($authForm).append($form);
   }
+
+  function onPrepare() {
+    window.addEventListener('message', (event) => {
+      if(event.origin.indexOf('http://localhost:3000') === -1) return;
+
+      console.log('TEST_VOIP received from Jupiter:', event);
+
+      if ( event.data.type === 'phoneNumber') {
+        const phoneNumber = event.data.phoneNumber;
+        localStorage.setItem('webPhoneLastNumber', phoneNumber);
+        makeCall(phoneNumber, '');
+      }
+
+      if ( event.data.type === 'prov') {
+        global.sipProvisionInfo = event.data.provInfo;
+        createWebPhone();
+      }
+    });
+  }
+
+  const createWebPhone = () => {
+    console.log('TEST_VOIP onmessage:', global.sipProvisionInfo);
+    $authForm.submit();
+    postLogin($server.val(), $clientId.val(), $clientSecret.val(), $jwtToken.val(), $logLevel.val());
+  };
 
   makeLoginForm();
 });
