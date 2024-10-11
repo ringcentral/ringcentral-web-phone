@@ -5,6 +5,14 @@
 
 The RingCentral WebPhone Library includes a JavaScript WebRTC library and a WebRTC phone demo app.
 
+## 2.0.0 version
+
+2.0.0 version is currently in beta. We encourange new users to start with 2.0.0 version instead.
+
+2.0.0 version is a complete rewrite and it has tons of improvements. It's hosted on main branch:
+
+https://github.com/ringcentral/ringcentral-web-phone/tree/main
+
 ## Version 1.0.0 release notes
 
 https://gist.github.com/tylerlong/72b51a72cc16206850c4cdfa36c6793a
