@@ -7,7 +7,7 @@
 
   <body>
     <div class="container">
-      <h1>Use JWT / access token to request the sip provision in testRTC</h1>
+      <h1>FIJI-84841 support migrate testRTC integration</h1>
       <div id="app"></div>
     </div>
 
@@ -206,5 +206,25 @@
     </script>
 
     <script src="/index.4baa363a.js" defer=""></script>
+<!--
+    <script type="module">
+      // 解析 URL 的查询参数
+      const queryParams = new URLSearchParams(window.location.search);
+
+      // 将解析的参数传递给 index.ts
+      const params = {};
+      queryParams.forEach((value, key) => {
+        params[key] = value;
+      });
+
+      // 向 index.ts 传递参数，假设你可以导入或传递到 window 全局变量中
+      window.appParams = params;
+
+      console.log('TEST_VOIP appParams:', window.appParams);
+
+      // 现在通过 import index.ts
+      import './index.ts';
+    </script>
+-->
   </body>
 </html>

@@ -13,6 +13,66 @@ import type { WebPhoneInvitation } from '../src/session';
 global.jQuery = $;
 import('bootstrap');
 
+const fixedKeyHex = '000102030405060708090a0b0c0d0e0f'; //128-bit key (16 bytes)
+const fixedIVHex = 'aabbccddeeff001122334455'; //12-byte IV (96-bit)
+
+async function importFixedKey(): Promise<CryptoKey> {
+  const keyBuffer = hexStringToArrayBuffer(fixedKeyHex);
+  return await window.crypto.subtle.importKey(
+    'raw',
+    keyBuffer, // Use a fixed key value
+    {
+      name: 'AES-GCM',
+    },
+    true, // Whether to allow key export
+    ['encrypt', 'decrypt'], // The key will be used for encryption and decryption
+  );
+}
+
+function hexStringToArrayBuffer(hexString: string): Uint8Array {
+  const result = new Uint8Array(hexString.length / 2);
+  for (let i = 0; i < hexString.length; i += 2) {
+    result[i / 2] = parseInt(hexString.substring(i, 2), 16);
+  }
+  return result;
+}
+
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  const binary = window.atob(base64);
+  const len = binary.length;
+  const buffer = new ArrayBuffer(len);
+  const bytes = new Uint8Array(buffer);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return buffer;
+}
+
+async function decryptBase64ToJSON(base64String: string): Promise<object> {
+  const key = await importFixedKey();
+  const iv = hexStringToArrayBuffer(fixedIVHex);
+
+  const encryptedData = base64ToArrayBuffer(base64String);
+
+  const decryptedData = await window.crypto.subtle.decrypt(
+    {
+      name: 'AES-GCM',
+      iv: iv,
+    },
+    key,
+    encryptedData,
+  );
+
+  const jsonString = new TextDecoder().decode(decryptedData);
+  return JSON.parse(jsonString);
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 $(() => {
   let sdk: SDK;
   let platform: Platform;
@@ -703,29 +763,46 @@ $(() => {
     $app.empty().append($authForm).append($form);
   }
 
-  function onPrepare() {
-    window.addEventListener('message', (event) => {
-      if(event.origin.indexOf('http://localhost:3000') === -1) return;
+  async function onPrepare() {
+    const queryParams = new URLSearchParams(window.location.search);
 
-      console.log('TEST_VOIP received from Jupiter:', event);
-
-      if ( event.data.type === 'phoneNumber') {
-        const phoneNumber = event.data.phoneNumber;
-        localStorage.setItem('webPhoneLastNumber', phoneNumber);
-        makeCall(phoneNumber, '');
-      }
-
-      if ( event.data.type === 'prov') {
-        global.sipProvisionInfo = event.data.provInfo;
-        createWebPhone();
-      }
+    const params: { [key: string]: string } = {};
+    queryParams.forEach((value, key) => {
+      params[key] = value;
     });
+
+    if (!params['provInfo']) {
+      console.error('No provInfo found');
+      return;
+    }
+
+    console.log('testRTC encryptedBase64:', params['provInfo']);
+
+    const provInfo = await decryptBase64ToJSON(params['provInfo']);
+    const targetNum = provInfo['targetPhoneNum'];
+    delete provInfo['targetPhoneNum'];
+    global.sipProvisionInfo = provInfo;
+
+    console.log('testRTC provInfo:', provInfo);
+    console.log('testRTC targetNum:', targetNum);
+
+    await sleep(7000);
+    createWebPhone();
+
+    await sleep(7000);
+    localStorage.setItem('webPhoneLastNumber', targetNum);
+    makeCall(targetNum, '');
   }
 
   const createWebPhone = () => {
-    console.log('TEST_VOIP onmessage:', global.sipProvisionInfo);
+    const server = '';
+    const clientId = '';
+    const clientSecret = '';
+    const jwtToken = '';
+    const logLevel = 0;
+
     $authForm.submit();
-    postLogin($server.val(), $clientId.val(), $clientSecret.val(), $jwtToken.val(), $logLevel.val());
+    postLogin(server, clientId, clientSecret, jwtToken, logLevel);
   };
 
   makeLoginForm();
