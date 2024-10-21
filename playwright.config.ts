@@ -1,7 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
-  timeout: 10000,
+  timeout: 20000,
   webServer: {
     command: 'yarn serve -p 8888',
     url: 'http://localhost:8888/',

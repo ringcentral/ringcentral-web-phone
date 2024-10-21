@@ -22,20 +22,20 @@ testTwoPages('reply with urgent', async ({ callerResource, calleeResource }) => 
     await window.inboundCalls[0].reply('Hello world!');
   });
 
-  // wait for audio to play to caller
-  await waitFor({ interval: 1000 });
+  await waitFor({ interval: 3000 });
 
   // caller press '5': Urgent
   await callerPage.evaluate(async () => {
     window.outboundCalls[0].sendDtmf('5');
   });
 
+  await waitFor({ interval: 3000 });
+
   // caller specify callback number
   await callerPage.evaluate(async (anotherNumber) => {
     window.outboundCalls[0].sendDtmf(`${anotherNumber}#`);
   }, anotherNumber);
 
-  // wait for sever to repeat the callback number
   await waitFor({ interval: 3000 });
 
   // caller press '1' to confirm the callback number
