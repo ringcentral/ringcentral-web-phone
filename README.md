@@ -118,6 +118,8 @@ await webPhone.start();
 
 What is `sipInfo`? Please read [Pre-requisites](#pre-requisites) section.
 
+### instanceId
+
 Optionally, you can specify `instanceId`: `new WebPhone({ sipInfo, instanceId })`.
 `instanceId` is the unique ID of your web phone device.
 
@@ -130,6 +132,14 @@ If you start two web phone instances with the same `instanceId`, only the second
 If you don't specify `instanceId`, the SDK by default will use `sipInfo.authorizationId` as `instanceId`. Which means, if you don't specify `instanceId`, you should only run one web phone instance in one tab.
 
 If you start two web phone instances with different `instanceId`, both instances will work. SIP server will send messages to both instances.
+
+The maximum unique live instances allowed for an extension is 5. If you try to register more, SIP server will reply with "SIP/2.0 603 Too Many Contacts".
+
+If you keep refreshing a browser page, and each refresh you use an unique `instanceId` to register a web phone instance. Registration will fail when you try to create the 6th web phone instance (when you refresh the page the 5th time).
+
+It takes around 1 minute for SIP server to mark an instance as expired (if client doesn't refresh it any more). So after you meet "SIP/2.0 603 Too Many Contacts" error, wait for 1 minute and try again.
+
+You may also invoke `await webPhone.dispose();` to dispose a web phone instance before you close/refresh a browser page. That way, the web phone instance registration is removed from SIP server immediately without waiting for 1 minute.
 
 ## Debug Mode
 
