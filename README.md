@@ -149,6 +149,14 @@ const webPhone = new WebPhone({ sipInfo, debug: true });
 
 In debug mode, the SDK will print all SIP messages to the console. It is useful for debugging.
 
+## Dispose
+
+When you no longer need the web phone instance, or you are going to close/refresh the browser page/tab, it is good practice to invoke:
+
+```ts
+await webPhone.dispose();
+```
+
 ## Make an outbound call
 
 ```ts
