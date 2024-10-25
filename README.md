@@ -1,4 +1,4 @@
-# RingCentral Web Phone
+# RingCentral Web Phone SDK
 
 ## Version 1.x
 
