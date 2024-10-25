@@ -6,3 +6,4 @@ dev-notes.md
 dist/
 test-results/
 .DS_Store
+.env.1.x

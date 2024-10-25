@@ -4,10 +4,10 @@ import InboundMessage from './sip-message/inbound';
 import type OutboundMessage from './sip-message/outbound';
 import RequestMessage from './sip-message/outbound/request';
 import ResponseMessage from './sip-message/outbound/response';
-import type { ISipClient, SipInfo, SipClientOptions } from './types';
+import type { SipClient, SipInfo, SipClientOptions } from './types';
 import { branch, fakeDomain, fakeEmail, generateAuthorization, uuid } from './utils';
 
-class SipClient extends EventEmitter implements ISipClient {
+export class DefaultSipClient extends EventEmitter implements SipClient {
   public wsc: WebSocket;
   public sipInfo: SipInfo;
   public instanceId: string;
@@ -147,7 +147,7 @@ class SipClient extends EventEmitter implements ISipClient {
 }
 
 // this is for multiple instances with shared worker, dummy phones do not talk to SIP server at all
-export class DummySipClient extends EventEmitter implements ISipClient {
+export class DummySipClient extends EventEmitter implements SipClient {
   private static inboundMessage: InboundMessage = new InboundMessage();
   public constructor() {
     super();
@@ -161,5 +161,3 @@ export class DummySipClient extends EventEmitter implements ISipClient {
   public async reply(message: ResponseMessage) {}
   public async dispose() {}
 }
-
-export default SipClient;

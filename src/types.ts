@@ -10,7 +10,8 @@ export interface SipClientOptions {
 }
 
 export type WebPhoneOptions = SipClientOptions & {
-  sipClient?: ISipClient;
+  sipClient?: SipClient;
+  deviceManager?: DeviceManager;
 };
 
 export interface SipInfo {
@@ -22,9 +23,14 @@ export interface SipInfo {
   stunServers: string[];
 }
 
-export type ISipClient = EventEmitter & {
+export type SipClient = EventEmitter & {
   start: () => Promise<void>;
   request: (message: RequestMessage) => Promise<InboundMessage>;
   reply: (message: ResponseMessage) => Promise<void>;
   dispose: () => Promise<void>;
 };
+
+export interface DeviceManager {
+  getInputDeviceId: () => Promise<string>;
+  getOutputDeviceId: () => Promise<string>;
+}

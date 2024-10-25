@@ -65,18 +65,38 @@ class CallSession extends EventEmitter {
     this.rtcPeerConnection = new RTCPeerConnection({
       iceServers: this.webPhone.sipInfo.stunServers?.map((url) => ({ urls: `stun:${url}` })) ?? [],
     });
+    const inputDeviceId = await this.webPhone.deviceManager.getInputDeviceId();
     this.mediaStream = await navigator.mediaDevices.getUserMedia({
       video: false,
-      audio: true,
+      audio: { deviceId: { exact: inputDeviceId } },
     });
-    this.mediaStream.getAudioTracks().forEach((track) => this.rtcPeerConnection.addTrack(track, this.mediaStream));
-    this.rtcPeerConnection.ontrack = (event) => {
+    this.mediaStream.getAudioTracks().forEach((track) => this.rtcPeerConnection.addTrack(track));
+    this.rtcPeerConnection.ontrack = async (event) => {
       const remoteStream = event.streams[0];
       this.audioElement = document.createElement('audio') as HTMLAudioElement;
+      const outputDeviceId = await this.webPhone.deviceManager.getOutputDeviceId();
+      this.audioElement.setSinkId(outputDeviceId);
       this.audioElement.autoplay = true;
       this.audioElement.hidden = true;
       this.audioElement.srcObject = remoteStream;
     };
+  }
+
+  public async changeInputDevice(deviceId: string) {
+    this.mediaStream.getAudioTracks().forEach((track) => track.stop());
+    this.mediaStream = await navigator.mediaDevices.getUserMedia({
+      video: false,
+      audio: { deviceId: { exact: deviceId } },
+    });
+    const newAudioTrack = this.mediaStream.getAudioTracks()[0];
+    const sender = this.rtcPeerConnection.getSenders().find((sender) => sender.track?.kind === 'audio');
+    if (sender) {
+      sender.replaceTrack(newAudioTrack);
+    }
+  }
+
+  public async changeOutputDevice(deviceId: string) {
+    this.audioElement.setSinkId(deviceId);
   }
 
   public async transfer(target: string) {
