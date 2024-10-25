@@ -28,6 +28,8 @@ class CallSession extends EventEmitter {
   public audioElement: HTMLAudioElement;
   public state: 'init' | 'ringing' | 'answered' | 'disposed' = 'init';
   public direction: 'inbound' | 'outbound';
+  public inputDeviceId: string;
+  public outputDeviceId: string;
 
   private reqid = 1;
   private sdpVersion = 1;
@@ -65,17 +67,17 @@ class CallSession extends EventEmitter {
     this.rtcPeerConnection = new RTCPeerConnection({
       iceServers: this.webPhone.sipInfo.stunServers?.map((url) => ({ urls: `stun:${url}` })) ?? [],
     });
-    const inputDeviceId = await this.webPhone.deviceManager.getInputDeviceId();
+    this.inputDeviceId = await this.webPhone.deviceManager.getInputDeviceId();
     this.mediaStream = await navigator.mediaDevices.getUserMedia({
       video: false,
-      audio: { deviceId: { exact: inputDeviceId } },
+      audio: { deviceId: { exact: this.inputDeviceId } },
     });
     this.mediaStream.getAudioTracks().forEach((track) => this.rtcPeerConnection.addTrack(track));
     this.rtcPeerConnection.ontrack = async (event) => {
       const remoteStream = event.streams[0];
       this.audioElement = document.createElement('audio') as HTMLAudioElement;
-      const outputDeviceId = await this.webPhone.deviceManager.getOutputDeviceId();
-      this.audioElement.setSinkId(outputDeviceId);
+      this.outputDeviceId = await this.webPhone.deviceManager.getOutputDeviceId();
+      this.audioElement.setSinkId(this.outputDeviceId);
       this.audioElement.autoplay = true;
       this.audioElement.hidden = true;
       this.audioElement.srcObject = remoteStream;
@@ -83,6 +85,7 @@ class CallSession extends EventEmitter {
   }
 
   public async changeInputDevice(deviceId: string) {
+    this.inputDeviceId = deviceId;
     this.mediaStream.getAudioTracks().forEach((track) => track.stop());
     this.mediaStream = await navigator.mediaDevices.getUserMedia({
       video: false,
@@ -96,6 +99,7 @@ class CallSession extends EventEmitter {
   }
 
   public async changeOutputDevice(deviceId: string) {
+    this.outputDeviceId = deviceId;
     this.audioElement.setSinkId(deviceId);
   }
 
