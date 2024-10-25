@@ -1,26 +1,14 @@
-# RingCentral Web Phone 2
+# RingCentral Web Phone
 
-This is a complete rewrite of the RingCentral Web Phone SDK.
+## Version 1.x
 
-## Why rewrite?
+For those who want to check documentation for verison 1.x, please [click here](https://github.com/ringcentral/ringcentral-web-phone/tree/1.x).
 
-The rewriting is to get rid of SIP.js.
+## Version 2.x
 
-### SIP.js is no longer actively maintained
+2.x version is a complete rewrite. We recommend all users to use the latest version.
 
-The last release of SIP.js was in October 2022, and it hasn't been updated since. Depending on an unmaintained library poses risks, including potential incompatibility with future browser updates and WebRTC changes. By moving away from SIP.js, we ensure that our SDK remains compatible with evolving web standards.
-
-### SIP.js lacks support for essential RingCentral features
-
-SIP.js was not built with RingCentral’s specific requirements in mind. To support critical functionalities like confirming receipt, sending calls to voicemail, declining, forwarding, replying, call recording (start/stop), call flipping, and parking, we had to patch SIP.js heavily. Managing these patches was inefficient, and developing our own signaling library is a more sustainable approach.
-
-### SIP signaling is simple enough to implement in-house
-
-SIP signaling itself is a relatively straightforward protocol. By implementing the SIP signaling in-house, we can avoid the overhead and complexity introduced by SIP.js while gaining full control over the signaling flow.
-
-### Decoupling SIP signaling from WebRTC
-
-SIP.js tightly couples SIP signaling with WebRTC. By decoupling these two components, we allow you to run a web phone with a real/dummy SIP client, which is essential for scenarios where you need to run multiple web phones in multiple tabs. Please refer to the [Shared Worker](#mutiple-instances-and-shared-worker) section for more information.
+For the reasoning about why we release a brand new 2.0 version and all the breaking changes, please read [this article](https://medium.com/@tylerlong/ringcentral-web-phone-sdk-2-0-8e55a4f6e2b2).
 
 ## Demo
 
@@ -519,34 +507,6 @@ You may create conference, invite a number to the conference, merge an existing 
 
 If you believe your app just recovered from network outage and the underlying websocket connection is broken, you may call `webPhone.start()`.
 It will create a brand new websocket connection to the SIP server and re-register the SIP client.
-
-## Breaking changes
-
-### API changes
-
-2.x version is a complete rewrite of the RingCentral Web Phone SDK.
-The API is completely different from 1.x version.
-
-### Behavior changes
-
-#### ringing audio
-
-This SDK doesn't play ringing audio when there is incoming call or outgoing call.
-It's up to the developer/app to play the audio. It's a by design change.
-
-We made this change because we want to give the developer/app more flexibility.
-And playing ringing audio is not a core feature of the SDK. It's more about how the app interacts with end users.
-
-#### call forward
-
-SDK 1.x treats forwarding as answering the call and then transfer the call.
-SDK 2.x treats forwarding as sending a SIP message to the SIP server to forward the call.
-I would like to say this is more like a bug fix than a behavior change.
-
-#### `<audio />`
-
-SDK 1.x requires you to provide `<audio />` elements to play remote audio.
-SDK 2.x will create `<audio />` elements on demand. You don't need to provide `<audio />` elements.
 
 ## Mutiple instances and shared worker
 
