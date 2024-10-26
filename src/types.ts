@@ -32,5 +32,5 @@ export type SipClient = EventEmitter & {
 
 export interface DeviceManager {
   getInputDeviceId: () => Promise<string>;
-  getOutputDeviceId: () => Promise<string>;
+  getOutputDeviceId: () => Promise<string | undefined>; // firefox doesn't support output device selection
 }

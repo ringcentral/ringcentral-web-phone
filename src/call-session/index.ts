@@ -29,7 +29,7 @@ class CallSession extends EventEmitter {
   public state: 'init' | 'ringing' | 'answered' | 'disposed' = 'init';
   public direction: 'inbound' | 'outbound';
   public inputDeviceId: string;
-  public outputDeviceId: string;
+  public outputDeviceId: string | undefined;
 
   private reqid = 1;
   private sdpVersion = 1;
@@ -77,7 +77,9 @@ class CallSession extends EventEmitter {
       const remoteStream = event.streams[0];
       this.audioElement = document.createElement('audio') as HTMLAudioElement;
       this.outputDeviceId = await this.webPhone.deviceManager.getOutputDeviceId();
-      this.audioElement.setSinkId(this.outputDeviceId);
+      if (this.outputDeviceId) {
+        this.audioElement.setSinkId(this.outputDeviceId);
+      }
       this.audioElement.autoplay = true;
       this.audioElement.hidden = true;
       this.audioElement.srcObject = remoteStream;
@@ -100,7 +102,9 @@ class CallSession extends EventEmitter {
 
   public async changeOutputDevice(deviceId: string) {
     this.outputDeviceId = deviceId;
-    this.audioElement.setSinkId(deviceId);
+    if (deviceId) {
+      this.audioElement.setSinkId(deviceId);
+    }
   }
 
   public async transfer(target: string) {

@@ -7,9 +7,9 @@ export class DefaultDeviceManager implements DeviceManager {
     return defaultInputDevice!.deviceId;
   }
 
-  public async getOutputDeviceId(): Promise<string> {
+  public async getOutputDeviceId(): Promise<string | undefined> {
     const devices = await navigator.mediaDevices.enumerateDevices();
     const defaultOutputDevice = devices.find((device) => device.kind === 'audiooutput');
-    return defaultOutputDevice!.deviceId;
+    return defaultOutputDevice?.deviceId;
   }
 }
