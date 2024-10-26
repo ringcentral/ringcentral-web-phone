@@ -12,6 +12,7 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
   public sipInfo: SipInfo;
   public instanceId: string;
   private debug: boolean;
+  private maxExpires: number;
 
   private intervalHandle: NodeJS.Timeout;
 
@@ -20,19 +21,20 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
     this.sipInfo = options.sipInfo;
     this.instanceId = options.instanceId ?? this.sipInfo.authorizationId!;
     this.debug = options.debug ?? false;
+    this.maxExpires = options.maxExpires ?? 60;
   }
 
   public async start() {
     await this.connect();
-    await this.register();
+    let expires = await this.register(this.maxExpires);
     if (this.intervalHandle) {
       clearInterval(this.intervalHandle);
     }
     this.intervalHandle = setInterval(
-      () => {
-        this.register();
+      async () => {
+        expires = await this.register(this.maxExpires);
       },
-      1 * 55 * 1000, // refresh registration every 55 seconds, otherwise WS will disconnect
+      (expires - 3) * 1000, // 3 seconds before expires
     );
   }
 
@@ -90,7 +92,7 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
     this.wsc.close();
   }
 
-  public async register(expires = 60) {
+  public async register(expires: number): Promise<number> {
     if (this.wsc.readyState === WebSocket.CLOSED) {
       await this.connect();
     }
@@ -101,16 +103,20 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
       To: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>`,
       Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
     });
-    const inboundMessage = await this.request(requestMessage);
+    let inboundMessage = await this.request(requestMessage);
     const wwwAuth = inboundMessage.headers['Www-Authenticate'] || inboundMessage!.headers['WWW-Authenticate'];
     if (wwwAuth) {
       const nonce = wwwAuth.match(/, nonce="(.+?)"/)![1];
       const newMessage = requestMessage.fork();
       newMessage.headers.Authorization = generateAuthorization(this.sipInfo, nonce, 'REGISTER');
-      await this.request(newMessage);
+      inboundMessage = await this.request(newMessage);
     } else if (inboundMessage.subject.startsWith('SIP/2.0 603 ')) {
       throw new Error('Registration failed: ' + inboundMessage.subject);
     }
+    if (inboundMessage.headers.Contact) {
+      return Number(inboundMessage.headers.Contact.match(/;expires=(\d+)/)![1]);
+    }
+    return 0; // `unregister()`;
   }
   public async unregister() {
     await this.register(0);

@@ -22,9 +22,9 @@
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
-    "@playwright/test": "^1.48.1",
+    "@playwright/test": "^1.48.2",
     "@types/blueimp-md5": "^2.18.2",
-    "@types/node": "^22.8.0",
+    "@types/node": "^22.8.1",
     "@types/sdp-transform": "^2.4.9",
     "@types/uuid": "^10.0.0",
     "@types/xml2js": "^0.4.14",
