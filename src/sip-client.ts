@@ -7,35 +7,28 @@ import ResponseMessage from './sip-message/outbound/response';
 import type { SipClient, SipInfo, SipClientOptions } from './types';
 import { branch, fakeDomain, fakeEmail, generateAuthorization, uuid } from './utils';
 
+const maxExpires = 60;
 export class DefaultSipClient extends EventEmitter implements SipClient {
   public wsc: WebSocket;
   public sipInfo: SipInfo;
   public instanceId: string;
   private debug: boolean;
-  private maxExpires: number;
 
-  private intervalHandle: NodeJS.Timeout;
+  private timeoutHandle: NodeJS.Timeout;
 
   public constructor(options: SipClientOptions) {
     super();
     this.sipInfo = options.sipInfo;
     this.instanceId = options.instanceId ?? this.sipInfo.authorizationId!;
     this.debug = options.debug ?? false;
-    this.maxExpires = options.maxExpires ?? 60;
   }
 
   public async start() {
     await this.connect();
-    let expires = await this.register(this.maxExpires);
-    if (this.intervalHandle) {
-      clearInterval(this.intervalHandle);
+    if (this.timeoutHandle) {
+      clearInterval(this.timeoutHandle);
     }
-    this.intervalHandle = setInterval(
-      async () => {
-        expires = await this.register(this.maxExpires);
-      },
-      (expires - 3) * 1000, // 3 seconds before expires
-    );
+    await this.register(maxExpires);
   }
 
   public async connect() {
@@ -83,7 +76,7 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
   }
 
   public async dispose() {
-    clearInterval(this.intervalHandle);
+    clearInterval(this.timeoutHandle);
     this.removeAllListeners();
     // in case dispose() is called twice
     if (this.wsc.readyState === WebSocket.OPEN) {
@@ -92,7 +85,7 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
     this.wsc.close();
   }
 
-  public async register(expires: number): Promise<number> {
+  public async register(expires: number) {
     if (this.wsc.readyState === WebSocket.CLOSED) {
       await this.connect();
     }
@@ -113,10 +106,15 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
     } else if (inboundMessage.subject.startsWith('SIP/2.0 603 ')) {
       throw new Error('Registration failed: ' + inboundMessage.subject);
     }
-    if (inboundMessage.headers.Contact) {
-      return Number(inboundMessage.headers.Contact.match(/;expires=(\d+)/)![1]);
+    if (expires > 0) {
+      const serverExpires = Number(inboundMessage.headers.Contact.match(/;expires=(\d+)/)![1]);
+      this.timeoutHandle = setTimeout(
+        () => {
+          this.register(expires);
+        },
+        (serverExpires - 3) * 1000, // 3 seconds before server expires
+      );
     }
-    return 0; // `unregister()`;
   }
   public async unregister() {
     await this.register(0);
