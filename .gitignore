@@ -10,3 +10,4 @@ node_modules
 .secret
 .parcel-cache
 test-results/
+.env.1.x
