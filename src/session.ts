@@ -185,6 +185,7 @@ export class CommonSession {
   public stopRecord?: typeof stopRecord;
   /** Send incoming call to voicemail */
   public toVoicemail?: typeof toVoicemail;
+  public decline?: typeof decline;
   /** Transfer current call */
   public transfer?: typeof transfer;
   /** Put the call on unhold */
@@ -332,6 +333,7 @@ export function patchIncomingWebphoneSession(session: WebPhoneSession): void {
   session.sendReceiveConfirm = sendReceiveConfirm.bind(session);
   session.sendSessionMessage = sendSessionMessage.bind(session);
   session.toVoicemail = toVoicemail.bind(session);
+  session.decline = decline.bind(session);
   session.__accept = (session as Invitation).accept.bind(session);
   (session as WebPhoneInvitation).accept = accept.bind(session);
   setupUserAgentCoreEvent(session);
@@ -473,6 +475,10 @@ function ignore(this: WebPhoneSession): Promise<IncomingResponse> {
 
 function toVoicemail(this: WebPhoneSession): Promise<IncomingResponse> {
   return this.sendReceiveConfirm!().then(() => this.sendSessionMessage!(messages.toVoicemail));
+}
+
+function decline(this: WebPhoneSession): Promise<IncomingResponse> {
+  return this.sendReceiveConfirm!().then(() => this.sendSessionMessage!(messages.ignore));
 }
 
 function replyWithMessage(this: WebPhoneSession, replyOptions: ReplyOptions): Promise<IncomingResponse> {

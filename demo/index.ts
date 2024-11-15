@@ -273,7 +273,7 @@ $(() => {
       });
 
       $modal.find('.decline').on('click', () => {
-        session.reject();
+        session.decline!();
         $modal.modal('hide');
       });
 

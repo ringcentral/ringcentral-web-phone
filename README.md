@@ -352,6 +352,17 @@ $modal.find('.transfer-form button.warm').on('click', function (e) {
 session.forward('TARGET_NUMBER').then(...);
 ```
 
+### Reject vs Decline
+
+`sesstion.reject()` method has been available since long ago.
+It will send a SIP "480 Temporarily Unavailable" message to SIP server.
+I believe this method is from SIP.js since I don't see any relavent code in this repo.
+There is a potential issue with this methods, sometimes server side will re-send the invite message to you.
+No always reproducible but quite annoying. The call will appear again right after you "reject".
+
+`session.decline()` method was added in 1.0.5. It sends a special XML message to SIP server to ignore the call.
+And RingCentral SIP servers understand this message and will not bother you again about this call session.
+
 ### Start/Stop Recording
 
 ```js
