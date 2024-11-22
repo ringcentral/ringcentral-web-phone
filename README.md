@@ -669,7 +669,7 @@ await callSession.sendDtmf('102#');
 
 ### take over
 
-Please note that, "take over" is special. Because after you request for taking over an existing call, you will receive an extra incoming call. You need to answer that incoming call for "take over" to complete. And you need to keep both calls alive, otherwise customer will be disconnected.
+Please note that, "take over" is special. Because after you request for taking over an existing call, you will receive an extra incoming call from '\*83'. You need to answer that incoming call for "take over" to complete. And you need to keep both calls alive, otherwise customer will be disconnected.
 
 For example, a customer is talking to extension 102, and you want to take over the call:
 
@@ -678,7 +678,9 @@ const callSession1 = await webPhone.call('*83');
 // optionally wait for 1 - 3 seconds here
 await callSession1.sendDtmf('102#');
 webPhone.on('inboundCall', async (callSession2: InboundCallSession) => {
-  await callSession2.answer(); // this could be done manually by user instead of automatically here.
+  if (callSession2.remoteNumber === '*83') {
+    await callSession2.answer(); // this could be done manually by user instead of automatically here.
+  }
 });
 ```
 
