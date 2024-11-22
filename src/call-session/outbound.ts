@@ -57,7 +57,7 @@ class OutboundCallSession extends CallSession {
     this.remotePeer = progressMessage.headers.To;
 
     // wait for the call to be answered
-    // by SIP server design, this happens immediately, evev if the callee has not received the INVITE
+    // by SIP server design, this happens immediately, even if the callee has not received the INVITE
     return new Promise<void>((resolve) => {
       const answerHandler = async (message: InboundMessage) => {
         if (message.headers.CSeq === this.sipMessage.headers.CSeq) {

@@ -88,12 +88,8 @@ Just in case you may need it for [RingCentral Call Control API](https://develope
 ## Installation
 
 ```
-yarn add ringcentral-web-phone@2.0.0-beta.1
+yarn add ringcentral-web-phone
 ```
-
-At the time I am writing this document, the latest version is `2.0.0-beta.1`.
-Please replace it with the latest version.
-Find the latest version here https://www.npmjs.com/package/ringcentral-web-phone
 
 ## Initialization
 
@@ -656,6 +652,38 @@ public async transfer(callId: string, transferToNumber: string) {
 
 A fully working sample is here https://github.com/tylerlong/rc-web-phone-demo-2/tree/shared-worker
 You may run mutiple tabs to see how it works.
+
+## monitor/whisper/barge/coach/take over
+
+These features are available to all phone clients, not just clients powered by this SDK.
+
+Please refer to [Monitor a Call on Desk Phone | RingCentral](https://support.ringcentral.com/article-v2/8086.html?brand=RC_US&product=RingEX&language=en_US).
+
+For example, to barge a call (join an existing call) which is being handled by extension 102:
+
+```ts
+const callSession = await webPhone.call('*82');
+// optionally wait for 1 - 3 seconds here
+await callSession.sendDTMF('102#');
+```
+
+### take over
+
+Please note that, "take over" is special. Because after you request for taking over an existing call, you will receive an extra incoming call. You need to answer that incoming call for "take over" to complete. And you need to keep both calls alive, otherwise customer will be disconnected.
+
+For example, a customer is talking to extension 102, and you want to take over the call:
+
+```ts
+const callSession1 = await webPhone.call('*83');
+// optionally wait for 1 - 3 seconds here
+await callSession1.sendDTMF('102#');
+webPhone.on('inboundCall', async (callSession2: InboundCallSession) => {
+  await callSession2.answer(); // this could be done manually by user instead of automatically here.
+});
+```
+
+You will need to keep both `callSession1` and `callSession2` alive in order to keep the conversation alive with the customer.
+If you hang up either one, the customer will be disconnected.
 
 # Maintainers Notes
 
