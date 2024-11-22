@@ -364,7 +364,7 @@ If you unmute the call, the remote peer can hear you again.
 ### Send DTMF
 
 ```ts
-await callSession.sendDTMF(dtmf);
+await callSession.sendDtmf(dtmf);
 ```
 
 `dtmf` is a string, like `*123#`. Valid characters are `0123456789*#ABCD`.
@@ -664,7 +664,7 @@ For example, to barge a call (join an existing call) which is being handled by e
 ```ts
 const callSession = await webPhone.call('*82');
 // optionally wait for 1 - 3 seconds here
-await callSession.sendDTMF('102#');
+await callSession.sendDtmf('102#');
 ```
 
 ### take over
@@ -676,7 +676,7 @@ For example, a customer is talking to extension 102, and you want to take over t
 ```ts
 const callSession1 = await webPhone.call('*83');
 // optionally wait for 1 - 3 seconds here
-await callSession1.sendDTMF('102#');
+await callSession1.sendDtmf('102#');
 webPhone.on('inboundCall', async (callSession2: InboundCallSession) => {
   await callSession2.answer(); // this could be done manually by user instead of automatically here.
 });
