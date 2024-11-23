@@ -353,7 +353,7 @@ To park a call to a park location, just do this:
 await callSession.transfer(`prk${parkLocationId}`);
 ```
 
-Please note that, the call must be answered before can be parked. You cannot park a still ringing call.
+Please note that, the call must be answered before it can be parked. You cannot park a still ringing call.
 
 #### Unpark private parked calls
 
@@ -361,7 +361,7 @@ This part requires you to invoke RESTful API and setup subscriptions. It's out o
 
 You will need to subscribe to `/restapi/v1.0/account/~/extension/{parkLocationId}/presence?detailedTelephonyState=true&sipData=true` events.
 
-When some one private parked a call, you will be able to get notification like this:
+When some one private parks a call, you will be able to get a notification like this one:
 
 ```
  "body": {
@@ -379,7 +379,7 @@ When some one private parked a call, you will be able to get notification like t
   ...
 ```
 
-You need to write code like this:
+You need to write code like this to unpark it:
 
 ```ts
 webPhone.call(`prk${parkLocationId}`, undefined, {
