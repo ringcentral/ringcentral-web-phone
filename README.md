@@ -328,7 +328,7 @@ const result = await callSession.park();
 ```
 
 After this method call, the call session will be ended for you. And the remote peer will be put on hold and parked on an extension.
-You will be able to retrieve the parked call by dailing `*[parked-extension]`.
+You will be able to retrieve the parked call by dialing `*[parked-extension]`.
 Sample result:
 
 ```json
@@ -339,11 +339,11 @@ Sample result:
 }
 ```
 
-Take the sample result above as an example, you can retrieve the parked call by dailing `*813`.
+Take the sample result above as an example, you can retrieve the parked call by dialing `*813`.
 
 ### Private parking
 
-RingCentral supports [park location](https://support.ringcentral.com/article-v2/8355.html?brand=RC_US&product=RingEX&language=en_US) feature. You may create a park location with a name, and specify who can park/unpark calls to/from this location.
+RingCentral supports [park location](https://support.ringcentral.com/article-v2/8355.html?brand=RC_US&product=RingEX&language=en_US) feature. You may create a park location with a name, and specify who can park/retrieve calls to/from this location.
 
 To park to a predefined location, you need to get the location's ID. You will need to login https://service.ringcentral.com and go to "Phone System > Groups > Park Locations". Click the park location and you will see its ID in browser URL. Save it as `parkLocationId`.
 
@@ -355,7 +355,7 @@ await callSession.transfer(`prk${parkLocationId}`);
 
 Please note that, the call must be answered before it can be parked. You cannot park a still ringing call.
 
-#### Unpark private parked calls
+#### Retrieve private parked calls
 
 This part requires you to invoke RESTful API and setup subscriptions. It's out of the scope of this SDK. Here I just provide the information for your reference:
 
@@ -379,7 +379,7 @@ When some one private parks a call, you will be able to get a notification like 
   ...
 ```
 
-You need to write code like this to unpark it:
+You need to write code like this to retrieve it:
 
 ```ts
 webPhone.call(`prk${parkLocationId}`, undefined, {
