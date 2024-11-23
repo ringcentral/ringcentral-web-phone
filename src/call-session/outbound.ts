@@ -10,7 +10,7 @@ class OutboundCallSession extends CallSession {
     this.direction = 'outbound';
   }
 
-  public async call(callee: string, callerId?: string) {
+  public async call(callee: string, callerId?: string, options?: { headers?: Record<string, string> }) {
     const offer = await this.rtcPeerConnection.createOffer({ iceRestart: true });
     await this.rtcPeerConnection.setLocalDescription(offer);
 
@@ -38,6 +38,11 @@ class OutboundCallSession extends CallSession {
     );
     if (callerId) {
       inviteMessage.headers['P-Asserted-Identity'] = `sip:${callerId}@${this.webPhone.sipInfo.domain}`;
+    }
+    if (options?.headers) {
+      for (const [key, value] of Object.entries(options.headers)) {
+        inviteMessage.headers[key] = value;
+      }
     }
 
     const inboundMessage = await this.webPhone.sipClient.request(inviteMessage);
