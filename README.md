@@ -382,9 +382,9 @@ When some one private parks a call, you will be able to get a notification like 
 You need to write code like this to retrieve it:
 
 ```ts
-webPhone.call(`prk${parkLocationId}`, undefined, {
+await webPhone.call(`prk${parkLocationId}`, undefined, {
   headers: {
-    Replaces: `${telephonySessionId};to-tag=${toTag};from-tag=${extractTag(fromTag)};early-only`,
+    Replaces: `${telephonySessionId};to-tag=${toTag};from-tag=${fromTag};early-only`,
   },
 });
 ```
