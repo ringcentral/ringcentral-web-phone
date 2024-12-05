@@ -9,6 +9,7 @@ import { branch, fakeDomain, fakeEmail, generateAuthorization, uuid } from './ut
 
 const maxExpires = 60;
 export class DefaultSipClient extends EventEmitter implements SipClient {
+  public disposed = false;
   public wsc: WebSocket;
   public sipInfo: SipInfo;
   public instanceId: string;
@@ -76,6 +77,7 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
   }
 
   public async dispose() {
+    this.disposed = true;
     clearInterval(this.timeoutHandle);
     this.removeAllListeners();
     // in case dispose() is called twice
@@ -153,6 +155,8 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
 // this is for multiple instances with shared worker, dummy phones do not talk to SIP server at all
 export class DummySipClient extends EventEmitter implements SipClient {
   private static inboundMessage: InboundMessage = new InboundMessage();
+  public disposed = false;
+  public wsc: WebSocket;
   public constructor() {
     super();
   }
@@ -163,5 +167,7 @@ export class DummySipClient extends EventEmitter implements SipClient {
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async reply(message: ResponseMessage) {}
-  public async dispose() {}
+  public async dispose() {
+    this.disposed = true;
+  }
 }
