@@ -45,7 +45,7 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
       };
     }
 
-    this.wsc.onmessage = async (event) => {
+    this.wsc.addEventListener('message', async (event) => {
       const inboundMessage = InboundMessage.fromString(event.data);
       if (inboundMessage.subject.startsWith('MESSAGE sip:')) {
         const rcMessage = await RcMessage.fromXml(inboundMessage.body);
@@ -67,12 +67,19 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
         // Auto reply 200 OK to MESSAGE, BYE, CANCEL, INFO, NOTIFY
         await this.reply(new ResponseMessage(inboundMessage, { responseCode: 200 }));
       }
-    };
+    });
 
-    return new Promise<void>((resolve) => {
-      this.wsc.onopen = () => {
+    return new Promise<void>((resolve, reject) => {
+      const openEventHandler = () => {
+        this.wsc.removeEventListener('open', openEventHandler);
         resolve();
       };
+      this.wsc.addEventListener('open', openEventHandler);
+      const errorEventHandler = (e) => {
+        this.wsc.removeEventListener('error', errorEventHandler);
+        reject(e);
+      };
+      this.wsc.addEventListener('error', errorEventHandler);
     });
   }
 
