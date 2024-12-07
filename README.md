@@ -141,6 +141,43 @@ When you no longer need the web phone instance, or you are going to close/refres
 await webPhone.dispose();
 ```
 
+## Recover from network outage
+
+If you believe your app just recovered from network outage and the underlying websocket connection is broken, you may call `webPhone.start()`.
+It will create a brand new websocket connection to the SIP server and re-register the SIP client.
+
+A sample implemetation with the ability to auto reconnect WebSocket:
+
+```ts
+import waitFor from 'wait-for-async';
+
+const closeListener = async (e) => {
+  webPhone.sipClient.wsc.removeEventListener('close', closeListener);
+  if (webPhone.sipClient.disposed) {
+    // webPhone.dispose() has been called, no need to reconnect
+    return;
+  }
+  console.log('WebSocket disconnected unexpectedly', e);
+  let connected = false;
+  let delay = 2000; // initial delay
+  while (!connected) {
+    console.log(`Reconnect WebSocket in ${delay / 1000} seconds`);
+    await waitFor({ interval: delay });
+    try {
+      await webPhone.start();
+      connected = true;
+    } catch (e) {
+      console.log('Error connecting to WebSocket', e);
+      delay *= 2; // exponential backoff
+      delay = Math.min(delay, 60000); // max delay 60s
+    }
+  }
+  // because webPhone.start() will create a new webPhone.sipClient.wsc
+  webPhone.sipClient.wsc.addEventListener('close', closeListener);
+};
+webPhone.sipClient.wsc.addEventListener('close', closeListener);
+```
+
 ## Make an outbound call
 
 ```ts
@@ -556,11 +593,6 @@ You could create it on-the-fly or you can find an existing call session.
 
 https://github.com/tylerlong/rc-web-phone-demo-2 provides conference features.
 You may create conference, invite a number to the conference, merge an existing call to the conference, etc.
-
-## Recover from network outage
-
-If you believe your app just recovered from network outage and the underlying websocket connection is broken, you may call `webPhone.start()`.
-It will create a brand new websocket connection to the SIP server and re-register the SIP client.
 
 ## Mutiple instances and shared worker
 
