@@ -67,6 +67,10 @@ class CallSession extends EventEmitter {
     this.rtcPeerConnection = new RTCPeerConnection({
       iceServers: this.webPhone.sipInfo.stunServers?.map((url) => ({ urls: `stun:${url}` })) ?? [],
     });
+
+    // line below is to make sure that you have the permission to access the microphone
+    await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+
     this.inputDeviceId = await this.webPhone.deviceManager.getInputDeviceId();
     this.mediaStream = await navigator.mediaDevices.getUserMedia({
       video: false,
