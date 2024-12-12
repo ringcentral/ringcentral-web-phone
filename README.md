@@ -2,7 +2,7 @@
 
 ## Version 1.x
 
-For those who want to check documentation for verison 1.x, please [click here](https://github.com/ringcentral/ringcentral-web-phone/tree/1.x).
+For those who want to check documentation for verison 1.x, please [click here](https://github.com/ringcentral/ringcentral-web-phone/tree/1.x). We will continue to support 1.x. There is no plan to deprecate it for now.
 
 ## Version 2.x
 
@@ -482,8 +482,12 @@ callSession.on('disposed', () => {
 
 ### CallSession Events
 
-- `answered`
-- `disposed`
+- answered
+  - Triggered when the call is answered.
+  - Note: There is a [known issue](#known-issue) affecting outbound calls.
+- disposed
+  - For answered calls, this event is triggered when either you or the remote peer hangs up.
+  - For inbound calls, it is triggered if the caller hangs up or if the call is answered on another device.
 
 #### Where is the `ringing` event?
 
