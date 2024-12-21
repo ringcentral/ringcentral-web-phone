@@ -817,6 +817,46 @@ webPhone.on('inboundCall', async (callSession) => {
 });
 ```
 
+## Call control APIs
+
+Ref: https://developers.ringcentral.com/api-reference/Call-Control/createCallOutCallSession
+
+Call control APIs are out of scope of this SDK, since they are all Restful APIs. I will provide some brief information here.
+
+I believe most users/developers of this SDK don't need to use call control API. Since the SDK can control calls already, like answer/hang up/transfer/hold/park...etc. There is really no good reason to not use the SDK provided call control, but to use Restful API call control.
+
+With above being said, it is easy to use Restful call control API together with this SDK. Take [answer call party API](https://developers.ringcentral.com/api-reference/Call-Control/answerCallParty) for example:
+
+```ts
+import RingCentral from '@rc-ex/core';
+
+public async callControlAnswer(callSession: CallSession) {
+  const rc = new RingCentral({ server });
+  rc.token = { access_token }; // re-use existing access token. You may generate new token instead
+  await rc
+    .restapi()
+    .account()
+    .telephony()
+    .sessions(callSession.sessionId) // sessionId and partyId are accessible directly
+    .parties(callSession.partyId)
+    .answer()
+    .post({
+      deviceId, // where to get deviceId? refer to "Pre-requisites" section of this README file
+    });
+}
+```
+
+The example above is just to demonstrate how to use call control API with this SDK. It's unnecessarily complicated compared to:
+
+```ts
+await callSession.answer();
+```
+
+### experimental warning
+
+Some call control APIs may not work well with this SDK, since we didn't test all of them yet.
+You are welcome to report issues.
+
 # Maintainers Notes
 
 Content below is for the maintainers of this project.
