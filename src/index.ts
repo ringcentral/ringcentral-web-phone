@@ -13,12 +13,14 @@ class WebPhone extends EventEmitter {
   public sipClient: SipClient;
   public deviceManager: DeviceManager;
   public callSessions: CallSession[] = [];
+  public autoAnswer = false;
 
   public constructor(options: WebPhoneOptions) {
     super();
     this.sipInfo = options.sipInfo;
     this.sipClient = options.sipClient ?? new DefaultSipClient(options);
     this.deviceManager = options.deviceManager ?? new DefaultDeviceManager();
+    this.autoAnswer = options.autoAnswer ?? false;
 
     this.sipClient.on('inboundMessage', async (inboundMessage: InboundMessage) => {
       // either inbound BYE/CANCEL or server reply to outbound BYE/CANCEL
@@ -48,7 +50,26 @@ class WebPhone extends EventEmitter {
       await this.sipClient.reply(tempMesage);
 
       // if we don't send this, toVoicemail() will not work
-      inboundCallSession.confirmReceive();
+      await inboundCallSession.confirmReceive();
+
+      // auto answer
+      if (!this.autoAnswer) {
+        return;
+      }
+      if (inboundCallSession.sipMessage.headers['Alert-Info'] !== 'Auto Answer') {
+        return;
+      }
+      let delay = 0;
+      const callInfoHeader = inboundCallSession.sipMessage.headers['Call-Info'];
+      if (callInfoHeader) {
+        const match = callInfoHeader.match(/Answer-After=(\d+)/);
+        if (match) {
+          delay = parseInt(match[1], 10); // Convert the captured value to an integer
+        }
+      }
+      setTimeout(() => {
+        inboundCallSession.answer();
+      }, delay);
     });
   }
 

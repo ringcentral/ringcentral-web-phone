@@ -762,7 +762,7 @@ await callSession.sendDtmf('102#');
 
 ### take over
 
-Please note that, "take over" is special. Because after you request for taking over an existing call, you will receive an extra incoming call from '\*83'. You need to answer that incoming call for "take over" to complete. And you need to keep both calls alive, otherwise customer will be disconnected.
+Please note that, "take over" is special. Because after you request for taking over an existing call, you will receive an extra inbound call from '\*83'. You need to answer that inbound call for "take over" to complete. And you need to keep both calls alive, otherwise customer will be disconnected.
 
 For example, a customer is talking to extension 102, and you want to take over the call:
 
@@ -779,6 +779,43 @@ webPhone.on('inboundCall', async (callSession2: InboundCallSession) => {
 
 You will need to keep both `callSession1` and `callSession2` alive in order to keep the conversation alive with the customer.
 If you hang up either one, the customer will be disconnected.
+
+## Auto Answer
+
+This feature is by default disabled. To enabled it when you create a new phone instance:
+
+```ts
+const webPhone = new WebPhone({ sipInfo, autoAnswer: true });
+```
+
+Or you can enable this feature afterwards:
+
+```ts
+webPhone.autoAnswer = true;
+```
+
+When this feature is enbled, whenever there is an inbound call, the SIP `INVITE` message will be inspected.
+If there is a header "Alert-Info: Auto Answer", the call will be auto answered.
+The `Call-Info` header will also be checked, if it contains `Answer-After=<a-number-here>`, that would be the delay before the call is answered.
+
+For example, if the inbound call `INVITE` message has the following headers, the call will be auto answered immediately:
+
+```ts
+Alert-Info: Auto Answer
+Call-Info: <224981555_132089748@10.13.116.50>;purpose=info;Answer-After=0
+```
+
+This feature is the key for some call control APIs to work. For example: [answer call party API](https://developers.ringcentral.com/api-reference/Call-Control/answerCallParty). When this API is invoked, the current call session will be cancelled. And a new inbound call will be sent to the target device. And there will be auto answer headers in that inbound call. If the target device has auto answer feature enabled, the call will be auto answered.
+
+### What if I want to auto answer all calls?
+
+If you want to auto answer all calls, regardless of the SIP message headers, just do this:
+
+```ts
+webPhone.on('inboundCall', async (callSession) => {
+  await callSession.answer();
+});
+```
 
 # Maintainers Notes
 
@@ -818,14 +855,14 @@ yarn test test/inbound/forward.spec.ts
 
 ### Two kinds of special messages
 
-Before an incoming call is answered, client may send special messages with **XML** body to confirmReceive/toVoicemail/decline/forward/reply the call.
+Before an inbound call is answered, client may send special messages with **XML** body to confirmReceive/toVoicemail/decline/forward/reply the call.
 
 In an ongoing call (either inbound or outbound), client may send special messages with **JSON** body to startCallRecord/stopCallRecord/flip/park the call.
 
 ### webPhone unregister
 
 Register the SIP client with expires time 0. It means that the SIP client will be unregistered immediately after the registration.
-After this method call, no incoming call will be received. If you try to make an outbound call, you will get a `SIP/2.0 403 Forbidden` response.
+After this method call, no inbound call will be received. If you try to make an outbound call, you will get a `SIP/2.0 403 Forbidden` response.
 
 ### Call-Id
 
@@ -837,7 +874,7 @@ Caller outbound INVITE and callee inbound INVITE don't have the same Call-Id. Th
 
 Every time you get a new `sipInfo`, you will get a new `authorizationId`. So different instances will have different `authorizationId`, unless you share the same `sipInfo`.
 
-If there are 3 instances, after an incoming call is answered, each instance will receive 3 messages with Cmd="7" with different Cln="xxx". "xxx" here is authorizationId.
+If there are 3 instances, after an inbound call is answered, each instance will receive 3 messages with Cmd="7" with different Cln="xxx". "xxx" here is authorizationId.
 
 ## Todo:
 

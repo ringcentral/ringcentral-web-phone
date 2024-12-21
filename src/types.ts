@@ -12,6 +12,7 @@ export interface SipClientOptions {
 export type WebPhoneOptions = SipClientOptions & {
   sipClient?: SipClient;
   deviceManager?: DeviceManager;
+  autoAnswer?: boolean;
 };
 
 export interface SipInfo {
