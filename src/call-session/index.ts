@@ -24,7 +24,7 @@ class CallSession extends EventEmitter {
   public localPeer: string;
   public remotePeer: string;
   public rtcPeerConnection: RTCPeerConnection;
-  public mediaStream: MediaStream;
+  public mediaStream?: MediaStream;
   public audioElement: HTMLAudioElement;
   public state: 'init' | 'ringing' | 'answered' | 'disposed' = 'init';
   public direction: 'inbound' | 'outbound';
@@ -69,7 +69,8 @@ class CallSession extends EventEmitter {
     });
 
     // line below is to make sure that you have the permission to access the microphone
-    await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    tempStream.getTracks().forEach((track) => track.stop()); // 🔥 Stop immediately!
 
     this.inputDeviceId = await this.webPhone.deviceManager.getInputDeviceId();
     this.mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -92,7 +93,7 @@ class CallSession extends EventEmitter {
 
   public async changeInputDevice(deviceId: string) {
     this.inputDeviceId = deviceId;
-    this.mediaStream.getAudioTracks().forEach((track) => track.stop());
+    this.mediaStream?.getAudioTracks().forEach((track) => track.stop());
     this.mediaStream = await navigator.mediaDevices.getUserMedia({
       video: false,
       audio: { deviceId: { exact: deviceId } },
