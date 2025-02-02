@@ -194,11 +194,9 @@ export class DummySipClient extends EventEmitter implements SipClient {
     super();
   }
   public async start() {}
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async request(message: RequestMessage) {
     return DummySipClient.inboundMessage;
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async reply(message: ResponseMessage) {}
   public async dispose() {
     this.disposed = true;
