@@ -14,7 +14,7 @@ testTwoPages("cold transfer", async ({ callerResource, calleeResource }) => {
       calleeResource,
     );
   await calleePage.evaluate(async (anotherNumber) => {
-    await window.inboundCalls[0].transfer(anotherNumber);
+    await globalThis.inboundCalls[0].transfer(anotherNumber);
   }, anotherNumber);
 
   // caller

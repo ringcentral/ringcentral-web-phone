@@ -5,7 +5,7 @@ import { testOnePage } from "../common";
 testOnePage("dispose", async ({ pageResource }) => {
   const { page, messages: sipMessages } = pageResource;
   await page.evaluate(async () => {
-    await window.webPhone.dispose();
+    await globalThis.webPhone.dispose();
   });
   const messages = sipMessages.map((m) => m.shortString);
   expect(messages).toHaveLength(6);

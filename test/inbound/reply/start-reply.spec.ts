@@ -12,7 +12,7 @@ testTwoPages("start reply", async ({ callerResource, calleeResource }) => {
 
   // start reply
   await calleePage.evaluate(async () => {
-    await window.inboundCalls[0].startReply();
+    await globalThis.inboundCalls[0].startReply();
   });
 
   // caller

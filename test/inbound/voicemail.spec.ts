@@ -11,7 +11,7 @@ testTwoPages(
       await call(callerResource, calleeResource);
 
     await calleePage.evaluate(async () => {
-      await window.inboundCalls[0].toVoicemail();
+      await globalThis.inboundCalls[0].toVoicemail();
     });
 
     // caller

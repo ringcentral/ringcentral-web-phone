@@ -77,7 +77,7 @@ const setupPage = async ({
     });
   }
   await page.evaluate(async (sipInfo) => {
-    await window.setup(sipInfo);
+    await globalThis.setup(sipInfo);
   }, sipInfo);
   messages.length = 0;
   return { page, messages };
@@ -85,7 +85,7 @@ const setupPage = async ({
 
 const teardownPage = async (page: Page) => {
   await page.evaluate(async () => {
-    await window.teardown();
+    await globalThis.teardown();
   });
 
   // very important, wait for teardown to complete
@@ -141,7 +141,7 @@ export const call = async (
   const { page: calleePage, messages: calleeMessages } = calleeResource;
   await callerPage.evaluate(
     async ({ calleeNumber, callerNumber }) => {
-      await window.webPhone.call(calleeNumber, callerNumber);
+      await globalThis.webPhone.call(calleeNumber, callerNumber);
     },
     { calleeNumber, callerNumber },
   );
@@ -167,7 +167,7 @@ export const callAndAnswer = async (
     calleeResource,
   );
   await calleePage.evaluate(async () => {
-    await window.inboundCalls[0].answer();
+    await globalThis.inboundCalls[0].answer();
   });
   callerMessages.length = 0;
   calleeMessages.length = 0;
@@ -176,7 +176,7 @@ export const callAndAnswer = async (
 
 export const assertCallCount = async (page: Page, count: number) => {
   const callsCount = await page.evaluate(() =>
-    window.webPhone.callSessions.length
+    globalThis.webPhone.callSessions.length
   );
   expect(callsCount).toBe(count);
 };

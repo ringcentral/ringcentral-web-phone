@@ -14,12 +14,14 @@ testTwoPages("flip", async ({ callerResource, calleeResource }) => {
       calleeResource,
     );
   const flipResult = await calleePage.evaluate(async (anotherNumber) => {
-    return await window.inboundCalls[0].flip(anotherNumber);
+    return await globalThis.inboundCalls[0].flip(anotherNumber);
   }, anotherNumber);
   expect(flipResult.code).toBe(0);
 
   // callee needs to hang up in order for caller to talk to the flip target
-  await calleePage.evaluate(async () => await window.inboundCalls[0].hangup());
+  await calleePage.evaluate(async () =>
+    await globalThis.inboundCalls[0].hangup()
+  );
 
   // caller
   expect(callerMessages).toHaveLength(0);

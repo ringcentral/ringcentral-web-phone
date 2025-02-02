@@ -336,7 +336,7 @@ if (response.body.Sts === "0") {
     default:
       break;
   }
-  global.notifier.info({
+  globalThis.notifier.info({
     message, // who replied
     description, // what replied
     duration: 0,

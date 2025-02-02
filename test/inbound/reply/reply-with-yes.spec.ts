@@ -13,7 +13,7 @@ testTwoPages("reply with yes", async ({ callerResource, calleeResource }) => {
 
   // start reply
   await calleePage.evaluate(async () => {
-    await window.inboundCalls[0].startReply();
+    await globalThis.inboundCalls[0].startReply();
   });
 
   // reply
@@ -22,14 +22,14 @@ testTwoPages("reply with yes", async ({ callerResource, calleeResource }) => {
   // do not await here, because we need to let the caller to send the reply message first
   // otherwise it will be a deadlock
   calleePage.evaluate(async () => {
-    await window.inboundCalls[0].reply("Hello world!");
+    await globalThis.inboundCalls[0].reply("Hello world!");
   });
 
   // wait for audio to play to caller
   await waitFor({ interval: 1000 });
   // caller press '3': Yes
   await callerPage.evaluate(async () => {
-    await window.outboundCalls[0].sendDtmf("3");
+    await globalThis.outboundCalls[0].sendDtmf("3");
   });
 
   // caller

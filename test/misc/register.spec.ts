@@ -7,7 +7,7 @@ testOnePage("register", async ({ pageResource }) => {
   await page.evaluate(async () => {
     // register AGAIN, because in setup code there is already a register
     // in case of network outage or recover from sleep, we may need to register again
-    await window.webPhone.start();
+    await globalThis.webPhone.start();
   });
   const messages = sipMessages.map((m) => m.shortString);
   expect(messages).toHaveLength(2); // register again immediately, only trigger 2 messages

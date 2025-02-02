@@ -18,7 +18,7 @@ testTwoPages(
 
     // start reply
     await calleePage.evaluate(async () => {
-      await window.inboundCalls[0].startReply();
+      await globalThis.inboundCalls[0].startReply();
     });
 
     // reply
@@ -27,28 +27,28 @@ testTwoPages(
     // do not await here, because we need to let the caller to send the reply message first
     // otherwise it will be a deadlock
     calleePage.evaluate(async () => {
-      await window.inboundCalls[0].reply("Hello world!");
+      await globalThis.inboundCalls[0].reply("Hello world!");
     });
 
     await waitFor({ interval: 3000 });
 
     // caller press '5': Urgent
     await callerPage.evaluate(async () => {
-      window.outboundCalls[0].sendDtmf("5");
+      globalThis.outboundCalls[0].sendDtmf("5");
     });
 
     await waitFor({ interval: 3000 });
 
     // caller specify callback number
     await callerPage.evaluate(async (anotherNumber) => {
-      window.outboundCalls[0].sendDtmf(`${anotherNumber}#`);
+      globalThis.outboundCalls[0].sendDtmf(`${anotherNumber}#`);
     }, anotherNumber);
 
     await waitFor({ interval: 3000 });
 
     // caller press '1' to confirm the callback number
     await callerPage.evaluate(async () => {
-      window.outboundCalls[0].sendDtmf("1");
+      globalThis.outboundCalls[0].sendDtmf("1");
     });
 
     // caller

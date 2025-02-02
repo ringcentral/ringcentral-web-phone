@@ -10,7 +10,7 @@ testTwoPages("dtmf", async ({ callerResource, calleeResource }) => {
     );
 
   await calleePage.evaluate(async () => {
-    await window.inboundCalls[0].sendDtmf("123#");
+    await globalThis.inboundCalls[0].sendDtmf("123#");
   });
   expect(callerMessages).toHaveLength(0);
   expect(calleeMessages).toHaveLength(0);

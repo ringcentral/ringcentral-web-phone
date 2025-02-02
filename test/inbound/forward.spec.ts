@@ -11,7 +11,7 @@ testTwoPages(
       await call(callerResource, calleeResource);
 
     await calleePage.evaluate(async (anotherNumber) => {
-      await window.inboundCalls[0].forward(anotherNumber);
+      await globalThis.inboundCalls[0].forward(anotherNumber);
     }, anotherNumber);
 
     // caller

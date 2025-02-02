@@ -13,7 +13,7 @@ testTwoPages("caller hang up", async ({ callerResource, calleeResource }) => {
     );
 
   await callerPage.evaluate(async () => {
-    await window.outboundCalls[0].hangup();
+    await globalThis.outboundCalls[0].hangup();
   });
 
   // caller

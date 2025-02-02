@@ -12,12 +12,12 @@ testTwoPages(
       );
 
     const startResult = await callerPage.evaluate(async () => {
-      return await window.outboundCalls[0].startRecording();
+      return await globalThis.outboundCalls[0].startRecording();
     });
     expect(startResult.code).toBe(0);
 
     const stopResult = await callerPage.evaluate(async () => {
-      return await window.outboundCalls[0].stopRecording();
+      return await globalThis.outboundCalls[0].stopRecording();
     });
     expect(stopResult.code).toBe(0);
 

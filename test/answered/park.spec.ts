@@ -10,7 +10,7 @@ testTwoPages("park", async ({ callerResource, calleeResource }) => {
     );
 
   const parkResult = await calleePage.evaluate(async () => {
-    return await window.inboundCalls[0].park();
+    return await globalThis.inboundCalls[0].park();
   });
   expect(parkResult.code).toBe(0);
 

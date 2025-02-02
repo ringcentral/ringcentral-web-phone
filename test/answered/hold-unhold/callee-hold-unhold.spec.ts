@@ -12,7 +12,7 @@ testTwoPages(
       );
 
     await calleePage.evaluate(async () => {
-      await window.inboundCalls[0].hold();
+      await globalThis.inboundCalls[0].hold();
     });
 
     // callee
@@ -33,7 +33,7 @@ testTwoPages(
     callerMessages.length = 0;
     calleeMessages.length = 0;
     await calleePage.evaluate(async () => {
-      await window.inboundCalls[0].unhold();
+      await globalThis.inboundCalls[0].unhold();
     });
 
     // caller
