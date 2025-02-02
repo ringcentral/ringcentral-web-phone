@@ -53,13 +53,13 @@ class CallSession extends EventEmitter {
   public get sessionId() {
     return this.sipMessage?.headers["p-rc-api-ids"].match(
       /session-id=(s-[0-9a-fz]+?)$/,
-    )![1];
+    )?.[1];
   }
 
   public get partyId() {
     return this.sipMessage?.headers["p-rc-api-ids"].match(
       /party-id=(p-[0-9a-fz]+?-\d);/,
-    )![1];
+    )?.[1];
   }
 
   public get remoteNumber() {
@@ -131,12 +131,12 @@ class CallSession extends EventEmitter {
   public async changeOutputDevice(deviceId: string) {
     this.outputDeviceId = deviceId;
     if (deviceId) {
-      this.audioElement.setSinkId(deviceId);
+      await this.audioElement.setSinkId(deviceId);
     }
   }
 
   public async transfer(target: string) {
-    return this._transfer(`sip:${target}@sip.ringcentral.com`);
+    return await this._transfer(`sip:${target}@sip.ringcentral.com`);
   }
 
   public async warmTransfer(
@@ -208,10 +208,10 @@ class CallSession extends EventEmitter {
     await this.toggleReceive(true);
   }
 
-  public async mute() {
+  public mute() {
     this.toggleTrack(false);
   }
-  public async unmute() {
+  public unmute() {
     this.toggleTrack(true);
   }
 
@@ -332,7 +332,7 @@ class CallSession extends EventEmitter {
 
     // wait for the final SIP message
     return new Promise<void>((resolve) => {
-      const handler = async (inboundMessage: InboundMessage) => {
+      const handler = (inboundMessage: InboundMessage) => {
         if (
           inboundMessage.subject.startsWith("BYE sip:") &&
           inboundMessage.headers["Call-Id"] === this.callId

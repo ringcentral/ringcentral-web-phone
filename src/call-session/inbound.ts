@@ -27,7 +27,7 @@ class InboundCallSession extends CallSession {
     await this.sendRcMessage(callControlCommands.ClientVoicemail);
     // wait for outbound reply to CANCEL
     return new Promise<void>((resolve) => {
-      const handler = async (outboundMessage: OutboundMessage) => {
+      const handler = (outboundMessage: OutboundMessage) => {
         if (
           outboundMessage.headers["Call-Id"] === this.callId &&
           outboundMessage.headers.CSeq.endsWith(" CANCEL")
@@ -44,7 +44,7 @@ class InboundCallSession extends CallSession {
     await this.sendRcMessage(callControlCommands.ClientReject);
     // wait for outbound reply to CANCEL
     return new Promise<void>((resolve) => {
-      const handler = async (outboundMessage: OutboundMessage) => {
+      const handler = (outboundMessage: OutboundMessage) => {
         if (
           outboundMessage.headers["Call-Id"] === this.callId &&
           outboundMessage.headers.CSeq.endsWith(" CANCEL")
@@ -65,7 +65,7 @@ class InboundCallSession extends CallSession {
     });
     // wait for the final SIP message
     return new Promise<void>((resolve) => {
-      const handler = async (inboundMessage: InboundMessage) => {
+      const handler = (inboundMessage: InboundMessage) => {
         if (inboundMessage.subject.startsWith("CANCEL sip:")) {
           this.webPhone.sipClient.off("inboundMessage", handler);
           resolve();
@@ -152,7 +152,10 @@ class InboundCallSession extends CallSession {
 
   protected async sendRcMessage(
     cmd: number,
-    body: {} | { RepTp: string; Bdy: string } | {
+    body: Record<string | number | symbol, never> | {
+      RepTp: string;
+      Bdy: string;
+    } | {
       FwdDly: string;
       Phn: string;
       PhnTp: string;
