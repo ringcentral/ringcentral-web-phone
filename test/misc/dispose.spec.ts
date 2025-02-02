@@ -1,8 +1,8 @@
-import { expect } from '@playwright/test';
+import { expect } from "@playwright/test";
 
-import { testOnePage } from '../common';
+import { testOnePage } from "../common";
 
-testOnePage('dispose', async ({ pageResource }) => {
+testOnePage("dispose", async ({ pageResource }) => {
   const { page, messages: sipMessages } = pageResource;
   await page.evaluate(async () => {
     await window.webPhone.dispose();
@@ -16,5 +16,5 @@ testOnePage('dispose', async ({ pageResource }) => {
   expect(messages[3]).toMatch(/^outbound - REGISTER sip:/);
   expect(messages[4]).toMatch(/^inbound - SIP\/2.0 100 Trying$/);
   expect(messages[5]).toMatch(/^inbound - SIP\/2.0 200 OK$/);
-  expect(sipMessages[0].headers.Contact.endsWith(';expires=0')).toBeTruthy();
+  expect(sipMessages[0].headers.Contact.endsWith(";expires=0")).toBeTruthy();
 });

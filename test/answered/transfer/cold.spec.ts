@@ -1,12 +1,18 @@
-import { expect } from '@playwright/test';
+import { expect } from "@playwright/test";
 
-import { anotherNumber, assertCallCount, callAndAnswer, testTwoPages } from '../../common';
+import {
+  anotherNumber,
+  assertCallCount,
+  callAndAnswer,
+  testTwoPages,
+} from "../../common";
 
-testTwoPages('cold transfer', async ({ callerResource, calleeResource }) => {
-  const { callerPage, calleePage, callerMessages, calleeMessages } = await callAndAnswer(
-    callerResource,
-    calleeResource,
-  );
+testTwoPages("cold transfer", async ({ callerResource, calleeResource }) => {
+  const { callerPage, calleePage, callerMessages, calleeMessages } =
+    await callAndAnswer(
+      callerResource,
+      calleeResource,
+    );
   await calleePage.evaluate(async (anotherNumber) => {
     await window.inboundCalls[0].transfer(anotherNumber);
   }, anotherNumber);

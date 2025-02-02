@@ -1,12 +1,18 @@
-import { expect } from '@playwright/test';
+import { expect } from "@playwright/test";
 
-import { anotherNumber, assertCallCount, callAndAnswer, testTwoPages } from '../common';
+import {
+  anotherNumber,
+  assertCallCount,
+  callAndAnswer,
+  testTwoPages,
+} from "../common";
 
-testTwoPages('flip', async ({ callerResource, calleeResource }) => {
-  const { callerPage, calleePage, callerMessages, calleeMessages } = await callAndAnswer(
-    callerResource,
-    calleeResource,
-  );
+testTwoPages("flip", async ({ callerResource, calleeResource }) => {
+  const { callerPage, calleePage, callerMessages, calleeMessages } =
+    await callAndAnswer(
+      callerResource,
+      calleeResource,
+    );
   const flipResult = await calleePage.evaluate(async (anotherNumber) => {
     return await window.inboundCalls[0].flip(anotherNumber);
   }, anotherNumber);

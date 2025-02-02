@@ -1,15 +1,16 @@
-import { expect } from '@playwright/test';
-import waitFor from 'wait-for-async';
+import { expect } from "@playwright/test";
+import waitFor from "wait-for-async";
 
-import { assertCallCount, callAndAnswer, testTwoPages } from '../common';
-import RcMessage from '../../src/rc-message/rc-message';
-import callControlCommands from '../../src/rc-message/call-control-commands';
+import { assertCallCount, callAndAnswer, testTwoPages } from "../common";
+import RcMessage from "../../src/rc-message/rc-message";
+import callControlCommands from "../../src/rc-message/call-control-commands";
 
-testTwoPages('caller hang up', async ({ callerResource, calleeResource }) => {
-  const { callerPage, calleePage, callerMessages, calleeMessages } = await callAndAnswer(
-    callerResource,
-    calleeResource,
-  );
+testTwoPages("caller hang up", async ({ callerResource, calleeResource }) => {
+  const { callerPage, calleePage, callerMessages, calleeMessages } =
+    await callAndAnswer(
+      callerResource,
+      calleeResource,
+    );
 
   await callerPage.evaluate(async () => {
     await window.outboundCalls[0].hangup();
@@ -31,6 +32,8 @@ testTwoPages('caller hang up', async ({ callerResource, calleeResource }) => {
   expect(messages[2]).toMatch(/^inbound - MESSAGE sip:/);
   expect(messages[3]).toMatch(/^outbound - SIP\/2.0 200 OK$/);
   const rcMessage = await RcMessage.fromXml(calleeMessages[2].body);
-  expect(rcMessage.headers.Cmd).toBe(callControlCommands.ServerFreeResources.toString());
+  expect(rcMessage.headers.Cmd).toBe(
+    callControlCommands.ServerFreeResources.toString(),
+  );
   await assertCallCount(calleePage, 0);
 });

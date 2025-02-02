@@ -1,22 +1,32 @@
-import { expect } from '@playwright/test';
-import waitFor from 'wait-for-async';
+import { expect } from "@playwright/test";
+import waitFor from "wait-for-async";
 
-import { anotherNumber, assertCallCount, callAndAnswer, testTwoPages } from '../../common';
+import {
+  anotherNumber,
+  assertCallCount,
+  callAndAnswer,
+  testTwoPages,
+} from "../../common";
 
-testTwoPages('warm transfer', async ({ callerResource, calleeResource }) => {
-  const { callerPage, calleePage, callerMessages, calleeMessages } = await callAndAnswer(
-    callerResource,
-    calleeResource,
-  );
+testTwoPages("warm transfer", async ({ callerResource, calleeResource }) => {
+  const { callerPage, calleePage, callerMessages, calleeMessages } =
+    await callAndAnswer(
+      callerResource,
+      calleeResource,
+    );
   await calleePage.evaluate(async (anotherNumber) => {
-    const { complete, cancel } = await window.inboundCalls[0].warmTransfer(anotherNumber);
+    const { complete, cancel } = await window.inboundCalls[0].warmTransfer(
+      anotherNumber,
+    );
     window.transferActions = { complete, cancel };
   }, anotherNumber);
 
   // wait for the transferee to answer the call
   await waitFor({ interval: 1000 });
 
-  await calleePage.evaluate(async () => await window.transferActions.complete());
+  await calleePage.evaluate(async () =>
+    await window.transferActions.complete()
+  );
 
   // caller
   expect(callerMessages).toHaveLength(0);

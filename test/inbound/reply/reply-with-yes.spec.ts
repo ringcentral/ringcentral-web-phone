@@ -1,12 +1,15 @@
-import { expect } from '@playwright/test';
-import waitFor from 'wait-for-async';
+import { expect } from "@playwright/test";
+import waitFor from "wait-for-async";
 
-import { assertCallCount, call, testTwoPages } from '../../common';
-import RcMessage from '../../../src/rc-message/rc-message';
-import callControlCommands from '../../../src/rc-message/call-control-commands';
+import { assertCallCount, call, testTwoPages } from "../../common";
+import RcMessage from "../../../src/rc-message/rc-message";
+import callControlCommands from "../../../src/rc-message/call-control-commands";
 
-testTwoPages('reply with yes', async ({ callerResource, calleeResource }) => {
-  const { callerPage, calleePage, callerMessages, calleeMessages } = await call(callerResource, calleeResource);
+testTwoPages("reply with yes", async ({ callerResource, calleeResource }) => {
+  const { callerPage, calleePage, callerMessages, calleeMessages } = await call(
+    callerResource,
+    calleeResource,
+  );
 
   // start reply
   await calleePage.evaluate(async () => {
@@ -19,14 +22,14 @@ testTwoPages('reply with yes', async ({ callerResource, calleeResource }) => {
   // do not await here, because we need to let the caller to send the reply message first
   // otherwise it will be a deadlock
   calleePage.evaluate(async () => {
-    await window.inboundCalls[0].reply('Hello world!');
+    await window.inboundCalls[0].reply("Hello world!");
   });
 
   // wait for audio to play to caller
   await waitFor({ interval: 1000 });
   // caller press '3': Yes
   await callerPage.evaluate(async () => {
-    await window.outboundCalls[0].sendDtmf('3');
+    await window.outboundCalls[0].sendDtmf("3");
   });
 
   // caller
@@ -44,11 +47,15 @@ testTwoPages('reply with yes', async ({ callerResource, calleeResource }) => {
   expect(messages[5]).toMatch(/^inbound - MESSAGE sip:/);
   expect(messages[6]).toMatch(/^outbound - SIP\/2.0 200 OK$/);
   let rcMessage = await RcMessage.fromXml(calleeMessages[0].body);
-  expect(rcMessage.headers.Cmd).toBe(callControlCommands.ClientReply.toString());
+  expect(rcMessage.headers.Cmd).toBe(
+    callControlCommands.ClientReply.toString(),
+  );
   rcMessage = await RcMessage.fromXml(calleeMessages[5].body);
-  expect(rcMessage.headers.Cmd).toBe(callControlCommands.SessionClose.toString());
-  expect(rcMessage.body.Sts).toBe('0');
-  expect(rcMessage.body.Resp).toBe('1');
+  expect(rcMessage.headers.Cmd).toBe(
+    callControlCommands.SessionClose.toString(),
+  );
+  expect(rcMessage.body.Sts).toBe("0");
+  expect(rcMessage.body.Resp).toBe("1");
 
   await assertCallCount(callerPage, 1);
   await assertCallCount(calleePage, 0);

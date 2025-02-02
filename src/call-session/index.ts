@@ -1,17 +1,24 @@
-import sdpTransform from 'sdp-transform';
+import sdpTransform from "sdp-transform";
 
-import EventEmitter from '../event-emitter';
-import RequestMessage from '../sip-message/outbound/request';
-import type InboundMessage from '../sip-message/inbound';
-import type WebPhone from '..';
-import { branch, extractAddress, extractNumber, extractTag, fakeDomain, uuid } from '../utils';
+import EventEmitter from "../event-emitter";
+import RequestMessage from "../sip-message/outbound/request";
+import type InboundMessage from "../sip-message/inbound";
+import type WebPhone from "..";
+import {
+  branch,
+  extractAddress,
+  extractNumber,
+  extractTag,
+  fakeDomain,
+  uuid,
+} from "../utils";
 
 interface CommandResult {
   code: number;
   description: string;
 }
 type ParkResult = CommandResult & {
-  'park extension': string;
+  "park extension": string;
 };
 type FlipResult = CommandResult & {
   number: string;
@@ -26,8 +33,8 @@ class CallSession extends EventEmitter {
   public rtcPeerConnection: RTCPeerConnection;
   public mediaStream?: MediaStream;
   public audioElement: HTMLAudioElement;
-  public state: 'init' | 'ringing' | 'answered' | 'disposed' = 'init';
-  public direction: 'inbound' | 'outbound';
+  public state: "init" | "ringing" | "answered" | "disposed" = "init";
+  public direction: "inbound" | "outbound";
   public inputDeviceId: string;
   public outputDeviceId: string | undefined;
 
@@ -40,36 +47,47 @@ class CallSession extends EventEmitter {
   }
 
   public get callId() {
-    return this.sipMessage?.headers['Call-Id'] ?? uuid();
+    return this.sipMessage?.headers["Call-Id"] ?? uuid();
   }
 
   public get sessionId() {
-    return this.sipMessage?.headers['p-rc-api-ids'].match(/session-id=(s-[0-9a-fz]+?)$/)![1];
+    return this.sipMessage?.headers["p-rc-api-ids"].match(
+      /session-id=(s-[0-9a-fz]+?)$/,
+    )![1];
   }
 
   public get partyId() {
-    return this.sipMessage?.headers['p-rc-api-ids'].match(/party-id=(p-[0-9a-fz]+?-\d);/)![1];
+    return this.sipMessage?.headers["p-rc-api-ids"].match(
+      /party-id=(p-[0-9a-fz]+?-\d);/,
+    )![1];
   }
 
   public get remoteNumber() {
-    return this.remotePeer ? extractNumber(this.remotePeer) : '';
+    return this.remotePeer ? extractNumber(this.remotePeer) : "";
   }
 
   public get localNumber() {
-    return this.localPeer ? extractNumber(this.localPeer) : '';
+    return this.localPeer ? extractNumber(this.localPeer) : "";
   }
 
   public get isConference() {
-    return this.remotePeer ? extractNumber(this.remotePeer).startsWith('conf_') : false;
+    return this.remotePeer
+      ? extractNumber(this.remotePeer).startsWith("conf_")
+      : false;
   }
 
   public async init() {
     this.rtcPeerConnection = new RTCPeerConnection({
-      iceServers: this.webPhone.sipInfo.stunServers?.map((url) => ({ urls: `stun:${url}` })) ?? [],
+      iceServers: this.webPhone.sipInfo.stunServers?.map((url) => ({
+        urls: `stun:${url}`,
+      })) ?? [],
     });
 
     // line below is to make sure that you have the permission to access the microphone
-    const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    const tempStream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: false,
+    });
     tempStream.getTracks().forEach((track) => track.stop()); // 🔥 Stop immediately!
 
     this.inputDeviceId = await this.webPhone.deviceManager.getInputDeviceId();
@@ -77,11 +95,14 @@ class CallSession extends EventEmitter {
       video: false,
       audio: { deviceId: { exact: this.inputDeviceId } },
     });
-    this.mediaStream.getAudioTracks().forEach((track) => this.rtcPeerConnection.addTrack(track));
+    this.mediaStream.getAudioTracks().forEach((track) =>
+      this.rtcPeerConnection.addTrack(track)
+    );
     this.rtcPeerConnection.ontrack = async (event) => {
       const remoteStream = event.streams[0];
-      this.audioElement = document.createElement('audio') as HTMLAudioElement;
-      this.outputDeviceId = await this.webPhone.deviceManager.getOutputDeviceId();
+      this.audioElement = document.createElement("audio") as HTMLAudioElement;
+      this.outputDeviceId = await this.webPhone.deviceManager
+        .getOutputDeviceId();
       if (this.outputDeviceId) {
         this.audioElement.setSinkId(this.outputDeviceId);
       }
@@ -99,7 +120,9 @@ class CallSession extends EventEmitter {
       audio: { deviceId: { exact: deviceId } },
     });
     const newAudioTrack = this.mediaStream.getAudioTracks()[0];
-    const sender = this.rtcPeerConnection.getSenders().find((sender) => sender.track?.kind === 'audio');
+    const sender = this.rtcPeerConnection.getSenders().find((sender) =>
+      sender.track?.kind === "audio"
+    );
     if (sender) {
       sender.replaceTrack(newAudioTrack);
     }
@@ -116,7 +139,9 @@ class CallSession extends EventEmitter {
     return this._transfer(`sip:${target}@sip.ringcentral.com`);
   }
 
-  public async warmTransfer(target: string): Promise<{ complete: () => Promise<void>; cancel: () => Promise<void> }> {
+  public async warmTransfer(
+    target: string,
+  ): Promise<{ complete: () => Promise<void>; cancel: () => Promise<void> }> {
     await this.hold();
     // create a new session and user needs to talk to the target before transfer
     const newSession = await this.webPhone.call(target);
@@ -124,7 +149,9 @@ class CallSession extends EventEmitter {
       // complete the transfer
       complete: async () => {
         await this._transfer(
-          `"${target}@sip.ringcentral.com" <sip:${target}@sip.ringcentral.com;transport=wss?Replaces=${newSession.callId}%3Bto-tag%3D${extractTag(newSession.remotePeer)}%3Bfrom-tag%3D${extractTag(newSession.localPeer)}>`,
+          `"${target}@sip.ringcentral.com" <sip:${target}@sip.ringcentral.com;transport=wss?Replaces=${newSession.callId}%3Bto-tag%3D${
+            extractTag(newSession.remotePeer)
+          }%3Bfrom-tag%3D${extractTag(newSession.localPeer)}>`,
         );
       },
       // cancel the transfer
@@ -136,25 +163,30 @@ class CallSession extends EventEmitter {
   }
 
   public async hangup() {
-    const requestMessage = new RequestMessage(`BYE sip:${this.webPhone.sipInfo.domain} SIP/2.0`, {
-      'Call-Id': this.callId,
-      From: this.localPeer,
-      To: this.remotePeer,
-      Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
-    });
+    const requestMessage = new RequestMessage(
+      `BYE sip:${this.webPhone.sipInfo.domain} SIP/2.0`,
+      {
+        "Call-Id": this.callId,
+        From: this.localPeer,
+        To: this.remotePeer,
+        Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
+      },
+    );
     await this.webPhone.sipClient.request(requestMessage);
   }
 
   public async startRecording(): Promise<CommandResult> {
-    return await this.sendJsonMessage('startcallrecord');
+    return await this.sendJsonMessage("startcallrecord");
   }
 
   public async stopRecording(): Promise<CommandResult> {
-    return await this.sendJsonMessage('stopcallrecord');
+    return await this.sendJsonMessage("stopcallrecord");
   }
 
   public async flip(target: string): Promise<FlipResult> {
-    const flipResult = await this.sendJsonMessage<FlipResult>('callflip', { target });
+    const flipResult = await this.sendJsonMessage<FlipResult>("callflip", {
+      target,
+    });
     // note: we can't dispose the call session here
     // otherwise the caller will not be able to talk to the flip target
     // after the flip target answers the call, manually dispose the call session
@@ -162,7 +194,7 @@ class CallSession extends EventEmitter {
   }
 
   public async park(): Promise<ParkResult> {
-    const parkResult = await this.sendJsonMessage<ParkResult>('callpark');
+    const parkResult = await this.sendJsonMessage<ParkResult>("callpark");
     if (parkResult.code === 0) {
       await this.hangup();
     }
@@ -194,8 +226,8 @@ class CallSession extends EventEmitter {
   public dispose() {
     this.rtcPeerConnection?.close();
     this.mediaStream?.getTracks().forEach((track) => track.stop());
-    this.state = 'disposed';
-    this.emit('disposed');
+    this.state = "disposed";
+    this.emit("disposed");
   }
 
   // for mute/unmute
@@ -216,7 +248,7 @@ class CallSession extends EventEmitter {
     let sdp = this.rtcPeerConnection.localDescription!.sdp;
     // default value is `a=sendrecv`
     if (!toReceive) {
-      sdp = sdp.replace(/a=sendrecv/g, 'a=sendonly');
+      sdp = sdp.replace(/a=sendrecv/g, "a=sendonly");
     }
     // increase the sdp version
     const res = sdpTransform.parse(sdp);
@@ -226,27 +258,30 @@ class CallSession extends EventEmitter {
     const requestMessage = new RequestMessage(
       `INVITE ${extractAddress(this.remotePeer)} SIP/2.0`,
       {
-        'Call-Id': this.callId,
+        "Call-Id": this.callId,
         From: this.localPeer,
         To: this.remotePeer,
         Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
-        'Content-Type': 'application/sdp',
+        "Content-Type": "application/sdp",
       },
       sdp,
     );
     const replyMessage = await this.webPhone.sipClient.request(requestMessage);
-    const ackMessage = new RequestMessage(`ACK ${extractAddress(this.remotePeer)} SIP/2.0`, {
-      'Call-Id': this.callId,
-      From: this.localPeer,
-      To: this.remotePeer,
-      Via: replyMessage.headers.Via,
-      CSeq: replyMessage.headers.CSeq.replace(' INVITE', ' ACK'),
-    });
+    const ackMessage = new RequestMessage(
+      `ACK ${extractAddress(this.remotePeer)} SIP/2.0`,
+      {
+        "Call-Id": this.callId,
+        From: this.localPeer,
+        To: this.remotePeer,
+        Via: replyMessage.headers.Via,
+        CSeq: replyMessage.headers.CSeq.replace(" INVITE", " ACK"),
+      },
+    );
     await this.webPhone.sipClient.reply(ackMessage);
   }
 
   protected async sendJsonMessage<T>(
-    command: 'callpark' | 'callflip' | 'startcallrecord' | 'stopcallrecord',
+    command: "callpark" | "callflip" | "startcallrecord" | "stopcallrecord",
     args: { [key: string]: string } = {},
   ) {
     const reqid = this.reqid++;
@@ -254,51 +289,59 @@ class CallSession extends EventEmitter {
     const requestMessage = new RequestMessage(
       `INFO sip:${this.webPhone.sipInfo.domain} SIP/2.0`,
       {
-        'Call-Id': this.callId,
+        "Call-Id": this.callId,
         From: this.localPeer,
         To: this.remotePeer,
         Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
-        'Content-Type': 'application/json;charset=utf-8',
+        "Content-Type": "application/json;charset=utf-8",
       },
       jsonBody,
     );
     await this.webPhone.sipClient.request(requestMessage);
     return new Promise<T>((resolve) => {
       const resultHandler = (inboundMessage: InboundMessage) => {
-        if (!inboundMessage.subject.startsWith('INFO sip:')) {
+        if (!inboundMessage.subject.startsWith("INFO sip:")) {
           return;
         }
         const response = JSON.parse(inboundMessage.body).response;
-        if (!response || response.reqid !== reqid || response.command !== command) {
+        if (
+          !response || response.reqid !== reqid || response.command !== command
+        ) {
           return;
         }
-        this.webPhone.sipClient.off('inboundMessage', resultHandler);
+        this.webPhone.sipClient.off("inboundMessage", resultHandler);
         resolve(response.result);
       };
-      this.webPhone.sipClient.on('inboundMessage', resultHandler);
+      this.webPhone.sipClient.on("inboundMessage", resultHandler);
     });
   }
 
   protected async _transfer(uri: string) {
-    const requestMessage = new RequestMessage(`REFER ${extractAddress(this.remotePeer)} SIP/2.0`, {
-      'Call-Id': this.callId,
-      From: this.localPeer,
-      To: this.remotePeer,
-      Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
-      'Refer-To': uri,
-      'Referred-By': `<${extractAddress(this.localPeer)}>`,
-    });
+    const requestMessage = new RequestMessage(
+      `REFER ${extractAddress(this.remotePeer)} SIP/2.0`,
+      {
+        "Call-Id": this.callId,
+        From: this.localPeer,
+        To: this.remotePeer,
+        Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
+        "Refer-To": uri,
+        "Referred-By": `<${extractAddress(this.localPeer)}>`,
+      },
+    );
     await this.webPhone.sipClient.request(requestMessage);
 
     // wait for the final SIP message
     return new Promise<void>((resolve) => {
       const handler = async (inboundMessage: InboundMessage) => {
-        if (inboundMessage.subject.startsWith('BYE sip:') && inboundMessage.headers['Call-Id'] === this.callId) {
-          this.webPhone.sipClient.off('inboundMessage', handler);
+        if (
+          inboundMessage.subject.startsWith("BYE sip:") &&
+          inboundMessage.headers["Call-Id"] === this.callId
+        ) {
+          this.webPhone.sipClient.off("inboundMessage", handler);
           resolve();
         }
       };
-      this.webPhone.sipClient.on('inboundMessage', handler);
+      this.webPhone.sipClient.on("inboundMessage", handler);
     });
   }
 }

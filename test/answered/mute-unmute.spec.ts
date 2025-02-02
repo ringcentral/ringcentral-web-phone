@@ -1,12 +1,13 @@
-import { expect } from '@playwright/test';
+import { expect } from "@playwright/test";
 
-import { assertCallCount, callAndAnswer, testTwoPages } from '../common';
+import { assertCallCount, callAndAnswer, testTwoPages } from "../common";
 
-testTwoPages('mute/unmute', async ({ callerResource, calleeResource }) => {
-  const { callerPage, calleePage, callerMessages, calleeMessages } = await callAndAnswer(
-    callerResource,
-    calleeResource,
-  );
+testTwoPages("mute/unmute", async ({ callerResource, calleeResource }) => {
+  const { callerPage, calleePage, callerMessages, calleeMessages } =
+    await callAndAnswer(
+      callerResource,
+      calleeResource,
+    );
 
   await calleePage.evaluate(async () => {
     await window.inboundCalls[0].mute();

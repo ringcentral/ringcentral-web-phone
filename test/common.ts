@@ -1,14 +1,14 @@
-import type { BrowserContext, Page } from '@playwright/test';
-import { expect, test } from '@playwright/test';
-import waitFor from 'wait-for-async';
+import type { BrowserContext, Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import waitFor from "wait-for-async";
 
-import type SipMessage from '../src/sip-message';
-import OutboundMessage from '../src/sip-message/outbound';
-import InboundMessage from '../src/sip-message/inbound';
-import type WebPhone from '../src';
-import type OutboundCallSession from '../src/call-session/outbound';
-import type InboundCallSession from '../src/call-session/inbound';
-import RcMessage from '../src/rc-message/rc-message';
+import type SipMessage from "../src/sip-message";
+import OutboundMessage from "../src/sip-message/outbound";
+import InboundMessage from "../src/sip-message/inbound";
+import type WebPhone from "../src";
+import type OutboundCallSession from "../src/call-session/outbound";
+import type InboundCallSession from "../src/call-session/inbound";
+import RcMessage from "../src/rc-message/rc-message";
 
 declare global {
   interface Window {
@@ -17,7 +17,10 @@ declare global {
     teardown: () => Promise<void>;
     outboundCalls: OutboundCallSession[];
     inboundCalls: InboundCallSession[];
-    transferActions: { complete: () => Promise<void>; cancel: () => Promise<void> };
+    transferActions: {
+      complete: () => Promise<void>;
+      cancel: () => Promise<void>;
+    };
   }
 }
 
@@ -44,27 +47,32 @@ const setupPage = async ({
   debug?: boolean;
 }) => {
   const page = await context.newPage();
-  await page.goto('/');
+  await page.goto("/");
   const messages: SipMessage[] = [];
   // we do not use page.once here, because client side may call register() multiple times
-  page.on('websocket', (ws) => {
-    ws.on('framereceived', async (frame) => {
+  page.on("websocket", (ws) => {
+    ws.on("framereceived", async (frame) => {
       const inboundMessage = InboundMessage.fromString(frame.payload as string);
-      if (inboundMessage.subject.startsWith('MESSAGE ')) {
+      if (inboundMessage.subject.startsWith("MESSAGE ")) {
         const rcMessage = await RcMessage.fromXml(inboundMessage.body);
-        if (rcMessage.body.Cln && rcMessage.body.Cln !== JSON.parse(sipInfo).authorizationId) {
+        if (
+          rcMessage.body.Cln &&
+          rcMessage.body.Cln !== JSON.parse(sipInfo).authorizationId
+        ) {
           return; // the message is not for this instance
         }
       }
       messages.push(inboundMessage);
     });
-    ws.on('framesent', (frame) => {
-      const outboundMessage = OutboundMessage.fromString(frame.payload as string);
+    ws.on("framesent", (frame) => {
+      const outboundMessage = OutboundMessage.fromString(
+        frame.payload as string,
+      );
       messages.push(outboundMessage);
     });
   });
   if (debug) {
-    page.on('console', (msg) => {
+    page.on("console", (msg) => {
       console.log(`\n[${name}] ${msg.text()}`);
     });
   }
@@ -87,7 +95,12 @@ const teardownPage = async (page: Page) => {
 
 export const testOnePage = test.extend<{ pageResource: PageResource }>({
   pageResource: async ({ context }, use) => {
-    const { page, messages } = await setupPage({ context, sipInfo: callerSipInfo, name: 'user', debug: false });
+    const { page, messages } = await setupPage({
+      context,
+      sipInfo: callerSipInfo,
+      name: "user",
+      debug: false,
+    });
     await use({ page, messages });
     await teardownPage(page);
   },
@@ -98,18 +111,32 @@ export const testTwoPages = test.extend<{
   calleeResource: PageResource;
 }>({
   callerResource: async ({ context }, use) => {
-    const { page, messages } = await setupPage({ context, sipInfo: callerSipInfo, name: 'caller', debug: false });
+    const { page, messages } = await setupPage({
+      context,
+      sipInfo: callerSipInfo,
+      name: "caller",
+      debug: false,
+    });
     await use({ page, messages });
     await teardownPage(page);
   },
   calleeResource: async ({ context }, use) => {
-    const { page, messages } = await setupPage({ context, sipInfo: calleeSipInfo, name: 'callee', debug: false });
+    const { page, messages } = await setupPage({
+      context,
+      sipInfo: calleeSipInfo,
+      name: "callee",
+      debug: false,
+    });
     await use({ page, messages });
     await teardownPage(page);
   },
 });
 
-export const call = async (callerResource: PageResource, calleeResource: PageResource, keepMessages = false) => {
+export const call = async (
+  callerResource: PageResource,
+  calleeResource: PageResource,
+  keepMessages = false,
+) => {
   const { page: callerPage, messages: callerMessages } = callerResource;
   const { page: calleePage, messages: calleeMessages } = calleeResource;
   await callerPage.evaluate(
@@ -131,8 +158,14 @@ export const call = async (callerResource: PageResource, calleeResource: PageRes
   return { callerPage, calleePage, callerMessages, calleeMessages };
 };
 
-export const callAndAnswer = async (callerResource: PageResource, calleeResource: PageResource) => {
-  const { callerPage, calleePage, callerMessages, calleeMessages } = await call(callerResource, calleeResource);
+export const callAndAnswer = async (
+  callerResource: PageResource,
+  calleeResource: PageResource,
+) => {
+  const { callerPage, calleePage, callerMessages, calleeMessages } = await call(
+    callerResource,
+    calleeResource,
+  );
   await calleePage.evaluate(async () => {
     await window.inboundCalls[0].answer();
   });
@@ -142,6 +175,8 @@ export const callAndAnswer = async (callerResource: PageResource, calleeResource
 };
 
 export const assertCallCount = async (page: Page, count: number) => {
-  const callsCount = await page.evaluate(() => window.webPhone.callSessions.length);
+  const callsCount = await page.evaluate(() =>
+    window.webPhone.callSessions.length
+  );
   expect(callsCount).toBe(count);
 };

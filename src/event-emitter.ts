@@ -35,8 +35,12 @@ class EventEmitter {
   }
 
   public emit(eventName: string, ...args: any[]) {
-    (this.listeners.get(eventName) ?? []).forEach((listener) => listener(...args));
-    (this.tempListeners.get(eventName) ?? []).forEach((listener) => listener(...args));
+    (this.listeners.get(eventName) ?? []).forEach((listener) =>
+      listener(...args)
+    );
+    (this.tempListeners.get(eventName) ?? []).forEach((listener) =>
+      listener(...args)
+    );
     this.tempListeners.delete(eventName);
   }
 

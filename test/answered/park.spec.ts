@@ -1,12 +1,13 @@
-import { expect } from '@playwright/test';
+import { expect } from "@playwright/test";
 
-import { assertCallCount, callAndAnswer, testTwoPages } from '../common';
+import { assertCallCount, callAndAnswer, testTwoPages } from "../common";
 
-testTwoPages('park', async ({ callerResource, calleeResource }) => {
-  const { callerPage, calleePage, callerMessages, calleeMessages } = await callAndAnswer(
-    callerResource,
-    calleeResource,
-  );
+testTwoPages("park", async ({ callerResource, calleeResource }) => {
+  const { callerPage, calleePage, callerMessages, calleeMessages } =
+    await callAndAnswer(
+      callerResource,
+      calleeResource,
+    );
 
   const parkResult = await calleePage.evaluate(async () => {
     return await window.inboundCalls[0].park();

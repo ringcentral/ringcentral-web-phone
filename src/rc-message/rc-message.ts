@@ -1,4 +1,4 @@
-import xml2js from 'xml2js';
+import xml2js from "xml2js";
 
 const parser = new xml2js.Parser({
   explicitArray: false,
@@ -21,7 +21,7 @@ interface BDY {
 class RcMessage {
   public static async fromXml(_xmlStr: string) {
     let xmlStr = _xmlStr;
-    if (xmlStr.startsWith('P-rc: ')) {
+    if (xmlStr.startsWith("P-rc: ")) {
       xmlStr = xmlStr.substring(6);
     }
     const parsed = await parser.parseStringPromise(xmlStr);
