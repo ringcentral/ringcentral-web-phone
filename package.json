@@ -1,17 +1,11 @@
 {
   "name": "ringcentral-web-phone",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "repository": {
     "type": "git",
     "url": "https://github.com/ringcentral/ringcentral-web-phone.git"
   },
   "license": "MIT",
-  "files": [
-    "dist"
-  ],
-  "types": "dist/esm/index.d.ts",
-  "main": "dist/cjs/index.js",
-  "module": "dist/esm/index.js",
   "exports": {
     ".": {
       "types": "./dist/esm/index.d.ts",
@@ -24,13 +18,19 @@
       "require": "./dist/cjs/*.js"
     }
   },
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/esm/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
+    "build": "tsc -p tsconfig.esm.json && tsc -p tsconfig.cjs.json",
     "lint": "deno fmt && deno lint --fix && sort-package-json",
     "prepublishOnly": "yarn lint && yarn test && yarn build",
     "postpublish": "rm -rf dist",
     "serve": "rm -rf .parcel-cache && parcel test/index.html --no-hmr",
-    "test": "NODE_OPTIONS=--require=dotenv-override-true/config playwright test --workers=1",
-    "build": "tsc -p tsconfig.esm.json && tsc -p tsconfig.cjs.json"
+    "test": "NODE_OPTIONS=--require=dotenv-override-true/config playwright test --workers=1"
   },
   "dependencies": {
     "blueimp-md5": "^2.19.0",
