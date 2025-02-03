@@ -1,4 +1,4 @@
-import SipMessage from "..";
+import SipMessage from "../index.js";
 
 class OutboundMessage extends SipMessage {
   public static fromString(str: string): OutboundMessage {

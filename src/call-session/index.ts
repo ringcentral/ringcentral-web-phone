@@ -1,9 +1,9 @@
 import sdpTransform from "sdp-transform";
 
-import EventEmitter from "../event-emitter";
-import RequestMessage from "../sip-message/outbound/request";
-import type InboundMessage from "../sip-message/inbound";
-import type WebPhone from "..";
+import EventEmitter from "../event-emitter.js";
+import RequestMessage from "../sip-message/outbound/request.js";
+import type InboundMessage from "../sip-message/inbound.js";
+import type WebPhone from "../index.js";
 import {
   branch,
   extractAddress,
@@ -11,7 +11,7 @@ import {
   extractTag,
   fakeDomain,
   uuid,
-} from "../utils";
+} from "../utils.js";
 
 interface CommandResult {
   code: number;

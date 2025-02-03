@@ -1,4 +1,4 @@
-import SipMessage from "../sip-message";
+import SipMessage from "../sip-message/index.js";
 
 class InboundMessage extends SipMessage {
   public static fromString(str: string): InboundMessage {

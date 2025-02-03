@@ -1,10 +1,10 @@
-import EventEmitter from "./event-emitter";
-import RcMessage from "./rc-message/rc-message";
-import InboundMessage from "./sip-message/inbound";
-import type OutboundMessage from "./sip-message/outbound";
-import RequestMessage from "./sip-message/outbound/request";
-import ResponseMessage from "./sip-message/outbound/response";
-import type { SipClient, SipClientOptions, SipInfo } from "./types";
+import EventEmitter from "./event-emitter.js";
+import RcMessage from "./rc-message/rc-message.js";
+import InboundMessage from "./sip-message/inbound.js";
+import type OutboundMessage from "./sip-message/outbound/index.js";
+import RequestMessage from "./sip-message/outbound/request.js";
+import ResponseMessage from "./sip-message/outbound/response.js";
+import type { SipClient, SipClientOptions, SipInfo } from "./types.js";
 import {
   branch,
   fakeDomain,

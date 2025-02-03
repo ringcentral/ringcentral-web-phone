@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "module": "commonjs",
+    "declaration": true,
+    "outDir": "./dist/cjs",
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts"]
+}

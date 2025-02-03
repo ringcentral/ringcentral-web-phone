@@ -1,6 +1,6 @@
-import OutboundMessage from ".";
-import responseCodes from "../response-codes";
-import type InboundMessage from "../inbound";
+import OutboundMessage from "./index.js";
+import responseCodes from "../response-codes.js";
+import type InboundMessage from "../inbound.js";
 
 class ResponseMessage extends OutboundMessage {
   public constructor(

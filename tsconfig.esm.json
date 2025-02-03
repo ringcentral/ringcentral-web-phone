@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "module": "esnext",
+    "declaration": true,
+    "outDir": "./dist/esm",
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts"]
+}

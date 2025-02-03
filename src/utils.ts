@@ -1,7 +1,7 @@
 import { v4 } from "uuid";
 import md5 from "blueimp-md5";
 
-import type { SipInfo } from "./types";
+import type { SipInfo } from "./types.js";
 
 export const uuid = () => v4();
 export const branch = () => "z9hG4bK-" + uuid();

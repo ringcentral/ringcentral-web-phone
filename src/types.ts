@@ -1,7 +1,7 @@
-import type EventEmitter from "./event-emitter";
-import type InboundMessage from "./sip-message/inbound";
-import type RequestMessage from "./sip-message/outbound/request";
-import type ResponseMessage from "./sip-message/outbound/response";
+import type EventEmitter from "./event-emitter.js";
+import type InboundMessage from "./sip-message/inbound.js";
+import type RequestMessage from "./sip-message/outbound/request.js";
+import type ResponseMessage from "./sip-message/outbound/response.js";
 
 export interface SipClientOptions {
   sipInfo: SipInfo;

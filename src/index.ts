@@ -1,17 +1,17 @@
-import type InboundMessage from "./sip-message/inbound";
-import ResponseMessage from "./sip-message/outbound/response";
-import InboundCallSession from "./call-session/inbound";
-import OutboundCallSession from "./call-session/outbound";
-import EventEmitter from "./event-emitter";
-import type CallSession from "./call-session";
-import { DefaultSipClient } from "./sip-client";
+import type InboundMessage from "./sip-message/inbound.js";
+import ResponseMessage from "./sip-message/outbound/response.js";
+import InboundCallSession from "./call-session/inbound.js";
+import OutboundCallSession from "./call-session/outbound.js";
+import EventEmitter from "./event-emitter.js";
+import type CallSession from "./call-session/index.js";
+import { DefaultSipClient } from "./sip-client.js";
 import type {
   DeviceManager,
   SipClient,
   SipInfo,
   WebPhoneOptions,
-} from "./types";
-import { DefaultDeviceManager } from "./device-manager";
+} from "./types.js";
+import { DefaultDeviceManager } from "./device-manager.js";
 
 class WebPhone extends EventEmitter {
   public sipInfo: SipInfo;

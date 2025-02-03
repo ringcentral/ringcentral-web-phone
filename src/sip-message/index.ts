@@ -1,4 +1,4 @@
-import { uuid } from "../utils";
+import { uuid } from "../utils.js";
 
 class SipMessage {
   public static fromString(str: string) {

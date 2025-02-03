@@ -1,12 +1,12 @@
-import RequestMessage from "../sip-message/outbound/request";
-import ResponseMessage from "../sip-message/outbound/response";
-import type InboundMessage from "../sip-message/inbound";
-import type WebPhone from "..";
-import CallSession from ".";
-import { branch, fakeDomain, uuid } from "../utils";
-import RcMessage from "../rc-message/rc-message";
-import callControlCommands from "../rc-message/call-control-commands";
-import type OutboundMessage from "../sip-message/outbound";
+import RequestMessage from "../sip-message/outbound/request.js";
+import ResponseMessage from "../sip-message/outbound/response.js";
+import type InboundMessage from "../sip-message/inbound.js";
+import type WebPhone from "../index.js";
+import CallSession from "./index.js";
+import { branch, fakeDomain, uuid } from "../utils.js";
+import RcMessage from "../rc-message/rc-message.js";
+import callControlCommands from "../rc-message/call-control-commands.js";
+import type OutboundMessage from "../sip-message/outbound/index.js";
 
 class InboundCallSession extends CallSession {
   public constructor(webPhone: WebPhone, inviteMessage: InboundMessage) {

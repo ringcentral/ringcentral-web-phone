@@ -6,14 +6,31 @@
     "url": "https://github.com/ringcentral/ringcentral-web-phone.git"
   },
   "license": "MIT",
-  "main": "index.js",
-  "types": "index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "types": "dist/esm/index.d.ts",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./*": {
+      "types": "./dist/esm/*.d.ts",
+      "import": "./dist/esm/*.js",
+      "require": "./dist/cjs/*.js"
+    }
+  },
   "scripts": {
     "lint": "deno fmt && deno lint --fix && sort-package-json",
-    "prepublishOnly": "yarn lint && yarn test && tsc src/index.ts --declaration --outDir . --target ESNext --moduleResolution NodeNext --module NodeNext",
-    "postpublish": "rm -rf call-session rc-message sip-message event-emitter.* index.* utils.* sip-client.* types.* device-manager.*",
+    "prepublishOnly": "yarn lint && yarn test && yarn build",
+    "postpublish": "rm -rf dist",
     "serve": "rm -rf .parcel-cache && parcel test/index.html --no-hmr",
-    "test": "NODE_OPTIONS=--require=dotenv-override-true/config playwright test --workers=1"
+    "test": "NODE_OPTIONS=--require=dotenv-override-true/config playwright test --workers=1",
+    "build": "tsc -p tsconfig.esm.json && tsc -p tsconfig.cjs.json"
   },
   "dependencies": {
     "blueimp-md5": "^2.19.0",

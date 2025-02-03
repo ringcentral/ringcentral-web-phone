@@ -1,4 +1,4 @@
-import type { DeviceManager } from "./types";
+import type { DeviceManager } from "./types.js";
 
 export class DefaultDeviceManager implements DeviceManager {
   public async getInputDeviceId(): Promise<string> {
