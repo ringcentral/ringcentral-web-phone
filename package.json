@@ -9,7 +9,7 @@
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
-    "lint": "deno fmt && deno lint && sort-package-json",
+    "lint": "deno fmt && deno lint --fix && sort-package-json",
     "prepublishOnly": "yarn lint && yarn test && tsc src/index.ts --declaration --outDir . --target ESNext --moduleResolution NodeNext --module NodeNext",
     "postpublish": "rm -rf call-session rc-message sip-message event-emitter.* index.* utils.* sip-client.* types.* device-manager.*",
     "serve": "rm -rf .parcel-cache && parcel test/index.html --no-hmr",

@@ -38,9 +38,9 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
     await this.register(maxExpires);
   }
 
-  public async connect() {
+  public connect(): Promise<void> {
     if (this.wsc && this.wsc.readyState === WebSocket.OPEN) {
-      return;
+      return Promise.resolve();
     }
     this.wsc = new WebSocket("wss://" + this.sipInfo.outboundProxy, "sip");
     if (this.debug) {
@@ -153,7 +153,7 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
   }
 
   public async request(message: RequestMessage): Promise<InboundMessage> {
-    return this._send(message, true);
+    return await this._send(message, true);
   }
   public async reply(message: ResponseMessage): Promise<void> {
     await this._send(message, false);
@@ -194,11 +194,12 @@ export class DummySipClient extends EventEmitter implements SipClient {
     super();
   }
   public async start() {}
-  public async request(message: RequestMessage) {
-    return DummySipClient.inboundMessage;
+  public request() {
+    return Promise.resolve(DummySipClient.inboundMessage);
   }
-  public async reply(message: ResponseMessage) {}
-  public async dispose() {
+  public async reply() {}
+  public dispose() {
     this.disposed = true;
+    return Promise.resolve();
   }
 }

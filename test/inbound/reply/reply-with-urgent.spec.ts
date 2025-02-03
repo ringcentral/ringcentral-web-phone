@@ -33,21 +33,21 @@ testTwoPages(
     await waitFor({ interval: 3000 });
 
     // caller press '5': Urgent
-    await callerPage.evaluate(async () => {
+    await callerPage.evaluate(() => {
       globalThis.outboundCalls[0].sendDtmf("5");
     });
 
     await waitFor({ interval: 3000 });
 
     // caller specify callback number
-    await callerPage.evaluate(async (anotherNumber) => {
+    await callerPage.evaluate((anotherNumber) => {
       globalThis.outboundCalls[0].sendDtmf(`${anotherNumber}#`);
     }, anotherNumber);
 
     await waitFor({ interval: 3000 });
 
     // caller press '1' to confirm the callback number
-    await callerPage.evaluate(async () => {
+    await callerPage.evaluate(() => {
       globalThis.outboundCalls[0].sendDtmf("1");
     });
 

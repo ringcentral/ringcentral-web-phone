@@ -1,6 +1,7 @@
 import type { BrowserContext, Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 import waitFor from "wait-for-async";
+import process from "node:process";
 
 import type SipMessage from "../src/sip-message";
 import OutboundMessage from "../src/sip-message/outbound";
