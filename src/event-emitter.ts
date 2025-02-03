@@ -1,23 +1,29 @@
 class EventEmitter {
-  private listeners = new Map<string, Function[]>();
-  // This is used to store temporary listeners that are only called once
-  private tempListeners = new Map<string, Function[]>();
+  // deno-lint-ignore no-explicit-any
+  private listeners = new Map<string, ((...args: any[]) => void)[]>();
 
-  public on(eventName: string, listener: Function) {
+  // This is used to store temporary listeners that are only called once
+  // deno-lint-ignore no-explicit-any
+  private tempListeners = new Map<string, ((...args: any[]) => void)[]>();
+
+  // deno-lint-ignore no-explicit-any
+  public on(eventName: string, listener: (...args: any[]) => void) {
     if (!this.listeners.has(eventName)) {
       this.listeners.set(eventName, []);
     }
     this.listeners.get(eventName)!.push(listener);
   }
 
-  public once(eventName: string, listener: Function) {
+  // deno-lint-ignore no-explicit-any
+  public once(eventName: string, listener: (...args: any[]) => void) {
     if (!this.tempListeners.has(eventName)) {
       this.tempListeners.set(eventName, []);
     }
     this.tempListeners.get(eventName)!.push(listener);
   }
 
-  public off(eventName: string, listener: Function) {
+  // deno-lint-ignore no-explicit-any
+  public off(eventName: string, listener: (...args: any[]) => void) {
     let list = this.listeners.get(eventName);
     if (list) {
       this.listeners.set(
@@ -34,6 +40,7 @@ class EventEmitter {
     }
   }
 
+  // deno-lint-ignore no-explicit-any
   public emit(eventName: string, ...args: any[]) {
     (this.listeners.get(eventName) ?? []).forEach((listener) =>
       listener(...args)
