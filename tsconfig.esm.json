@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "esModuleInterop": true,
-    "module": "esnext",
+    "module": "ESNext",
+    "target": "ESNext",
     "declaration": true,
     "outDir": "./dist/esm",
     "skipLibCheck": true

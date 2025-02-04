@@ -2,6 +2,7 @@
   "compilerOptions": {
     "esModuleInterop": true,
     "module": "commonjs",
+    "target": "ES2022",
     "declaration": true,
     "outDir": "./dist/cjs",
     "skipLibCheck": true
