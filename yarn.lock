@@ -1572,10 +1572,10 @@ lmdb@2.8.5:
     "@lmdb/lmdb-linux-x64" "2.8.5"
     "@lmdb/lmdb-win32-x64" "2.8.5"
 
-manate@^2.0.0-beta.8:
-  version "2.0.0-beta.8"
-  resolved "https://registry.yarnpkg.com/manate/-/manate-2.0.0-beta.8.tgz#eedee74af2922a76083410bb72d2801d99671592"
-  integrity sha512-jjMOCeUi3T/o9d28EAm/tDYCj1wYwBqQaXZqkEangfNOdHh+taqFxH+S2HcduXQdcp03fVY2eVWrF+gPdz4Q5w==
+manate@^2.0.0-rc.3:
+  version "2.0.0-rc.3"
+  resolved "https://registry.yarnpkg.com/manate/-/manate-2.0.0-rc.3.tgz#a32125c98b9a3e1fe8f95b020c80a5be5edc2a3a"
+  integrity sha512-Js7eFpBgNayvSl5zC3q7VdzRM4kat6LebvHUefIQaZKUTfRsdqYt/PR3HIqS1YxdsBcDXn0eHbIGbpsABj/8Qw==
 
 micromatch@^4.0.5:
   version "4.0.7"

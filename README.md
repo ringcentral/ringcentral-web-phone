@@ -1090,5 +1090,3 @@ authorizationId.
 - When private park a ringing call, server will NOTIFY "SIP/2.0 486 Busy Here",
   does the SDK handle it?
 - support picking up a private parked call
-- in the official demo, outbound call doesn't release microphone (inbound call
-  is fine).

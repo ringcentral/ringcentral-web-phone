@@ -49,7 +49,7 @@
     "buffer": "^6.0.3",
     "dotenv-override-true": "^6.2.2",
     "events": "^3.3.0",
-    "manate": "^2.0.0-beta.8",
+    "manate": "^2.0.0-rc.3",
     "parcel": "^2.13.3",
     "process": "^0.11.10",
     "stream-browserify": "^3.0.0",
