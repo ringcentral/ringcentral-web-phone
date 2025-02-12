@@ -16,7 +16,7 @@ class RcMessage {
     suppressEmptyNode: true,
   };
 
-  public static async fromXml(_xmlStr: string) {
+  public static fromXml(_xmlStr: string) {
     let xmlStr = _xmlStr;
     if (xmlStr.startsWith("P-rc: ")) {
       xmlStr = xmlStr.substring(6);
