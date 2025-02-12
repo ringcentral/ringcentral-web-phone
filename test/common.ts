@@ -150,7 +150,11 @@ export const call = async (
   // wait for the call to reach the callee
   // by SIP server design, caller will receive 200 OK immediately, even if the callee has not received the INVITE
   // So we need to wait for the callee to receive the INVITE
-  await waitFor({ interval: 1000 });
+  while (
+    !(await calleePage.evaluate(() => globalThis.inboundCalls?.length > 0))
+  ) {
+    await waitFor({ interval: 1000 });
+  }
 
   if (!keepMessages) {
     callerMessages.length = 0;
