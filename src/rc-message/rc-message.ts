@@ -1,15 +1,4 @@
-import xml2js from "xml2js";
-
-const parser = new xml2js.Parser({
-  explicitArray: false,
-});
-
-const builder = new xml2js.Builder({
-  renderOpts: {
-    pretty: false,
-  },
-  headless: true,
-});
+import { XMLBuilder, XMLParser } from "fast-xml-parser";
 
 interface HDR {
   [key: string]: string | undefined;
@@ -19,12 +8,21 @@ interface BDY {
 }
 
 class RcMessage {
+  private static xmlOptions = {
+    ignoreAttributes: false,
+    attributeNamePrefix: "",
+    attributesGroupName: "$",
+    format: false,
+    suppressEmptyNode: true,
+  };
+
   public static async fromXml(_xmlStr: string) {
     let xmlStr = _xmlStr;
     if (xmlStr.startsWith("P-rc: ")) {
       xmlStr = xmlStr.substring(6);
     }
-    const parsed = await parser.parseStringPromise(xmlStr);
+    const parser = new XMLParser(RcMessage.xmlOptions);
+    const parsed = parser.parse(xmlStr);
     return new RcMessage(parsed.Msg.Hdr.$, parsed.Msg.Bdy.$);
   }
 
@@ -37,7 +35,8 @@ class RcMessage {
   }
 
   public toXml() {
-    const xml = builder.buildObject({
+    const builder = new XMLBuilder(RcMessage.xmlOptions);
+    const obj = {
       Msg: {
         Hdr: {
           $: this.headers,
@@ -46,8 +45,8 @@ class RcMessage {
           $: this.body,
         },
       },
-    });
-    return xml;
+    };
+    return builder.build(obj);
   }
 }
 
