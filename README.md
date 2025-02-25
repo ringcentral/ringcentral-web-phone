@@ -464,8 +464,9 @@ To park a call to a park location, just do this:
 await callSession.transfer(`prk${parkLocationId}`);
 ```
 
-Please note that, the call must be answered before it can be parked. You cannot
-park a still ringing call.
+Please note that, the call must be answered before it can be private parked. You
+cannot park a still ringing call. As I tested, parking an unanswered call will
+receive `SIP/2.0 202 Accepted` from server but the call is not parked at all.
 
 #### Retrieve private parked calls
 
@@ -1087,6 +1088,4 @@ authorizationId.
 
 - generate api reference
 - test recovery from computer sleep
-- When private park a ringing call, server will NOTIFY "SIP/2.0 486 Busy Here",
-  does the SDK handle it?
 - support picking up a private parked call
