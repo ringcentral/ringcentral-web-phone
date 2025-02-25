@@ -503,10 +503,13 @@ You need to write code like this to retrieve it:
 await webPhone.call(`prk${parkLocationId}`, undefined, {
   headers: {
     Replaces:
-      `${telephonySessionId};to-tag=${toTag};from-tag=${fromTag};early-only`,
+      `${telephonySessionId};to-tag=${fromTag};from-tag=${toTag};early-only`,
   },
 });
 ```
+
+Please pay attention to `to-tag=${fromTag};from-tag=${toTag}`, it is NOT
+`to-tag=${toTag};from-tag=${fromTag}`!
 
 ### Hold/Unhold the call
 
@@ -1088,4 +1091,3 @@ authorizationId.
 
 - generate api reference
 - test recovery from computer sleep
-- support picking up a private parked call
