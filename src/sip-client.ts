@@ -121,7 +121,10 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
         Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
       },
     );
+    // if cannot get response in 5 seconds, we close the connection
+    const closeHandle = setTimeout(() => this.wsc.close(), 5000);
     let inboundMessage = await this.request(requestMessage);
+    clearTimeout(closeHandle);
     const wwwAuth = inboundMessage.headers["Www-Authenticate"] ||
       inboundMessage!.headers["WWW-Authenticate"];
     if (wwwAuth) {
@@ -136,7 +139,7 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
     } else if (inboundMessage.subject.startsWith("SIP/2.0 603 ")) {
       throw new Error("Registration failed: " + inboundMessage.subject);
     }
-    if (expires > 0) {
+    if (expires > 0) { // not for unregister
       const serverExpires = Number(
         inboundMessage.headers.Contact.match(/;expires=(\d+)/)![1],
       );

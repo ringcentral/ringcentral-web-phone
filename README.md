@@ -220,6 +220,11 @@ const closeListener = async (e) => {
 webPhone.sipClient.wsc.addEventListener("close", closeListener);
 ```
 
+By default the SDK will send a `register` message every 60 seconds. If there is
+no response from server in 5 seconds(which indicates that the WebSocket
+connection is probably broken), the SDK will proactively close the WebSocket
+connection, which will trigger the logic above to invoke `webPhone.start()`.
+
 ## Make an outbound call
 
 ```ts
