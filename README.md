@@ -1095,4 +1095,5 @@ authorizationId.
 ## Todo:
 
 - generate api reference
-- test recovery from computer sleep
+- make a call, switch wifi network(or turn off wifi then turn it on), can the
+  call survive?
