@@ -181,14 +181,31 @@ close/refresh the browser page/tab, it is good practice to invoke:
 await webPhone.dispose();
 ```
 
-## Recover from network outage
+## Recover from network outage/issue
+
+Please note that, this SDK doesn't detect network outage or network issues. Our
+philosophy is to avoid adding any magic logic to the SDK. But we may change the
+design in the future.
+
+### network outage
 
 If you believe your app just recovered from network outage and the underlying
-websocket connection is broken, you may call `webPhone.start()`. It will create
+WebSocket connection is broken, you may call `webPhone.start()`. It will create
 a brand new websocket connection to the SIP server and re-register the SIP
 client.
 
-A sample implemetation with the ability to auto reconnect WebSocket:
+A sample implemetation could be a simple as this:
+
+```ts
+// browser issues network online event.
+window.addEventListener("online", () => webPhone.start());
+```
+
+### network issue
+
+What if network is not offline, but underlying WebSocket connection is broken?
+This is very unlikely to happen, but if it happens, the following code will try
+to bring your web phone back to work:
 
 ```ts
 import waitFor from "wait-for-async";
@@ -220,8 +237,8 @@ const closeListener = async (e) => {
 webPhone.sipClient.wsc.addEventListener("close", closeListener);
 ```
 
-By default the SDK will send a `register` message every 60 seconds. If there is
-no response from server in 5 seconds(which indicates that the WebSocket
+By default the SDK will send a `register` message around every 60 seconds. If
+there is no response from server in 5 seconds(which indicates that the WebSocket
 connection is probably broken), the SDK will proactively close the WebSocket
 connection, which will trigger the logic above to invoke `webPhone.start()`.
 
@@ -1097,3 +1114,4 @@ authorizationId.
 - generate api reference
 - make a call, switch wifi network(or turn off wifi then turn it on), can the
   call survive?
+- auto switch to/from backup outbound proxy?
