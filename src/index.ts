@@ -20,6 +20,8 @@ class WebPhone extends EventEmitter {
   public callSessions: CallSession[] = [];
   public autoAnswer = false;
 
+  public disposed = false;
+
   public constructor(options: WebPhoneOptions) {
     super();
     this.sipInfo = options.sipInfo;
@@ -96,6 +98,7 @@ class WebPhone extends EventEmitter {
   }
 
   public async dispose() {
+    this.disposed = true;
     // properly dispose all call sessions
     for (const callSession of this.callSessions) {
       if (callSession.state === "answered") {

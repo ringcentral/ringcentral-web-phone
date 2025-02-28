@@ -194,7 +194,7 @@ WebSocket connection is broken, you may call `webPhone.start()`. It will create
 a brand new websocket connection to the SIP server and re-register the SIP
 client.
 
-A sample implemetation could be a simple as this:
+A sample implemetation could be as simple as this:
 
 ```ts
 // browser issues network online event.
@@ -212,7 +212,7 @@ import waitFor from "wait-for-async";
 
 const closeListener = async (e) => {
   webPhone.sipClient.wsc.removeEventListener("close", closeListener);
-  if (webPhone.sipClient.disposed) {
+  if (webPhone.disposed) {
     // webPhone.dispose() has been called, no need to reconnect
     return;
   }

@@ -39,9 +39,6 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
   }
 
   public connect(): Promise<void> {
-    if (this.wsc && this.wsc.readyState === WebSocket.OPEN) {
-      return Promise.resolve();
-    }
     this.wsc = new WebSocket("wss://" + this.sipInfo.outboundProxy, "sip");
     if (this.debug) {
       const wscSend = this.wsc.send.bind(this.wsc);
@@ -98,17 +95,11 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
     this.disposed = true;
     clearInterval(this.timeoutHandle);
     this.removeAllListeners();
-    // in case dispose() is called twice
-    if (this.wsc.readyState === WebSocket.OPEN) {
-      await this.unregister();
-    }
+    await this.unregister();
     this.wsc.close();
   }
 
   public async register(expires: number) {
-    if (this.wsc.readyState === WebSocket.CLOSED) {
-      await this.connect();
-    }
     const requestMessage = new RequestMessage(
       `REGISTER sip:${this.sipInfo.domain} SIP/2.0`,
       {

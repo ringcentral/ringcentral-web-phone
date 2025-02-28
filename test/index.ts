@@ -25,7 +25,12 @@ globalThis.setup = async (sipInfo: string) => {
 globalThis.teardown = async () => {
   globalThis.stopAutoRun();
   globalThis.stopAutoRun = undefined;
-  await globalThis.webPhone.dispose();
+
+  // test/misc/dispose.spec.ts will dispose it
+  if (!globalThis.webPhone.disposed) {
+    await globalThis.webPhone.dispose();
+  }
+
   globalThis.webPhone = undefined;
   globalThis.inboundCalls = undefined;
   globalThis.outboundCalls = undefined;
