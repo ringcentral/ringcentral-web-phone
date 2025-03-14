@@ -425,6 +425,10 @@ other devices. Let's say you are talking to someone on your desktop, and you
 want to switch to your mobile phone. You can use call flip to achieve this:
 `await callSession.flip(mobilePhoneNumber)`.
 
+As soon as the flip starts, the remote peer will be put on hold (I wish the
+remote peer will not be put on hold, it would be a more seamless experience) and
+your mobile phone will get a call.
+
 Please note that, after you mobile phone answers the call, you need to
 **manually** end the call session on your desktop, otherwise you won't be able
 to talk/listen on your mobile phone.
@@ -446,6 +450,16 @@ A sample result of `flip` is like this:
 
 I don't think you need to do anything based on the result. It is just for your
 information.
+
+Personally I don't think the flip feature is of much value, since it's basically
+the same as "cold" transfer. Compare flip to "cold" transfer, there is only one
+difference that I can tell:
+
+- after you initiate "cold" transfer, the current call session will auto end
+  since SIP server will send a "BYE" message to you.
+- after you intiate a flip, the current call will not auto end. And you will
+  need to manually end it for the flip to complete.
+  - for more details, check the instructions above.
 
 ### Park the call
 
@@ -942,6 +956,35 @@ webPhone.on("inboundCall", async (callSession2: InboundCallSession) => {
 You will need to keep both `callSession1` and `callSession2` alive in order to
 keep the conversation alive with the customer. If you hang up either one, the
 customer will be disconnected.
+
+## Switch call to this device
+
+Let's say you are having a phone call on your mobile phone app. And you would
+like to switch the call to desktop app.
+
+The official RingCentral apps for mobile and desktop already supports it, prefer
+refer to
+[this article](https://support.ringcentral.com/article-v2/Switching-a-call-or-meeting-between-desktop-and-mobile-in-the-RingCentral-app.html?brand=RingCentral&product=RingEX&language=en_US&pills-nav=call).
+
+But how do we achieve the same with this SDK?
+
+First of all, you will need the `sipData` of the ongoing call. Especially, the
+`telephonySessionId`, the `fromTag` and the `toTag`.
+
+Once you have that, it is easy to switch the call to this device:
+
+```ts
+this.webPhone.call("whatever", undefined, {
+  headers: {
+    Replaces:
+      `${telephonySessionId};to-tag=${toTag};from-tag=${fromTag};early-only`,
+  },
+});
+```
+
+The "callee" number we specified above is "whatever". Since we are not making a
+new outbound call, we just try to replace an existing call. The callee number
+could be fake.
 
 ## Auto Answer
 
