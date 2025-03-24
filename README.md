@@ -656,6 +656,10 @@ A sample implemetation could be as simple as this:
 window.addEventListener("online", () => webPhone.start());
 ```
 
+Please note that, in this case, existing calls will recover automatically by
+WebRTC unless the network changed(like from one WiFi to another, or from WiFi to
+cellular). For network change, please read sections below.
+
 ### network issue
 
 What if network is not offline, but underlying WebSocket connection is broken?
