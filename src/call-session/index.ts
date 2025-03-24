@@ -239,6 +239,52 @@ class CallSession extends EventEmitter {
     });
   }
 
+  // send re-INVITE.
+  // If the call is on hold and you don't want to unhold it, set toReceive to false
+  public async reInvite(toReceive: boolean = true) {
+    const offer = await this.rtcPeerConnection.createOffer({
+      iceRestart: true,
+    });
+    await this.rtcPeerConnection.setLocalDescription(offer);
+    // wait for ICE gathering to complete
+    await new Promise((resolve) => {
+      this.rtcPeerConnection.onicecandidate = (event) => {
+        if (event.candidate === null) {
+          resolve(true);
+        }
+      };
+      setTimeout(() => resolve(false), 3000);
+    });
+    let sdp = this.rtcPeerConnection.localDescription!.sdp;
+    // default value is `a=sendrecv`
+    if (!toReceive) {
+      sdp = sdp.replace(/a=sendrecv/g, "a=sendonly");
+    }
+    const requestMessage = new RequestMessage(
+      `INVITE ${extractAddress(this.remotePeer)} SIP/2.0`,
+      {
+        "Call-Id": this.callId,
+        From: this.localPeer,
+        To: this.remotePeer,
+        Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
+        "Content-Type": "application/sdp",
+      },
+      sdp,
+    );
+    const replyMessage = await this.webPhone.sipClient.request(requestMessage);
+    const ackMessage = new RequestMessage(
+      `ACK ${extractAddress(this.remotePeer)} SIP/2.0`,
+      {
+        "Call-Id": this.callId,
+        From: this.localPeer,
+        To: this.remotePeer,
+        Via: replyMessage.headers.Via,
+        CSeq: replyMessage.headers.CSeq.replace(" INVITE", " ACK"),
+      },
+    );
+    await this.webPhone.sipClient.reply(ackMessage);
+  }
+
   // for hold/unhold
   // toggle between a=sendrecv and a=sendonly
   protected async toggleReceive(toReceive: boolean) {
