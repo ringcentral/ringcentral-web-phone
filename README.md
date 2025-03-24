@@ -1093,6 +1093,28 @@ await callSession.answer();
 Some call control APIs may not work well with this SDK, since we didn't test all
 of them yet. You are welcome to report issues.
 
+## re-INVITE
+
+I don't know any good user cases when you should issue an re-INVITE with an
+ongoing call. So this is just for your information. You probably never need to
+re-INVITE at all.
+
+Some one says when the web phone is restored from a network issue, you should
+send re-INVITE for each ongoing call. But it is not necessary. You will need to
+invoke `webPhone.start()` which will create a new WebSocket connection and
+re-register the web phone. And ongoing calls will automatically resume and this
+part is done by WebRTC. Yes, WebRTC can restore your calls after you restore
+from network outage. So in such case, there is no need to send re-INVITE, as far
+as I can tell.
+
+But just in case you still want to re-INVITE (for some reasons that I don't
+know), you can just invoke `callSession.unhold()`. Because
+`callSession.unhold()` sends a re-INVITE with "a=sendrecv" in SDP body. And
+"a=sendrecv" is the default value for all calls. But if the call is already on
+hold and you want to re-INVITE it(without unhold it), you may
+`callSession.hold()`. Since `callSession.hold()` will send a re-INVITE with
+"a=sendonly" in SDP.
+
 # Maintainers Notes
 
 Content below is for the maintainers of this project.
