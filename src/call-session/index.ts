@@ -272,6 +272,10 @@ class CallSession extends EventEmitter {
       sdp,
     );
     const replyMessage = await this.webPhone.sipClient.request(requestMessage);
+    this.rtcPeerConnection.setRemoteDescription({
+      type: "answer",
+      sdp: replyMessage.body,
+    });
     const ackMessage = new RequestMessage(
       `ACK ${extractAddress(this.remotePeer)} SIP/2.0`,
       {
