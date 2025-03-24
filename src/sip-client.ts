@@ -38,8 +38,19 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
     await this.register(maxExpires);
   }
 
+  private useBackupOutboundProxy = false;
+  public toggleBackupOutboundProxy(enabled = true) {
+    this.useBackupOutboundProxy = enabled;
+  }
+
   public connect(): Promise<void> {
-    this.wsc = new WebSocket("wss://" + this.sipInfo.outboundProxy, "sip");
+    this.wsc = new WebSocket(
+      "wss://" +
+        (this.useBackupOutboundProxy
+          ? this.sipInfo.outboundProxyBackup
+          : this.sipInfo.outboundProxy),
+      "sip",
+    );
     if (this.debug) {
       const wscSend = this.wsc.send.bind(this.wsc);
       this.wsc.send = (message) => {

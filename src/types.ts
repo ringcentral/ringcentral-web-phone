@@ -19,6 +19,7 @@ export interface SipInfo {
   authorizationId: string;
   domain: string;
   outboundProxy: string;
+  outboundProxyBackup: string;
   username: string;
   password: string;
   stunServers: string[];
