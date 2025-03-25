@@ -95,9 +95,19 @@ class CallSession extends EventEmitter {
       video: false,
       audio: { deviceId: { exact: this.inputDeviceId } },
     });
-    this.mediaStream.getAudioTracks().forEach((track) =>
-      this.rtcPeerConnection.addTrack(track)
-    );
+    this.mediaStream.getAudioTracks().forEach((track) => {
+      const rtcRtpSender = this.rtcPeerConnection.addTrack(track);
+
+      // ref: https://github.com/ringcentral/ringcentral-web-phone/issues/257
+      const params = rtcRtpSender.getParameters();
+      if (!params.encodings || params.encodings.length === 0) {
+        params.encodings = [{}];
+      }
+      params.encodings.forEach((encoding) => {
+        encoding.priority = "high";
+      });
+      rtcRtpSender.setParameters(params);
+    });
     this.rtcPeerConnection.ontrack = async (event) => {
       const remoteStream = event.streams[0];
       this.audioElement = document.createElement("audio") as HTMLAudioElement;
