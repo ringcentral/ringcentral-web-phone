@@ -539,6 +539,11 @@ true. Sometimes you may want to specify a false value:
 `callSession.reInvite(false)`. For example, if the call was on hold. You want to
 recover the call but keep it on hold.
 
+Please note that `reInvite()` will generate new local SDP and do iceRestart. And
+after server replies with remote SDP, it will be set
+`rtcPeerConnection.setRemoteDescription(remoteSDP)` This is required because if
+network information changed, old SDPs won't work any more.
+
 ## Events
 
 You may subscribe to events, examples:
