@@ -1336,10 +1336,3 @@ same `sipInfo`.
 If there are 3 instances, after an inbound call is answered, each instance will
 receive 3 messages with Cmd="7" with different Cln="xxx". "xxx" here is
 authorizationId.
-
-## Todo:
-
-- generate api reference
-- make a call, switch wifi network(or turn off wifi then turn it on), can the
-  call survive?
-- auto switch to/from backup outbound proxy?
