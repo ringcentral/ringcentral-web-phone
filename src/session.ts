@@ -3,10 +3,10 @@ import type {
   Invitation,
   InvitationAcceptOptions,
   Inviter,
+  Session,
   SessionInviteOptions,
   SessionReferOptions,
   URI,
-  Session,
 } from 'sip.js';
 import { RequestPendingError, UserAgent } from 'sip.js';
 import type {
@@ -26,7 +26,7 @@ import type {
 
 import { extend } from './utils';
 import type { Command } from './constants';
-import { responseTimeout, messages } from './constants';
+import { messages, responseTimeout } from './constants';
 import { MediaStreams } from './mediaStreams';
 import type { RTPReport } from './rtpReport';
 import { isNoAudio } from './rtpReport';
@@ -82,8 +82,6 @@ export interface RTCPeerConnectionLegacy extends RTCPeerConnection {
 }
 
 export class CommonSession {
-  /** @ignore */
-  public __isRecording?: boolean;
   /** @ignore */
   public __localHold?: boolean;
   /** @ignore */
@@ -675,7 +673,6 @@ async function transfer(
 }
 
 /**
- *
  * @param this WebPhoneSessionSessionInviteOptions
  * @param options
  * @returns Promise<OutgoingInviteRequest>
@@ -835,12 +832,7 @@ function parseRcHeader(session: WebPhoneSession): void {
 
 async function setRecord(session: WebPhoneSession, flag: boolean): Promise<any> {
   const message = flag ? messages.startRecord : messages.stopRecord;
-
-  if ((session.__isRecording && !flag) || (!session.__isRecording && flag)) {
-    const data = await session.sendInfoAndReceiveResponse!(message);
-    session.__isRecording = !!flag;
-    return data;
-  }
+  return await session.sendInfoAndReceiveResponse!(message);
 }
 
 function enableReceiverTracks(session: WebPhoneSession, enable: boolean): void {

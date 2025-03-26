@@ -3,13 +3,16 @@
 
 # RingCentral WebPhone Library
 
-The RingCentral WebPhone Library includes a JavaScript WebRTC library and a WebRTC phone demo app.
+The RingCentral WebPhone Library includes a JavaScript WebRTC library and a
+WebRTC phone demo app.
 
 ## 2.0.0 version
 
-2.0.0 version is currently in beta. We encourange new users to start with 2.0.0 version instead.
+2.0.0 version is currently in beta. We encourange new users to start with 2.0.0
+version instead.
 
-2.0.0 version is a complete rewrite and it has tons of improvements. It's hosted on main branch:
+2.0.0 version is a complete rewrite and it has tons of improvements. It's hosted
+on main branch:
 
 https://github.com/ringcentral/ringcentral-web-phone/tree/main
 
@@ -19,21 +22,25 @@ https://gist.github.com/tylerlong/72b51a72cc16206850c4cdfa36c6793a
 
 ## Prerequisites
 
-- You will need an active RingCentral account. Don't have an account? [Get your Free RingCentral Developer Account Now!](https://developers.ringcentral.com)
+- You will need an active RingCentral account. Don't have an account?
+  [Get your Free RingCentral Developer Account Now!](https://developers.ringcentral.com)
 - App type should be either :
   - Browser-Based
   - Server/Web
 
 ## Browser Compatibility
 
-Currently, we officially support Google Chrome browser. Official support for Firefox and Safari browsers are coming soon.
+Currently, we officially support Google Chrome browser. Official support for
+Firefox and Safari browsers are coming soon.
 
 ## Network Requirements
 
 Please visit Network Requirement links below
 
-1. Network Requirements and Recommendations | RingCentral Office : [https://support.ringcentral.com/s/article/9233?language=en_US](https://support.ringcentral.com/s/article/9233?language=en_US)
-2. Network Requirements and Recommendations - Resources : [https://support.ringcentral.com/s/article/Network-Requirements-and-Recommendations-Resources?language=en_US](https://support.ringcentral.com/s/article/Network-Requirements-and-Recommendations-Resources?language=en_US)
+1. Network Requirements and Recommendations | RingCentral Office :
+   [https://support.ringcentral.com/s/article/9233?language=en_US](https://support.ringcentral.com/s/article/9233?language=en_US)
+2. Network Requirements and Recommendations - Resources :
+   [https://support.ringcentral.com/s/article/Network-Requirements-and-Recommendations-Resources?language=en_US](https://support.ringcentral.com/s/article/Network-Requirements-and-Recommendations-Resources?language=en_US)
 
 ## Demo application for React.js
 
@@ -74,8 +81,10 @@ yarn add ringcentral-web-phone
 
 ### If you are not using NPM:
 
-1. Download SIP.JS: [https://github.com/onsip/SIP.js/releases/tag/0.20.0](https://github.com/onsip/SIP.js/releases/tag/0.20.0)
-2. Download WebPhone SDK: [https://github.com/ringcentral/ringcentral-web-phone/releases/latest](https://github.com/ringcentral/ringcentral-web-phone/releases/latest)
+1. Download SIP.JS:
+   [https://github.com/onsip/SIP.js/releases/tag/0.20.0](https://github.com/onsip/SIP.js/releases/tag/0.20.0)
+2. Download WebPhone SDK:
+   [https://github.com/ringcentral/ringcentral-web-phone/releases/latest](https://github.com/ringcentral/ringcentral-web-phone/releases/latest)
 3. Download audio files:
    1. [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/demo/audio/incoming.ogg](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/demo/audio/incoming.ogg)
    2. [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/demo/audio/outgoing.ogg](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/demo/audio/outgoing.ogg)
@@ -86,20 +95,31 @@ yarn add ringcentral-web-phone
 
 ### Configuring your RingCentral app
 
-Ensure your app has the following properties set. If these are not set, the error specified will be returned.
+Ensure your app has the following properties set. If these are not set, the
+error specified will be returned.
 
 | App Property  | Value           | Error if not set                                      |
 | ------------- | --------------- | ----------------------------------------------------- |
 | Permissions   | `VoIP Calling`  | `Specific application permission required`            |
 | Platform type | `Browser-based` | `Client edition is not compatible with current Brand` |
 
-Since WebRTC enables dialing out, you need to have a `DIGITAL LINE` attached to an extension to use this capability. You can configure this in Online Web Portal for [Production](https://service.ringcentral.com/) and [Sandbox](https://service.devtest.ringcentral.com/) accounts. More information on Digital Lines and their configuration is available in the following RingCentral Knowledge Base article topics:
+Since WebRTC enables dialing out, you need to have a `DIGITAL LINE` attached to
+an extension to use this capability. You can configure this in Online Web Portal
+for [Production](https://service.ringcentral.com/) accounts. More information on
+Digital Lines and their configuration is available in the following RingCentral
+Knowledge Base article topics:
 
 1. [Digital Line Overview (KB 5862)](http://success.ringcentral.com/articles/en_US/RC_Knowledge_Article/5862)
-2. [Adding a Digital Line (KB 3136)](http://success.ringcentral.com/articles/RC_Knowledge_Article/5-10-Adding-Phones-to-other-extensions-via-Web). A limited number of Digital Lines are free with each sandbox account which can be configured with the free RingCentral for Desktop softphone.
+2. [Adding a Digital Line (KB 3136)](http://success.ringcentral.com/articles/RC_Knowledge_Article/5-10-Adding-Phones-to-other-extensions-via-Web).
+   A limited number of Digital Lines are free with each sandbox account which
+   can be configured with the free RingCentral for Desktop softphone.
 3. [Reassigning an Existing Digital Line (KB 3748)](http://success.ringcentral.com/articles/en_US/RC_Knowledge_Article/How-to-Assign-an-Existing-Digital-Line-to-a-different-extension)
 
-These permissions be configured for your app in the [RingCentral Developer Portal](https://developers.ringcentral.com/). Fill this [Registration Form](https://docs.google.com/forms/d/15kK_zJ5FhyXiH8gwOqiaG7_BuTWGCeeVr4MAv4OBpUM/viewform) to get access to WebRTC permissions. Please contact devsupport@ringcentral.com to request these permissions.
+These permissions be configured for your app in the
+[RingCentral Developer Portal](https://developers.ringcentral.com/). Fill this
+[Registration Form](https://docs.google.com/forms/d/15kK_zJ5FhyXiH8gwOqiaG7_BuTWGCeeVr4MAv4OBpUM/viewform)
+to get access to WebRTC permissions. Please contact devsupport@ringcentral.com
+to request these permissions.
 
 ### Include Library And HTML Elements
 
@@ -113,15 +133,16 @@ These permissions be configured for your app in the [RingCentral Developer Porta
 
 ### Application
 
-For this example you will also need to have [RingCentral JS SDK installed](https://github.com/ringcentral/ringcentral-js#installation).
+For this example you will also need to have
+[RingCentral JS SDK installed](https://github.com/ringcentral/ringcentral-js#installation).
 
 Configure the web-phone
 
 ```js
-var clientId = '...';
-var clientSecret = '...';
-var appName = '...';
-var appVersion = '...';
+var clientId = "...";
+var clientSecret = "...";
+var appName = "...";
+var appVersion = "...";
 
 var sdk = new RingCentral.SDK({
   clientId: clientId,
@@ -131,19 +152,19 @@ var sdk = new RingCentral.SDK({
   server: RingCentral.SDK.server.production, // or .sandbox
 });
 
-var remoteVideoElement = document.getElementById('remoteVideo');
-var localVideoElement = document.getElementById('localVideo');
+var remoteVideoElement = document.getElementById("remoteVideo");
+var localVideoElement = document.getElementById("localVideo");
 
 var platform = sdk.platform();
 
 platform
   .login({
-    jwt: '...',
+    jwt: "...",
   })
   .then(function (loginResponse) {
     return platform
-      .post('/client-info/sip-provision', {
-        sipInfo: [{ transport: 'WSS' }],
+      .post("/client-info/sip-provision", {
+        sipInfo: [{ transport: "WSS" }],
       })
       .then(function (res) {
         // Doing nested then because we need loginResponse in a simple way
@@ -157,8 +178,8 @@ platform
           logLevel: 1, // error 0, warn 1, log: 2, debug: 3
           audioHelper: {
             enabled: true, // enables audio feedback when web phone is ringing or making a call
-            incoming: 'path-to-audio/incoming.ogg', // path to audio file for incoming call
-            outgoing: 'path-to-audio/outgoing.ogg', // path to aduotfile for outgoing call
+            incoming: "path-to-audio/incoming.ogg", // path to audio file for incoming call
+            outgoing: "path-to-audio/outgoing.ogg", // path to aduotfile for outgoing call
           },
           media: {
             remote: remoteVideoElement,
@@ -188,31 +209,46 @@ $ yarn install
 $ yarn serve
 ```
 
-1. Open `http://localhost:8080` in the browser (port may change if `8080` will be already used by other app)
-2. If your Application is of the Scope
-   `Server/Web`
-   `Browser-Based`
-   Then you would need to add `http://localhost:8080/callback.html` as the OAuth Redirect URI for the application in [Developer Portal](https://developer.ringcentral.com)
+1. Open `http://localhost:8080` in the browser (port may change if `8080` will
+   be already used by other app)
+2. If your Application is of the Scope `Server/Web` `Browser-Based` Then you
+   would need to add `http://localhost:8080/callback.html` as the OAuth Redirect
+   URI for the application in
+   [Developer Portal](https://developer.ringcentral.com)
 3. Add your RC credentials and click on `Register`
 4. For making outbound calls, enter phone number and click on `Call`
-5. For receiving incoming calls, Click on `Accept` button when window pops up (will be visible when there is an incoming call)
+5. For receiving incoming calls, Click on `Accept` button when window pops up
+   (will be visible when there is an incoming call)
 
-If there's any connection problems to Sandbox environment, you may need to switch to the Production environment.
+If there's any connection problems to Sandbox environment, you may need to
+switch to the Production environment.
 
-WebRTC works with issues when served from file system directly to browser (e.g. `file://` protocol), so you will need a local HTTP server (comes with this package).
+WebRTC works with issues when served from file system directly to browser (e.g.
+`file://` protocol), so you will need a local HTTP server (comes with this
+package).
 
-Online demo is hosted at [https://ringcentral.github.io/ringcentral-web-phone](https://ringcentral.github.io/ringcentral-web-phone)
+Online demo is hosted at
+[https://ringcentral.github.io/ringcentral-web-phone](https://ringcentral.github.io/ringcentral-web-phone)
 
-\*\* NOTE : If you are using the online demo, please add `https://ringcentral.github.io/ringcentral-web-phone/callback.html` to the app's OAuth Redirect URI
+\*\* NOTE : If you are using the online demo, please add
+`https://ringcentral.github.io/ringcentral-web-phone/callback.html` to the app's
+OAuth Redirect URI
 
 ---
 
 ## API
 
-Except for some RingCentral-specific features the API is 100% the same as SIP.JS: https://github.com/onsip/SIP.js/releases/tag/0.20.0: most of the time you will be working with RC-flavored [UserAgent](https://github.com/onsip/SIP.js/blob/master/docs/api/sip.js.useragent.md) and [Session](https://github.com/onsip/SIP.js/blob/master/docs/api/sip.js.session.md) objects of SIP.JS.
+Except for some RingCentral-specific features the API is 100% the same as
+SIP.JS: https://github.com/onsip/SIP.js/releases/tag/0.20.0: most of the time
+you will be working with RC-flavored
+[UserAgent](https://github.com/onsip/SIP.js/blob/master/docs/api/sip.js.useragent.md)
+and
+[Session](https://github.com/onsip/SIP.js/blob/master/docs/api/sip.js.session.md)
+objects of SIP.JS.
 
-We encourage you to take a look at [Guides](https://sipjs.com/guides/) section, especially
-[Make A Call](https://sipjs.com/guides/make-call/) and [Receive A Call](https://sipjs.com/guides/receive-call/) articles.
+We encourage you to take a look at [Guides](https://sipjs.com/guides/) section,
+especially [Make A Call](https://sipjs.com/guides/make-call/) and
+[Receive A Call](https://sipjs.com/guides/receive-call/) articles.
 
 ### Constructor
 
@@ -220,34 +256,41 @@ We encourage you to take a look at [Guides](https://sipjs.com/guides/) section, 
 var webPhone = new RingCentral.WebPhone(provisionData, options);
 ```
 
-- Provision Data &mdash; the JSON returned from `/client-info/sip-provision` API endpoint
-- Options &mdash; object with various configuration options that adjust WebPhone behavior
+- Provision Data &mdash; the JSON returned from `/client-info/sip-provision` API
+  endpoint
+- Options &mdash; object with various configuration options that adjust WebPhone
+  behavior
   - `clientId` &mdash; your application key
   - `appName` &mdash; your application short code name
   - `appVersion` &mdash; your application version
-  - `uuid` &mdash; manually provide the unique identifier of WebPhone instance (should persist between page reloads)
+  - `uuid` &mdash; manually provide the unique identifier of WebPhone instance
+    (should persist between page reloads)
   - `logLevel` &mdash; controls verboseness in browser console
     - `0` &mdash; Errors only (good for production)
     - `1` &mdash; Errors & warnings
     - `2` &mdash; Errors, warnings, logs
     - `3` &mdash; Everything including debug information (good for development)
-  - `audioHelper` &mdash; audio feedback when web phone is ringing or making a call
+  - `audioHelper` &mdash; audio feedback when web phone is ringing or making a
+    call
     - `enabled` &mdash; turns feedback on and off
     - `incoming` &mdash; path to `incoming.ogg`, audio file for incoming call
     - `outgoing` &mdash; path to `outgoing.ogg`, audio file for outgoing call
-  - `onSession` &mdash; this callback will be fired each time User Agent starts working with session (incoming or outgoing)
-  - `enableQos:true` &mdash; will enable quality of service for webRTC calls , you can view the voice quality of calls in analytics portal
+  - `onSession` &mdash; this callback will be fired each time User Agent starts
+    working with session (incoming or outgoing)
+  - `enableQos:true` &mdash; will enable quality of service for webRTC calls ,
+    you can view the voice quality of calls in analytics portal
 
 ### Attaching Media Streams
 
-For futher information, refer SIP.js guide to [attach media](https://sipjs.com/guides/attach-media/)
+For futher information, refer SIP.js guide to
+[attach media](https://sipjs.com/guides/attach-media/)
 
 ### Initiating The Call
 
 ```javascript
-var session = webPhone.userAgent.invite('PHONE_NUMBER', {
-  fromNumber: 'PHONE_NUMBER', // Optional, Company Number will be used as default
-  homeCountryId: '1', // Optional, the value of
+var session = webPhone.userAgent.invite("PHONE_NUMBER", {
+  fromNumber: "PHONE_NUMBER", // Optional, Company Number will be used as default
+  homeCountryId: "1", // Optional, the value of
 });
 ```
 
@@ -261,7 +304,8 @@ webPhone.userAgent.on('invite', function(session){
 
 ### DTMF
 
-Callee will be put on hold and the another person can join into the call by dialing the extension number announced within the call.
+Callee will be put on hold and the another person can join into the call by
+dialing the extension number announced within the call.
 
 ```js
 session.dtmf('DTMF_DIGITS').then(...);
@@ -269,7 +313,8 @@ session.dtmf('DTMF_DIGITS').then(...);
 
 ### Hold Unhold
 
-Callee will be put on hold and the another person can join into the call by dialing the extension number announced within the call.
+Callee will be put on hold and the another person can join into the call by
+dialing the extension number announced within the call.
 
 ```js
 session.hold().then(...);
@@ -287,7 +332,8 @@ session.unmute();
 
 ### Park
 
-Callee will be put on hold and the another person can join into the call by dialing the extension number announced within the call.
+Callee will be put on hold and the another person can join into the call by
+dialing the extension number announced within the call.
 
 ```js
 session.park().then(...);
@@ -295,7 +341,8 @@ session.park().then(...);
 
 ### Flip
 
-Caller can filp calls to different devices logged in through the same credentials.
+Caller can filp calls to different devices logged in through the same
+credentials.
 
 ```js
 session.flip('TARGET_NUMBER').then(...);
@@ -309,11 +356,13 @@ session.transfer('TARGET_NUMBER').then(...);
 
 ### Warm Transfer
 
-If an agent has an active call with a customer and needs to transfer this call to a supervisor, then agent puts existing
-call on hold, makes a call to a supervisor and when ready performs a warm transfer. Customer will be connected to
-supervisor and the call between customer and agent will be disconnected.
+If an agent has an active call with a customer and needs to transfer this call
+to a supervisor, then agent puts existing call on hold, makes a call to a
+supervisor and when ready performs a warm transfer. Customer will be connected
+to supervisor and the call between customer and agent will be disconnected.
 
-Warm transfer puts current line on hold (if not done yet) then takes an existing line from arguments and makes transfer.
+Warm transfer puts current line on hold (if not done yet) then takes an existing
+line from arguments and makes transfer.
 
 #### Handle Warm Transfer scenario (Attended Transfer usecase) :
 
@@ -321,24 +370,25 @@ Steps:
 
 1. Put the current session on `Hold` as shown in the demo code
 2. Initiate a new session (Start new call)
-3. a. Once new call is answered , `Complete` the transfer , or terminate new session.
-   b. If you want to switch to original call, switch the session context and `Unhold` the session
+3. a. Once new call is answered , `Complete` the transfer , or terminate new
+   session. b. If you want to switch to original call, switch the session
+   context and `Unhold` the session
 
 ```javascript
-$modal.find('.transfer-form button.warm').on('click', function (e) {
+$modal.find(".transfer-form button.warm").on("click", function (e) {
   session.hold().then(function () {
-    console.log('Placing the call on hold, initiating attended transfer');
+    console.log("Placing the call on hold, initiating attended transfer");
     var newSession = session.userAgent.invite($transfer.val().trim());
-    newSession.once('established', function () {
-      console.log('New call initated. Click Complete to complete the transfer');
-      $modal.find('.transfer-form button.complete').on('click', function (e) {
+    newSession.once("established", function () {
+      console.log("New call initated. Click Complete to complete the transfer");
+      $modal.find(".transfer-form button.complete").on("click", function (e) {
         session
           .warmTransfer(newSession)
           .then(function () {
-            console.log('Warm transfer completed');
+            console.log("Warm transfer completed");
           })
           .catch(function (e) {
-            console.error('Transfer failed', e.stack || e);
+            console.error("Transfer failed", e.stack || e);
           });
       });
     });
@@ -354,14 +404,16 @@ session.forward('TARGET_NUMBER').then(...);
 
 ### Reject vs Decline
 
-`sesstion.reject()` method has been available since long ago.
-It will send a SIP "480 Temporarily Unavailable" message to SIP server.
-I believe this method is from SIP.js since I don't see any relavent code in this repo.
-There is a potential issue with this methods, sometimes server side will re-send the invite message to you.
-No always reproducible but quite annoying. The call will appear again right after you "reject".
+`sesstion.reject()` method has been available since long ago. It will send a SIP
+"480 Temporarily Unavailable" message to SIP server. I believe this method is
+from SIP.js since I don't see any relavent code in this repo. There is a
+potential issue with this methods, sometimes server side will re-send the invite
+message to you. No always reproducible but quite annoying. The call will appear
+again right after you "reject".
 
-`session.decline()` method was added in 1.0.5. It sends a special XML message to SIP server to ignore the call.
-And RingCentral SIP servers understand this message and will not bother you again about this call session.
+`session.decline()` method was added in 1.0.5. It sends a special XML message to
+SIP server to ignore the call. And RingCentral SIP servers understand this
+message and will not bother you again about this call session.
 
 ### Start/Stop Recording
 
@@ -372,7 +424,8 @@ session.stopRecord().then(...);
 
 ### Barge/Whisper
 
-Not yet implemented. Could be done by dialing \*83. The account should be enabled for barge/whisper access through system admin.
+Not yet implemented. Could be done by dialing \*83. The account should be
+enabled for barge/whisper access through system admin.
 
 ## Upgrade Procedure from 0.8.x to 0.9.0
 
@@ -380,29 +433,47 @@ Not yet implemented. Could be done by dialing \*83. The account should be enable
 
 ## Upgrade Procedure from v0.4.X to 0.8.9
 
-- SDK now only supports only Unified SDP plan. You can find more information about this here: [https://chromestatus.com/feature/5723303167655936](https://chromestatus.com/feature/5723303167655936)
+- SDK now only supports only Unified SDP plan. You can find more information
+  about this here:
+  [https://chromestatus.com/feature/5723303167655936](https://chromestatus.com/feature/5723303167655936)
 
-- SDK now only supports "require" as rtcp-mux policy. We no more support "negotiate". You can find more information about this here: [https://www.juandebravo.com/2017/02/15/rtcp-mux-in-webrtc/](https://www.juandebravo.com/2017/02/15/rtcp-mux-in-webrtc/)
+- SDK now only supports "require" as rtcp-mux policy. We no more support
+  "negotiate". You can find more information about this here:
+  [https://www.juandebravo.com/2017/02/15/rtcp-mux-in-webrtc/](https://www.juandebravo.com/2017/02/15/rtcp-mux-in-webrtc/)
 
-- SDK now handles SIP Re-Invites, which helps in handling one-way audio issues / reconnecting media due to network reconnections.
+- SDK now handles SIP Re-Invites, which helps in handling one-way audio issues /
+  reconnecting media due to network reconnections.
 
-- SDK constructor now allows to add custom UA Configuration parameters like `sessionDescriptionHandlerFactory` , `sessionDescriptionHandlerFactoryOptions`
+- SDK constructor now allows to add custom UA Configuration parameters like
+  `sessionDescriptionHandlerFactory` , `sessionDescriptionHandlerFactoryOptions`
 
-- SDK now handles rendering HTML Media Elements. Pass remoteVideo and localVideo elements via SDK constructor
+- SDK now handles rendering HTML Media Elements. Pass remoteVideo and localVideo
+  elements via SDK constructor
 
-- SDK also offers to addTrack() to handle remoteVideo and localVideo elements outside the constructor too
+- SDK also offers to addTrack() to handle remoteVideo and localVideo elements
+  outside the constructor too
 
 - For FireFox browser support
 
   - Client application needs to detect if the browser is firefox.
-  - Client application needs to set custom UA configuration option 'options.enableMidLinesInSDP' to `true` for browser >= FF v63 for hold functionality to work
-  - QoS feature is not supported on FireFox due to browser related bugs. Please set the custom UA configuration option `options.enableQos` to `false`
+  - Client application needs to set custom UA configuration option
+    'options.enableMidLinesInSDP' to `true` for browser >= FF v63 for hold
+    functionality to work
+  - QoS feature is not supported on FireFox due to browser related bugs. Please
+    set the custom UA configuration option `options.enableQos` to `false`
 
-- SDK can now detect AudioInputLevel if the microphone device is not present or the input volume is set to 0. Added event listner `no-input-volume` for the same
+- SDK can now detect AudioInputLevel if the microphone device is not present or
+  the input volume is set to 0. Added event listner `no-input-volume` for the
+  same
 
-- SDK can now detect AudioOutputLevel if the headset/speaker device is not configured correctly or the output volume is set to 0. Added event listner `no-output-volume` for the same
+- SDK can now detect AudioOutputLevel if the headset/speaker device is not
+  configured correctly or the output volume is set to 0. Added event listner
+  `no-output-volume` for the same
 
-- You can now enable logging for AudioInputLevel, AudioOutputLevel and Media Reports by setting the custom UA configuration option `options.enableMediaReportLogging` to true. This will help in providing more information on one-way audio issues if there are any
+- You can now enable logging for AudioInputLevel, AudioOutputLevel and Media
+  Reports by setting the custom UA configuration option
+  `options.enableMediaReportLogging` to true. This will help in providing more
+  information on one-way audio issues if there are any
 
 ### Initialization
 
@@ -410,29 +481,29 @@ Before:
 
 ```javascript
 webPhone = new RingCentral.WebPhone(data, {
-  clientId: localStorage.getItem('webPhoneClientId'),
+  clientId: localStorage.getItem("webPhoneClientId"),
   audioHelper: {
     enabled: true,
   },
   logLevel: parseInt(logLevel, 10),
-  appName: 'WebPhoneDemo',
-  appVersion: '1.0.0',
+  appName: "WebPhoneDemo",
+  appVersion: "1.0.0",
 });
 ```
 
 After:
 
 ```javascript
-var remoteVideoElement = document.getElementById('remoteVideo');
-var localVideoElement = document.getElementById('localVideo');
+var remoteVideoElement = document.getElementById("remoteVideo");
+var localVideoElement = document.getElementById("localVideo");
 webPhone = new RingCentral.WebPhone(data, {
-  clientId: localStorage.getItem('webPhoneClientId'),
+  clientId: localStorage.getItem("webPhoneClientId"),
   audioHelper: {
     enabled: true,
   },
   logLevel: parseInt(logLevel, 10),
-  appName: 'WebPhoneDemo',
-  appVersion: '1.0.0',
+  appName: "WebPhoneDemo",
+  appVersion: "1.0.0",
   media: {
     remote: remoteVideoElement,
     local: localVideoElement,
@@ -480,8 +551,8 @@ Before:
 var session = webPhone.userAgent.invite(number, {
   media: {
     render: {
-      remote: document.getElementById('remoteVideo'),
-      local: document.getElementById('localVideo'),
+      remote: document.getElementById("remoteVideo"),
+      local: document.getElementById("localVideo"),
     },
   },
   fromNumber: username,
@@ -501,7 +572,6 @@ var session = webPhone.userAgent.invite(number, {
 ### Auto Answer incoming calls if Invites containing `Alert-Info: Auto Answer` header field:
 
 ```javascript
-
 For incoming calls
 function onInvite(session) {
     if (session.request.headers['Alert-Info'][0].raw === 'Auto Answer') {
