@@ -1258,6 +1258,13 @@ differences are:
 - For callout, inbound call to the device will have auto answer headers. It
   could be auto answered if the device supports it.
 
+Again, you are not required to use the RESTful API to do a call out. This is way
+simpler:
+
+```ts
+const callSession = await webPhone.call(callee);
+```
+
 # Maintainers Notes
 
 Content below is for the maintainers of this project.
