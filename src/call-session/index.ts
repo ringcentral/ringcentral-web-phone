@@ -12,6 +12,7 @@ import {
   fakeDomain,
   uuid,
 } from "../utils.js";
+import ResponseMessage from "../sip-message/outbound/response.js";
 
 interface CommandResult {
   code: number;
@@ -282,7 +283,7 @@ class CallSession extends EventEmitter {
       sdp,
     );
     const replyMessage = await this.webPhone.sipClient.request(requestMessage);
-    this.rtcPeerConnection.setRemoteDescription({
+    await this.rtcPeerConnection.setRemoteDescription({
       type: "answer",
       sdp: replyMessage.body,
     });
@@ -297,6 +298,37 @@ class CallSession extends EventEmitter {
       },
     );
     await this.webPhone.sipClient.reply(ackMessage);
+  }
+
+  // handle re-INVITE from SIP server
+  public async handleReInvite(reInviteMessage: InboundMessage) {
+    this.sipMessage = reInviteMessage;
+    await this.rtcPeerConnection.setRemoteDescription({
+      type: "offer",
+      sdp: reInviteMessage.body,
+    });
+    const answer = await this.rtcPeerConnection.createAnswer();
+    await this.rtcPeerConnection.setLocalDescription(answer);
+    // wait for ICE gathering to complete
+    await new Promise((resolve) => {
+      this.rtcPeerConnection.onicecandidate = (event) => {
+        if (event.candidate === null) {
+          resolve(true);
+        }
+      };
+      setTimeout(() => resolve(false), 3000);
+    });
+
+    const newMessage = new ResponseMessage(this.sipMessage, {
+      responseCode: 200,
+      headers: {
+        "Content-Type": "application/sdp",
+      },
+      body: answer.sdp,
+    });
+    await this.webPhone.sipClient.reply(newMessage);
+
+    // todo: wait for the final SIP message, refer to inbound call answer function
   }
 
   // for hold/unhold

@@ -1319,14 +1319,6 @@ be unregistered immediately after the registration. After this method call, no
 inbound call will be received. If you try to make an outbound call, you will get
 a `SIP/2.0 403 Forbidden` response.
 
-### Call-Id
-
-SIP headers are case insensitive. SIP server INVITE message uses Call-Id, so
-this project uses Call-Id.
-
-Caller outbound INVITE and callee inbound INVITE don't have the same Call-Id.
-They are different. I am not sure it is a bug or not.
-
 ### multiple instances
 
 Every time you get a new `sipInfo`, you will get a new `authorizationId`. So

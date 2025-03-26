@@ -51,6 +51,22 @@ class WebPhone extends EventEmitter {
         if (!inboundMessage.subject.startsWith("INVITE sip:")) {
           return;
         }
+
+        // re-INVITE
+        const callSession = this.callSessions.find(
+          (callSession) => {
+            const sipMessage = callSession.sipMessage;
+            return sipMessage.headers["Call-Id"] ===
+                inboundMessage.headers["Call-Id"] &&
+              sipMessage.headers.To === inboundMessage.headers.To &&
+              sipMessage.headers.From === inboundMessage.headers.From;
+          },
+        );
+        if (callSession) {
+          callSession.handleReInvite(inboundMessage);
+          return;
+        }
+
         this.callSessions.push(new InboundCallSession(this, inboundMessage));
         // write it this way so that it will be compatible with manate, inboundCallSession will be managed
         const inboundCallSession = this
