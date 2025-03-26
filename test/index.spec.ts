@@ -176,34 +176,37 @@ test('skip client id during register if not set', async ({ context }) => {
   await waitFor(() => wsHandled);
 });
 
-test('refresh frequency setting', async ({ context }) => {
-  test.setTimeout(70000);
-  let firstRegisterAt;
-  let wsHandled = false;
-  await login(
-    context,
-    process.env.RC_WP_CALLER_JWT_TOKEN!,
-    (ws) => {
-      ws.on('framesent', async (frame) => {
-        const parsed = sip.Core.Parser.parseMessage(frame.payload, logger);
+// This is no longer needed. SIP server behavior has changed.
+// even you requst a small refresh frequency, the server will still grant you a value greater than you requested.
+// so the test will always fail.
+// test('refresh frequency setting', async ({ context }) => {
+//   test.setTimeout(70000);
+//   let firstRegisterAt;
+//   let wsHandled = false;
+//   await login(
+//     context,
+//     process.env.RC_WP_CALLER_JWT_TOKEN!,
+//     (ws) => {
+//       ws.on('framesent', async (frame) => {
+//         const parsed = sip.Core.Parser.parseMessage(frame.payload, logger);
 
-        if (parsed.method === 'REGISTER' && typeof firstRegisterAt !== 'undefined') {
-          expect(Date.now() - firstRegisterAt).toBeLessThan(30000);
-          wsHandled = true;
-        }
-      });
-      ws.on('framereceived', async (frame) => {
-        const parsed = sip.Core.Parser.parseMessage(frame.payload, logger);
+//         if (parsed.method === 'REGISTER' && typeof firstRegisterAt !== 'undefined') {
+//           expect(Date.now() - firstRegisterAt).toBeLessThan(30000);
+//           wsHandled = true;
+//         }
+//       });
+//       ws.on('framereceived', async (frame) => {
+//         const parsed = sip.Core.Parser.parseMessage(frame.payload, logger);
 
-        if (parsed.method === 'REGISTER' && parsed.reasonPhrase === 'OK') {
-          firstRegisterAt = Date.now();
-        }
-      });
-    },
-    {
-      refreshFrequency: 50,
-    },
-  );
+//         if (parsed.method === 'REGISTER' && parsed.reasonPhrase === 'OK') {
+//           firstRegisterAt = Date.now();
+//         }
+//       });
+//     },
+//     {
+//       refreshFrequency: 50,
+//     },
+//   );
 
-  await waitFor(() => wsHandled, 1000, 65000);
-});
+//   await waitFor(() => wsHandled, 1000, 65000);
+// });
