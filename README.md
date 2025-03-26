@@ -529,7 +529,7 @@ network to another. Let's say you are having a call with your friend and you
 switch from WiFi network to cellular. The call will become "silent". You can
 restore the call by invoking `callSession.reInvite()`.
 
-Network outage/issue/change is a big topic and we have a dedication section for
+Network outage/issue/change is a big topic and we have a dedicated section for
 that. For example, if the network change, the WebSocket connection will break
 too. So, it is not as easy as invoking `callSession.reInvite()`. Please read the
 "Recover from network outage/issue/change" section for more details.
@@ -540,8 +540,8 @@ true. Sometimes you may want to specify a false value:
 recover the call but keep it on hold.
 
 Please note that `reInvite()` will generate new local SDP and do iceRestart. And
-after server replies with remote SDP, it will be set
-`rtcPeerConnection.setRemoteDescription(remoteSDP)` This is required because if
+after server replies with remote SDP, it will be set:
+`rtcPeerConnection.setRemoteDescription(remoteSDP)`. This is required because if
 network information changed, old SDPs won't work any more.
 
 ## Events
