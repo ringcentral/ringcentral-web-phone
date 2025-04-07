@@ -130,6 +130,14 @@ You can use this library without a bundling tool:
 <script src="/path/to/ringcentral-web-phone/dist/esm/index.umd.js"></script>
 ```
 
+Or you could use a CDN:
+
+```html
+<script
+  src="https://cdn.jsdelivr.net/npm/ringcentral-web-phone@2.1.5/dist/esm/index.umd.js"
+></script>
+```
+
 ### instanceId
 
 Optionally, you can specify `instanceId`:
