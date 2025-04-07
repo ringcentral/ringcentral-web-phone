@@ -63,6 +63,8 @@ export interface SipInfo {
   certificate: string;
   /** The interval in seconds after which the app must try to switch back to primary proxy if it was previously switched to backup */
   switchBackInterval: number;
+
+  stunServers: string[];
 }
 
 export interface WebPhoneOptions {
@@ -348,7 +350,7 @@ export default class WebPhone {
 
     const sdpSemantics = options.enablePlanB ? 'plan-b' : 'unified-plan';
 
-    const stunServers = options.stunServers || defaultStunServers;
+    const stunServers = options.stunServers || this.sipInfo.stunServers || defaultStunServers;
     const iceTransportPolicy = options.iceTransportPolicy;
     let iceServers: Array<RTCIceServer> = [];
     if (options.enableTurnServers) {
