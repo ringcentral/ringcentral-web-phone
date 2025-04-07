@@ -122,6 +122,14 @@ await webPhone.start();
 
 What is `sipInfo`? Please read [Pre-requisites](#pre-requisites) section.
 
+## Without a bundling tool
+
+You can use this library without a bundling tool:
+
+```html
+<script src="/path/to/ringcentral-web-phone/dist/esm/index.umd.js"></script>
+```
+
 ### instanceId
 
 Optionally, you can specify `instanceId`:
