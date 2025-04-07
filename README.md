@@ -111,18 +111,7 @@ may need it for
 yarn add ringcentral-web-phone
 ```
 
-## Initialization
-
-```ts
-import WebPhone from "ringcentral-web-phone";
-
-const webPhone = new WebPhone({ sipInfo });
-await webPhone.start();
-```
-
-What is `sipInfo`? Please read [Pre-requisites](#pre-requisites) section.
-
-## Without a bundling tool
+### Without a bundling tool
 
 You can use this library without a bundling tool:
 
@@ -137,6 +126,17 @@ Or you could use a CDN:
   src="https://cdn.jsdelivr.net/npm/ringcentral-web-phone@2.1.5/dist/esm/index.umd.js"
 ></script>
 ```
+
+## Initialization
+
+```ts
+import WebPhone from "ringcentral-web-phone";
+
+const webPhone = new WebPhone({ sipInfo });
+await webPhone.start();
+```
+
+What is `sipInfo`? Please read [Pre-requisites](#pre-requisites) section.
 
 ### instanceId
 
