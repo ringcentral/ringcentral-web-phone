@@ -79,6 +79,14 @@ Source code is here: https://github.com/tylerlong/rc-web-phone-demo
 yarn add ringcentral-web-phone
 ```
 
+Or you may referece it in html directly:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/ringcentral-web-phone@1.0.7/lib/index.umd.js"></script>
+```
+
+Please note that, sip.js has been bundled into `index.umd.js` so you don't need to reference it separately.
+
 ### If you are not using NPM:
 
 1. Download SIP.JS:
@@ -124,11 +132,7 @@ to request these permissions.
 ### Include Library And HTML Elements
 
 ```html
-<video id="remoteVideo" hidden="hidden"></video>
-<video id="localVideo" hidden="hidden" muted="muted"></video>
-
-<script src=".../sip.js" type="text/javascript"></script>
-<script src=".../ringcentral-web-phone.js" type="text/javascript"></script>
+<video id="remoteVideo" hidden="hidden"></video> <video id="localVideo" hidden="hidden" muted="muted"></video>
 ```
 
 ### Application
@@ -139,10 +143,10 @@ For this example you will also need to have
 Configure the web-phone
 
 ```js
-var clientId = "...";
-var clientSecret = "...";
-var appName = "...";
-var appVersion = "...";
+var clientId = '...';
+var clientSecret = '...';
+var appName = '...';
+var appVersion = '...';
 
 var sdk = new RingCentral.SDK({
   clientId: clientId,
@@ -152,19 +156,19 @@ var sdk = new RingCentral.SDK({
   server: RingCentral.SDK.server.production, // or .sandbox
 });
 
-var remoteVideoElement = document.getElementById("remoteVideo");
-var localVideoElement = document.getElementById("localVideo");
+var remoteVideoElement = document.getElementById('remoteVideo');
+var localVideoElement = document.getElementById('localVideo');
 
 var platform = sdk.platform();
 
 platform
   .login({
-    jwt: "...",
+    jwt: '...',
   })
   .then(function (loginResponse) {
     return platform
-      .post("/client-info/sip-provision", {
-        sipInfo: [{ transport: "WSS" }],
+      .post('/client-info/sip-provision', {
+        sipInfo: [{ transport: 'WSS' }],
       })
       .then(function (res) {
         // Doing nested then because we need loginResponse in a simple way
@@ -178,8 +182,8 @@ platform
           logLevel: 1, // error 0, warn 1, log: 2, debug: 3
           audioHelper: {
             enabled: true, // enables audio feedback when web phone is ringing or making a call
-            incoming: "path-to-audio/incoming.ogg", // path to audio file for incoming call
-            outgoing: "path-to-audio/outgoing.ogg", // path to aduotfile for outgoing call
+            incoming: 'path-to-audio/incoming.ogg', // path to audio file for incoming call
+            outgoing: 'path-to-audio/outgoing.ogg', // path to aduotfile for outgoing call
           },
           media: {
             remote: remoteVideoElement,
@@ -288,9 +292,9 @@ For futher information, refer SIP.js guide to
 ### Initiating The Call
 
 ```javascript
-var session = webPhone.userAgent.invite("PHONE_NUMBER", {
-  fromNumber: "PHONE_NUMBER", // Optional, Company Number will be used as default
-  homeCountryId: "1", // Optional, the value of
+var session = webPhone.userAgent.invite('PHONE_NUMBER', {
+  fromNumber: 'PHONE_NUMBER', // Optional, Company Number will be used as default
+  homeCountryId: '1', // Optional, the value of
 });
 ```
 
@@ -375,20 +379,20 @@ Steps:
    context and `Unhold` the session
 
 ```javascript
-$modal.find(".transfer-form button.warm").on("click", function (e) {
+$modal.find('.transfer-form button.warm').on('click', function (e) {
   session.hold().then(function () {
-    console.log("Placing the call on hold, initiating attended transfer");
+    console.log('Placing the call on hold, initiating attended transfer');
     var newSession = session.userAgent.invite($transfer.val().trim());
-    newSession.once("established", function () {
-      console.log("New call initated. Click Complete to complete the transfer");
-      $modal.find(".transfer-form button.complete").on("click", function (e) {
+    newSession.once('established', function () {
+      console.log('New call initated. Click Complete to complete the transfer');
+      $modal.find('.transfer-form button.complete').on('click', function (e) {
         session
           .warmTransfer(newSession)
           .then(function () {
-            console.log("Warm transfer completed");
+            console.log('Warm transfer completed');
           })
           .catch(function (e) {
-            console.error("Transfer failed", e.stack || e);
+            console.error('Transfer failed', e.stack || e);
           });
       });
     });
@@ -481,29 +485,29 @@ Before:
 
 ```javascript
 webPhone = new RingCentral.WebPhone(data, {
-  clientId: localStorage.getItem("webPhoneClientId"),
+  clientId: localStorage.getItem('webPhoneClientId'),
   audioHelper: {
     enabled: true,
   },
   logLevel: parseInt(logLevel, 10),
-  appName: "WebPhoneDemo",
-  appVersion: "1.0.0",
+  appName: 'WebPhoneDemo',
+  appVersion: '1.0.0',
 });
 ```
 
 After:
 
 ```javascript
-var remoteVideoElement = document.getElementById("remoteVideo");
-var localVideoElement = document.getElementById("localVideo");
+var remoteVideoElement = document.getElementById('remoteVideo');
+var localVideoElement = document.getElementById('localVideo');
 webPhone = new RingCentral.WebPhone(data, {
-  clientId: localStorage.getItem("webPhoneClientId"),
+  clientId: localStorage.getItem('webPhoneClientId'),
   audioHelper: {
     enabled: true,
   },
   logLevel: parseInt(logLevel, 10),
-  appName: "WebPhoneDemo",
-  appVersion: "1.0.0",
+  appName: 'WebPhoneDemo',
+  appVersion: '1.0.0',
   media: {
     remote: remoteVideoElement,
     local: localVideoElement,
@@ -551,8 +555,8 @@ Before:
 var session = webPhone.userAgent.invite(number, {
   media: {
     render: {
-      remote: document.getElementById("remoteVideo"),
-      local: document.getElementById("localVideo"),
+      remote: document.getElementById('remoteVideo'),
+      local: document.getElementById('localVideo'),
     },
   },
   fromNumber: username,
