@@ -11,7 +11,7 @@ import {
   fakeEmail,
   generateAuthorization,
   uuid,
-} from "./utils";
+} from "./utils.js";
 
 const maxExpires = 60;
 export class DefaultSipClient extends EventEmitter implements SipClient {
