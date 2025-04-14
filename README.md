@@ -82,20 +82,18 @@ yarn add ringcentral-web-phone
 Or you may referece it in html directly:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/ringcentral-web-phone@1.0.7/lib/index.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ringcentral-web-phone@1.0.8/lib/index.umd.js"></script>
 ```
 
-Please note that, sip.js has been bundled into `index.umd.js` so you don't need to reference it separately.
+You may need to replace `1.0.8` with latest version number. For latest version please check here: https://www.npmjs.com/package/ringcentral-web-phone?activeTab=versions
+Please also note that: 2.x and 1.x are not compatible. You will to read 2.x README file if you wnat to use 2.x version instead.
 
-### If you are not using NPM:
+Please note that, SIP.js has been bundled into `index.umd.js` so you don't need to reference it separately.
 
-1. Download SIP.JS:
-   [https://github.com/onsip/SIP.js/releases/tag/0.20.0](https://github.com/onsip/SIP.js/releases/tag/0.20.0)
-2. Download WebPhone SDK:
-   [https://github.com/ringcentral/ringcentral-web-phone/releases/latest](https://github.com/ringcentral/ringcentral-web-phone/releases/latest)
-3. Download audio files:
-   1. [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/demo/audio/incoming.ogg](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/demo/audio/incoming.ogg)
-   2. [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/demo/audio/outgoing.ogg](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/demo/audio/outgoing.ogg)
+Download audio files:
+
+1.  [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/demo/audio/incoming.ogg](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/demo/audio/incoming.ogg)
+2.  [https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/demo/audio/outgoing.ogg](https://cdn.rawgit.com/ringcentral/ringcentral-web-phone/master/demo/audio/outgoing.ogg)
 
 ---
 
@@ -243,7 +241,7 @@ OAuth Redirect URI
 ## API
 
 Except for some RingCentral-specific features the API is 100% the same as
-SIP.JS: https://github.com/onsip/SIP.js/releases/tag/0.20.0: most of the time
+SIP.JS: most of the time
 you will be working with RC-flavored
 [UserAgent](https://github.com/onsip/SIP.js/blob/master/docs/api/sip.js.useragent.md)
 and
@@ -412,7 +410,7 @@ session.forward('TARGET_NUMBER').then(...);
 "480 Temporarily Unavailable" message to SIP server. I believe this method is
 from SIP.js since I don't see any relavent code in this repo. There is a
 potential issue with this methods, sometimes server side will re-send the invite
-message to you. No always reproducible but quite annoying. The call will appear
+message to you. Not always reproducible but quite annoying. The call will appear
 again right after you "reject".
 
 `session.decline()` method was added in 1.0.5. It sends a special XML message to
