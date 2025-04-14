@@ -1,17 +1,11 @@
 [![Build Status](https://github.com/ringcentral/ringcentral-web-phone/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/ringcentral/ringcentral-web-phone/actions/workflows/tests.yml)
 [![Coverage Status](https://coveralls.io/repos/github/ringcentral/ringcentral-web-phone/badge.svg?branch=master)](https://coveralls.io/github/ringcentral/ringcentral-web-phone?branch=master)
 
-# RingCentral WebPhone Library
+# RingCentral WebPhone SDK
 
-The RingCentral WebPhone Library includes a JavaScript WebRTC library and a
-WebRTC phone demo app.
+## 2.x version
 
-## 2.0.0 version
-
-2.0.0 version is currently in beta. We encourange new users to start with 2.0.0
-version instead.
-
-2.0.0 version is a complete rewrite and it has tons of improvements. It's hosted
+2.x version is a complete rewrite and it has tons of improvements. It's hosted
 on main branch:
 
 https://github.com/ringcentral/ringcentral-web-phone/tree/main
@@ -30,8 +24,7 @@ https://gist.github.com/tylerlong/72b51a72cc16206850c4cdfa36c6793a
 
 ## Browser Compatibility
 
-Currently, we officially support Google Chrome browser. Official support for
-Firefox and Safari browsers are coming soon.
+Currently, we officially support Google Chrome browser. Other browsers may work as well but they are not tested.
 
 ## Network Requirements
 
@@ -86,7 +79,7 @@ Or you may referece it in html directly:
 ```
 
 You may need to replace `1.0.8` with latest version number. For latest version please check here: https://www.npmjs.com/package/ringcentral-web-phone?activeTab=versions
-Please also note that: 2.x and 1.x are not compatible. You will to read 2.x README file if you wnat to use 2.x version instead.
+Please also note that: 2.x and 1.x are not compatible. You will to read 2.x README file if you want to use 2.x version instead.
 
 Please note that, SIP.js has been bundled into `index.umd.js` so you don't need to reference it separately.
 
@@ -424,58 +417,16 @@ session.startRecord().then(...);
 session.stopRecord().then(...);
 ```
 
+There is a special case that call recording is auto started by server side: https://github.com/ringcentral/ringcentral-web-phone/issues/292
+
 ### Barge/Whisper
 
 Not yet implemented. Could be done by dialing \*83. The account should be
 enabled for barge/whisper access through system admin.
 
-## Upgrade Procedure from 0.8.x to 0.9.0
+## Upgrade Procedure from 0.8.x to 1.0
 
 - [Migration Doc](MIGRATION.md)
-
-## Upgrade Procedure from v0.4.X to 0.8.9
-
-- SDK now only supports only Unified SDP plan. You can find more information
-  about this here:
-  [https://chromestatus.com/feature/5723303167655936](https://chromestatus.com/feature/5723303167655936)
-
-- SDK now only supports "require" as rtcp-mux policy. We no more support
-  "negotiate". You can find more information about this here:
-  [https://www.juandebravo.com/2017/02/15/rtcp-mux-in-webrtc/](https://www.juandebravo.com/2017/02/15/rtcp-mux-in-webrtc/)
-
-- SDK now handles SIP Re-Invites, which helps in handling one-way audio issues /
-  reconnecting media due to network reconnections.
-
-- SDK constructor now allows to add custom UA Configuration parameters like
-  `sessionDescriptionHandlerFactory` , `sessionDescriptionHandlerFactoryOptions`
-
-- SDK now handles rendering HTML Media Elements. Pass remoteVideo and localVideo
-  elements via SDK constructor
-
-- SDK also offers to addTrack() to handle remoteVideo and localVideo elements
-  outside the constructor too
-
-- For FireFox browser support
-
-  - Client application needs to detect if the browser is firefox.
-  - Client application needs to set custom UA configuration option
-    'options.enableMidLinesInSDP' to `true` for browser >= FF v63 for hold
-    functionality to work
-  - QoS feature is not supported on FireFox due to browser related bugs. Please
-    set the custom UA configuration option `options.enableQos` to `false`
-
-- SDK can now detect AudioInputLevel if the microphone device is not present or
-  the input volume is set to 0. Added event listner `no-input-volume` for the
-  same
-
-- SDK can now detect AudioOutputLevel if the headset/speaker device is not
-  configured correctly or the output volume is set to 0. Added event listner
-  `no-output-volume` for the same
-
-- You can now enable logging for AudioInputLevel, AudioOutputLevel and Media
-  Reports by setting the custom UA configuration option
-  `options.enableMediaReportLogging` to true. This will help in providing more
-  information on one-way audio issues if there are any
 
 ### Initialization
 
