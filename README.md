@@ -4,11 +4,11 @@
 
 For those who want to check documentation for verison 1.x, please
 [click here](https://github.com/ringcentral/ringcentral-web-phone/tree/1.x). We
-will continue to support 1.x. There is no plan to deprecate it for now.
+will continue to support 1.x. There is no plan to deprecate it.
 
 ## Version 2.x
 
-2.x version is a complete rewrite. We recommend all users to use the latest
+2.x version is a complete rewrite. We recommend new users to use the latest
 version.
 
 For the reasoning about why we release a brand new 2.0 version and all the
@@ -23,48 +23,11 @@ breaking changes, please read
 ## Pre-requisites
 
 This SDK assumes that you have basic knowledge of RingCentral Platform. You have
-created a RingCentral app and you know how to invoke RingCentral APIs. If you
-don't know how to do that, please read the following document first:
-https://developers.ringcentral.com/guide/voice/call-log/quick-start. The
-document is about how to create a RingCentral app and how to use the RingCentral
-API to access call log data. It is a good starting point for you to understand
-the RingCentral API. This SDK doesn't use/require call log API, the document is
-just for you to get familiar with RingCentral API.
+created a RingCentral app and you know how to invoke RingCentral APIs.
 
 This SDK assumes that you know how to invoke
 [Device SIP Registration](https://developers.ringcentral.com/api-reference/Device-SIP-Registration/createSIPRegistration)
 to get a `sipInfo` object.
-
-With `@ringcentral/sdk`, it is done like this:
-
-```ts
-import { SDK } from "@ringcentral/sdk";
-
-const rc = new SDK({
-  server: process.env.RINGCENTRAL_SERVER_URL,
-  clientId: process.env.RINGCENTRAL_CLIENT_ID,
-  clientSecret: process.env.RINGCENTRAL_CLIENT_SECRET,
-});
-
-const main = async () => {
-  await rc.login({
-    jwt: process.env.RINGCENTRAL_JWT_TOKEN,
-  });
-  const r = await rc.platform().post(
-    "/restapi/v1.0/client-info/sip-provision",
-    {
-      sipInfo: [{ transport: "WSS" }],
-    },
-  );
-  const jsonData = await r.json();
-  const sipInfo = jsonData.sipInfo[0];
-  console.log(sipInfo); // this is what we need
-
-  const deviceId = jsonData.device.id; // Web Phone SDK doesn't need `deviceId`, just for your information.
-  await rc.logout(); // Web Phone SDK doesn't need a long-living Restful API access token, you MAY logout
-};
-main();
-```
 
 With `@rc-ex/core`, it is done like this:
 
@@ -156,8 +119,8 @@ first instance will still be able to make outbound calls, but it will not
 receive inbound calls.)
 
 If you don't specify `instanceId`, the SDK by default will use
-`sipInfo.authorizationId` as `instanceId`. Which means, if you don't specify
-`instanceId`, you should only run one web phone instance in one tab.
+`sipInfo.authorizationId` as `instanceId`. It won't change unless you generate a
+new `sipInfo`.
 
 If you start two web phone instances with different `instanceId`, both instances
 will work. SIP server will send messages to both instances.
@@ -555,8 +518,8 @@ true. Sometimes you may want to specify a false value:
 `callSession.reInvite(false)`. For example, if the call was on hold. You want to
 recover the call but keep it on hold.
 
-Please note that `reInvite()` will generate new local SDP and do iceRestart. And
-after server replies with remote SDP, it will be set:
+Some technical details: `reInvite()` will generate new local SDP and do
+iceRestart. And after server replies with remote SDP, it will be set:
 `rtcPeerConnection.setRemoteDescription(remoteSDP)`. This is required because if
 network information changed, old SDPs won't work any more.
 
@@ -673,8 +636,7 @@ Firefox doesn't support output device selection. Please use `undefined` as
 ## Recover from network outage/issue/change
 
 Please note that, this SDK doesn't detect network outage/issue/change. Our
-philosophy is to avoid adding any magic logic to the SDK. But we may change the
-design in the future.
+philosophy is to avoid adding any magic logic to the SDK.
 
 For a working example to handle network outage/issue/change, please refer to
 https://github.com/tylerlong/rc-web-phone-demo-2/blob/main/src/store/after-login.ts.
@@ -815,6 +777,7 @@ webPhone.sipClient.wsc.addEventListener("close", closeListener);
 
 Latest tested code could be found here:
 https://github.com/tylerlong/rc-web-phone-demo-2/blob/main/src/store/after-login.ts
+Scroll to the bottom part where it handles network outage/issue/change.
 
 ### switch to backup outbound proxy
 
@@ -1150,7 +1113,7 @@ https://github.com/tylerlong/rc-softphone-call-id-test
 
 ## Auto Answer
 
-This feature is by default disabled. To enabled it when you create a new phone
+This feature is by default disabled. To enable it when you create a new phone
 instance:
 
 ```ts
