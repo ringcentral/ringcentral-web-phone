@@ -1,6 +1,6 @@
 {
   "name": "ringcentral-web-phone",
-  "version": "2.1.5",
+  "version": "2.1.6",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ringcentral/ringcentral-web-phone.git"
@@ -42,7 +42,6 @@
     "@playwright/test": "^1.51.1",
     "@rollup/plugin-commonjs": "^28.0.3",
     "@rollup/plugin-node-resolve": "^16.0.1",
-    "@rollup/plugin-typescript": "^12.1.2",
     "@types/blueimp-md5": "^2.18.2",
     "@types/node": "^22.13.13",
     "@types/sdp-transform": "^2.4.9",
