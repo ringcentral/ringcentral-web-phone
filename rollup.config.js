@@ -1,4 +1,3 @@
-import typescript from '@rollup/plugin-typescript';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import babel from '@rollup/plugin-babel';
@@ -6,7 +5,7 @@ import json from '@rollup/plugin-json';
 import polyfillNode from 'rollup-plugin-polyfill-node';
 
 export default {
-  input: 'src/index.ts',
+  input: 'lib/src/index.js',
   output: {
     file: 'lib/index.umd.js',
     format: 'umd',
@@ -15,13 +14,12 @@ export default {
   plugins: [
     json(),
     polyfillNode(),
-    nodeResolve({ extensions: ['.ts', '.js'] }),
+    nodeResolve({ extensions: ['.js'] }),
     commonjs(),
-    typescript(),
     babel({
       babelHelpers: 'bundled',
       extensions: ['.ts'],
-      presets: ['@babel/preset-typescript', '@babel/preset-env'],
+      presets: ['@babel/preset-env'],
     }),
   ],
 };

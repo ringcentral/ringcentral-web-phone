@@ -312,8 +312,7 @@ async function unregister(this: WebPhoneUserAgent): Promise<void> {
   await this.registerer!.unregister();
 }
 
-function invite(this: WebPhoneUserAgent, number: string, options: InviteOptions): WebPhoneSession {
-  options = options || {};
+function invite(this: WebPhoneUserAgent, number: string, options: InviteOptions = {}): WebPhoneSession {
   const inviterOptions: InviterOptions = {};
   inviterOptions.extraHeaders = [
     ...(options.extraHeaders || []),
@@ -371,8 +370,7 @@ function invite(this: WebPhoneUserAgent, number: string, options: InviteOptions)
  * https://developers.ringcentral.com/api-reference/Detailed-Extension-Presence-with-SIP-Event
  */
 
-function switchFrom(this: WebPhoneUserAgent, activeCall: ActiveCallInfo, options: InviteOptions): WebPhoneSession {
-  options = options || {};
+function switchFrom(this: WebPhoneUserAgent, activeCall: ActiveCallInfo, options: InviteOptions = {}): WebPhoneSession {
   const replaceHeaders = [
     `Replaces: ${activeCall.id};to-tag=${activeCall.sipData.fromTag};from-tag=${activeCall.sipData.toTag}`,
     'RC-call-type: replace',

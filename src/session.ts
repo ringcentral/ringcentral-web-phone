@@ -721,9 +721,7 @@ async function unhold(this: WebPhoneSession): Promise<void> {
 }
 
 // eslint-disable-next-line max-params
-function dtmf(this: WebPhoneSession, dtmf: string, _duration, _interToneGap): void {
-  _duration = _duration || 100;
-  _interToneGap = _interToneGap || 50;
+function dtmf(this: WebPhoneSession, dtmf: string, _duration = 100, _interToneGap = 50): void {
   const duration = parseInt(_duration.toString(), 10);
   const interToneGap = parseInt(_interToneGap.toString(), 10);
   const sessionDescriptionHandler = this.sessionDescriptionHandler as SessionDescriptionHandler;
