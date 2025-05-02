@@ -1,5 +1,0 @@
-{% extends "base.html" %}
-
-{% block announce %}
-  Announcing the RingCentral Embeddable 2.0 <a href="{{ config.site_url }}2.x/" class="upgrade-button">Upgrade today</a>
-{% endblock %}
