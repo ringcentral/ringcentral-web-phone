@@ -1,0 +1,4 @@
+```ts
+await inboundCallSession.toVoicemail();
+```
+

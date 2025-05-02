@@ -1,0 +1,120 @@
+# Project information
+site_name: RingCentral Web Phone SDK
+site_url: https://ringcentral.github.io/ringcentral-web-phone
+
+# Repository
+repo_url: https://github.com/ringcentral/ringcentral-web-phone
+repo_name: ringcentral/ringcentral-web-phone
+edit_uri: tree/main/docs
+docs_dir: docs
+
+theme:
+  name: material
+  custom_dir: overrides
+  features:
+      - navigation.path
+#      - navigation.sections
+      - navigation.tabs
+      - navigation.top
+      - navigation.expand
+      - navigation.sections
+      - search.sharing
+      - search.highlight
+      - content.code.copy
+      - content.action.edit
+      - content.action.view
+      - content.code.annotate
+  palette:
+    - scheme: default
+      primary: custom
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
+    - scheme: slate
+      primary: black
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+
+plugins:
+  - search:
+      separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+  - badges
+#  - with-pdf
+  - exclude:
+      regex:
+        - '^\.#.*'
+        - '.*\.\#.*$'
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/ringcentral
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/ringcentraldevs
+extra_css:
+  - extra.css
+
+markdown_extensions:
+  - attr_list
+  - md_in_html
+  - mdx_include
+  - admonition
+  - tables
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+
+copyright: "2024-2025 RingCentral, Inc. All rights reserved."
+
+nav:
+- 'Home': index.md
+- 'Get Started': get-started.md
+- 'Using the SDK':
+  - 'Web phone instances': instances.md
+  - 'Call sessions': sessions.md
+  - 'Testing': testing.md
+- 'Events':
+  - 'Subscribing to events': events/index.md
+  - 'answered': events/answered.md
+  - 'disposed': events/disposed.md
+  - 'inboundCall': events/inboundCall.md
+  - 'inboundMessage': events/inboundMessage.md
+  - 'outboundCall': events/outboundCall.md
+  - 'outboundMessage': events/outboundMessage.md
+  - 'ringing': events/ringing.md
+- 'Session Reference':
+  - 'answer()': reference/answer.md
+  - 'call()': reference/call.md
+  - 'decline()': reference/decline.md
+  - 'flip()': reference/flip.md
+  - 'forward()': reference/forward.md
+  - 'hangup()': reference/hangup.md
+  - 'hold()/unhold()': reference/hold.md
+  - 'mute()/unmute()': reference/mute.md
+  - 'park()': reference/park.md
+  - 'reInvite()': reference/reInvite.md
+  - 'reply()': reference/reply.md
+  - 'sendDTMF()': reference/sendDTMF.md
+  - 'startRecording()/stopRecording()': reference/recording.md
+  - 'startReply()': reference.startReply.md
+  - 'toVoicemail()': reference/toVoicemail.md
+  - 'transfer()': reference/transfer.md
+  - 'warmTransfer()': reference/warmTransfer.md
+- 'Recipes':
+  - 'Auto-answer a call': recipes/auto-answer.md
+  - 'Barge in on a call': recipes/barging-in.md
+  - 'Conference calls': recipes/conference-calls.md
+  - 'Managed and changing audio devices': audio.md
+  - 'Privately parking a call': recipes/private-parking.md 
+  - 'Recovering from an outage': recipes/recovery.md
+  - 'Switch call to this device': recipes/switch-to-this-device.md
+  - 'Using the Call Control API': recipes/call-control.md
+
