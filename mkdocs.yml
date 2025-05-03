@@ -76,11 +76,12 @@ copyright: "2024-2025 RingCentral, Inc. All rights reserved."
 
 nav:
 - 'Home': index.md
-- 'Get Started': get-started.md
-- 'Using the SDK':
-  - 'Web phone instances': instances.md
-  - 'Call sessions': sessions.md
-  - 'Testing': testing.md
+- 'Get Started':
+  - Register your device: get-started/index.md
+  - 'Create a WebPhone instance': get-started/instances.md
+  - 'Shared workers': get-started/shared-workers.md
+  - 'Establish a call session': get-started/sessions.md
+  - 'Testing your phone': get-started/testing.md
 - 'Events':
   - 'Subscribing to events': events/index.md
   - 'answered': events/answered.md
@@ -90,25 +91,29 @@ nav:
   - 'outboundCall': events/outboundCall.md
   - 'outboundMessage': events/outboundMessage.md
   - 'ringing': events/ringing.md
-- 'Session Reference':
-  - 'answer()': reference/answer.md
-  - 'call()': reference/call.md
-  - 'decline()': reference/decline.md
-  - 'flip()': reference/flip.md
-  - 'forward()': reference/forward.md
-  - 'hangup()': reference/hangup.md
-  - 'hold()/unhold()': reference/hold.md
-  - 'mute()/unmute()': reference/mute.md
-  - 'park()': reference/park.md
-  - 'reInvite()': reference/reInvite.md
-  - 'reply()': reference/reply.md
-  - 'sendDTMF()': reference/sendDTMF.md
-  - 'startRecording()/stopRecording()': reference/recording.md
-  - 'startReply()': reference.startReply.md
-  - 'toVoicemail()': reference/toVoicemail.md
-  - 'transfer()': reference/transfer.md
-  - 'warmTransfer()': reference/warmTransfer.md
-- 'Recipes':
+- 'Reference':
+  - 'Overview': reference/index.md
+  - 'WebPhone':
+    - 'call()': reference/call.md
+    - 'dispose()': reference/dispose.md
+  - 'Call Session':
+    - 'answer()': reference/answer.md
+    - 'decline()': reference/decline.md
+    - 'flip()': reference/flip.md
+    - 'forward()': reference/forward.md
+    - 'hangup()': reference/hangup.md
+    - 'hold()/unhold()': reference/hold.md
+    - 'mute()/unmute()': reference/mute.md
+    - 'park()': reference/park.md
+    - 'reInvite()': reference/reInvite.md
+    - 'reply()': reference/reply.md
+    - 'sendDtmf()': reference/sendDtmf.md
+    - 'startRecording()/stopRecording()': reference/recording.md
+    - 'startReply()': reference/startReply.md
+    - 'toVoicemail()': reference/toVoicemail.md
+    - 'transfer()': reference/transfer.md
+    - 'warmTransfer()': reference/warmTransfer.md
+- 'Code samples':
   - 'Auto-answer a call': recipes/auto-answer.md
   - 'Barge in on a call': recipes/barging-in.md
   - 'Conference calls': recipes/conference-calls.md

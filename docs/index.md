@@ -4,12 +4,39 @@ hide:
   - toc
 title: RingCentral's Web Phone SDK - a javascript tool to manipulate live phone calls
 ---
-# RingCentral Web Phone SDK
+# RingCentral WebPhone SDK
 
-What is the Web Phone SDK?
+The RingCentral WebPhone SDK is a toolset for use within the context of a web browser. Developers use the SDK to build custom phone clients and CTIs from the ground up. The WebPhone SDK utilizes a user's credentials obtained independently through OAuth to place and receive phone calls. 
 
-## Demo
+Once a call is connected and a session established, the WebPhone SDK can be used to manipulate that phone call in all the ways you would expect a device to be able to, including: 
 
-- [Online Demo](https://chuntaoliu.com/rc-web-phone-demo-2/)
-- [Source Code](https://github.com/tylerlong/rc-web-phone-demo-2)
+* answering and hanging up
+* muting and unmuting
+* placing or removing someone from hold
+* transferring or merging calls
+* starting, stopping and pausing a recording
+* and so forth
 
+Furthermore, the WebPhone SDK can be combined with other SDKs to call the RingCentral REST API in order to create more advanced applications that leverage other data sources and APIs throughout the RingCentral ecosystem and beyond. 
+
+## Explore a live demo of the WebPhone SDK
+
+<div class="grid cards" markdown>
+
+-   :material-application:{ .lg .middle } __Live demo__
+
+    ---
+
+    Access a live demo of the WebPhone SDK. You will need to register an app and obtain credentials first.
+
+    [:octicons-arrow-right-24: Launch demo](https://chuntaoliu.com/rc-web-phone-demo-2/)
+
+-   :material-github:{ .lg .middle } __Source code__
+
+    ---
+
+    Access, clone or fork the WebPhone SDK demo on Github to kick start the development on your custom CTI.
+
+    [:octicons-arrow-right-24: Explore the source code](https://github.com/tylerlong/rc-web-phone-demo-2)
+
+</div>
