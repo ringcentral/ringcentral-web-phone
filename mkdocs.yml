@@ -102,16 +102,19 @@ nav:
     - 'flip()': reference/flip.md
     - 'forward()': reference/forward.md
     - 'hangup()': reference/hangup.md
-    - 'hold()/unhold()': reference/hold.md
-    - 'mute()/unmute()': reference/mute.md
+    - 'hold()': reference/hold.md
+    - 'mute()': reference/mute.md
     - 'park()': reference/park.md
     - 'reInvite()': reference/reInvite.md
     - 'reply()': reference/reply.md
     - 'sendDtmf()': reference/sendDtmf.md
-    - 'startRecording()/stopRecording()': reference/recording.md
+    - 'startRecording()': reference/startRecording.md
     - 'startReply()': reference/startReply.md
+    - 'stopRecording()': reference/stopRecording.md
     - 'toVoicemail()': reference/toVoicemail.md
     - 'transfer()': reference/transfer.md
+    - 'unhold()': reference/unhold.md
+    - 'unmute()': reference/unmute.md
     - 'warmTransfer()': reference/warmTransfer.md
 - 'Code samples':
   - 'Auto-answer a call': recipes/auto-answer.md

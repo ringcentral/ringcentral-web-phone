@@ -1,27 +1,15 @@
-### Flip the call
+# callSession.flip()
 
-```ts
-const result = await callSession.flip(targetNumber);
-```
+Call flipping refers to the ability to seamlessly transfer an active phone call from one device to another without interrupting the conversation.
 
-Most popular use case of call flip is for you to switch the current call to your
-other devices. Let's say you are talking to someone on your desktop, and you
-want to switch to your mobile phone. You can use call flip to achieve this:
-`await callSession.flip(mobilePhoneNumber)`.
+The most popular use case of call flip is to switch the current call to your other devices. Let's say you are talking to someone on your desktop, and you want to switch to your mobile phone. You can use call flip to achieve this.
 
-As soon as the flip starts, the remote peer will be put on hold (I wish the
-remote peer will not be put on hold, it would be a more seamless experience) and
-your mobile phone will get a call.
+As soon as the flip starts, the remote peer will be put on hold and your target phone will receive a call. You answer the call, and then terminate the call on the originating device to complete the process. 
 
-Please note that, after you mobile phone answers the call, you need to
-**manually** end the call session on your desktop, otherwise you won't be able
-to talk/listen on your mobile phone.
+!!! note "Flipping versus transferring"
+    Please also note that, this SDK allows you to flip the call to any phone number, not just your own phone numbers. But if it is not your number, we recommend you transfer the call instead of flipping the call.
 
-Please also note that, this SDK allows you to flip the call to any phone number,
-not just your own phone numbers. But if it is not your number, you probably
-should transfer the call instead of flipping the call.
-
-A sample result of `flip` is like this:
+**Sample response**
 
 ```json
 {
@@ -32,16 +20,35 @@ A sample result of `flip` is like this:
 }
 ```
 
-I don't think you need to do anything based on the result. It is just for your
-information.
+Flipping a call is functionally similar to a cold transfer, with one small difference:
 
-Personally I don't think the flip feature is of much value, since it's basically
-the same as "cold" transfer. Compare flip to "cold" transfer, there is only one
-difference that I can tell:
+- after you initiate cold transfer, the current call session will auto end since SIP server will send a "BYE" message to you.
+- after you intiate a flip, the current call will not auto end, and you will need to manually end it for the flip to complete.
 
-- after you initiate "cold" transfer, the current call session will auto end
-  since SIP server will send a "BYE" message to you.
-- after you intiate a flip, the current call will not auto end. And you will
-  need to manually end it for the flip to complete.
-  - for more details, check the instructions above.
+See also:
+
+* [`transfer()`](transfer.md)
+
+## Sample
+
+```ts
+const result = await callSession.flip(targetNumber);
+```
+
+## Inputs
+
+| Parameters     | Description                           |
+|----------------|---------------------------------------|
+| `targetNumber` | The phone number to flip the call to. |
+
+## Outputs
+
+| Parameters           | Description                                       |
+|----------------------|---------------------------------------------------|
+| `result`             | The response returned from the call.              |
+| `result.code`        | The response code. A zero indicates success.      |
+| `result.description` | A string describing the result, e.g. "succeeded". |
+| `result.number`      |                                                   |
+| `result.target`      |                                                   |
+
 

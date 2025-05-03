@@ -1,40 +1,19 @@
-Optionally, you can tell the server that the user has started replying the call.
-The server will give the user more time to edit the reply message before ending
-the call or redirecting the call to voicemail.
+# callSession.reply()
 
-```ts
-await inboundCallSession.startReply();
-```
+!!! info "This is reserved for inbound call sessions only."
 
-Reply the call with text:
-
-```ts
-const response = await inboundCallSession.reply(text);
-```
-
-After this method call, the call session will be ended for the callee. But the
-call session will not end yet for the caller. And the caller will receive the
-replied `text` via text-to-speech. The caller will then have several options:
+When this method is called, the call session is terminated for the callee, but not for the caller. Instead the caller will hear a message, before being prompted to enter a number of their keypad. The content of the message is delivered via text-to-speech, with the source being the value of the `text` input variable. After reading the message to the caller, they will then hear several options:
 
 - press 1 to repeat the message
 - press 2 to leave a voicemail
 - press 3 to reply with "yes"
 - press 4 to reply with "no"
 - press 5 to reply with "urgent, please call immediately"
-  - the caller will be prompted to specify a callback number
 - press 6 to to disconnect
 
-`if (response.body.Sts === '0')`, it means that the caller replied to your
-message(he/she pressed 3, 4, 5). Then you need to check `response.body.Resp`:
+If the caller selects 5, they will then be prompted to enter a call back number. 
 
-- if it's `'1'`, it means that the caller replied with "yes" (he/she pressed 3)
-- if it's `'2'`, it means that the caller replied with "no" (he/she pressed 4)
-- if it's `'3'`, it means that the caller replied with "urgent, please call
-  [number] immediately". (he/she pressed 5)
-  - in this case, there is also an urgent number provided by the caller which
-    can be accessed by `response.body.ExtNfo`.
-
-Below is some code snippet for your reference:
+## Sample
 
 ```ts
 const response = await session.reply(
@@ -63,4 +42,27 @@ if (response.body.Sts === "0") {
   });
 }
 ```
+
+## Inputs
+
+| Parameter | Description                        |
+|-----------|------------------------------------|
+| `text`    | The message to send to the caller. |
+
+## Outputs
+
+| Parameter              | Description                              |
+|------------------------|------------------------------------------|
+| `response`             | The response returned by the SIP server. |
+| `response.body.Sts`    | If this property is equal to zero, then the caller responded to the prompt. The value they entered is stored in `Resp`. |
+| `response.body.Resp`   | The caller's response to the reply `text` prompt. |
+| `response.body.ExtNfo` | If the caller pressed "5" indicating that the call is urgent and requests a call back, then this properly will hold the phone number they entered. |
+
+#### Understanding the value of `Resp`
+
+| `Resp` | Meaning                                                                                            |
+|--------|----------------------------------------------------------------------------------------------------|
+| `1`  | it means that the caller replied with "yes" (they pressed 3)                                       |
+| `2`  | it means that the caller replied with "no" (they pressed 4)                                        |
+| `3`  | it means that the caller replied with "urgent, please call [number] immediately". (they pressed 5) |
 
