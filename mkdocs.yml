@@ -84,13 +84,15 @@ nav:
   - 'Testing your phone': get-started/testing.md
 - 'Events':
   - 'Subscribing to events': events/index.md
-  - 'answered': events/answered.md
-  - 'disposed': events/disposed.md
-  - 'inboundCall': events/inboundCall.md
-  - 'inboundMessage': events/inboundMessage.md
-  - 'outboundCall': events/outboundCall.md
-  - 'outboundMessage': events/outboundMessage.md
-  - 'ringing': events/ringing.md
+  - 'WebPhone events':
+    - 'disposed': events/disposed.md
+    - 'inboundCall': events/inboundCall.md
+    - 'outboundCall': events/outboundCall.md
+    - 'ringing': events/ringing.md
+  - 'Call Session events':
+    - 'answered': events/answered.md
+    - 'inboundMessage': events/inboundMessage.md
+    - 'outboundMessage': events/outboundMessage.md
 - 'Reference':
   - 'Overview': reference/index.md
   - 'WebPhone':

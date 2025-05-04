@@ -1,11 +1,23 @@
-# webPhone.on('ringing')
+# webPhone.on('ringing', callback)
 
-`ringing` event is implicit.
+This event is triggered when a call is connected and it is ringing. It is an event that has very little utility, because when you make an outbound call, or by the time you receive an inbound call event, by the time the `callSession` object is returned, the phone is already ringing. 
 
-When you make an outbound call: `const callSession = await webPhone.call(...)`,
-at the time that you get the `callSession` object, the call is already ringing.
+Therefore, these two code samples are functionally equivalent to the `ringing` event:
 
-Similarly, when you handle an inbound call:
-`webPhone.on('inboundCall', callSession => {...})`, at the time that you get the
-`callSession` object, the call is already ringing.
+=== "Placing a call"
 
+    ```js
+    const callSession = await webPhone.call(...)
+    ```
+
+=== "Receiving a call"
+
+    ```js
+    webPhone.on('inboundCall', callSession => {...})
+    ```
+
+## Sample
+
+```js
+webPhone.on('ringing', callSession => {...})
+```

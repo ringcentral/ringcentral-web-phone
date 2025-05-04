@@ -1,4 +1,4 @@
-# webPhone.on('outboundCall') 
+# webPhone.on('outboundCall', callback) 
 
 When the `outboundCall` event is triggered, you will receive as input an outbound call session. You may invoke any number of [call session methods](../reference/index.md#call-session-methods) as well as a few others listed below. 
 

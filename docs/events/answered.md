@@ -1,13 +1,27 @@
-# callSession.on('answered')
+# callSession.on('answered', callback)
 
-Outbound calls are always "answered" immediately. This is because SIP server
-always reply "200 OK" immediately after we send out a INVITE message.
+Registers a callback to be invoked when a call is answered.
 
-Server side engineers said it is by design. But, this SDK won't be able to tell
-you when an outbound call is answered. It's an known issue. The SDK can do
-little about it since it is a SIP server behavior.
+The `answered` event is triggered when a call transitions from the ringing state to the connected state—i.e., when the call is answered by the remote party.
 
-This makes the `answered` event less useful. For outbound call, it is a fake
-event that triggers immediately. For inbound call, since it is your own code
-that answers the call, you probably don't need the event at all.
+!!! warning "Important Limitation: Due to the behavior of the underlying SIP infrastructure, this event behaves differently for inbound and outbound calls"
 
+### Outbound call limitation
+
+The SIP server responds with a 200 OK immediately after the INVITE is sent, regardless of whether the remote party has actually answered. This means the answered event is triggered immediately after initiating the call, giving the illusion that the call was answered.
+
+This is by design on the server side and is a known limitation.
+
+As a result, the answered event is not reliable for detecting when an outbound call is truly answered.
+
+### Inbound calls
+
+When your application code explicitly accepts the call (e.g., via `callSession.accept()`), the call is considered answered. In this case, triggering the answered event may be redundant since your code already initiated the answer action.
+
+## Sample
+
+```js
+callSession.on('answered', () => {
+  console.log('Call has been marked as answered.');
+});
+```
