@@ -127,4 +127,5 @@ nav:
   - 'Recovering from an outage': recipes/recovery.md
   - 'Switch call to this device': recipes/switch-to-this-device.md
   - 'Using the Call Control API': recipes/call-control.md
+- 'Demo': demo/index.md
 
