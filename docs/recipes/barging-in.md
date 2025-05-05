@@ -1,13 +1,12 @@
-## monitor/whisper/barge/coach/take over
+# Taking action on a live call as a third-party
 
-These features are available to all phone clients, not just clients powered by
-this SDK.
+WebPhone SDK allows you to monitor, whisper, barge in on, coach, and take over a phone call. These features are available to all phone clients, not just clients powered by this SDK.
 
-Please refer to
-[Monitor a Call on Desk Phone | RingCentral](https://support.ringcentral.com/article-v2/8086.html?brand=RC_US&product=RingEX&language=en_US).
+Please refer to our [support article](https://support.ringcentral.com/article-v2/8086.html?brand=RC_US&product=RingEX&language=en_US) on the procedure that involves dialing certain numbers, e.g. `*80`. 
 
-For example, to barge a call (join an existing call) which is being handled by
-extension 102:
+## Barge-in
+
+To barge in on a call (join an existing call) which is being handled by extension 102, do the following:
 
 ```ts
 const callSession = await webPhone.call("*82");
@@ -15,15 +14,11 @@ const callSession = await webPhone.call("*82");
 await callSession.sendDtmf("102#");
 ```
 
-### take over
+## Take-over
 
-Please note that, "take over" is special. Because after you request for taking
-over an existing call, you will receive an extra inbound call from '\*83'. You
-need to answer that inbound call for "take over" to complete. And you need to
-keep both calls alive, otherwise customer will be disconnected.
+Taking over a call requires a little more finesse, as it process a little bit differently. When you send a request for taking over an existing call, you will receive an extra inbound call from '\*83'. You need to answer that inbound call for the "take over" to complete. You also need to keep both calls alive, otherwise the customer will be disconnected.
 
-For example, a customer is talking to extension 102, and you want to take over
-the call:
+For example, a customer is talking to extension 102, and you want to take over the call:
 
 ```ts
 const callSession1 = await webPhone.call("*83");
@@ -36,7 +31,5 @@ webPhone.on("inboundCall", async (callSession2: InboundCallSession) => {
 });
 ```
 
-You will need to keep both `callSession1` and `callSession2` alive in order to
-keep the conversation alive with the customer. If you hang up either one, the
-customer will be disconnected.
+You will need to keep both `callSession1` and `callSession2` alive in order to keep the conversation alive with the customer. If you hang up either one, the customer will be disconnected.
 

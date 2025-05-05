@@ -1,45 +1,53 @@
-## Auto Answer
+# Auto-answer a call
 
-This feature is by default disabled. To enable it when you create a new phone
-instance:
+The Auto-Answer feature enables your application to automatically accept incoming SIP calls based on specific SIP headers or through custom logic. This is particularly useful for automated systems, call centers, or integrations requiring immediate call handling.
 
-```ts
-const webPhone = new WebPhone({ sipInfo, autoAnswer: true });
+!!! note "Use this approach with caution, as it will accept all incoming calls automatically, which may not be suitable for all applications."
+
+## Enabling Auto-Answer
+
+By default, Auto-Answer is disabled. You can enable it during the instantiation of the WebPhone instance or afterward:
+
+**Enable during instantiation:**
+
+```js
+const webPhone = new WebPhone({
+  sipInfo,
+  autoAnswer: true
+});
 ```
 
-Or you can enable this feature afterwards:
+Enable after instantiation:
 
-```ts
+```js
 webPhone.autoAnswer = true;
 ```
 
-When this feature is enbled, whenever there is an inbound call, the SIP `INVITE`
-message will be inspected. If there is a header "Alert-Info: Auto Answer", the
-call will be auto answered. The `Call-Info` header will also be checked, if it
-contains `Answer-After=<a-number-here>`, that would be the delay before the call
-is answered.
+## How It Works
 
-For example, if the inbound call `INVITE` message has the following headers, the
-call will be auto answered immediately:
+When Auto-Answer is enabled, the SDK inspects incoming SIP INVITE messages for specific headers:
 
-```ts
+* **Alert-Info Header**: If this header is present with the value Auto Answer, the call will be auto-answered.
+* **Call-Info Header**: If this header contains Answer-After=<number>, the call will be auto-answered after the specified delay in seconds.
+
+## Example SIP Headers:
+
+```sql
 Alert-Info: Auto Answer
 Call-Info: <224981555_132089748@10.13.116.50>;purpose=info;Answer-After=0
 ```
 
-This feature is the key for some call control APIs to work. For example:
-[answer call party API](https://developers.ringcentral.com/api-reference/Call-Control/answerCallParty).
-When this API is invoked, the current call session will be cancelled. And a new
-inbound call will be sent to the target device. And there will be auto answer
-headers in that inbound call. If the target device has auto answer feature
-enabled, the call will be auto answered.
+In this example, the call will be auto-answered immediately upon receipt.
 
-### What if I want to auto answer all calls?
+## Use Cases
 
-If you want to auto answer all calls, regardless of the SIP message headers,
-just do this:
+Auto-Answer is essential for certain call control APIs, such as the Answer Call Party API. When this API is invoked, the current call session is canceled, and a new inbound call with auto-answer headers is sent to the target device. If Auto-Answer is enabled, the call is automatically accepted.
 
-```ts
+### Auto-Answer All Calls
+
+If you want to auto-answer all incoming calls, regardless of SIP headers, you can implement custom logic:
+
+```js
 webPhone.on("inboundCall", async (callSession) => {
   await callSession.answer();
 });
