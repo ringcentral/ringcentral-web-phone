@@ -10,6 +10,10 @@ on main branch:
 
 https://github.com/ringcentral/ringcentral-web-phone/tree/main
 
+## Online demo for version 1.x
+
+https://ringcentral.github.io/web-phone-demo/
+
 ## Version 1.0.0 release notes
 
 https://gist.github.com/tylerlong/72b51a72cc16206850c4cdfa36c6793a
@@ -223,10 +227,10 @@ WebRTC works with issues when served from file system directly to browser (e.g.
 package).
 
 Online demo is hosted at
-[https://ringcentral.github.io/ringcentral-web-phone](https://ringcentral.github.io/ringcentral-web-phone)
+[https://ringcentral.github.io/web-phone-demo/](https://ringcentral.github.io/web-phone-demo/)
 
 \*\* NOTE : If you are using the online demo, please add
-`https://ringcentral.github.io/ringcentral-web-phone/callback.html` to the app's
+`https://ringcentral.github.io/web-phone-demo/callback.html` to the app's
 OAuth Redirect URI
 
 ---

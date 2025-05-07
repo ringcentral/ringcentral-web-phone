@@ -43,7 +43,7 @@
     "test": "jest src/mediaStreams.spec.ts",
     "test2": "NODE_OPTIONS=--require=dotenv-override-true/config playwright test test/index.spec.ts --workers=1",
     "test:coverage": "cat .coverage/lcov.info | coveralls -v",
-    "deploy": "gh-pages -d docs"
+    "deploy": "gh-pages -d docs --repo=https://github.com/ringcentral/web-phone-demo-1.git --branch=gh-pages"
   },
   "dependencies": {
     "sip.js": "^0.21.2"
