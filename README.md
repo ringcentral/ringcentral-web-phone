@@ -17,8 +17,8 @@ breaking changes, please read
 
 ## Demo
 
-- [Online Demo](https://chuntaoliu.com/rc-web-phone-demo-2/)
-- [Source Code](https://github.com/tylerlong/rc-web-phone-demo-2)
+- [Online Demo](https://ringcentral.github.io/web-phone-demo/)
+- [Source Code](https://github.com/ringcentral/web-phone-demo)
 
 ## Pre-requisites
 
@@ -639,7 +639,7 @@ Please note that, this SDK doesn't detect network outage/issue/change. Our
 philosophy is to avoid adding any magic logic to the SDK.
 
 For a working example to handle network outage/issue/change, please refer to
-https://github.com/tylerlong/rc-web-phone-demo-2/blob/main/src/store/after-login.ts.
+https://github.com/ringcentral/web-phone-demo/blob/main/src/store/after-login.ts.
 Scroll to the bottom part where it handles network outage/issue/change.
 
 ### network outage
@@ -776,7 +776,7 @@ webPhone.sipClient.wsc.addEventListener("close", closeListener);
 ```
 
 Latest tested code could be found here:
-https://github.com/tylerlong/rc-web-phone-demo-2/blob/main/src/store/after-login.ts
+https://github.com/ringcentral/web-phone-demo/blob/main/src/store/after-login.ts
 Scroll to the bottom part where it handles network outage/issue/change.
 
 ### switch to backup outbound proxy
@@ -866,9 +866,9 @@ find an existing call session.
 
 ### A live sample
 
-https://github.com/tylerlong/rc-web-phone-demo-2 provides conference features.
-You may create conference, invite a number to the conference, merge an existing
-call to the conference, etc.
+https://github.com/ringcentral/web-phone-demo provides conference features. You
+may create conference, invite a number to the conference, merge an existing call
+to the conference, etc.
 
 ## Mutiple instances and shared worker
 
@@ -1026,7 +1026,7 @@ public async transfer(callId: string, transferToNumber: string) {
 ### Working sample
 
 A fully working sample is here
-https://github.com/tylerlong/rc-web-phone-demo-2/tree/shared-worker You may run
+https://github.com/ringcentral/web-phone-demo/tree/shared-worker You may run
 mutiple tabs to see how it works.
 
 ## monitor/whisper/barge/coach/take over
