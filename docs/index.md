@@ -2,7 +2,7 @@
 hide:
   - navigation
   - toc
-title: RingCentral's Web Phone SDK - a javascript tool to manipulate live phone calls
+title: RingCentral's Web Phone SDK - a javascript tool to aid in creating browser-based phones
 ---
 # RingCentral WebPhone SDK
 
