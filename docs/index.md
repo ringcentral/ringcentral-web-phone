@@ -6,6 +6,9 @@ title: RingCentral's Web Phone SDK - a javascript tool to manipulate live phone 
 ---
 # RingCentral WebPhone SDK
 
+!!! info "Migrate to Web Phone SDK 2.0"
+    This website is devoted to the latest version of the RingCentral Web Phone SDK, version 2.x. While we will continue to support 1.x, we will no longer be actively be maintaining it. **If you are still using version 1.0, we recommend you migrate your application to the latest version.**
+
 The RingCentral WebPhone SDK is a toolset for use within the context of a web browser. Developers use the SDK to build custom phone clients and CTIs from the ground up. The WebPhone SDK utilizes a user's credentials obtained independently through OAuth to place and receive phone calls. 
 
 Once a call is connected and a session established, the WebPhone SDK can be used to manipulate that phone call in all the ways you would expect a device to be able to, including: 
