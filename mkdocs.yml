@@ -1,0 +1,131 @@
+# Project information
+site_name: RingCentral Web Phone SDK
+site_url: https://ringcentral.github.io/ringcentral-web-phone
+
+# Repository
+repo_url: https://github.com/ringcentral/ringcentral-web-phone
+repo_name: ringcentral/ringcentral-web-phone
+edit_uri: tree/main/docs
+docs_dir: docs
+
+theme:
+  name: material
+  custom_dir: overrides
+  features:
+      - navigation.path
+#      - navigation.sections
+      - navigation.tabs
+      - navigation.top
+      - navigation.expand
+      - navigation.sections
+      - search.sharing
+      - search.highlight
+      - content.code.copy
+      - content.action.edit
+      - content.action.view
+      - content.code.annotate
+  palette:
+    - scheme: default
+      primary: custom
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
+    - scheme: slate
+      primary: black
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+
+plugins:
+  - search:
+      separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+  - badges
+#  - with-pdf
+  - exclude:
+      regex:
+        - '^\.#.*'
+        - '.*\.\#.*$'
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/ringcentral
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/ringcentraldevs
+extra_css:
+  - extra.css
+
+markdown_extensions:
+  - attr_list
+  - md_in_html
+  - mdx_include
+  - admonition
+  - tables
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+
+copyright: "2024-2025 RingCentral, Inc. All rights reserved."
+
+nav:
+- 'Home': index.md
+- 'Get Started':
+  - Register your device: get-started/index.md
+  - 'Create a WebPhone instance': get-started/instances.md
+  - 'Shared workers': get-started/shared-workers.md
+  - 'Establish a call session': get-started/sessions.md
+  - 'Testing your phone': get-started/testing.md
+- 'Events':
+  - 'Subscribing to events': events/index.md
+  - 'WebPhone events':
+    - 'disposed': events/disposed.md
+    - 'inboundCall': events/inboundCall.md
+    - 'outboundCall': events/outboundCall.md
+    - 'ringing': events/ringing.md
+  - 'Call Session events':
+    - 'answered': events/answered.md
+    - 'inboundMessage': events/inboundMessage.md
+    - 'outboundMessage': events/outboundMessage.md
+- 'Reference':
+  - 'Overview': reference/index.md
+  - 'WebPhone':
+    - 'call()': reference/call.md
+    - 'dispose()': reference/dispose.md
+  - 'Call Session':
+    - 'answer()': reference/answer.md
+    - 'decline()': reference/decline.md
+    - 'flip()': reference/flip.md
+    - 'forward()': reference/forward.md
+    - 'hangup()': reference/hangup.md
+    - 'hold()': reference/hold.md
+    - 'mute()': reference/mute.md
+    - 'park()': reference/park.md
+    - 'reInvite()': reference/reInvite.md
+    - 'reply()': reference/reply.md
+    - 'sendDtmf()': reference/sendDtmf.md
+    - 'startRecording()': reference/startRecording.md
+    - 'startReply()': reference/startReply.md
+    - 'stopRecording()': reference/stopRecording.md
+    - 'toVoicemail()': reference/toVoicemail.md
+    - 'transfer()': reference/transfer.md
+    - 'unhold()': reference/unhold.md
+    - 'unmute()': reference/unmute.md
+    - 'warmTransfer()': reference/warmTransfer.md
+- 'Code samples':
+  - 'Auto-answer a call': recipes/auto-answer.md
+  - 'Barge in on a call': recipes/barging-in.md
+  - 'Conference calls': recipes/conference-calls.md
+  - 'Managed and changing audio devices': audio.md
+  - 'Privately parking a call': recipes/private-parking.md 
+  - 'Recovering from an outage': recipes/recovery.md
+  - 'Switch call to this device': recipes/switch-to-this-device.md
+  - 'Using the Call Control API': recipes/call-control.md
+- 'Demo': https://chuntaoliu.com/rc-web-phone-demo-2/
+
