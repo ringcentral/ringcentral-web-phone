@@ -85,13 +85,13 @@ nav:
 - 'Events':
   - 'Subscribing to events': events/index.md
   - 'WebPhone events':
-    - 'disposed': events/disposed.md
     - 'inboundCall': events/inboundCall.md
     - 'outboundCall': events/outboundCall.md
-    - 'ringing': events/ringing.md
   - 'Call Session events':
     - 'answered': events/answered.md
+    - 'disposed': events/disposed.md
     - 'inboundMessage': events/inboundMessage.md
+    - 'ringing': events/ringing.md
     - 'outboundMessage': events/outboundMessage.md
 - 'Reference':
   - 'Overview': reference/index.md
