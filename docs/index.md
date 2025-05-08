@@ -32,7 +32,7 @@ Furthermore, the WebPhone SDK can be combined with other SDKs to call the RingCe
 
     Access a live demo of the WebPhone SDK. You will need to register an app and obtain credentials first.
 
-    [:octicons-arrow-right-24: Launch demo](https://chuntaoliu.com/rc-web-phone-demo-2/)
+    [:octicons-arrow-right-24: Launch demo](https://ringcentral.github.io/web-phone-demo/)
 
 -   :material-github:{ .lg .middle } __Source code__
 
@@ -40,6 +40,6 @@ Furthermore, the WebPhone SDK can be combined with other SDKs to call the RingCe
 
     Access, clone or fork the WebPhone SDK demo on Github to kick start the development on your custom CTI.
 
-    [:octicons-arrow-right-24: Explore the source code](https://github.com/tylerlong/rc-web-phone-demo-2)
+    [:octicons-arrow-right-24: Explore the source code](https://github.com/ringcentral/web-phone-demo)
 
 </div>
