@@ -85,10 +85,12 @@ You can use this library without a bundling tool:
 Or you could use a CDN:
 
 ```html
-<script
-  src="https://cdn.jsdelivr.net/npm/ringcentral-web-phone@2.1.5/dist/esm/index.umd.js"
-></script>
+<script src="https://cdn.jsdelivr.net/npm/ringcentral-web-phone@2.1.6/dist/esm/index.umd.js"></script>
 ```
+
+You may need to replace 2.16 with latest version number. For latest version
+please check here:
+https://www.npmjs.com/package/ringcentral-web-phone?activeTab=versions
 
 ## Initialization
 
@@ -101,46 +103,66 @@ await webPhone.start();
 
 What is `sipInfo`? Please read [Pre-requisites](#pre-requisites) section.
 
-### instanceId
+### `instanceId` Behavior and Best Practices
 
-Optionally, you can specify `instanceId`:
-`new WebPhone({ sipInfo, instanceId })`. `instanceId` is the unique ID of your
-web phone device.
+You can optionally specify an instanceId when creating a WebPhone instance:
 
-If you want like to run multiple web phone devices in multiple tabs, you need to
-generate a unique `instanceId` for each device. It MUST be persistent across
-power cycles of the device. It MUST NOT change as the device moves from one
-network to another. Ref:
-https://datatracker.ietf.org/doc/html/rfc5626#section-4.1
+```ts
+const webPhone = new WebPhone({ sipInfo, instanceId });
+```
 
-If you start two web phone instances with the same `instanceId`, only the second
-instance will work. SIP server will not route calls to the first instance. (The
-first instance will still be able to make outbound calls, but it will not
-receive inbound calls.)
+The instanceId is used to uniquely identify each WebPhone instance (or "device")
+on the SIP server. It controls how inbound calls are routed and how many
+simultaneous instances are allowed.
 
-If you don't specify `instanceId`, the SDK by default will use
-`sipInfo.authorizationId` as `instanceId`. It won't change unless you generate a
-new `sipInfo`.
+#### Default behavior
 
-If you start two web phone instances with different `instanceId`, both instances
-will work. SIP server will send messages to both instances.
+If you do not explicitly set an `instanceId`, the SDK will use
+`sipInfo.authorizationId` as the default. This means all WebPhone instances
+using the same `sipInfo` will share the same instanceId.
 
-The maximum unique live instances allowed for an extension is 5. If you try to
-register more, SIP server will reply with "SIP/2.0 603 Too Many Contacts".
+#### Sharing the Same `instanceId`
 
-If you keep refreshing a browser page, and each refresh you use an unique
-`instanceId` to register a web phone instance. Registration will fail when you
-try to create the 6th web phone instance (when you refresh the page the 5th
-time).
+When multiple instances share the same `instanceId` (e.g., across tabs or
+windows):
 
-It takes around 1 minute for SIP server to mark an instance as expired (if
-client doesn't refresh it any more). So after you meet "SIP/2.0 603 Too Many
-Contacts" error, wait for 1 minute and try again.
+- Only the most recently registered instance will receive inbound calls.
+- Older instances can still make outbound calls, but will not receive inbound
+  calls.
+- This is suitable if only one active tab needs to receive calls, and the rest
+  are considered fallback or auxiliary tabs.
 
-You may also invoke `await webPhone.dispose();` to dispose a web phone instance
-before you close/refresh a browser page. That way, the web phone instance
-registration is removed from SIP server immediately without waiting for 1
-minute.
+#### Using unique `instanceId`s
+
+If each instance uses a unique instanceId (e.g., generated per tab):
+
+- All instances can receive inbound calls.
+- However, the SIP server enforces a limit of 5 simultaneous active instances
+  per extension.
+- If you try to register a 6th unique instanceId, the server will reject it
+  with:
+  ```ts
+  SIP/2.0 603 Too Many Contacts
+  ```
+- This limit applies per extension and includes all devices and tabs.
+
+> Note: A valid instanceId must be persistent and stable across device reboots
+> and network changes. See
+> [RFC 5626 §4.1](https://datatracker.ietf.org/doc/html/rfc5626#section-4.1) for
+> guidance.
+
+#### Instance Lifecycle and Cleanup
+
+- When a WebPhone instance becomes inactive (e.g., browser closed or page
+  reloaded), it may take the SIP server ~2 minutes to detect expiration and free
+  up the slot.
+- To avoid hitting the 5-instance limit unnecessarily, manually dispose
+  instances using:
+  ```ts
+  await webPhone.dispose();
+  ```
+  This immediately unregisters the instance from the SIP server and releases the
+  associated slot, without needing to wait for expiration.
 
 ## Debug Mode
 
