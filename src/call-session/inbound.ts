@@ -19,6 +19,21 @@ class InboundCallSession extends CallSession {
     this.emit("ringing");
   }
 
+  // for inbound calls from call queue, there will be p-rc-api-call-info header:
+  // p-rc-api-call-info: callAttributes=queue-call,reject;callerIdName=WIRELESS CALLER;displayInfo=queueName;displayInfoSub=callerIdName;queueName=Tyler's call queue
+  public get rcApiCallInfo() {
+    return Object.fromEntries(
+      this.sipMessage.headers["p-rc-api-call-info"]
+        .split(";")
+        .map((pair) => pair.trim())
+        .filter(Boolean)
+        .map((pair) => {
+          const [key, ...rest] = pair.split("=");
+          return [key, rest.join("=")]; // Handles '=' in value
+        }),
+    ) as { callerIdName?: string; queueName?: string };
+  }
+
   public async confirmReceive() {
     await this.sendRcMessage(callControlCommands.ClientReceiveConfirm);
   }
