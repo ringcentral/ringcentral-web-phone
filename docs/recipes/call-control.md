@@ -83,4 +83,3 @@ simpler:
 ```ts
 const callSession = await webPhone.call(callee);
 ```
-

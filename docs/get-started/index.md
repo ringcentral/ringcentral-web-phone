@@ -1,22 +1,29 @@
 # Get started with RingCentral's WebPhone SDK
 
-The WebPhone SDK empowers developers to build their own custom browser-based phone and CTI. Getting started in quick and easy for those who have a RingCentral developer account. Let's take you through the process.
+The WebPhone SDK empowers developers to build their own custom browser-based
+phone and CTI. Getting started in quick and easy for those who have a
+RingCentral developer account. Let's take you through the process.
 
 ## Obtain a client ID and secret
 
-If you have not already, signup for a [RingCentral Developer account](https://developers.ringcentral.com/pricing). Then:
+If you have not already, signup for a
+[RingCentral Developer account](https://developers.ringcentral.com/pricing).
+Then:
 
-1. Login to the [Developer Console](https://developers.ringcentral.com/my-account.html)
+1. Login to the
+   [Developer Console](https://developers.ringcentral.com/my-account.html)
 
-2. [Register your application](https://developers.ringcentral.com/guide/getting-started/register-app) with following settings:
-     * Select "JWT auth flow" under **Auth**
-     * Select the following **application scopes**:
-        * VoIP Calling
-        * WebSocket Subscriptions
+2. [Register your application](https://developers.ringcentral.com/guide/getting-started/register-app)
+   with following settings:
+   - Select "JWT auth flow" under **Auth**
+   - Select the following **application scopes**:
+     - VoIP Calling
+     - WebSocket Subscriptions
 
 3. [Generate a JWT credential](https://developers.ringcentral.com/guide/getting-started/create-credential)
 
-Then, make note of your **Client ID** and **Client Secret**, you will need them later. 
+Then, make note of your **Client ID** and **Client Secret**, you will need them
+later.
 
 ## Install the SDK
 
@@ -28,7 +35,8 @@ yarn add ringcentral-web-phone
 
 #### Alternative methods
 
-You can use this library directly without a bundling tool. Just download a release, unzip it, and load it via a `<script>` tag. 
+You can use this library directly without a bundling tool. Just download a
+release, unzip it, and load it via a `<script>` tag.
 
 === "Locally"
 
@@ -46,10 +54,17 @@ You can use this library directly without a bundling tool. Just download a relea
 
 ## Register your web phone
 
-!!! tip "Are you a new RingCentral developer?"
-    For the purposes of this getting started exercise, we assume you have basic knowledge of the RingCentral Platform and how to calls its APIs. If you are new to RingCentral, we recommend going through the [getting started](https://developers.ringcentral.com/guide/getting-started) experience found in our Developer Guide. 
+!!! tip "Are you a new RingCentral developer?" For the purposes of this getting
+started exercise, we assume you have basic knowledge of the RingCentral Platform
+and how to calls its APIs. If you are new to RingCentral, we recommend going
+through the
+[getting started](https://developers.ringcentral.com/guide/getting-started)
+experience found in our Developer Guide.
 
-To begin, you need to register your "device" associated with the phone you are about to build. Registration is done by calling the [SIP registration](https://developers.ringcentral.com/api-reference/Device-SIP-Registration/createSIPRegistration) API. You will need the `sipInfo` object returned by this API.
+To begin, you need to register your "device" associated with the phone you are
+about to build. Registration is done by calling the
+[SIP registration](https://developers.ringcentral.com/api-reference/Device-SIP-Registration/createSIPRegistration)
+API. You will need the `sipInfo` object returned by this API.
 
 #### Sample code
 
@@ -82,11 +97,14 @@ const main = async () => {
 main();
 ```
 
-!!! tip "Save `sipInfo` for later use"
-    Please note that, you may save and re-use `sipInfo` for a long time. You don't need to invoke `Device SIP Registration` every time you start the web phone.
+!!! tip "Save `sipInfo` for later use" Please note that, you may save and re-use
+`sipInfo` for a long time. You don't need to invoke `Device SIP Registration`
+every time you start the web phone.
 
-!!! tip "Save `deviceId` for use in the REST API"
-    In the sample code above, you can see how to access the `deviceId`. The Web Phone SDK doesn't need the `deviceId`, but it is useful when calling certain REST APIs, like the [Call Control API](https://developers.ringcentral.com/api-reference/Call-Control/createCallOutCallSession).
+!!! tip "Save `deviceId` for use in the REST API" In the sample code above, you
+can see how to access the `deviceId`. The Web Phone SDK doesn't need the
+`deviceId`, but it is useful when calling certain REST APIs, like the
+[Call Control API](https://developers.ringcentral.com/api-reference/Call-Control/createCallOutCallSession).
 
 ## Initialize your WebPhone
 
@@ -101,9 +119,8 @@ await webPhone.start();
 
 ## Next steps...
 
-Once your WebPhone is initialized, you can then begin building your client. You can:
+Once your WebPhone is initialized, you can then begin building your client. You
+can:
 
-* [Subscribe to events](../events/index.md)
-* [Place or receive a phone call](sessions.md)
-
-
+- [Subscribe to events](../events/index.md)
+- [Place or receive a phone call](sessions.md)

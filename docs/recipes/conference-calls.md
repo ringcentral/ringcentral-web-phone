@@ -60,4 +60,3 @@ find an existing call session.
 https://github.com/tylerlong/rc-web-phone-demo-2 provides conference features.
 You may create conference, invite a number to the conference, merge an existing
 call to the conference, etc.
-

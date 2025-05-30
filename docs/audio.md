@@ -47,4 +47,3 @@ await callSession.changeOutputDevice("my-preferred-output-device-id");
 
 Firefox doesn't support output device selection. Please use `undefined` as
 `outputDeviceId`.
-

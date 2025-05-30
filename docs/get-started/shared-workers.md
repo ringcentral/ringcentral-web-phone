@@ -1,28 +1,41 @@
 # Managing multiple WebPhone instances using SharedWorker
 
-Most browser-based applications allow users to open multiple tabs. In each tab you may have a distinct WebPhone instance. However, there is a limit of how many instances you can run per each extension. So what if the user opens too many tabs? This will lead to unpredictable results. 
+Most browser-based applications allow users to open multiple tabs. In each tab
+you may have a distinct WebPhone instance. However, there is a limit of how many
+instances you can run per each extension. So what if the user opens too many
+tabs? This will lead to unpredictable results.
 
-To allow a user to open an unlimitted number of tabs without ever hitting a limit, one cab have one tab run a **primary phone** while all other tabs run secondary or **dummy phones**. Dummy phones don't register themselves to the RingCentral Server. Instead, only the primary phone does, and then it syncs its state to all the dummy phones. When user performs an action on a dummy phone, the dummy phone forwards the action to the primary phone. The primary phone then performs the action and syncs the state back to all the other dummy phones.
+To allow a user to open an unlimitted number of tabs without ever hitting a
+limit, one cab have one tab run a **primary phone** while all other tabs run
+secondary or **dummy phones**. Dummy phones don't register themselves to the
+RingCentral Server. Instead, only the primary phone does, and then it syncs its
+state to all the dummy phones. When user performs an action on a dummy phone,
+the dummy phone forwards the action to the primary phone. The primary phone then
+performs the action and syncs the state back to all the other dummy phones.
 
-To achieve this, you will need to use a [SharedWorker](https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker).
+To achieve this, you will need to use a
+[SharedWorker](https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker).
 
 ## How SharedWorkers work
 
 This is how a shared worker functons:
 
-1. The primary phone sends its state to SharedWorker. 
+1. The primary phone sends its state to SharedWorker.
 2. SharedWorker transmits that state to all available dummy phones.
 3. The dummy phones update their state and UI accordingly.
 
 Conversely, when the user performs an action on a dummy phone:
 
-1. The dummy phone forwards the action to SharedWorker. 
-2. SharedWorker forwards the action to the primary phone. 
-3. The primary phone performs the action and sends its new state to SharedWorker.
+1. The dummy phone forwards the action to SharedWorker.
+2. SharedWorker forwards the action to the primary phone.
+3. The primary phone performs the action and sends its new state to
+   SharedWorker.
 
-And the process repeats itself. 
+And the process repeats itself.
 
-When the primary phone quits (the browser tab closes, the user navigates away to another page, etc), then a dummy phone is automatically promoted to become the new primary phone. This way, there is always one and only one primary phone. 
+When the primary phone quits (the browser tab closes, the user navigates away to
+another page, etc), then a dummy phone is automatically promoted to become the
+new primary phone. This way, there is always one and only one primary phone.
 
 ## Sample code and technical details
 
@@ -34,7 +47,8 @@ import SipClient from "ringcentral-web-phone/sip-client";
 new WebPhone({ sipInfo, sipClient: new SipClient({ sipInfo }) });
 ```
 
-Or even simpler (since `sipClient` is optional with default value `new SipClient({ sipInfo })`):
+Or even simpler (since `sipClient` is optional with default value
+`new SipClient({ sipInfo })`):
 
 ```ts
 new WebPhone({ sipInfo });
@@ -48,11 +62,14 @@ import { DummySipClient } from "ringcentral-web-phone/sip-client";
 new WebPhone({ sipInfo, sipClient: new DummySipClient() });
 ```
 
-You may need to re-initiate a dummy phone to a real phone when the previous primary phone quits.
+You may need to re-initiate a dummy phone to a real phone when the previous
+primary phone quits.
 
-A `DummySipClient` doesn't register itself with the RingCentral Server, nor does it send any SIP messages to the RingCentral Server. It is effectively inert.
+A `DummySipClient` doesn't register itself with the RingCentral Server, nor does
+it send any SIP messages to the RingCentral Server. It is effectively inert.
 
 Then, you will need to implement a SharedWorker to:
+
 - sync the state from the real phone to all dummy phones.
 - forward actions from dummy phones to the real phone.
 
@@ -141,4 +158,6 @@ public async transfer(callId: string, transferToNumber: string) {
 
 ## Full working example
 
-A [fully working example](https://github.com/tylerlong/rc-web-phone-demo-2/tree/shared-worker) is available so that you can see it working with multiple browser tabs.
+A
+[fully working example](https://github.com/tylerlong/rc-web-phone-demo-2/tree/shared-worker)
+is available so that you can see it working with multiple browser tabs.

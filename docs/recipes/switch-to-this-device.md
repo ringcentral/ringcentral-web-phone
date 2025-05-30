@@ -37,4 +37,3 @@ able to get them via the headers of SIP messages.
 Or you could get them by setting up subscriptions. It's a topic out of the scope
 of this SDK. You may find more details here:
 https://github.com/tylerlong/rc-softphone-call-id-test
-

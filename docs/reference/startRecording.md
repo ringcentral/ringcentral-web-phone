@@ -1,10 +1,10 @@
 # callSession.startRecording()
 
-Just as the method name says, this will cause a call recording to be started. 
+Just as the method name says, this will cause a call recording to be started.
 
 See also:
 
-* [`stopRecording`](stopRecording.md)
+- [`stopRecording`](stopRecording.md)
 
 ## Sample
 
@@ -18,4 +18,4 @@ None.
 
 ## Outputs
 
-None. 
+None.

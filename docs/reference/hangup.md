@@ -1,6 +1,6 @@
 # callSession.hangup()
 
-Terminates the existing call. 
+Terminates the existing call.
 
 ## Sample
 
@@ -10,8 +10,8 @@ await callSession.hangup();
 
 ## Inputs
 
-None. 
+None.
 
-## Outputs 
+## Outputs
 
-None. 
+None.

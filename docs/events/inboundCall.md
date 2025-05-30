@@ -1,6 +1,9 @@
-# webPhone.on('inboundCall', callback) 
+# webPhone.on('inboundCall', callback)
 
-When the `inboundCall` event is triggered, you will receive as input an inbound call session. You may invoke any number of [call session methods](../reference/index.md#call-session-methods) as well as a few others listed below. 
+When the `inboundCall` event is triggered, you will receive as input an inbound
+call session. You may invoke any number of
+[call session methods](../reference/index.md#call-session-methods) as well as a
+few others listed below.
 
 ## Sample
 
@@ -13,7 +16,7 @@ webPhone.on("inboundCall", (inboundCall: InboundCallSession) => {
 ## Properties
 
 | Property     | Description                                                                                       |
-|--------------|---------------------------------------------------------------------------------------------------|
+| ------------ | ------------------------------------------------------------------------------------------------- |
 | `sipMessage` | The message that triggered the event. You do not typically need to access this property directly. |
 | `localPeer`  | The user's device and connection.                                                                 |
 | `remotePeer` | The remote user's device and connection.                                                          |
@@ -23,7 +26,7 @@ webPhone.on("inboundCall", (inboundCall: InboundCallSession) => {
 ## Methods
 
 | Method           | Description                                               |
-|------------------|-----------------------------------------------------------|
+| ---------------- | --------------------------------------------------------- |
 | `callId()`       | The current call ID.                                      |
 | `sessionId()`    | The telephony session ID.                                 |
 | `partyId()`      | The ID of the remote party.                               |

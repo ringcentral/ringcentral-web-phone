@@ -171,4 +171,3 @@ switch back to the original outbound proxy:
 
 You will need to invoke `webPhone.start()` to re-create the WebSocket
 connection, otherwise it is still the old outbound proxy.
-

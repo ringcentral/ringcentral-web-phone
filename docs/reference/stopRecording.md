@@ -1,10 +1,11 @@
 # callSession.stopRecording()
 
-Just as the method name says, this will cause a call recording to be stopped or paused. 
+Just as the method name says, this will cause a call recording to be stopped or
+paused.
 
 See also:
 
-* [`startRecording`](startRecording.md)
+- [`startRecording`](startRecording.md)
 
 ## Sample
 
@@ -18,4 +19,4 @@ None.
 
 ## Outputs
 
-None. 
+None.

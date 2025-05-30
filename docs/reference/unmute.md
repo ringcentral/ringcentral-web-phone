@@ -1,10 +1,11 @@
 # callSession.unmute()
 
-If you mute the call, the remote peer can't hear you. If you unmute the call, the remote peer can hear you again.
+If you mute the call, the remote peer can't hear you. If you unmute the call,
+the remote peer can hear you again.
 
 See also:
 
-* [`mute()`](mute.md)
+- [`mute()`](mute.md)
 
 ## Sample
 
@@ -12,11 +13,10 @@ See also:
 await callSession.unmute();
 ```
 
-## Inputs 
+## Inputs
 
 None.
 
 ## Outputs
 
 None.
-

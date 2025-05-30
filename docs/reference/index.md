@@ -3,14 +3,14 @@
 ## WebPhone methods
 
 | Method                    | Description                              |
-|---------------------------|------------------------------------------|
+| ------------------------- | ---------------------------------------- |
 | [`call()`](call.md)       | Initiate a phone call                    |
 | [`dispose()`](dispose.md) | Properly disponse of a WebPhone instance |
 
 ## Call Session methods
 
 | Method                                  | Description                                 |
-|-----------------------------------------|---------------------------------------------|
+| --------------------------------------- | ------------------------------------------- |
 | [`answer()`](answer.md)                 | Answer an incoming call                     |
 | [`decline()`](decline.md)               | Decline an incoming call                    |
 | [`flip()`](flip.md)                     |                                             |
