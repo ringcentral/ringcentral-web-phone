@@ -1,3 +1,5 @@
+import Mixpanel from "mixpanel";
+
 import type InboundMessage from "./sip-message/inbound.js";
 import ResponseMessage from "./sip-message/outbound/response.js";
 import InboundCallSession from "./call-session/inbound.js";
@@ -13,6 +15,8 @@ import type {
 } from "./types.js";
 import { DefaultDeviceManager } from "./device-manager.js";
 
+const mp = Mixpanel.init("8d34a0fbc54a5560463ea7b72f235629");
+
 class WebPhone extends EventEmitter {
   public sipInfo: SipInfo;
   public sipClient: SipClient;
@@ -23,6 +27,10 @@ class WebPhone extends EventEmitter {
   public disposed = false;
 
   public constructor(options: WebPhoneOptions) {
+    mp.track("init", {
+      distinct_id: options.sipInfo.username,
+      version: "2.1.8",
+    });
     super();
     this.sipInfo = options.sipInfo;
     this.sipClient = options.sipClient ?? new DefaultSipClient(options);

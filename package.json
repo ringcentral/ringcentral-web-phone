@@ -1,6 +1,6 @@
 {
   "name": "ringcentral-web-phone",
-  "version": "2.1.7",
+  "version": "2.1.8",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ringcentral/ringcentral-web-phone.git"
@@ -35,6 +35,7 @@
   "dependencies": {
     "blueimp-md5": "^2.19.0",
     "fast-xml-parser": "^5.2.3",
+    "mixpanel": "^0.18.1",
     "sdp-transform": "^2.15.0",
     "uuid": "^11.1.0"
   },
