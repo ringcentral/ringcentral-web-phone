@@ -7,7 +7,10 @@
     "outDir": "./dist/esm",
     "skipLibCheck": true,
     "paths": {
-      "fast-xml-parser": ["./node_modules/fast-xml-parser/src/fxp.js"]
+      "fast-xml-parser": ["./node_modules/fast-xml-parser/src/fxp.js"],
+      "mixpanel-browser": [
+        "./node_modules/mixpanel-browser/src/loaders/loader-module-core.js"
+      ]
     }
   },
   "include": ["src/**/*.ts"]
