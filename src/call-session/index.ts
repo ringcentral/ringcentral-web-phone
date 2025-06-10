@@ -13,6 +13,7 @@ import {
   uuid,
 } from "../utils.js";
 import ResponseMessage from "../sip-message/outbound/response.js";
+import OutboundCallSession from "./outbound.js";
 
 interface CommandResult {
   code: number;
@@ -152,7 +153,13 @@ class CallSession extends EventEmitter {
 
   public async warmTransfer(
     target: string,
-  ): Promise<{ complete: () => Promise<void>; cancel: () => Promise<void> }> {
+  ): Promise<
+    {
+      complete: () => Promise<void>;
+      cancel: () => Promise<void>;
+      newSession: OutboundCallSession;
+    }
+  > {
     await this.hold();
     // create a new session and user needs to talk to the target before transfer
     const newSession = await this.webPhone.call(target);
@@ -170,6 +177,7 @@ class CallSession extends EventEmitter {
         await newSession.hangup();
         await this.unhold();
       },
+      newSession,
     };
   }
 
