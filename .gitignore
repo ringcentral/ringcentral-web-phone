@@ -12,3 +12,4 @@ node_modules
 test-results/
 .env.1.x
 docs/
+.DS_Store

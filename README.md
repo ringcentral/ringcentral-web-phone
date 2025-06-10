@@ -12,7 +12,7 @@ https://github.com/ringcentral/ringcentral-web-phone/tree/main
 
 ## Online demo for version 1.x
 
-https://ringcentral.github.io/web-phone-demo/
+https://ringcentral.github.io/web-phone-demo-1/
 
 ## Version 1.0.0 release notes
 
