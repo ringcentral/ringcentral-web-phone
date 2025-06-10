@@ -114,8 +114,6 @@ Knowledge Base article topics:
 
 1. [Digital Line Overview (KB 5862)](http://success.ringcentral.com/articles/en_US/RC_Knowledge_Article/5862)
 2. [Adding a Digital Line (KB 3136)](http://success.ringcentral.com/articles/RC_Knowledge_Article/5-10-Adding-Phones-to-other-extensions-via-Web).
-   A limited number of Digital Lines are free with each sandbox account which
-   can be configured with the free RingCentral for Desktop softphone.
 3. [Reassigning an Existing Digital Line (KB 3748)](http://success.ringcentral.com/articles/en_US/RC_Knowledge_Article/How-to-Assign-an-Existing-Digital-Line-to-a-different-extension)
 
 These permissions be configured for your app in the
@@ -148,7 +146,7 @@ var sdk = new RingCentral.SDK({
   clientSecret: clientSecret,
   appName: appName,
   appVersion: appVersion,
-  server: RingCentral.SDK.server.production, // or .sandbox
+  server: RingCentral.SDK.server.production,
 });
 
 var remoteVideoElement = document.getElementById('remoteVideo');
@@ -208,10 +206,10 @@ $ yarn install
 $ yarn serve
 ```
 
-1. Open `http://localhost:8080` in the browser (port may change if `8080` will
+1. Open `http://localhost:1234` in the browser (port may change if `1234` will
    be already used by other app)
 2. If your Application is of the Scope `Server/Web` `Browser-Based` Then you
-   would need to add `http://localhost:8080/callback.html` as the OAuth Redirect
+   would need to add `http://localhost:1234/callback.html` as the OAuth Redirect
    URI for the application in
    [Developer Portal](https://developer.ringcentral.com)
 3. Add your RC credentials and click on `Register`
@@ -219,18 +217,15 @@ $ yarn serve
 5. For receiving incoming calls, Click on `Accept` button when window pops up
    (will be visible when there is an incoming call)
 
-If there's any connection problems to Sandbox environment, you may need to
-switch to the Production environment.
-
 WebRTC works with issues when served from file system directly to browser (e.g.
 `file://` protocol), so you will need a local HTTP server (comes with this
 package).
 
 Online demo is hosted at
-[https://ringcentral.github.io/web-phone-demo/](https://ringcentral.github.io/web-phone-demo/)
+[https://ringcentral.github.io/web-phone-demo-1/](https://ringcentral.github.io/web-phone-demo-1/)
 
 \*\* NOTE : If you are using the online demo, please add
-`https://ringcentral.github.io/web-phone-demo/callback.html` to the app's
+`https://ringcentral.github.io/web-phone-demo-1/callback.html` to the app's
 OAuth Redirect URI
 
 ---

@@ -722,7 +722,7 @@ $(() => {
     const $jwtToken = $form.find('input[name=jwtToken]').eq(0);
     const $logLevel = $authForm.find('select[name=logLevel]').eq(0);
 
-    $server.val(localStorage.getItem('webPhoneServer') || SDK.server.sandbox);
+    $server.val(localStorage.getItem('webPhoneServer') || SDK.server.production);
     $clientId.val(localStorage.getItem('webPhoneclientId') || '');
     $clientSecret.val(localStorage.getItem('webPhoneclientSecret') || '');
     $jwtToken.val(localStorage.getItem('webPhoneJwtToken') || '');
