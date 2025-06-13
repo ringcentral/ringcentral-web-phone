@@ -19,7 +19,7 @@ testOnePage("register", async ({ pageResource }) => {
   expect(messages[5]).toMatch(/^inbound - SIP\/2.0 183 Session Progress$/);
   expect(messages[6]).toMatch(/^inbound - SIP\/2.0 486 Busy Here$/);
 
-  const count = await page.evaluate(async () => {
+  const count = await page.evaluate(() => {
     return globalThis.webPhone.callSessions.length;
   });
   expect(count).toBe(0); // failed calls are automatically disposed
