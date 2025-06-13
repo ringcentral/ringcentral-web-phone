@@ -574,14 +574,23 @@ callSession.on("disposed", () => {
 
 ### CallSession Events
 
-- answered
+- `answered`
   - Triggered when the call is answered.
   - Note: There is a [known issue](#known-issue) affecting outbound calls.
-- disposed
+- `disposed`
   - For answered calls, this event is triggered when either you or the remote
     peer hangs up.
   - For inbound calls, it is triggered if the caller hangs up or if the call is
     answered on another device.
+- `failed`
+  - This is for outbound call only. It means the outbound call was not
+    successful
+  - It may be caused by invalid target number
+  - It may be caused by invalid emergency address configuration.
+    - If you extension doesn't have emergency address configured, it couldn't
+      make outbound calls.
+  - Please note that, this call will be disposed automatically. So you will also
+    get a `disposed` event.
 
 #### Where is the `ringing` event?
 

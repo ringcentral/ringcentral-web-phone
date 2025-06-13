@@ -35,7 +35,8 @@ class CallSession extends EventEmitter {
   public rtcPeerConnection: RTCPeerConnection;
   public mediaStream?: MediaStream;
   public audioElement: HTMLAudioElement;
-  public state: "init" | "ringing" | "answered" | "disposed" = "init";
+  public state: "init" | "ringing" | "answered" | "disposed" | "failed" =
+    "init";
   public direction: "inbound" | "outbound";
   public inputDeviceId: string;
   public outputDeviceId: string | undefined;
