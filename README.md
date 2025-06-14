@@ -574,23 +574,59 @@ callSession.on("disposed", () => {
 
 ### CallSession Events
 
-- `answered`
-  - Triggered when the call is answered.
-  - Note: There is a [known issue](#known-issue) affecting outbound calls.
-- `disposed`
-  - For answered calls, this event is triggered when either you or the remote
-    peer hangs up.
-  - For inbound calls, it is triggered if the caller hangs up or if the call is
-    answered on another device.
-- `failed`
-  - This is for outbound call only. It means the outbound call was not
-    successful
-  - It may be caused by invalid target number
-  - It may be caused by invalid emergency address configuration.
-    - If you extension doesn't have emergency address configured, it couldn't
-      make outbound calls.
-  - Please note that, this call will be disposed automatically. So you will also
-    get a `disposed` event.
+### `answered` event
+
+- Triggered when the call is answered.
+- Note: There is a [known issue](#known-issue) affecting outbound calls.
+
+### `disposed` event
+
+- For answered calls, this event is triggered when either you or the remote peer
+  hangs up.
+- For inbound calls, it is triggered if the caller hangs up or if the call is
+  answered on another device.
+
+### `failed` event
+
+- This is for outbound call only. It means the outbound call was not successful
+- It may be caused by invalid target number
+- It may be caused by invalid emergency address configuration.
+  - If you extension doesn't have emergency address configured, it couldn't make
+    outbound calls.
+- Please note that, this call will be disposed automatically. So you will also
+  get a `disposed` event.
+
+The following code works:
+
+```ts
+webPhone.on("outboundCall", (callSession) => {
+  callSession.once("failed", (message) => {
+    console.log("Outbound call failed, message is", message);
+  });
+});
+```
+
+However, the following code will not capture the `failed` event:
+
+```ts
+const callSession = await webPhone.call("12345678987");
+callSession.once("failed", (message) => {
+  console.log("Outbound call failed, message is", message);
+});
+```
+
+This is because `await webPhone.call("12345678987")` will wait for the call to
+be answered or fail before resolving. After this statement, the call is already
+answered or failed, it's too late to listen for events.
+
+Instead, you may check the status directly:
+
+```ts
+const callSession = await webPhone.call("12345678987");
+if (callSession.state === "failed") {
+  console.log("Oubound call failed");
+}
+```
 
 #### Where is the `ringing` event?
 

@@ -248,6 +248,7 @@ class CallSession extends EventEmitter {
     this.mediaStream?.getTracks().forEach((track) => track.stop());
     this.state = "disposed";
     this.emit("disposed");
+    this.removeAllListeners();
   }
 
   // for mute/unmute
