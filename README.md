@@ -623,10 +623,13 @@ Instead, you may check the status directly:
 
 ```ts
 const callSession = await webPhone.call("12345678987");
-if (callSession.state === "failed") {
+if (callSession.state === "failed" || callSession.state === "disposed") {
   console.log("Oubound call failed");
 }
 ```
+
+Failed call sessions will be disposed automatically, so the state will become
+"disposed". "failed" is just a temporary state.
 
 #### Where is the `ringing` event?
 
