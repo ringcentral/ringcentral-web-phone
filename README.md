@@ -585,6 +585,8 @@ callSession.on("disposed", () => {
   hangs up.
 - For inbound calls, it is triggered if the caller hangs up or if the call is
   answered on another device.
+- For outbound calls, if call failed (for example, invalid callee number), it
+  will be disposed automatically. So, this event will be triggered.
 
 ### `failed` event
 
