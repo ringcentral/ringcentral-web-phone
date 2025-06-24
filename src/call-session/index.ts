@@ -114,14 +114,16 @@ class CallSession extends EventEmitter {
     this.rtcPeerConnection.ontrack = async (event) => {
       const remoteStream = event.streams[0];
       this.audioElement = document.createElement("audio") as HTMLAudioElement;
+      this.audioElement.hidden = true;
+      this.audioElement.srcObject = remoteStream;
+      await this.audioElement.play();
+
+      // this code should be run last
       this.outputDeviceId = await this.webPhone.deviceManager
         .getOutputDeviceId();
       if (this.outputDeviceId) {
         this.audioElement.setSinkId(this.outputDeviceId);
       }
-      this.audioElement.autoplay = true;
-      this.audioElement.hidden = true;
-      this.audioElement.srcObject = remoteStream;
     };
   }
 
