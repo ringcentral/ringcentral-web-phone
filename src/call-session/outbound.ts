@@ -99,9 +99,9 @@ class OutboundCallSession extends CallSession {
     const progressMessage = await this.webPhone.sipClient.request(newMessage);
     this.sipMessage = progressMessage;
     this.state = "ringing";
-    this.emit("ringing");
     this.localPeer = progressMessage.headers.From;
     this.remotePeer = progressMessage.headers.To;
+    this.emit("ringing");
 
     // wait for the call to be answered
     // by SIP server design, this happens immediately, even if the callee has not received the INVITE
