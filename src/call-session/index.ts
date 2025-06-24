@@ -44,13 +44,20 @@ class CallSession extends EventEmitter {
   private reqid = 1;
   private sdpVersion = 1;
 
+  private _id: string;
+
   public constructor(webPhone: WebPhone) {
     super();
     this.webPhone = webPhone;
+    this._id = uuid();
+  }
+
+  public get id() {
+    return this._id;
   }
 
   public get callId() {
-    return this.sipMessage?.headers["Call-Id"] ?? uuid();
+    return this.sipMessage?.headers["Call-Id"] ?? this._id;
   }
 
   public get sessionId() {
