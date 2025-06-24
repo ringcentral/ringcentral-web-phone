@@ -44,9 +44,16 @@ class CallSession extends EventEmitter {
   private reqid = 1;
   private sdpVersion = 1;
 
+  private _id: string;
+
   public constructor(webPhone: WebPhone) {
     super();
     this.webPhone = webPhone;
+    this._id = uuid();
+  }
+
+  public get id() {
+    return this._id;
   }
 
   // for inbound call, this.sipMessage?.headers["Call-Id"] will be the call id
