@@ -13,6 +13,7 @@ import {
   uuid,
 } from "../utils.js";
 import ResponseMessage from "../sip-message/outbound/response.js";
+import RcMessage from "../rc-message/rc-message.js";
 import OutboundCallSession from "./outbound.js";
 
 interface CommandResult {
@@ -92,6 +93,15 @@ class CallSession extends EventEmitter {
     return this.remotePeer
       ? extractNumber(this.remotePeer).startsWith("conf_")
       : false;
+  }
+
+  public get rcHeaders() {
+    const rcHeaders = this.sipMessage?.headers["P-rc"];
+    if (!rcHeaders) {
+      return null;
+    }
+    const msg = RcMessage.fromXml(rcHeaders);
+    return msg.headers;
   }
 
   public async init() {

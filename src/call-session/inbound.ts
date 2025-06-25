@@ -176,16 +176,16 @@ class InboundCallSession extends CallSession {
       PhnTp: string;
     } = {},
   ) {
-    if (!this.sipMessage.headers["P-rc"]) {
+    const rcHeaders = this.rcHeaders;
+    if (!rcHeaders) {
       return;
     }
-    const rcMessage = await RcMessage.fromXml(this.sipMessage.headers["P-rc"]);
     const newRcMessage = new RcMessage(
       {
-        SID: rcMessage.headers.SID,
-        Req: rcMessage.headers.Req,
-        From: rcMessage.headers.To,
-        To: rcMessage.headers.From,
+        SID: rcHeaders.SID,
+        Req: rcHeaders.Req,
+        From: rcHeaders.To,
+        To: rcHeaders.From,
         Cmd: cmd.toString(),
       },
       {
