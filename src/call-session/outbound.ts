@@ -8,14 +8,15 @@ import {
   fakeDomain,
   fakeEmail,
   generateAuthorization,
-  uuid,
   withoutTag,
 } from "../utils.js";
 
 class OutboundCallSession extends CallSession {
-  public constructor(webPhone: WebPhone) {
+  public constructor(webPhone: WebPhone, callee: string) {
     super(webPhone);
     this.direction = "outbound";
+    this.localPeer = `<sip:${webPhone.sipInfo.username}@${webPhone.sipInfo.domain}>;tag=${this.id}`;
+    this.remotePeer = `<sip:${callee}@${webPhone.sipInfo.domain}>`;
   }
 
   public async call(
@@ -65,9 +66,8 @@ class OutboundCallSession extends CallSession {
       {
         "Call-Id": this.callId,
         Contact: `<sip:${fakeEmail};transport=wss>;expires=60`,
-        From:
-          `<sip:${this.webPhone.sipInfo.username}@${this.webPhone.sipInfo.domain}>;tag=${uuid()}`,
-        To: `<sip:${callee}@${this.webPhone.sipInfo.domain}>`,
+        From: this.localPeer,
+        To: this.remotePeer,
         Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
         "Content-Type": "application/sdp",
       },

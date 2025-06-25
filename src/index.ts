@@ -148,7 +148,7 @@ class WebPhone extends EventEmitter {
     callerId?: string,
     options?: { headers?: Record<string, string> },
   ) {
-    this.callSessions.push(new OutboundCallSession(this));
+    this.callSessions.push(new OutboundCallSession(this, callee));
     // write it this way so that it will be compatible with manate, outboundCallSession will be managed
     const outboundCallSession = this
       .callSessions[this.callSessions.length - 1] as OutboundCallSession;

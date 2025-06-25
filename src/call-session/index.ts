@@ -194,6 +194,15 @@ class CallSession extends EventEmitter {
     };
   }
 
+  public async completeWarmTransfer(newSession: CallSession) {
+    const target = newSession.remoteNumber;
+    return await this._transfer(
+      `"${target}@sip.ringcentral.com" <sip:${target}@sip.ringcentral.com;transport=wss?Replaces=${newSession.callId}%3Bto-tag%3D${
+        extractTag(newSession.remotePeer)
+      }%3Bfrom-tag%3D${extractTag(newSession.localPeer)}>`,
+    );
+  }
+
   public async hangup() {
     const requestMessage = new RequestMessage(
       `BYE sip:${this.webPhone.sipInfo.domain} SIP/2.0`,
