@@ -3,7 +3,7 @@ import ResponseMessage from "../sip-message/outbound/response.js";
 import type InboundMessage from "../sip-message/inbound.js";
 import type WebPhone from "../index.js";
 import CallSession from "./index.js";
-import { branch, fakeDomain, uuid } from "../utils.js";
+import { branch, fakeDomain } from "../utils.js";
 import RcMessage from "../rc-message/rc-message.js";
 import callControlCommands from "../rc-message/call-control-commands.js";
 import type OutboundMessage from "../sip-message/outbound/index.js";
@@ -199,7 +199,7 @@ class InboundCallSession extends CallSession {
         Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
         To: `<sip:${newRcMessage.headers.To}>`,
         From:
-          `<sip:${this.webPhone.sipInfo.username}@${this.webPhone.sipInfo.domain}>;tag=${uuid()}`,
+          `<sip:${this.webPhone.sipInfo.username}@${this.webPhone.sipInfo.domain}>;tag=${this.id}`,
         "Call-Id": this.callId,
         "Content-Type": "x-rc/agent",
       },
