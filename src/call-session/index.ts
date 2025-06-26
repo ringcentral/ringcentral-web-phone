@@ -115,8 +115,8 @@ class CallSession extends EventEmitter {
       const remoteStream = event.streams[0];
       this.audioElement = document.createElement("audio") as HTMLAudioElement;
       this.audioElement.hidden = true;
+      this.audioElement.autoplay = true;
       this.audioElement.srcObject = remoteStream;
-      await this.audioElement.play();
 
       // this code should be run last
       this.outputDeviceId = await this.webPhone.deviceManager
@@ -146,7 +146,10 @@ class CallSession extends EventEmitter {
   public async changeOutputDevice(deviceId: string) {
     this.outputDeviceId = deviceId;
     if (deviceId) {
+      // todo: uncomment based on testing result
+      // await this.audioElement.pause();
       await this.audioElement.setSinkId(deviceId);
+      // await this.audioElement.play();
     }
   }
 

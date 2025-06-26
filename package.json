@@ -1,6 +1,6 @@
 {
   "name": "ringcentral-web-phone",
-  "version": "2.1.12",
+  "version": "2.1.13",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ringcentral/ringcentral-web-phone.git"
