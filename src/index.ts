@@ -61,6 +61,14 @@ class WebPhone extends EventEmitter {
           }
         }
 
+        // NOTIFY message
+        if (inboundMessage.subject.startsWith("NOTIFY ")) {
+          const event = inboundMessage.headers.Event;
+          if (event === 'check-sync') {
+            this.emit("provisionUpdate");
+          }
+        }
+
         // listen for incoming calls
         if (!inboundMessage.subject.startsWith("INVITE sip:")) {
           return;
