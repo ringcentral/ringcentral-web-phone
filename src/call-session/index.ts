@@ -57,6 +57,10 @@ class CallSession extends EventEmitter {
     return this._id;
   }
 
+  public get clientId() {
+    return this.webPhone.clientId;
+  }
+
   public get callId() {
     return this.sipMessage?.headers["Call-Id"] ?? this._id;
   }
