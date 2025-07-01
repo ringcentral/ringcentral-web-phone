@@ -1157,9 +1157,15 @@ refer to
 But how do we achieve the same with this SDK?
 
 First of all, you will need the `sipData` of the ongoing call. Especially, the
-`telephonySessionId`, the `fromTag` and the `toTag`.
+`telephonySessionId`, the `fromTag` and the `toTag`. How to get the data? You
+will need to create a subscription to
+[Telephony Events](https://developers.ringcentral.com/api-reference/Extension-Telephony-Sessions-Event).
+How to create such a subscription? You will need to use RingCentral Restful API
+and subscription API, which is out of the scope of this SDK. You may read this
+article:
+[Create WebSocket subscriptions using RingCentral JavaScript SDKs](https://medium.com/@tylerlong/create-websocket-subscriptions-using-ringcentral-javascript-sdks-1204ce5843b8)
 
-Once you have that, it is easy to switch the call to this device:
+Once you have the data, it is easy to switch the call to this device:
 
 ```ts
 this.webPhone.call("whatever", undefined, {
@@ -1174,16 +1180,18 @@ The "callee" number we specified above is "whatever". Since we are not making a
 new outbound call, we just try to replace an existing call. The callee number
 could be fake.
 
-### Where to get sipData?
+### Other ways to get sipData?
 
-Where to get the `telephonySessionId`, the `fromTag` and the `toTag`?
+We have mentioned that you could use subscriptions to get the
+`telephonySessionId`, the `fromTag` and the `toTag`. Are there any other ways?
 
 If you are using some SDKs, like this SDK, or the softphone SDK, you will be
-able to get them via the headers of SIP messages.
-
-Or you could get them by setting up subscriptions. It's a topic out of the scope
-of this SDK. You may find more details here:
-https://github.com/tylerlong/rc-softphone-call-id-test
+able to get them via the headers of SIP messages. But it won't be your current
+web phone instance, since if it's already your current web phone instance, there
+is no need to "switch call to this device". You will need to figure out ways to
+pass the data from other phone instances to your current phone instance. And
+once your current phone instance have the required data, it could run the code
+snippet above to "switch the call to this device".
 
 ## Auto Answer
 
