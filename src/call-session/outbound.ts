@@ -60,17 +60,20 @@ class OutboundCallSession extends CallSession {
       };
       this.rtcPeerConnection.addEventListener("icecandidate", onIceCandidate);
     });
-
+    const inviteHeaders = {
+      "Call-Id": this.callId,
+      Contact: `<sip:${fakeEmail};transport=wss>;expires=60`,
+      From: this.localPeer,
+      To: this.remotePeer,
+      Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
+      "Content-Type": "application/sdp",
+    };
+    if (this.clientId) {
+      inviteHeaders["Client-id"] = this.clientId!;
+    }
     const inviteMessage = new RequestMessage(
       `INVITE sip:${callee}@${this.webPhone.sipInfo.domain} SIP/2.0`,
-      {
-        "Call-Id": this.callId,
-        Contact: `<sip:${fakeEmail};transport=wss>;expires=60`,
-        From: this.localPeer,
-        To: this.remotePeer,
-        Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
-        "Content-Type": "application/sdp",
-      },
+      inviteHeaders,
       this.rtcPeerConnection.localDescription!.sdp!,
     );
     if (callerId) {

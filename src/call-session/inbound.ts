@@ -135,11 +135,15 @@ class InboundCallSession extends CallSession {
       setTimeout(() => resolve(false), 2000);
     });
 
+    const answerHeaders = {
+      "Content-Type": "application/sdp",
+    };
+    if (this.clientId) {
+      answerHeaders["Client-id"] = this.clientId!;
+    }
     const newMessage = new ResponseMessage(this.sipMessage, {
       responseCode: 200,
-      headers: {
-        "Content-Type": "application/sdp",
-      },
+      headers: answerHeaders,
       body: answer.sdp,
     });
     await this.webPhone.sipClient.reply(newMessage);

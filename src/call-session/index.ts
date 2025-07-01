@@ -57,9 +57,14 @@ class CallSession extends EventEmitter {
     return this._id;
   }
 
+  public get clientId() {
+    return this.webPhone.clientId;
+  }
+
   // for inbound call, this.sipMessage?.headers["Call-Id"] will be the call id
   // for outbound call, this._callId will be the call id. Once the call session is out of "init" state, this.sipMessage will be set
   private _callId = uuid();
+
   public get callId() {
     return this.sipMessage?.headers["Call-Id"] ?? this._callId;
   }

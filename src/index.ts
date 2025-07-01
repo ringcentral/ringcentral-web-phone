@@ -25,6 +25,7 @@ class WebPhone extends EventEmitter {
   public autoAnswer = false;
   public options: WebPhoneOptions;
 
+  public clientId?: string;
   public disposed = false;
 
   public constructor(options: WebPhoneOptions) {
@@ -35,6 +36,7 @@ class WebPhone extends EventEmitter {
     });
     super();
     this.options = options;
+    this.clientId = options.clientId;
     this.sipInfo = options.sipInfo;
     this.sipClient = options.sipClient ?? new DefaultSipClient(options);
     this.deviceManager = options.deviceManager ?? new DefaultDeviceManager();
