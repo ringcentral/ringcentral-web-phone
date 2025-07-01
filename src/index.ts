@@ -23,7 +23,7 @@ class WebPhone extends EventEmitter {
   public deviceManager: DeviceManager;
   public callSessions: CallSession[] = [];
   public autoAnswer = false;
-
+  public clientId?: string;
   public disposed = false;
 
   public constructor(options: WebPhoneOptions) {
@@ -33,6 +33,7 @@ class WebPhone extends EventEmitter {
       version: "2.1.8",
     });
     super();
+    this.clientId = options.clientId;
     this.sipInfo = options.sipInfo;
     this.sipClient = options.sipClient ?? new DefaultSipClient(options);
     this.deviceManager = options.deviceManager ?? new DefaultDeviceManager();
