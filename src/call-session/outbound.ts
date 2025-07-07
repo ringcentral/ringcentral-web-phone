@@ -29,14 +29,45 @@ class OutboundCallSession extends CallSession {
     await this.rtcPeerConnection.setLocalDescription(offer);
 
     // wait for ICE gathering to complete
-    await new Promise((resolve) => {
-      this.rtcPeerConnection.onicecandidate = (event) => {
-        if (event.candidate === null) {
-          resolve(true);
+    await new Promise<void>((resolve) => {
+      const timeout = setTimeout(resolve, 1500); // fallback safeguard
+      const onIceCandidate = (event: RTCPeerConnectionIceEvent) => {
+        if (!event.candidate) {
+          cleanup();
+          resolve();
         }
       };
-      setTimeout(() => resolve(false), 3000);
+      const onStateChange = () => {
+        if (this.rtcPeerConnection.iceGatheringState === "complete") {
+          cleanup();
+          resolve();
+        }
+      };
+      const cleanup = () => {
+        clearTimeout(timeout);
+        this.rtcPeerConnection.removeEventListener(
+          "icecandidate",
+          onIceCandidate,
+        );
+        this.rtcPeerConnection.removeEventListener(
+          "icegatheringstatechange",
+          onStateChange,
+        );
+      };
+      this.rtcPeerConnection.addEventListener("icecandidate", onIceCandidate);
+      this.rtcPeerConnection.addEventListener(
+        "icegatheringstatechange",
+        onStateChange,
+      );
     });
+    // await new Promise((resolve) => {
+    //   this.rtcPeerConnection.onicecandidate = (event) => {
+    //     if (event.candidate === null) {
+    //       resolve(true);
+    //     }
+    //   };
+    //   setTimeout(() => resolve(false), 3000);
+    // });
 
     const inviteMessage = new RequestMessage(
       `INVITE sip:${callee}@${this.webPhone.sipInfo.domain} SIP/2.0`,

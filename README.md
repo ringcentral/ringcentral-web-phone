@@ -85,10 +85,10 @@ You can use this library without a bundling tool:
 Or you could use a CDN:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/ringcentral-web-phone@2.1.6/dist/esm/index.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ringcentral-web-phone@2.1.13/dist/esm/index.umd.js"></script>
 ```
 
-You may need to replace 2.16 with latest version number. For latest version
+You may need to replace 2.1.13 with latest version number. For latest version
 please check here:
 https://www.npmjs.com/package/ringcentral-web-phone?activeTab=versions
 
