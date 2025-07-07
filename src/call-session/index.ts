@@ -279,7 +279,7 @@ class CallSession extends EventEmitter {
           resolve(true);
         }
       };
-      setTimeout(() => resolve(false), 3000);
+      setTimeout(() => resolve(false), 2000);
     });
     let sdp = this.rtcPeerConnection.localDescription!.sdp;
     // default value is `a=sendrecv`
@@ -331,7 +331,7 @@ class CallSession extends EventEmitter {
           resolve(true);
         }
       };
-      setTimeout(() => resolve(false), 3000);
+      setTimeout(() => resolve(false), 2000);
     });
 
     const newMessage = new ResponseMessage(this.sipMessage, {

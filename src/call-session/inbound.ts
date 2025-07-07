@@ -132,7 +132,7 @@ class InboundCallSession extends CallSession {
           resolve(true);
         }
       };
-      setTimeout(() => resolve(false), 3000);
+      setTimeout(() => resolve(false), 2000);
     });
 
     const newMessage = new ResponseMessage(this.sipMessage, {
