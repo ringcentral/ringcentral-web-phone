@@ -30,7 +30,14 @@ class OutboundCallSession extends CallSession {
 
     // wait for ICE gathering to complete
     await new Promise<void>((resolve) => {
-      const timeout = setTimeout(resolve, 1500); // fallback safeguard
+      const timeout = setTimeout(() => {
+        if (this.webPhone.options.debug) {
+          console.warn(
+            "ICE gathering did not complete within 1.5 seconds, proceeding anyway.",
+          );
+        }
+        resolve();
+      }, 1500); // fallback safeguard
       const onIceCandidate = (event: RTCPeerConnectionIceEvent) => {
         if (!event.candidate) {
           cleanup();
