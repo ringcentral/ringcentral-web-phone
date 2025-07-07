@@ -28,26 +28,26 @@ class OutboundCallSession extends CallSession {
     });
     await this.rtcPeerConnection.setLocalDescription(offer);
 
-    // wait for ICE gathering to complete
+    // wait for srflx ICE candidate or timeout after 2 seconds
     await new Promise<void>((resolve) => {
       const timeout = setTimeout(() => {
         if (this.webPhone.options.debug) {
           console.warn(
-            "ICE gathering did not complete within 1.5 seconds, proceeding anyway.",
+            "srflx candidate not found within 2 seconds — proceeding anyway.",
           );
         }
+        cleanup();
         resolve();
-      }, 1500); // fallback safeguard
+      }, 2000);
+
       const onIceCandidate = (event: RTCPeerConnectionIceEvent) => {
-        if (!event.candidate) {
+        const candidate = event.candidate?.candidate;
+        if (!candidate) return;
+        if (candidate.includes("typ srflx")) {
           cleanup();
-          resolve();
-        }
-      };
-      const onStateChange = () => {
-        if (this.rtcPeerConnection.iceGatheringState === "complete") {
-          cleanup();
-          resolve();
+          setTimeout(() => {
+            resolve();
+          }, 500); // extra 500ms after got srflx candidate
         }
       };
       const cleanup = () => {
@@ -56,25 +56,9 @@ class OutboundCallSession extends CallSession {
           "icecandidate",
           onIceCandidate,
         );
-        this.rtcPeerConnection.removeEventListener(
-          "icegatheringstatechange",
-          onStateChange,
-        );
       };
       this.rtcPeerConnection.addEventListener("icecandidate", onIceCandidate);
-      this.rtcPeerConnection.addEventListener(
-        "icegatheringstatechange",
-        onStateChange,
-      );
     });
-    // await new Promise((resolve) => {
-    //   this.rtcPeerConnection.onicecandidate = (event) => {
-    //     if (event.candidate === null) {
-    //       resolve(true);
-    //     }
-    //   };
-    //   setTimeout(() => resolve(false), 3000);
-    // });
 
     const inviteMessage = new RequestMessage(
       `INVITE sip:${callee}@${this.webPhone.sipInfo.domain} SIP/2.0`,
