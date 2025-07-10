@@ -657,6 +657,28 @@ This makes the `answered` event less useful. For outbound call, it is a fake
 event that triggers immediately. For inbound call, since it is your own code
 that answers the call, you probably don't need the event at all.
 
+### SIP Client Events
+
+- `inboundMessage`
+- `outboundMessage`
+
+These events represent low-level SIP messages received from or sent to the SIP
+server by the web phone instance. Most developers won’t need to interact with
+these directly, but they’re exposed for advanced use cases that require greater
+flexibility.
+
+**Example:**
+
+```ts
+webPhone.sipClient.on("inboundMessage", (message) => {
+  console.log("Received an inbound SIP message from the server.");
+});
+
+webPhone.sipClient.on("outboundMessage", (message) => {
+  console.log("Sent an outbound SIP message to the server.");
+});
+```
+
 ## Audio Devices
 
 By default, this SDK will use the default audio input device and output device
