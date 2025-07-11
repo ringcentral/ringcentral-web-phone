@@ -25,6 +25,7 @@ class WebPhone extends EventEmitter {
   public autoAnswer = false;
   public options: WebPhoneOptions;
 
+  public clientId?: string;
   public disposed = false;
 
   public constructor(options: WebPhoneOptions) {
@@ -35,6 +36,7 @@ class WebPhone extends EventEmitter {
     });
     super();
     this.options = options;
+    this.clientId = options.clientId;
     this.sipInfo = options.sipInfo;
     this.sipClient = options.sipClient ?? new DefaultSipClient(options);
     this.deviceManager = options.deviceManager ?? new DefaultDeviceManager();
@@ -53,8 +55,17 @@ class WebPhone extends EventEmitter {
               callSession.callId === inboundMessage.headers["Call-Id"],
           );
           if (index !== -1) {
-            this.callSessions[index].dispose();
+            const callSession = this.callSessions[index];
             this.callSessions.splice(index, 1);
+            callSession.dispose();
+          }
+        }
+
+        // NOTIFY message
+        if (inboundMessage.subject.startsWith("NOTIFY ")) {
+          const event = inboundMessage.headers.Event;
+          if (event === 'check-sync') {
+            this.emit("provisionUpdate");
           }
         }
 
@@ -147,7 +158,7 @@ class WebPhone extends EventEmitter {
     callerId?: string,
     options?: { headers?: Record<string, string> },
   ) {
-    this.callSessions.push(new OutboundCallSession(this));
+    this.callSessions.push(new OutboundCallSession(this, callee));
     // write it this way so that it will be compatible with manate, outboundCallSession will be managed
     const outboundCallSession = this
       .callSessions[this.callSessions.length - 1] as OutboundCallSession;

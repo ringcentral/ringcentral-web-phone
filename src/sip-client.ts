@@ -20,7 +20,7 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
   public sipInfo: SipInfo;
   public instanceId: string;
   private debug: boolean;
-
+  public clientId?: string;
   private timeoutHandle: NodeJS.Timeout;
 
   public constructor(options: SipClientOptions) {
@@ -28,6 +28,7 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
     this.sipInfo = options.sipInfo;
     this.instanceId = options.instanceId ?? this.sipInfo.authorizationId!;
     this.debug = options.debug ?? false;
+    this.clientId = options.clientId;
   }
 
   public async start() {
@@ -111,17 +112,21 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
   }
 
   public async register(expires: number) {
+    const headers = {
+      "Call-Id": uuid(),
+      Contact:
+        `<sip:${fakeEmail};transport=wss>;+sip.instance="<urn:uuid:${this.instanceId}>";expires=${expires}`,
+      From:
+        `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>;tag=${uuid()}`,
+      To: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>`,
+      Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
+    };
+    if (this.clientId) {
+      headers["Client-id"] = this.clientId!;
+    }
     const requestMessage = new RequestMessage(
       `REGISTER sip:${this.sipInfo.domain} SIP/2.0`,
-      {
-        "Call-Id": uuid(),
-        Contact:
-          `<sip:${fakeEmail};transport=wss>;+sip.instance="<urn:uuid:${this.instanceId}>";expires=${expires}`,
-        From:
-          `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>;tag=${uuid()}`,
-        To: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>`,
-        Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
-      },
+      headers,
     );
     // if cannot get response in 5 seconds, we close the connection
     const closeHandle = setTimeout(() => this.wsc.close(), 5000);

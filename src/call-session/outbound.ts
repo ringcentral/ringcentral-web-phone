@@ -8,14 +8,15 @@ import {
   fakeDomain,
   fakeEmail,
   generateAuthorization,
-  uuid,
   withoutTag,
 } from "../utils.js";
 
 class OutboundCallSession extends CallSession {
-  public constructor(webPhone: WebPhone) {
+  public constructor(webPhone: WebPhone, callee: string) {
     super(webPhone);
     this.direction = "outbound";
+    this.localPeer = `<sip:${webPhone.sipInfo.username}@${webPhone.sipInfo.domain}>;tag=${this.id}`;
+    this.remotePeer = `<sip:${callee}@${webPhone.sipInfo.domain}>`;
   }
 
   public async call(
@@ -59,18 +60,20 @@ class OutboundCallSession extends CallSession {
       };
       this.rtcPeerConnection.addEventListener("icecandidate", onIceCandidate);
     });
-
+    const inviteHeaders = {
+      "Call-Id": this.callId,
+      Contact: `<sip:${fakeEmail};transport=wss>;expires=60`,
+      From: this.localPeer,
+      To: this.remotePeer,
+      Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
+      "Content-Type": "application/sdp",
+    };
+    if (this.clientId) {
+      inviteHeaders["Client-id"] = this.clientId!;
+    }
     const inviteMessage = new RequestMessage(
       `INVITE sip:${callee}@${this.webPhone.sipInfo.domain} SIP/2.0`,
-      {
-        "Call-Id": uuid(),
-        Contact: `<sip:${fakeEmail};transport=wss>;expires=60`,
-        From:
-          `<sip:${this.webPhone.sipInfo.username}@${this.webPhone.sipInfo.domain}>;tag=${uuid()}`,
-        To: `<sip:${callee}@${this.webPhone.sipInfo.domain}>`,
-        Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
-        "Content-Type": "application/sdp",
-      },
+      inviteHeaders,
       this.rtcPeerConnection.localDescription!.sdp!,
     );
     if (callerId) {
@@ -99,9 +102,9 @@ class OutboundCallSession extends CallSession {
     const progressMessage = await this.webPhone.sipClient.request(newMessage);
     this.sipMessage = progressMessage;
     this.state = "ringing";
-    this.emit("ringing");
     this.localPeer = progressMessage.headers.From;
     this.remotePeer = progressMessage.headers.To;
+    this.emit("ringing");
 
     // wait for the call to be answered
     // by SIP server design, this happens immediately, even if the callee has not received the INVITE

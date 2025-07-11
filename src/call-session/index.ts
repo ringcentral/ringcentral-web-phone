@@ -13,6 +13,7 @@ import {
   uuid,
 } from "../utils.js";
 import ResponseMessage from "../sip-message/outbound/response.js";
+import RcMessage from "../rc-message/rc-message.js";
 import OutboundCallSession from "./outbound.js";
 
 interface CommandResult {
@@ -44,13 +45,24 @@ class CallSession extends EventEmitter {
   private reqid = 1;
   private sdpVersion = 1;
 
+  private _id: string;
+
   public constructor(webPhone: WebPhone) {
     super();
     this.webPhone = webPhone;
+    this._id = uuid();
+  }
+
+  public get id() {
+    return this._id;
+  }
+
+  public get clientId() {
+    return this.webPhone.clientId;
   }
 
   public get callId() {
-    return this.sipMessage?.headers["Call-Id"] ?? uuid();
+    return this.sipMessage?.headers["Call-Id"] ?? this._id;
   }
 
   public get sessionId() {
@@ -73,10 +85,27 @@ class CallSession extends EventEmitter {
     return this.localPeer ? extractNumber(this.localPeer) : "";
   }
 
+  public get remoteTag() {
+    return this.remotePeer ? extractTag(this.remotePeer) : "";
+  }
+
+  public get localTag() {
+    return this.localPeer ? extractTag(this.localPeer) : "";
+  }
+
   public get isConference() {
     return this.remotePeer
       ? extractNumber(this.remotePeer).startsWith("conf_")
       : false;
+  }
+
+  public get rcHeaders() {
+    const rcHeaders = this.sipMessage?.headers["P-rc"];
+    if (!rcHeaders) {
+      return null;
+    }
+    const msg = RcMessage.fromXml(rcHeaders);
+    return msg.headers;
   }
 
   public async init() {
@@ -98,6 +127,7 @@ class CallSession extends EventEmitter {
       video: false,
       audio: { deviceId: { exact: this.inputDeviceId } },
     });
+    this.emit("userMedia", this.mediaStream);
     this.mediaStream.getAudioTracks().forEach((track) => {
       const rtcRtpSender = this.rtcPeerConnection.addTrack(track);
 
@@ -171,8 +201,8 @@ class CallSession extends EventEmitter {
       complete: async () => {
         await this._transfer(
           `"${target}@sip.ringcentral.com" <sip:${target}@sip.ringcentral.com;transport=wss?Replaces=${newSession.callId}%3Bto-tag%3D${
-            extractTag(newSession.remotePeer)
-          }%3Bfrom-tag%3D${extractTag(newSession.localPeer)}>`,
+            newSession.remoteTag
+          }%3Bfrom-tag%3D${newSession.localTag}>`,
         );
       },
       // cancel the transfer
@@ -182,6 +212,15 @@ class CallSession extends EventEmitter {
       },
       newSession,
     };
+  }
+
+  public async completeWarmTransfer(newSession: CallSession) {
+    const target = newSession.remoteNumber;
+    return await this._transfer(
+      `"${target}@sip.ringcentral.com" <sip:${target}@sip.ringcentral.com;transport=wss?Replaces=${newSession.callId}%3Bto-tag%3D${
+        newSession.remoteTag
+      }%3Bfrom-tag%3D${newSession.localTag}>`,
+    );
   }
 
   public async hangup() {
