@@ -63,7 +63,7 @@ class OutboundCallSession extends CallSession {
     const inviteMessage = new RequestMessage(
       `INVITE sip:${callee}@${this.webPhone.sipInfo.domain} SIP/2.0`,
       {
-        "Call-Id": uuid(),
+        "Call-Id": this.callId,
         Contact: `<sip:${fakeEmail};transport=wss>;expires=60`,
         From:
           `<sip:${this.webPhone.sipInfo.username}@${this.webPhone.sipInfo.domain}>;tag=${uuid()}`,
