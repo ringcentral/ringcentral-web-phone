@@ -346,7 +346,8 @@ class CallSession extends EventEmitter {
     });
     await this.webPhone.sipClient.reply(newMessage);
 
-    // todo: wait for the final SIP message, refer to inbound call answer function
+    // note: no need to wait for the final SIP message (refer to inbound call answer function)
+    // because nobody is supposed to proactively invoke this function.
   }
 
   // for hold/unhold
