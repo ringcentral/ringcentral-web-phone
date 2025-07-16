@@ -1125,7 +1125,7 @@ A fully working sample is here
 https://github.com/ringcentral/web-phone-demo/tree/shared-worker You may run
 mutiple tabs to see how it works.
 
-## monitor/whisper/barge/coach/take over
+## monitor/whisper/barge/coach/takeover
 
 These features are available to all phone clients, not just clients powered by
 this SDK.
@@ -1142,30 +1142,20 @@ const callSession = await webPhone.call("*82");
 await callSession.sendDtmf("102#");
 ```
 
-### take over
+### Technical Details About Call Takeover
 
-Please note that, "take over" is special. Because after you request for taking
-over an existing call, you will receive an extra inbound call from '\*83'. You
-need to answer that inbound call for "take over" to complete. And you need to
-keep both calls alive, otherwise customer will be disconnected.
+In most cases, developers don't need to worry about the technical aspects of
+call takeover, as the SDK handles everything automatically. However, for those
+who are curious, here’s how it works under the hood:
 
-For example, a customer is talking to extension 102, and you want to take over
-the call:
+When you initiate a takeover by dialing `*83`, followed by the agent's extension
+and `#`, the system sends you an inbound call from `*83`. This inbound call
+shares the same `Call-ID` as the outbound request you just made. Technically,
+this is treated as a re-INVITE from the server.
 
-```ts
-const callSession1 = await webPhone.call("*83");
-// optionally wait for 1 - 3 seconds here
-await callSession1.sendDtmf("102#");
-webPhone.on("inboundCall", async (callSession2: InboundCallSession) => {
-  if (callSession2.remoteNumber === "*83") {
-    await callSession2.answer(); // this could be done manually by user instead of automatically here.
-  }
-});
-```
-
-You will need to keep both `callSession1` and `callSession2` alive in order to
-keep the conversation alive with the customer. If you hang up either one, the
-customer will be disconnected.
+The SDK automatically processes this re-INVITE and finalizes the takeover. Once
+complete, you are connected directly to the customer, and the original agent is
+disconnected.
 
 ## Switch call to this device
 
