@@ -66,11 +66,9 @@ class WebPhone extends EventEmitter {
         // re-INVITE
         const callSession = this.callSessions.find(
           (callSession) => {
-            const sipMessage = callSession.sipMessage;
-            return sipMessage.headers["Call-Id"] ===
-                inboundMessage.headers["Call-Id"] &&
-              sipMessage.headers.To === inboundMessage.headers.To &&
-              sipMessage.headers.From === inboundMessage.headers.From;
+            return callSession.callId === inboundMessage.headers["Call-Id"] &&
+              callSession.localPeer === inboundMessage.headers.To &&
+              callSession.remotePeer === inboundMessage.headers.From;
           },
         );
         if (callSession) {
