@@ -184,8 +184,8 @@ class InboundCallSession extends CallSession {
       {
         SID: rcMessage.headers.SID,
         Req: rcMessage.headers.Req,
-        From: this.localPeer,
-        To: this.remotePeer,
+        From: rcMessage.headers.To,
+        To: rcMessage.headers.From,
         Cmd: cmd.toString(),
       },
       {
@@ -194,10 +194,10 @@ class InboundCallSession extends CallSession {
       },
     );
     const requestSipMessage = new RequestMessage(
-      `MESSAGE sip:${this.remotePeer} SIP/2.0`,
+      `MESSAGE sip:${newRcMessage.headers.To} SIP/2.0`,
       {
         Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
-        To: `<sip:${this.remotePeer}>`,
+        To: `<sip:${newRcMessage.headers.To}>`,
         From:
           `<sip:${this.webPhone.sipInfo.username}@${this.webPhone.sipInfo.domain}>;tag=${uuid()}`,
         "Call-Id": this.callId,
