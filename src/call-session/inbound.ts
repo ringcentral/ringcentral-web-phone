@@ -3,7 +3,7 @@ import ResponseMessage from "../sip-message/outbound/response.js";
 import type InboundMessage from "../sip-message/inbound.js";
 import type WebPhone from "../index.js";
 import CallSession from "./index.js";
-import { branch, fakeDomain, uuid } from "../utils.js";
+import { branch, fakeDomain } from "../utils.js";
 import RcMessage from "../rc-message/rc-message.js";
 import callControlCommands from "../rc-message/call-control-commands.js";
 import type OutboundMessage from "../sip-message/outbound/index.js";
@@ -135,11 +135,15 @@ class InboundCallSession extends CallSession {
       setTimeout(() => resolve(false), 2000);
     });
 
+    const answerHeaders = {
+      "Content-Type": "application/sdp",
+    };
+    if (this.clientId) {
+      answerHeaders["Client-id"] = this.clientId!;
+    }
     const newMessage = new ResponseMessage(this.sipMessage, {
       responseCode: 200,
-      headers: {
-        "Content-Type": "application/sdp",
-      },
+      headers: answerHeaders,
       body: answer.sdp,
     });
     await this.webPhone.sipClient.reply(newMessage);
@@ -176,16 +180,16 @@ class InboundCallSession extends CallSession {
       PhnTp: string;
     } = {},
   ) {
-    if (!this.sipMessage.headers["P-rc"]) {
+    const rcHeaders = this.rcHeaders;
+    if (!rcHeaders) {
       return;
     }
-    const rcMessage = await RcMessage.fromXml(this.sipMessage.headers["P-rc"]);
     const newRcMessage = new RcMessage(
       {
-        SID: rcMessage.headers.SID,
-        Req: rcMessage.headers.Req,
-        From: rcMessage.headers.To,
-        To: rcMessage.headers.From,
+        SID: rcHeaders.SID,
+        Req: rcHeaders.Req,
+        From: rcHeaders.To,
+        To: rcHeaders.From,
         Cmd: cmd.toString(),
       },
       {
@@ -199,7 +203,7 @@ class InboundCallSession extends CallSession {
         Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
         To: `<sip:${newRcMessage.headers.To}>`,
         From:
-          `<sip:${this.webPhone.sipInfo.username}@${this.webPhone.sipInfo.domain}>;tag=${uuid()}`,
+          `<sip:${this.webPhone.sipInfo.username}@${this.webPhone.sipInfo.domain}>;tag=${this.id}`,
         "Call-Id": this.callId,
         "Content-Type": "x-rc/agent",
       },
