@@ -903,6 +903,44 @@ switch back to the original outbound proxy:
 You will need to invoke `webPhone.start()` to re-create the WebSocket
 connection, otherwise it is still the old outbound proxy.
 
+## Custom SIP message headers
+
+This is an advanced topic that most developers won't need to use.
+
+You can add arbitrary headers to outgoing SIP messages by extending the
+`DefaultSipClient` class and overriding its `send` method:
+
+```ts
+import WebPhone from "ringcentral-web-phone";
+import type { WebPhoneOptions } from "ringcentral-web-phone/types";
+import { DefaultSipClient } from "ringcentral-web-phone/sip-client";
+import OutboundMessage from "ringcentral-web-phone/sip-message/outbound/index";
+import InboundMessage from "ringcentral-web-phone/sip-message/inbound";
+
+class MySipClient extends DefaultSipClient {
+  constructor(options: SipClientOptions) {
+    super(options);
+  }
+  public send(
+    message: OutboundMessage,
+    waitForReply = false,
+  ): Promise<InboundMessage> {
+    // You may write your own logic here, like only adding headers to REGISTER messages (not other messages)
+    message.headers["Custom-Header"] = "CustomHeaderValue";
+    return super.send(message, waitForReply);
+  }
+}
+
+const options: WebPhoneOptions = {
+  sipInfo,
+  // other options here
+};
+options.sipClient = new MySipClient(options);
+const webPhone = new WebPhone(options);
+await webPhone.start();
+// ...
+```
+
 ## Conference
 
 Conference is out of the scope of this SDK. Because conferences are mainly done

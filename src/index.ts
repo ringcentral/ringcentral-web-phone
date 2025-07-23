@@ -31,7 +31,7 @@ class WebPhone extends EventEmitter {
     mp.identify(options.sipInfo.username);
     mp.track("init", {
       distinct_id: options.sipInfo.username,
-      version: "2.1.14",
+      version: "2.2.2",
     });
     super();
     this.options = options;
@@ -143,7 +143,6 @@ class WebPhone extends EventEmitter {
   public async call(
     callee: string,
     callerId?: string,
-    options?: { headers?: Record<string, string> },
   ) {
     this.callSessions.push(new OutboundCallSession(this, callee));
     // write it this way so that it will be compatible with manate, outboundCallSession will be managed
@@ -151,7 +150,7 @@ class WebPhone extends EventEmitter {
       .callSessions[this.callSessions.length - 1] as OutboundCallSession;
     this.emit("outboundCall", outboundCallSession);
     await outboundCallSession.init();
-    await outboundCallSession.call(callerId, options);
+    await outboundCallSession.call(callerId);
     return outboundCallSession;
   }
 }

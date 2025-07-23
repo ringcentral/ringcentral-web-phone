@@ -26,7 +26,6 @@ class OutboundCallSession extends CallSession {
 
   public async call(
     callerId?: string,
-    options?: { headers?: Record<string, string> },
   ) {
     const offer = await this.rtcPeerConnection.createOffer({
       iceRestart: true,
@@ -81,11 +80,6 @@ class OutboundCallSession extends CallSession {
     if (callerId) {
       inviteMessage.headers["P-Asserted-Identity"] =
         `sip:${callerId}@${this.webPhone.sipInfo.domain}`;
-    }
-    if (options?.headers) {
-      for (const [key, value] of Object.entries(options.headers)) {
-        inviteMessage.headers[key] = value;
-      }
     }
 
     const inboundMessage = await this.webPhone.sipClient.request(inviteMessage);

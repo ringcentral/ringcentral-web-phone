@@ -158,12 +158,12 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
   }
 
   public async request(message: RequestMessage): Promise<InboundMessage> {
-    return await this._send(message, true);
+    return await this.send(message, true);
   }
   public async reply(message: ResponseMessage): Promise<void> {
-    await this._send(message, false);
+    await this.send(message, false);
   }
-  private _send(
+  public send(
     message: OutboundMessage,
     waitForReply = false,
   ): Promise<InboundMessage> {
