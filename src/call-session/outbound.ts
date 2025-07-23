@@ -13,13 +13,18 @@ import {
 } from "../utils.js";
 
 class OutboundCallSession extends CallSession {
-  public constructor(webPhone: WebPhone) {
+  public constructor(webPhone: WebPhone, callee: string) {
     super(webPhone);
+    this.callee = callee;
     this.direction = "outbound";
   }
 
+  private callee: string;
+  public get remoteNumber(): string {
+    return this.remotePeer ? super.remoteNumber : this.callee;
+  }
+
   public async call(
-    callee: string,
     callerId?: string,
     options?: { headers?: Record<string, string> },
   ) {
@@ -61,13 +66,13 @@ class OutboundCallSession extends CallSession {
     });
 
     const inviteMessage = new RequestMessage(
-      `INVITE sip:${callee}@${this.webPhone.sipInfo.domain} SIP/2.0`,
+      `INVITE sip:${this.callee}@${this.webPhone.sipInfo.domain} SIP/2.0`,
       {
         "Call-Id": this.callId,
         Contact: `<sip:${fakeEmail};transport=wss>;expires=60`,
         From:
           `<sip:${this.webPhone.sipInfo.username}@${this.webPhone.sipInfo.domain}>;tag=${uuid()}`,
-        To: `<sip:${callee}@${this.webPhone.sipInfo.domain}>`,
+        To: `<sip:${this.callee}@${this.webPhone.sipInfo.domain}>`,
         Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
         "Content-Type": "application/sdp",
       },

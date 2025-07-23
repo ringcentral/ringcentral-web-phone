@@ -68,11 +68,11 @@ class CallSession extends EventEmitter {
     )?.[1];
   }
 
-  public get remoteNumber() {
-    return this.remotePeer ? extractNumber(this.remotePeer) : "";
+  public get remoteNumber(): string {
+    return extractNumber(this.remotePeer);
   }
 
-  public get localNumber() {
+  public get localNumber(): string {
     return this.localPeer
       ? extractNumber(this.localPeer)
       : this.webPhone.sipInfo.username;
