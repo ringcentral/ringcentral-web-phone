@@ -73,7 +73,9 @@ class CallSession extends EventEmitter {
   }
 
   public get localNumber() {
-    return this.localPeer ? extractNumber(this.localPeer) : "";
+    return this.localPeer
+      ? extractNumber(this.localPeer)
+      : this.webPhone.sipInfo.username;
   }
 
   public get isConference() {
