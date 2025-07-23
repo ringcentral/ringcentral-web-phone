@@ -78,6 +78,14 @@ class CallSession extends EventEmitter {
       : this.webPhone.sipInfo.username;
   }
 
+  public get remoteTag() {
+    return extractTag(this.remotePeer);
+  }
+
+  public get localTag() {
+    return extractTag(this.localPeer);
+  }
+
   public get isConference() {
     return this.remotePeer
       ? extractNumber(this.remotePeer).startsWith("conf_")
@@ -174,11 +182,7 @@ class CallSession extends EventEmitter {
     return {
       // complete the transfer
       complete: async () => {
-        await this._transfer(
-          `"${target}@sip.ringcentral.com" <sip:${target}@sip.ringcentral.com;transport=wss?Replaces=${newSession.callId}%3Bto-tag%3D${
-            extractTag(newSession.remotePeer)
-          }%3Bfrom-tag%3D${extractTag(newSession.localPeer)}>`,
-        );
+        await this.completeWarmTransfer(newSession);
       },
       // cancel the transfer
       cancel: async () => {
@@ -187,6 +191,13 @@ class CallSession extends EventEmitter {
       },
       newSession,
     };
+  }
+
+  public async completeWarmTransfer(existingSession: CallSession) {
+    const target = existingSession.remoteNumber;
+    await this._transfer(
+      `"${target}@sip.ringcentral.com" <sip:${target}@sip.ringcentral.com;transport=wss?Replaces=${existingSession.callId}%3Bto-tag%3D${existingSession.remoteTag}%3Bfrom-tag%3D${existingSession.localTag}>`,
+    );
   }
 
   public async hangup() {

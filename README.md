@@ -343,6 +343,16 @@ transferor will have a chance to talk to the transferee. After that, depending
 on the transferor's decision, the app can call `complete()` to complete the
 transfer, or call `cancel()` to cancel the transfer.
 
+#### "Warm" transfer to an existing call session
+
+Instead of letting this SDK to create the new call session, some apps prefer to
+let end user to use the dialpad to create a new session manually. If that is the
+case, you may use the `completeWarmTransfer` method:
+
+```ts
+await session.completeWarmTransfer(existingSession);
+```
+
 ### Hang up the call
 
 ```ts

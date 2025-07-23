@@ -31,7 +31,7 @@ class WebPhone extends EventEmitter {
     mp.identify(options.sipInfo.username);
     mp.track("init", {
       distinct_id: options.sipInfo.username,
-      version: "2.2.2",
+      version: "2.2.3",
     });
     super();
     this.options = options;
