@@ -1,8 +1,6 @@
 ## todo
 
-pickup private parked call, 有没有可能 from to
-等等数据和之前park的那个session是一样的?
+Write test cases for ALL features
 
-write test cases for recent changes, 比如 outbound call headers
-
-write test cases for all features
+Private parking could fail due to "SIP/2.0 486 Busy Here". It means the parking
+location already has a call parked.
