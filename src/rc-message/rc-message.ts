@@ -1,9 +1,9 @@
 import { XMLBuilder, XMLParser } from "fast-xml-parser";
 
-interface HDR {
+export interface HDR {
   [key: string]: string | undefined;
 }
-interface BDY {
+export interface BDY {
   [key: string]: string | undefined;
 }
 
