@@ -915,6 +915,16 @@ connection, otherwise it is still the old outbound proxy.
 
 ## Custom SIP message headers
 
+### Add headers to outbound call
+
+```ts
+await webPhone.call("callee", "caller-id (optional)", {
+  headers: { "Custom-Header": "CustomHeaderValue" },
+});
+```
+
+### Add headers to outbound messages
+
 This is an advanced topic that most developers won't need to use.
 
 You can add arbitrary headers to outgoing SIP messages by extending the
