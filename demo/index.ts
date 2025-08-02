@@ -6,7 +6,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import type Platform from '@ringcentral/sdk/lib/platform/Platform';
 import { SessionState } from 'sip.js';
 
-import WebPhone from '../src/index';
+import WebPhone, { WebPhoneOptions } from '../src/index';
 import incomingAudio from 'url:./audio/incoming.ogg';
 import outgoingAudio from 'url:./audio/outgoing.ogg';
 import type { WebPhoneInvitation } from '../src/session';
@@ -159,7 +159,7 @@ $(() => {
   }
 
   function register(data) {
-    const webPhoneConfig: any = {
+    const webPhoneConfig: WebPhoneOptions = {
       enableDscp: true,
       clientId: localStorage.getItem('webPhoneclientId')!,
       audioHelper: {
@@ -176,6 +176,11 @@ $(() => {
       },
       enableQos: true,
       enableMediaReportLogging: true,
+
+      // in some network environments, the default iceCheckingTimeout of 500ms is not enough
+      // we need more time to gather candidates.
+      // disadvantage of this is that it will take more time to establish the call
+      iceCheckingTimeout: 3000, // 3 seconds
     };
 
     const urlParams = new URLSearchParams(window.location.search);
