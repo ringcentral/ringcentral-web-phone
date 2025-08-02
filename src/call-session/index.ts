@@ -355,7 +355,7 @@ class CallSession extends EventEmitter {
       headers: {
         "Content-Type": "application/sdp",
       },
-      body: answer.sdp,
+      body: this.rtcPeerConnection.localDescription!.sdp,
     });
     await this.webPhone.sipClient.reply(newMessage);
 

@@ -76,7 +76,7 @@ class OutboundCallSession extends CallSession {
         Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
         "Content-Type": "application/sdp",
       },
-      this.rtcPeerConnection.localDescription!.sdp!,
+      this.rtcPeerConnection.localDescription!.sdp,
     );
     if (callerId) {
       inviteMessage.headers["P-Asserted-Identity"] =
