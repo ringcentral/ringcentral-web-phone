@@ -129,7 +129,7 @@ export interface WebPhoneOptions {
   enableTurnServers?: boolean;
   /** Max time in milliseconds to be considered when generating ice candidates
    *
-   * default value `2000` when `enableTurnServers` is `true`, otherwise `500`
+   * default value `2000`
    */
   iceCheckingTimeout?: number;
   /** Policy used when generating ice candidates
@@ -366,7 +366,7 @@ export default class WebPhone {
     ];
 
     const sessionDescriptionHandlerFactoryOptions = options.sessionDescriptionHandlerFactoryOptions || {
-      iceGatheringTimeout: options.iceCheckingTimeout || 500,
+      iceGatheringTimeout: options.iceCheckingTimeout || 2000,
       enableDscp: options.enableDscp,
       peerConnectionConfiguration: {
         iceServers,

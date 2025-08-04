@@ -177,10 +177,8 @@ $(() => {
       enableQos: true,
       enableMediaReportLogging: true,
 
-      // in some network environments, the default iceCheckingTimeout of 500ms is not enough
-      // we need more time to gather candidates.
-      // disadvantage of this is that it will take more time to establish the call
-      iceCheckingTimeout: 3000, // 3 seconds
+      // previous default value is 500ms. Now it is 2000ms, so I comment it out
+      // iceCheckingTimeout: 2000,
     };
 
     const urlParams = new URLSearchParams(window.location.search);
