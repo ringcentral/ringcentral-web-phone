@@ -306,50 +306,50 @@ describe('MediaStreamsImpl', () => {
       .spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get')
       .mockReturnValue('new');
     mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
-    expect(mockOnMediaConnectionStateChange).toBeCalledWith('mediaConnectionStateNew', mockSession);
-    expect(mediaConnectionStateNew).toBeCalled();
+    expect(mockOnMediaConnectionStateChange).toHaveBeenCalledWith('mediaConnectionStateNew', mockSession);
+    expect(mediaConnectionStateNew).toHaveBeenCalled();
 
     jest
       .spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get')
       .mockReturnValue('checking');
     mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
-    expect(mockOnMediaConnectionStateChange).toBeCalledWith('mediaConnectionStateChecking', mockSession);
-    expect(mediaConnectionStateChecking).toBeCalled();
+    expect(mockOnMediaConnectionStateChange).toHaveBeenCalledWith('mediaConnectionStateChecking', mockSession);
+    expect(mediaConnectionStateChecking).toHaveBeenCalled();
 
     jest
       .spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get')
       .mockReturnValue('connected');
     mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
-    expect(mockOnMediaConnectionStateChange).toBeCalledWith('mediaConnectionStateConnected', mockSession);
-    expect(mediaConnectionStateConnected).toBeCalled();
+    expect(mockOnMediaConnectionStateChange).toHaveBeenCalledWith('mediaConnectionStateConnected', mockSession);
+    expect(mediaConnectionStateConnected).toHaveBeenCalled();
 
     jest
       .spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get')
       .mockReturnValue('completed');
     mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
-    expect(mockOnMediaConnectionStateChange).toBeCalledWith('mediaConnectionStateCompleted', mockSession);
-    expect(mediaConnectionStateCompleted).toBeCalled();
+    expect(mockOnMediaConnectionStateChange).toHaveBeenCalledWith('mediaConnectionStateCompleted', mockSession);
+    expect(mediaConnectionStateCompleted).toHaveBeenCalled();
 
     jest
       .spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get')
       .mockReturnValue('failed');
     mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
-    expect(mockOnMediaConnectionStateChange).toBeCalledWith('mediaConnectionStateFailed', mockSession);
-    expect(mediaConnectionStateFailed).toBeCalled();
+    expect(mockOnMediaConnectionStateChange).toHaveBeenCalledWith('mediaConnectionStateFailed', mockSession);
+    expect(mediaConnectionStateFailed).toHaveBeenCalled();
 
     jest
       .spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get')
       .mockReturnValue('disconnected');
     mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
-    expect(mockOnMediaConnectionStateChange).toBeCalledWith('mediaConnectionStateDisconnected', mockSession);
-    expect(mediaConnectionStateDisconnected).toBeCalled();
+    expect(mockOnMediaConnectionStateChange).toHaveBeenCalledWith('mediaConnectionStateDisconnected', mockSession);
+    expect(mediaConnectionStateDisconnected).toHaveBeenCalled();
 
     jest
       .spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get')
       .mockReturnValue('closed');
     mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
-    expect(mockOnMediaConnectionStateChange).toBeCalledWith('mediaConnectionStateClosed', mockSession);
-    expect(mediaConnectionStateClosed).toBeCalled();
+    expect(mockOnMediaConnectionStateChange).toHaveBeenCalledWith('mediaConnectionStateClosed', mockSession);
+    expect(mediaConnectionStateClosed).toHaveBeenCalled();
   });
 
   test('should not emit event on session and trigger onMediaConnectionStateChange on iceconnectionstatechange for unknown events', () => {
@@ -370,15 +370,15 @@ describe('MediaStreamsImpl', () => {
       .spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get')
       .mockReturnValue('randomEvent');
     mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
-    expect(mockOnMediaConnectionStateChange).toBeCalledTimes(0);
-    expect(sessionEventListener).toBeCalledTimes(0);
+    expect(mockOnMediaConnectionStateChange).toHaveBeenCalledTimes(0);
+    expect(sessionEventListener).toHaveBeenCalledTimes(0);
 
     jest
       .spyOn(mockSession.sessionDescriptionHandler.peerConnection, 'iceConnectionState', 'get')
       .mockReturnValue('kylo-ren-event');
     mockSession.sessionDescriptionHandler.peerConnection.emit('iceconnectionstatechange', null);
-    expect(mockOnMediaConnectionStateChange).toBeCalledTimes(0);
-    expect(sessionEventListener).toBeCalledTimes(0);
+    expect(mockOnMediaConnectionStateChange).toHaveBeenCalledTimes(0);
+    expect(sessionEventListener).toHaveBeenCalledTimes(0);
   });
 });
 
@@ -394,7 +394,7 @@ describe('MediaStreams', () => {
     const mockReinvite = jest.fn().mockReturnValue(Promise.resolve(null));
     mockSession.reinvite = mockReinvite;
     await mediaStreams.reconnectMedia();
-    expect(mockReinvite).toBeCalled();
+    expect(mockReinvite).toHaveBeenCalled();
   });
 
   test('should cleanup on release', (done) => {
@@ -424,8 +424,8 @@ describe('MediaStreams', () => {
     jest.advanceTimersByTime(400);
     // Added promise resolve since fake timer + promise work differently
     await Promise.resolve();
-    expect(getStatsCallback).toBeCalledTimes(4);
-    expect(rtpStatCallback).toBeCalledTimes(4);
+    expect(getStatsCallback).toHaveBeenCalledTimes(4);
+    expect(rtpStatCallback).toHaveBeenCalledTimes(4);
     await mediaStreams.release();
     getStatsCallback.mockClear();
     rtpStatCallback.mockClear();
@@ -433,8 +433,8 @@ describe('MediaStreams', () => {
     jest.advanceTimersByTime(400);
     // Added promise resolve since fake timer + promise work differently
     await Promise.resolve();
-    expect(getStatsCallback).toBeCalledTimes(8);
-    expect(rtpStatCallback).toBeCalledTimes(8);
+    expect(getStatsCallback).toHaveBeenCalledTimes(8);
+    expect(rtpStatCallback).toHaveBeenCalledTimes(8);
     mediaStreams.release();
   });
 
@@ -453,7 +453,7 @@ describe('MediaStreams', () => {
     jest.advanceTimersByTime(400);
     mediaStreams.stopMediaStats();
     jest.advanceTimersByTime(400);
-    expect(getStatsCallback).toBeCalledTimes(4);
+    expect(getStatsCallback).toHaveBeenCalledTimes(4);
     await mediaStreams.release();
   });
 

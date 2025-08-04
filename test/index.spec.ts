@@ -52,7 +52,7 @@ const login = async (
 
   await page.goto(path);
   const title = page.locator('h1');
-  await expect(title).toHaveText('RingCentral WebPhone Demo');
+  await expect(title).toHaveText('RingCentral WebPhone Demo for SDK 1.x');
   await page.screenshot({ path: 'screenshots/before-login.png' });
 
   page.on('websocket', ws);
