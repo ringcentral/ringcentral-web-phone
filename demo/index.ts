@@ -13,32 +13,6 @@ import type { WebPhoneInvitation } from '../src/session';
 global.jQuery = $;
 import('bootstrap');
 
-// Place this at the very start of your app — before SIP.js or any media session is initialized
-
-// Wrap createAnswer
-const originalCreateAnswer = RTCPeerConnection.prototype.createAnswer;
-RTCPeerConnection.prototype.createAnswer = async function (...args) {
-  console.time('RTCPeerConnection.createAnswer');
-  try {
-    const result = await originalCreateAnswer.apply(this, args);
-    return result;
-  } finally {
-    console.timeEnd('RTCPeerConnection.createAnswer');
-  }
-};
-
-// Wrap setLocalDescription
-const originalSetLocalDescription = RTCPeerConnection.prototype.setLocalDescription;
-RTCPeerConnection.prototype.setLocalDescription = async function (...args) {
-  console.time('RTCPeerConnection.setLocalDescription');
-  try {
-    const result = await originalSetLocalDescription.apply(this, args);
-    return result;
-  } finally {
-    console.timeEnd('RTCPeerConnection.setLocalDescription');
-  }
-};
-
 $(() => {
   let sdk: SDK;
   let platform: Platform;
