@@ -584,12 +584,12 @@ callSession.on("disposed", () => {
 
 ### CallSession Events
 
-### `answered` event
+#### `answered` event
 
 - Triggered when the call is answered.
 - Note: There is a [known issue](#known-issue) affecting outbound calls.
 
-### `disposed` event
+#### `disposed` event
 
 - For answered calls, this event is triggered when either you or the remote peer
   hangs up.
@@ -598,7 +598,7 @@ callSession.on("disposed", () => {
 - For outbound calls, if call failed (for example, invalid callee number), it
   will be disposed automatically. So, this event will be triggered.
 
-### `failed` event
+#### `failed` event
 
 - This is for outbound call only. It means the outbound call was not successful
 - It may be caused by invalid target number
@@ -642,6 +642,22 @@ if (callSession.state === "failed" || callSession.state === "disposed") {
 
 Failed call sessions will be disposed automatically, so the state will become
 "disposed". "failed" is just a temporary state.
+
+#### `mediaStreamSet` event
+
+This is triggered when `callSession.mediaStream` is set. An interesting use case
+is to apply noise reduction to this object.
+
+```ts
+callSession.on("mediaStreamSet", (mediaStream) => {
+  console.log("a new mediaStream object is set");
+});
+```
+
+When you make an outbound call: `const callSession = await webPhone.call(...)`,
+at the time that you get the `callSession` object, `callSession.mediaStream` is
+already set. It would be too late to subscribe for `mediaStreamSet` event. In
+such case you can access `callSession.mediaStream` directly.
 
 #### Where is the `ringing` event?
 

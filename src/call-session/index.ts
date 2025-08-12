@@ -33,7 +33,7 @@ class CallSession extends EventEmitter {
   public localPeer: string;
   public remotePeer: string;
   public rtcPeerConnection: RTCPeerConnection;
-  public mediaStream?: MediaStream;
+  public _mediaStream?: MediaStream;
   public audioElement: HTMLAudioElement;
   public state: "init" | "ringing" | "answered" | "disposed" | "failed" =
     "init";
@@ -47,6 +47,14 @@ class CallSession extends EventEmitter {
   public constructor(webPhone: WebPhone) {
     super();
     this.webPhone = webPhone;
+  }
+
+  public get mediaStream(): MediaStream | undefined {
+    return this._mediaStream;
+  }
+  public set mediaStream(stream: MediaStream) {
+    this._mediaStream = stream;
+    this.emit("mediaStreamSet", stream);
   }
 
   // for inbound call, this.sipMessage?.headers["Call-Id"] will be the call id
@@ -228,6 +236,7 @@ class CallSession extends EventEmitter {
     // note: we can't dispose the call session here
     // otherwise the caller will not be able to talk to the flip target
     // after the flip target answers the call, manually dispose the call session
+    // todo: review this part
     return flipResult;
   }
 
