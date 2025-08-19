@@ -238,6 +238,17 @@ await inbundCallSession.toVoicemail();
 await inbundCallSession.forward(targetNumber);
 ```
 
+##### Troubleshooting Call Forwarding Issues
+
+If you run into trouble forwarding calls to a specific number/extension,
+consider using an alternative approach: answering the call and then immediately
+transferring it.
+
+The official RingCentral app uses this exact method when you forward a call,
+which suggests it may be a more reliable way to handle call forwarding. If you
+encounter an error using the forward method, this workaround might just solve
+the problem.
+
 #### Reply the call
 
 Optionally, you can tell the server that the user has started replying the call.
