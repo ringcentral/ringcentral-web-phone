@@ -238,6 +238,18 @@ await inbundCallSession.toVoicemail();
 await inbundCallSession.forward(targetNumber);
 ```
 
+##### Forward to extension number
+
+You will need to detect if end user specified an extension number instead of a
+phone number and prefix it with the main company numbers.
+
+For example, if user wants to forward to extension "102", and you know that the
+main company number is "12345678987", you can:
+
+```ts
+await inbundCallSession.forward("12345678987*102");
+```
+
 ##### Troubleshooting Call Forwarding Issues
 
 If you run into trouble forwarding calls to a specific number/extension,
