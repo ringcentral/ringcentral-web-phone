@@ -129,7 +129,7 @@ export interface WebPhoneOptions {
   enableTurnServers?: boolean;
   /** Max time in milliseconds to be considered when generating ice candidates
    *
-   * default value `2000`
+   * default value `1000`
    */
   iceCheckingTimeout?: number;
   /** Policy used when generating ice candidates
@@ -355,7 +355,7 @@ export default class WebPhone {
     let iceServers: Array<RTCIceServer> = [];
     if (options.enableTurnServers) {
       iceServers = options.turnServers!.map((url) => ({ urls: url }));
-      options.iceCheckingTimeout = options.iceCheckingTimeout || 2000;
+      options.iceCheckingTimeout = options.iceCheckingTimeout || 1000;
     }
     iceServers = [
       ...iceServers,
@@ -366,7 +366,7 @@ export default class WebPhone {
     ];
 
     const sessionDescriptionHandlerFactoryOptions = options.sessionDescriptionHandlerFactoryOptions || {
-      iceGatheringTimeout: options.iceCheckingTimeout || 2000,
+      iceGatheringTimeout: options.iceCheckingTimeout || 1000,
       enableDscp: options.enableDscp,
       peerConnectionConfiguration: {
         iceServers,

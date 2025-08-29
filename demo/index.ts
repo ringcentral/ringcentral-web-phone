@@ -151,8 +151,8 @@ $(() => {
       enableQos: true,
       enableMediaReportLogging: true,
 
-      // previous default value is 500ms. Now it is 2000ms, so I comment it out
-      // iceCheckingTimeout: 2000,
+      // previous default value is 500ms. Now it is 1000ms, so I comment it out
+      // iceCheckingTimeout: 1000,
     };
 
     const urlParams = new URLSearchParams(window.location.search);
