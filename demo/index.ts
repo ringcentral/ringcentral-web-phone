@@ -269,6 +269,19 @@ $(() => {
         session
           .accept()
           .then(() => {
+            const pc = session.sessionDescriptionHandler?.peerConnection as RTCPeerConnection;
+            setTimeout(async () => {
+              const stats = await pc.getStats();
+              stats.forEach((report) => {
+                if(report.kind === "audio" && report.type === 'inbound-rtp') {
+                  console.log(report);
+                  if(report.bytesReceived < 1000) {
+                    console.warn('not enough audio data received, probably one way audio issue');
+                  }
+                }
+              });
+            }, 3000);
+
             $modal.modal('hide');
             onAccepted(session);
           })
