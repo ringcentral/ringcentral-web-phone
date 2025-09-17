@@ -207,15 +207,15 @@ webPhone.on("inboundCall", (inbundCallSession: InboundCallSession) => {
 });
 ```
 
-### Actions to take on inbound call session
+## Actions to take on inbound call session
 
-#### Answer the call
+### Answer the call
 
 ```ts
 await inbundCallSession.answer();
 ```
 
-#### Decline the call
+### Decline the call
 
 ```ts
 await inbundCallSession.decline();
@@ -226,19 +226,19 @@ for the caller immediately. The caller will hear the ringback tone for a while
 until he/she hears "I am sorry, no one is available to take your call. Thank you
 for calling. Goodbye." And the call will not reach your voicemail.
 
-#### Send the call to voicemail
+### Send the call to voicemail
 
 ```ts
 await inbundCallSession.toVoicemail();
 ```
 
-#### Forward the call
+### Forward the call
 
 ```ts
 await inbundCallSession.forward(targetNumber);
 ```
 
-##### Forward to extension number
+#### Forward to extension number
 
 You will need to detect if end user specified an extension number instead of a
 phone number and prefix it with the main company numbers.
@@ -250,7 +250,7 @@ main company number is "12345678987", you can:
 await inbundCallSession.forward("12345678987*102");
 ```
 
-##### Troubleshooting Call Forwarding Issues
+#### Troubleshooting Call Forwarding Issues
 
 If you run into trouble forwarding calls to a specific number/extension,
 consider using an alternative approach: answering the call and then immediately
@@ -261,7 +261,7 @@ which suggests it may be a more reliable way to handle call forwarding. If you
 encounter an error using the forward method, this workaround might just solve
 the problem.
 
-#### Reply the call
+### Reply the call
 
 Optionally, you can tell the server that the user has started replying the call.
 The server will give the user more time to edit the reply message before ending
@@ -328,6 +328,13 @@ if (response.body.Sts === "0") {
   });
 }
 ```
+
+### Inbound calls from call queues
+
+Inbound calls from call queues are special. There are only two actions you can
+perform: answer or reject.
+
+You cannot perform other actions, such as forward or to voicemail.
 
 ## Actions to take on answered call sessions
 
