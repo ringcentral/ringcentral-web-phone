@@ -133,6 +133,13 @@ $(() => {
   }
 
   function register(data) {
+
+
+    // disable stun servers, for testing one way audio issue with certain network setup
+    data.sipInfo.stunServers = [];
+    console.log('SIP Info', data.sipInfo);
+
+
     const webPhoneConfig: WebPhoneOptions = {
       enableDscp: true,
       clientId: localStorage.getItem('webPhoneclientId')!,
