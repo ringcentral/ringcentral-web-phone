@@ -713,7 +713,7 @@ This makes the `answered` event less useful. For outbound call, it is a fake
 event that triggers immediately. For inbound call, since it is your own code
 that answers the call, you probably don't need the event at all.
 
-##### Special case for Vodafone branded accounts
+#### Special case for Vodafone branded accounts
 
 Vodafone branded accounts use a specific signaling flow where the "200 OK"
 response is only sent once the call is answered. This means
@@ -724,7 +724,7 @@ If you need the `outboundCallSession` object immediately (e.g., to update the UI
 while the phone is still ringing), use an event-based approach instead of
 awaiting the promise:
 
-**Standard approach (Blocks until answered):**
+Standard approach (Blocks until answered):
 
 ```ts
 const outboundCallSession = await this.webPhone.call(toNumber, this.fromNumber);
@@ -732,7 +732,7 @@ const outboundCallSession = await this.webPhone.call(toNumber, this.fromNumber);
 // business logic here
 ```
 
-**Recommended approach (Immediate access):**
+Recommended approach (Immediate access):
 
 ```ts
 this.webPhone.once("outboundCall", (outboundCallSession) => {
