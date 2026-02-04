@@ -713,6 +713,36 @@ This makes the `answered` event less useful. For outbound call, it is a fake
 event that triggers immediately. For inbound call, since it is your own code
 that answers the call, you probably don't need the event at all.
 
+##### Special case for Vodafone branded accounts
+
+Vodafone branded accounts use a specific signaling flow where the "200 OK"
+response is only sent once the call is answered. This means
+`await this.webPhone.call(...)` will remain pending throughout the ringing
+phase.
+
+If you need the `outboundCallSession` object immediately (e.g., to update the UI
+while the phone is still ringing), use an event-based approach instead of
+awaiting the promise:
+
+**Standard approach (Blocks until answered):**
+
+```ts
+const outboundCallSession = await this.webPhone.call(toNumber, this.fromNumber);
+// do something with the outboundCallSession object
+// business logic here
+```
+
+**Recommended approach (Immediate access):**
+
+```ts
+this.webPhone.once("outboundCall", (outboundCallSession) => {
+  // do something with the outboundCallSession object
+  // business logic here
+  // please note, at this time, the call may not have been answered yet (SIP server doesn't reply with "200 OK" yet)
+});
+this.webPhone.call(toNumber, this.fromNumber);
+```
+
 ### SIP Client Events
 
 - `inboundMessage`
