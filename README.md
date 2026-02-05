@@ -207,6 +207,29 @@ webPhone.on("inboundCall", (inbundCallSession: InboundCallSession) => {
 });
 ```
 
+## Enabling Local Ringtones
+
+By default, the SDK does not play a local ringtone. To provide audio feedback,
+you must manually start the ringtone when the call begins ringing, and stop it
+immediately once the call is answered or disposed.
+
+Use the following pattern to manage the ringtone state:
+
+```ts
+// a new inbound call or outbound call is supposed to ring
+// play local ringtone
+callSession.once("answered", () => {
+  // stop local ringtone
+});
+callSession.once("disposed", () => {
+  // stop local ringtone(if it's not stopped already).
+});
+```
+
+> Implementation Note: You can implement the actual audio playback using the
+> standard
+> [HTML5 `<audio>` element](https://www.w3schools.com/html/html5_audio.asp).
+
 ## Actions to take on inbound call session
 
 ### Answer the call
