@@ -387,6 +387,7 @@ two.
 ```ts
 const { complete, cancel, newSession } = await session.warmTransfer(
   transferToNumber,
+  callerId, // optional, transferee will see this number if specified
 );
 ```
 

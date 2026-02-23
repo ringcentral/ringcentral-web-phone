@@ -177,6 +177,7 @@ class CallSession extends EventEmitter {
 
   public async warmTransfer(
     target: string,
+    callerId?: string,
   ): Promise<
     {
       complete: () => Promise<void>;
@@ -186,7 +187,7 @@ class CallSession extends EventEmitter {
   > {
     await this.hold();
     // create a new session and user needs to talk to the target before transfer
-    const newSession = await this.webPhone.call(target);
+    const newSession = await this.webPhone.call(target, callerId);
     return {
       // complete the transfer
       complete: async () => {
