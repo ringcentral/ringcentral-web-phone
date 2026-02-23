@@ -35,7 +35,6 @@
   "dependencies": {
     "blueimp-md5": "^2.19.0",
     "fast-xml-parser": "^5.3.7",
-    "mixpanel-browser": "^2.74.0",
     "sdp-transform": "^3.0.0",
     "uuid": "^13.0.0"
   },
