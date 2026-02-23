@@ -28,7 +28,7 @@ testTwoPages(
     // expect(messages[6]).toMatch(/^outbound - SIP\/2.0 200 OK$/);
     // expect(messages[3]).toMatch(/^inbound - CANCEL sip:/);
     // expect(messages[4]).toMatch(/^outbound - SIP\/2.0 200 OK$/);
-    let rcMessage = await RcMessage.fromXml(calleeMessages[0].body);
+    const rcMessage = await RcMessage.fromXml(calleeMessages[0].body);
     expect(rcMessage.headers.Cmd).toBe(
       callControlCommands.ClientReject.toString(),
     );

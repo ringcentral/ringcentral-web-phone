@@ -7,7 +7,8 @@
     "outDir": "./dist/esm",
     "skipLibCheck": true,
     "paths": {
-      "fast-xml-parser": ["./node_modules/fast-xml-parser/src/fxp.js"]
+      "fast-xml-parser": ["./node_modules/fast-xml-parser/src/fxp.js"],
+      "uuid": ["./node_modules/uuid/dist/index.js"]
     }
   },
   "include": ["src/**/*.ts"]
