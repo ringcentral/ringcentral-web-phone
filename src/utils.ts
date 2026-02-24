@@ -1,9 +1,26 @@
-import { v4 } from "uuid";
 import md5 from "blueimp-md5";
 
 import type { SipInfo } from "./types.js";
 
-export const uuid = () => v4();
+// Private counter kept alive in the closure
+let counter = 0;
+export const uuid = () => {
+  // 1. Increment counter safely (reset if it gets dangerously high, though unlikely)
+  counter = (counter + 1) % Number.MAX_SAFE_INTEGER;
+
+  // 2. Get current time in Base36 (alphanumeric)
+  const timePart = Date.now().toString(36);
+
+  // 3. Get the counter in Base36
+  const countPart = counter.toString(36);
+
+  // 4. Add a bit of Math.random for good measure (Base36, stripping '0.')
+  const randomPart = Math.random().toString(36).substring(2, 8);
+
+  // Combine them. Output example: "lq5z8f9x1a2b3c"
+  return `${timePart}${countPart}${randomPart}`;
+};
+
 export const branch = () => "z9hG4bK-" + uuid();
 
 const generateResponse = (
