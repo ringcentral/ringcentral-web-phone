@@ -1208,10 +1208,10 @@
   resolved "https://registry.yarnpkg.com/@types/estree/-/estree-1.0.8.tgz#958b91c991b1867ced318bedea0e215ee050726e"
   integrity sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==
 
-"@types/node@^25.3.0":
-  version "25.3.0"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-25.3.0.tgz#749b1bd4058e51b72e22bd41e9eab6ebd0180470"
-  integrity sha512-4K3bqJpXpqfg2XKGK9bpDTc6xO/xoUP/RBWS7AtRMug6zZFaRekiLzjVtAoZMquxoAbzBvy5nxQ7veS5eYzf8A==
+"@types/node@^25.3.3":
+  version "25.3.3"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-25.3.3.tgz#605862544ee7ffd7a936bcbf0135a14012f1e549"
+  integrity sha512-DpzbrH7wIcBaJibpKo9nnSQL0MTRdnWttGyE5haGwK86xgMOkFLp7vEyfQPGLOJh5wNYiJ3V9PmUMDhV9u8kkQ==
   dependencies:
     undici-types "~7.18.0"
 
@@ -1407,11 +1407,17 @@ events@^3.3.0:
   resolved "https://registry.yarnpkg.com/events/-/events-3.3.0.tgz#31a95ad0a924e2d2c419a813aeb2c4e878ea7400"
   integrity sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==
 
-fast-xml-parser@^5.3.7:
-  version "5.3.7"
-  resolved "https://registry.yarnpkg.com/fast-xml-parser/-/fast-xml-parser-5.3.7.tgz#81694e71ff0e568cbb6befade342f2a7e58aa1d9"
-  integrity sha512-JzVLro9NQv92pOM/jTCR6mHlJh2FGwtomH8ZQjhFj/R29P2Fnj38OgPJVtcvYw6SuKClhgYuwUZf5b3rd8u2mA==
+fast-xml-builder@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/fast-xml-builder/-/fast-xml-builder-1.0.0.tgz#a485d7e8381f1db983cf006f849d1066e2935241"
+  integrity sha512-fpZuDogrAgnyt9oDDz+5DBz0zgPdPZz6D4IR7iESxRXElrlGTRkHJ9eEt+SACRJwT0FNFrt71DFQIUFBJfX/uQ==
+
+fast-xml-parser@^5.4.2:
+  version "5.4.2"
+  resolved "https://registry.yarnpkg.com/fast-xml-parser/-/fast-xml-parser-5.4.2.tgz#7fc66463b59260b0c5fd57edf46148a418bde68b"
+  integrity sha512-pw/6pIl4k0CSpElPEJhDppLzaixDEuWui2CUQQBH/ECDf7+y6YwA4Gf7Tyb0Rfe4DIMuZipYj4AEL0nACKglvQ==
   dependencies:
+    fast-xml-builder "^1.0.0"
     strnum "^2.1.2"
 
 fdir@^6.2.0:
