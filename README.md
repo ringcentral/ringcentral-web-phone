@@ -1365,20 +1365,20 @@ snippet above to "switch the call to this device".
 
 ## Auto Answer
 
-This feature is by default disabled. To enable it when you create a new phone
+This feature is by default enabled. To disable it when you create a new phone
 instance:
 
 ```ts
-const webPhone = new WebPhone({ sipInfo, autoAnswer: true });
+const webPhone = new WebPhone({ sipInfo, autoAnswer: false });
 ```
 
-Or you can enable this feature afterwards:
+Or you can disable this feature afterwards:
 
 ```ts
-webPhone.autoAnswer = true;
+webPhone.autoAnswer = false;
 ```
 
-When this feature is enbled, whenever there is an inbound call, the SIP `INVITE`
+When this feature is enabled, whenever there is an inbound call, the SIP `INVITE`
 message will be inspected. If there is a header "Alert-Info: Auto Answer", the
 call will be auto answered. The `Call-Info` header will also be checked, if it
 contains `Answer-After=<a-number-here>`, that would be the delay before the call

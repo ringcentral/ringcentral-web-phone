@@ -18,7 +18,7 @@ class WebPhone extends EventEmitter {
   public sipClient: SipClient;
   public deviceManager: DeviceManager;
   public callSessions: CallSession[] = [];
-  public autoAnswer = false;
+  public autoAnswer = true;
   public options: WebPhoneOptions;
 
   public disposed = false;
@@ -29,7 +29,7 @@ class WebPhone extends EventEmitter {
     this.sipInfo = options.sipInfo;
     this.sipClient = options.sipClient ?? new DefaultSipClient(options);
     this.deviceManager = options.deviceManager ?? new DefaultDeviceManager();
-    this.autoAnswer = options.autoAnswer ?? false;
+    this.autoAnswer = options.autoAnswer ?? true;
 
     this.sipClient.on(
       "inboundMessage",
