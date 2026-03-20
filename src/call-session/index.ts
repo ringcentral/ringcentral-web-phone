@@ -26,6 +26,7 @@ type FlipResult = CommandResult & {
   number: string;
   target: string;
 };
+const DEFAULT_TRANSFER_TIMEOUT_MS = 10000;
 
 class CallSession extends EventEmitter {
   public webPhone: WebPhone;
@@ -171,13 +172,16 @@ class CallSession extends EventEmitter {
     }
   }
 
-  public async transfer(target: string) {
-    return await this._transfer(`sip:${target}@sip.ringcentral.com`);
+  public async transfer(
+    target: string,
+    timeout = DEFAULT_TRANSFER_TIMEOUT_MS,
+  ) {
+    return await this._transfer(`sip:${target}@sip.ringcentral.com`, timeout);
   }
 
   public async warmTransfer(
     target: string,
-    callerId?: string,
+    options?: { callerId?: string; timeout?: number },
   ): Promise<
     {
       complete: () => Promise<void>;
@@ -187,11 +191,14 @@ class CallSession extends EventEmitter {
   > {
     await this.hold();
     // create a new session and user needs to talk to the target before transfer
-    const newSession = await this.webPhone.call(target, callerId);
+    const newSession = await this.webPhone.call(target, options?.callerId);
     return {
       // complete the transfer
       complete: async () => {
-        await this.completeWarmTransfer(newSession);
+        await this.completeWarmTransfer(
+          newSession,
+          options?.timeout ?? DEFAULT_TRANSFER_TIMEOUT_MS,
+        );
       },
       // cancel the transfer
       cancel: async () => {
@@ -202,10 +209,14 @@ class CallSession extends EventEmitter {
     };
   }
 
-  public async completeWarmTransfer(existingSession: CallSession) {
+  public async completeWarmTransfer(
+    existingSession: CallSession,
+    timeout = DEFAULT_TRANSFER_TIMEOUT_MS,
+  ) {
     const target = existingSession.remoteNumber;
     await this._transfer(
       `"${target}@sip.ringcentral.com" <sip:${target}@sip.ringcentral.com;transport=wss?Replaces=${existingSession.callId}%3Bto-tag%3D${existingSession.remoteTag}%3Bfrom-tag%3D${existingSession.localTag}>`,
+      timeout,
     );
   }
 
@@ -450,7 +461,10 @@ class CallSession extends EventEmitter {
     });
   }
 
-  protected async _transfer(uri: string) {
+  protected async _transfer(
+    uri: string,
+    timeout = DEFAULT_TRANSFER_TIMEOUT_MS,
+  ) {
     const requestMessage = new RequestMessage(
       `REFER ${extractAddress(this.remotePeer)} SIP/2.0`,
       {
@@ -465,16 +479,28 @@ class CallSession extends EventEmitter {
     await this.webPhone.sipClient.request(requestMessage);
 
     // wait for the final SIP message
-    return new Promise<void>((resolve) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    return new Promise<void>((resolve, reject) => {
       const handler = (inboundMessage: InboundMessage) => {
         if (
           inboundMessage.subject.startsWith("BYE sip:") &&
           inboundMessage.headers["Call-Id"] === this.callId
         ) {
+          clearTimeout(timeoutId);
           this.webPhone.sipClient.off("inboundMessage", handler);
           resolve();
         }
       };
+      timeoutId = setTimeout(() => {
+        this.webPhone.sipClient.off("inboundMessage", handler);
+        reject(
+          new Error(
+            `"REFER ${
+              extractAddress(this.remotePeer)
+            } SIP/2.0" request timed out. It often means either you don't have permission or the call is not in a correct state.`,
+          ),
+        );
+      }, timeout);
       this.webPhone.sipClient.on("inboundMessage", handler);
     });
   }
