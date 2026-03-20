@@ -1,6 +1,6 @@
 {
   "name": "ringcentral-web-phone",
-  "version": "2.3.3",
+  "version": "2.4.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ringcentral/ringcentral-web-phone.git"
@@ -44,15 +44,15 @@
   },
   "dependencies": {
     "blueimp-md5": "^2.19.0",
-    "fast-xml-parser": "^5.4.2",
+    "fast-xml-parser": "^5.5.8",
     "sdp-transform": "^3.0.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
-    "@rollup/plugin-commonjs": "^29.0.0",
+    "@rollup/plugin-commonjs": "^29.0.2",
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@types/blueimp-md5": "^2.18.2",
-    "@types/node": "^25.3.3",
+    "@types/node": "^25.5.0",
     "@types/sdp-transform": "^2.15.0",
     "buffer": "^6.0.3",
     "dotenv-override-true": "^6.2.2",

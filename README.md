@@ -387,7 +387,10 @@ two.
 ```ts
 const { complete, cancel, newSession } = await session.warmTransfer(
   transferToNumber,
-  callerId, // optional, transferee will see this number if specified
+  {
+    callerId, // optional, transferee will see this number if specified
+    timeout, // optional, by default 10 seconds
+  },
 );
 ```
 
