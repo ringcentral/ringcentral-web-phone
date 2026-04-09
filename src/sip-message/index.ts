@@ -21,7 +21,7 @@ class SipMessage {
     [key: string]: string;
   };
   public body: string;
-  public direction: "inbound" | "outbound";
+  public direction!: "inbound" | "outbound";
 
   public constructor(subject = "", headers = {}, body = "") {
     this.subject = subject;

@@ -4,6 +4,7 @@
     "module": "commonjs",
     "target": "ES2022",
     "declaration": true,
+    "rootDir": "./src",
     "outDir": "./dist/cjs",
     "skipLibCheck": true
   },

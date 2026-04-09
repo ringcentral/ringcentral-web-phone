@@ -4,11 +4,9 @@
     "module": "ESNext",
     "target": "ESNext",
     "declaration": true,
+    "rootDir": "./src",
     "outDir": "./dist/esm",
-    "skipLibCheck": true,
-    "paths": {
-      "fast-xml-parser": ["./node_modules/fast-xml-parser/src/fxp.js"]
-    }
+    "skipLibCheck": true
   },
   "include": ["src/**/*.ts"]
 }

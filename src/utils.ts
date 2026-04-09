@@ -53,8 +53,8 @@ export const generateAuthorization = (
       nonce,
     ),
   };
-  return Object.keys(authObj)
-    .map((key) => `${key}="${authObj[key]}"`)
+  return Object.entries(authObj)
+    .map(([key, value]) => `${key}="${value}"`)
     .join(", ");
 };
 

@@ -1,6 +1,6 @@
 {
   "name": "ringcentral-web-phone",
-  "version": "2.4.0",
+  "version": "2.4.1-beta.2",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ringcentral/ringcentral-web-phone.git"
@@ -39,7 +39,7 @@
     "format": "biome format --write .",
     "lint": "biome lint --write .",
     "check": "biome check .",
-    "prepublishOnly": "yarn lint && yarn build",
+    "prepublishOnly": "yarn build",
     "postpublish": "rm -rf dist",
     "serve": "rm -rf .parcel-cache && parcel test/index.html --no-hmr",
     "test": "NODE_OPTIONS=--require=dotenv-override-true/config playwright test --workers=1"

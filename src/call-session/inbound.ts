@@ -122,31 +122,88 @@ class InboundCallSession extends CallSession {
 
   public async answer() {
     await this.init();
-    await this.rtcPeerConnection.setRemoteDescription({
-      type: "offer",
-      sdp: this.sipMessage.body,
-    });
-    const answer = await this.rtcPeerConnection.createAnswer();
-    await this.rtcPeerConnection.setLocalDescription(answer);
 
-    // wait for ICE gathering to complete
-    await new Promise((resolve) => {
-      this.rtcPeerConnection.onicecandidate = (event) => {
-        if (event.candidate === null) {
-          resolve(true);
-        }
-      };
-      setTimeout(() => resolve(false), 2000);
-    });
+    // most INVITE message will have a body with SDP offer.
+    if (this.sipMessage.body.length > 0) {
+      await this.rtcPeerConnection.setRemoteDescription({
+        type: "offer",
+        sdp: this.sipMessage.body,
+      });
+      const answer = await this.rtcPeerConnection.createAnswer();
+      await this.rtcPeerConnection.setLocalDescription(answer);
 
-    const newMessage = new ResponseMessage(this.sipMessage, {
-      responseCode: 200,
-      headers: {
-        "Content-Type": "application/sdp",
-      },
-      body: this.rtcPeerConnection.localDescription!.sdp,
-    });
-    await this.webPhone.sipClient.reply(newMessage);
+      // wait for ICE gathering to complete
+      await new Promise((resolve) => {
+        this.rtcPeerConnection.onicecandidate = (event) => {
+          if (event.candidate === null) {
+            resolve(true);
+          }
+        };
+        setTimeout(() => resolve(false), 2000);
+      });
+
+      const newMessage = new ResponseMessage(this.sipMessage, {
+        responseCode: 200,
+        headers: {
+          "Content-Type": "application/sdp",
+        },
+        body: this.rtcPeerConnection.localDescription!.sdp,
+      });
+      await this.webPhone.sipClient.reply(newMessage);
+    } else {
+      // some INVITE message has an empty body. For example, when you invoke RESTful API /pickup to answer a call from a call queue
+      const offer = await this.rtcPeerConnection.createOffer({
+        iceRestart: true,
+      });
+      await this.rtcPeerConnection.setLocalDescription(offer);
+
+      // wait for srflx ICE candidate or timeout after 2 seconds
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(() => {
+          if (this.webPhone.options.debug) {
+            console.warn(
+              "srflx candidate not found within 2 seconds — proceeding anyway.",
+            );
+          }
+          cleanup();
+          resolve();
+        }, 2000);
+
+        const onIceCandidate = (event: RTCPeerConnectionIceEvent) => {
+          const candidate = event.candidate?.candidate;
+          if (!candidate) return;
+          if (candidate.includes("typ srflx")) {
+            cleanup();
+            setTimeout(() => {
+              resolve();
+            }, 500); // extra 500ms after got srflx candidate
+          }
+        };
+        const cleanup = () => {
+          clearTimeout(timeout);
+          this.rtcPeerConnection.removeEventListener(
+            "icecandidate",
+            onIceCandidate,
+          );
+        };
+        this.rtcPeerConnection.addEventListener("icecandidate", onIceCandidate);
+      });
+
+      const newMessage = new ResponseMessage(this.sipMessage, {
+        responseCode: 200,
+        headers: {
+          "Content-Type": "application/sdp",
+        },
+        body: this.rtcPeerConnection.localDescription!.sdp,
+      });
+      const ackMessage = await this.webPhone.sipClient.request(
+        newMessage as RequestMessage,
+      );
+      this.rtcPeerConnection.setRemoteDescription({
+        type: "answer",
+        sdp: ackMessage.body,
+      });
+    }
 
     this.state = "answered";
     this.emit("answered");

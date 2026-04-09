@@ -30,16 +30,16 @@ const DEFAULT_TRANSFER_TIMEOUT_MS = 10000;
 
 class CallSession extends EventEmitter {
   public webPhone: WebPhone;
-  public sipMessage: InboundMessage;
-  public localPeer: string;
-  public remotePeer: string;
-  public rtcPeerConnection: RTCPeerConnection;
+  public sipMessage!: InboundMessage;
+  public localPeer!: string;
+  public remotePeer!: string;
+  public rtcPeerConnection!: RTCPeerConnection;
   public _mediaStream?: MediaStream;
-  public audioElement: HTMLAudioElement;
+  public audioElement!: HTMLAudioElement;
   public state: "init" | "ringing" | "answered" | "disposed" | "failed" =
     "init";
-  public direction: "inbound" | "outbound";
-  public inputDeviceId: string;
+  public direction!: "inbound" | "outbound";
+  public inputDeviceId!: string;
   public outputDeviceId: string | undefined;
 
   private reqid = 1;

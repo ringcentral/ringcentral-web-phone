@@ -16,12 +16,12 @@ import {
 const maxExpires = 60;
 export class DefaultSipClient extends EventEmitter implements SipClient {
   public disposed = false;
-  public wsc: WebSocket;
+  public wsc!: WebSocket;
   public sipInfo: SipInfo;
   public instanceId: string;
   private debug: boolean;
 
-  private timeoutHandle: NodeJS.Timeout;
+  private timeoutHandle!: ReturnType<typeof setTimeout>;
 
   public constructor(options: SipClientOptions) {
     super();
@@ -94,7 +94,7 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
         resolve();
       };
       this.wsc.addEventListener("open", openEventHandler);
-      const errorEventHandler = (e) => {
+      const errorEventHandler = (e: Event) => {
         this.wsc.removeEventListener("error", errorEventHandler);
         reject(e);
       };
@@ -176,7 +176,10 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
     }
     return new Promise<InboundMessage>((resolve) => {
       const messageListerner = (inboundMessage: InboundMessage) => {
-        if (inboundMessage.headers.CSeq !== message.headers.CSeq) {
+        if (
+          inboundMessage.headers.CSeq.trim().split(/\s+/)[0] !==
+          message.headers.CSeq.trim().split(/\s+/)[0]
+        ) {
           return;
         }
         if (inboundMessage.subject.startsWith("SIP/2.0 100 ")) {
@@ -194,10 +197,7 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
 export class DummySipClient extends EventEmitter implements SipClient {
   private static inboundMessage: InboundMessage = new InboundMessage();
   public disposed = false;
-  public wsc: WebSocket;
-  public constructor() {
-    super();
-  }
+  public wsc!: WebSocket;
   public async start() {}
   public request() {
     return Promise.resolve(DummySipClient.inboundMessage);
