@@ -4,10 +4,7 @@ import { assertCallCount, callAndAnswer, testTwoPages } from "../common";
 
 testTwoPages("dtmf", async ({ callerResource, calleeResource }) => {
   const { callerPage, calleePage, callerMessages, calleeMessages } =
-    await callAndAnswer(
-      callerResource,
-      calleeResource,
-    );
+    await callAndAnswer(callerResource, calleeResource);
 
   await calleePage.evaluate(async () => {
     await globalThis.inboundCalls[0].sendDtmf("123#");

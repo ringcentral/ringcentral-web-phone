@@ -10,11 +10,11 @@ globalThis.setup = async (sipInfo: string) => {
   });
   globalThis.webPhone = manage(webPhone);
   const { start, stop } = autoRun(() => {
-    globalThis.inboundCalls = webPhone.callSessions.filter((call) =>
-      call.direction === "inbound"
+    globalThis.inboundCalls = webPhone.callSessions.filter(
+      (call) => call.direction === "inbound",
     );
-    globalThis.outboundCalls = webPhone.callSessions.filter((call) =>
-      call.direction === "outbound"
+    globalThis.outboundCalls = webPhone.callSessions.filter(
+      (call) => call.direction === "outbound",
     );
   });
   start();

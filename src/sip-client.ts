@@ -115,10 +115,8 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
       `REGISTER sip:${this.sipInfo.domain} SIP/2.0`,
       {
         "Call-Id": uuid(),
-        Contact:
-          `<sip:${fakeEmail};transport=wss>;+sip.instance="<urn:uuid:${this.instanceId}>";expires=${expires}`,
-        From:
-          `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>;tag=${uuid()}`,
+        Contact: `<sip:${fakeEmail};transport=wss>;+sip.instance="<urn:uuid:${this.instanceId}>";expires=${expires}`,
+        From: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>;tag=${uuid()}`,
         To: `<sip:${this.sipInfo.username}@${this.sipInfo.domain}>`,
         Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
       },
@@ -127,7 +125,8 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
     const closeHandle = setTimeout(() => this.wsc.close(), 5000);
     let inboundMessage = await this.request(requestMessage);
     clearTimeout(closeHandle);
-    const wwwAuth = inboundMessage.headers["Www-Authenticate"] ||
+    const wwwAuth =
+      inboundMessage.headers["Www-Authenticate"] ||
       inboundMessage!.headers["WWW-Authenticate"];
     if (wwwAuth) {
       const nonce = wwwAuth.match(/, nonce="(.+?)"/)![1];
@@ -141,7 +140,8 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
     } else if (inboundMessage.subject.startsWith("SIP/2.0 603 ")) {
       throw new Error("Registration failed: " + inboundMessage.subject);
     }
-    if (expires > 0) { // not for unregister
+    if (expires > 0) {
+      // not for unregister
       const serverExpires = Number(
         inboundMessage.headers.Contact.match(/;expires=(\d+)/)![1],
       );

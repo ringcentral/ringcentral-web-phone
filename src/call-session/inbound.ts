@@ -108,7 +108,7 @@ class InboundCallSession extends CallSession {
           const rcMessage = await RcMessage.fromXml(inboundMessage.body);
           if (
             rcMessage.headers.Cmd ===
-              callControlCommands.SessionClose.toString()
+            callControlCommands.SessionClose.toString()
           ) {
             this.webPhone.sipClient.off("inboundMessage", sessionCloseHandler);
             resolve(rcMessage);
@@ -158,7 +158,7 @@ class InboundCallSession extends CallSession {
           const rcMessage = await RcMessage.fromXml(inboundMessage.body);
           if (
             rcMessage.headers.Cmd ===
-              callControlCommands.AlreadyProcessed.toString()
+            callControlCommands.AlreadyProcessed.toString()
           ) {
             this.webPhone.sipClient.off("inboundMessage", handler);
             resolve();
@@ -171,14 +171,17 @@ class InboundCallSession extends CallSession {
 
   protected async sendRcMessage(
     cmd: number,
-    body: Record<string | number | symbol, never> | {
-      RepTp: string;
-      Bdy: string;
-    } | {
-      FwdDly: string;
-      Phn: string;
-      PhnTp: string;
-    } = {},
+    body:
+      | Record<string | number | symbol, never>
+      | {
+          RepTp: string;
+          Bdy: string;
+        }
+      | {
+          FwdDly: string;
+          Phn: string;
+          PhnTp: string;
+        } = {},
   ) {
     if (!this.sipMessage.headers["P-rc"]) {
       return;
@@ -202,8 +205,7 @@ class InboundCallSession extends CallSession {
       {
         Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
         To: `<sip:${newRcMessage.headers.To}>`,
-        From:
-          `<sip:${this.webPhone.sipInfo.username}@${this.webPhone.sipInfo.domain}>;tag=${uuid()}`,
+        From: `<sip:${this.webPhone.sipInfo.username}@${this.webPhone.sipInfo.domain}>;tag=${uuid()}`,
         "Call-Id": this.callId,
         "Content-Type": "x-rc/agent",
       },

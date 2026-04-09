@@ -43,10 +43,10 @@ class EventEmitter {
   // deno-lint-ignore no-explicit-any
   public emit(eventName: string, ...args: any[]) {
     (this.listeners.get(eventName) ?? []).forEach((listener) =>
-      listener(...args)
+      listener(...args),
     );
     (this.tempListeners.get(eventName) ?? []).forEach((listener) =>
-      listener(...args)
+      listener(...args),
     );
     this.tempListeners.delete(eventName);
   }

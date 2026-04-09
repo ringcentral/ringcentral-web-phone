@@ -70,8 +70,7 @@ class OutboundCallSession extends CallSession {
       {
         "Call-Id": this.callId,
         Contact: `<sip:${fakeEmail};transport=wss>;expires=60`,
-        From:
-          `<sip:${this.webPhone.sipInfo.username}@${this.webPhone.sipInfo.domain}>;tag=${uuid()}`,
+        From: `<sip:${this.webPhone.sipInfo.username}@${this.webPhone.sipInfo.domain}>;tag=${uuid()}`,
         To: `<sip:${this.callee}@${this.webPhone.sipInfo.domain}>`,
         Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
         "Content-Type": "application/sdp",

@@ -6,10 +6,7 @@ testTwoPages(
   "caller hold/unhold",
   async ({ callerResource, calleeResource }) => {
     const { callerPage, calleePage, callerMessages, calleeMessages } =
-      await callAndAnswer(
-        callerResource,
-        calleeResource,
-      );
+      await callAndAnswer(callerResource, calleeResource);
 
     await callerPage.evaluate(async () => {
       await globalThis.outboundCalls[0].hold();

@@ -180,8 +180,8 @@ export const callAndAnswer = async (
 };
 
 export const assertCallCount = async (page: Page, count: number) => {
-  const callsCount = await page.evaluate(() =>
-    globalThis.webPhone.callSessions.length
+  const callsCount = await page.evaluate(
+    () => globalThis.webPhone.callSessions.length,
   );
   expect(callsCount).toBe(count);
 };

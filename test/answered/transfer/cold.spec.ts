@@ -9,10 +9,7 @@ import {
 
 testTwoPages("cold transfer", async ({ callerResource, calleeResource }) => {
   const { callerPage, calleePage, callerMessages, calleeMessages } =
-    await callAndAnswer(
-      callerResource,
-      calleeResource,
-    );
+    await callAndAnswer(callerResource, calleeResource);
   await calleePage.evaluate(async (anotherNumber) => {
     await globalThis.inboundCalls[0].transfer(anotherNumber);
   }, anotherNumber);

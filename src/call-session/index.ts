@@ -13,7 +13,7 @@ import {
   uuid,
 } from "../utils.js";
 import ResponseMessage from "../sip-message/outbound/response.js";
-import OutboundCallSession from "./outbound.js";
+import type OutboundCallSession from "./outbound.js";
 
 interface CommandResult {
   code: number;
@@ -103,9 +103,10 @@ class CallSession extends EventEmitter {
 
   public async init() {
     this.rtcPeerConnection = new RTCPeerConnection({
-      iceServers: this.webPhone.sipInfo.stunServers?.map((url) => ({
-        urls: `stun:${url}`,
-      })) ?? [],
+      iceServers:
+        this.webPhone.sipInfo.stunServers?.map((url) => ({
+          urls: `stun:${url}`,
+        })) ?? [],
     });
 
     // line below is to make sure that you have the permission to access the microphone
@@ -141,8 +142,8 @@ class CallSession extends EventEmitter {
       this.audioElement.srcObject = remoteStream;
 
       // this code should be run last
-      this.outputDeviceId = await this.webPhone.deviceManager
-        .getOutputDeviceId();
+      this.outputDeviceId =
+        await this.webPhone.deviceManager.getOutputDeviceId();
       if (this.outputDeviceId) {
         this.audioElement.setSinkId(this.outputDeviceId);
       }
@@ -157,9 +158,9 @@ class CallSession extends EventEmitter {
       audio: { deviceId: { exact: deviceId } },
     });
     const newAudioTrack = this.mediaStream.getAudioTracks()[0];
-    const sender = this.rtcPeerConnection.getSenders().find((sender) =>
-      sender.track?.kind === "audio"
-    );
+    const sender = this.rtcPeerConnection
+      .getSenders()
+      .find((sender) => sender.track?.kind === "audio");
     if (sender) {
       sender.replaceTrack(newAudioTrack);
     }
@@ -172,23 +173,18 @@ class CallSession extends EventEmitter {
     }
   }
 
-  public async transfer(
-    target: string,
-    timeout = DEFAULT_TRANSFER_TIMEOUT_MS,
-  ) {
+  public async transfer(target: string, timeout = DEFAULT_TRANSFER_TIMEOUT_MS) {
     return await this._transfer(`sip:${target}@sip.ringcentral.com`, timeout);
   }
 
   public async warmTransfer(
     target: string,
     options?: { callerId?: string; timeout?: number },
-  ): Promise<
-    {
-      complete: () => Promise<void>;
-      cancel: () => Promise<void>;
-      newSession: OutboundCallSession;
-    }
-  > {
+  ): Promise<{
+    complete: () => Promise<void>;
+    cancel: () => Promise<void>;
+    newSession: OutboundCallSession;
+  }> {
     await this.hold();
     // create a new session and user needs to talk to the target before transfer
     const newSession = await this.webPhone.call(target, options?.callerId);
@@ -450,7 +446,9 @@ class CallSession extends EventEmitter {
         }
         const response = JSON.parse(inboundMessage.body).response;
         if (
-          !response || response.reqid !== reqid || response.command !== command
+          !response ||
+          response.reqid !== reqid ||
+          response.command !== command
         ) {
           return;
         }
@@ -495,9 +493,9 @@ class CallSession extends EventEmitter {
         this.webPhone.sipClient.off("inboundMessage", handler);
         reject(
           new Error(
-            `"REFER ${
-              extractAddress(this.remotePeer)
-            } SIP/2.0" request timed out. It often means either you don't have permission or the call is not in a correct state.`,
+            `"REFER ${extractAddress(
+              this.remotePeer,
+            )} SIP/2.0" request timed out. It often means either you don't have permission or the call is not in a correct state.`,
           ),
         );
       }, timeout);

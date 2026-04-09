@@ -10,22 +10,18 @@ import {
 
 testTwoPages("warm transfer", async ({ callerResource, calleeResource }) => {
   const { callerPage, calleePage, callerMessages, calleeMessages } =
-    await callAndAnswer(
-      callerResource,
-      calleeResource,
-    );
+    await callAndAnswer(callerResource, calleeResource);
   await calleePage.evaluate(async (anotherNumber) => {
-    const { complete, cancel } = await globalThis.inboundCalls[0].warmTransfer(
-      anotherNumber,
-    );
+    const { complete, cancel } =
+      await globalThis.inboundCalls[0].warmTransfer(anotherNumber);
     globalThis.transferActions = { complete, cancel };
   }, anotherNumber);
 
   // wait for the transferee to answer the call
   await waitFor({ interval: 1000 });
 
-  await calleePage.evaluate(async () =>
-    await globalThis.transferActions.complete()
+  await calleePage.evaluate(
+    async () => await globalThis.transferActions.complete(),
   );
 
   // caller

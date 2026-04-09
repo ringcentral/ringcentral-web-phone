@@ -6,10 +6,7 @@ testTwoPages(
   "start/stop recording",
   async ({ callerResource, calleeResource }) => {
     const { callerPage, calleePage, callerMessages, calleeMessages } =
-      await callAndAnswer(
-        callerResource,
-        calleeResource,
-      );
+      await callAndAnswer(callerResource, calleeResource);
 
     const startResult = await callerPage.evaluate(async () => {
       return await globalThis.outboundCalls[0].startRecording();

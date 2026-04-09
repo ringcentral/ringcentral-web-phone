@@ -36,7 +36,9 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.esm.json && tsc -p tsconfig.cjs.json && rollup -c",
-    "lint": "deno fmt && deno lint --fix",
+    "format": "biome format --write .",
+    "lint": "biome lint --write .",
+    "check": "biome check .",
     "prepublishOnly": "yarn lint && yarn build",
     "postpublish": "rm -rf dist",
     "serve": "rm -rf .parcel-cache && parcel test/index.html --no-hmr",
@@ -48,6 +50,7 @@
     "sdp-transform": "^3.0.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.11",
     "@playwright/test": "^1.58.2",
     "@rollup/plugin-commonjs": "^29.0.2",
     "@rollup/plugin-node-resolve": "^16.0.3",

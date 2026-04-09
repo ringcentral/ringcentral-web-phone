@@ -56,13 +56,13 @@ class WebPhone extends EventEmitter {
         }
 
         // re-INVITE
-        const callSession = this.callSessions.find(
-          (callSession) => {
-            return callSession.callId === inboundMessage.headers["Call-Id"] &&
-              callSession.localPeer === inboundMessage.headers.To &&
-              callSession.remotePeer === inboundMessage.headers.From;
-          },
-        );
+        const callSession = this.callSessions.find((callSession) => {
+          return (
+            callSession.callId === inboundMessage.headers["Call-Id"] &&
+            callSession.localPeer === inboundMessage.headers.To &&
+            callSession.remotePeer === inboundMessage.headers.From
+          );
+        });
         if (callSession) {
           callSession.handleReInvite(inboundMessage);
           return;
@@ -70,8 +70,9 @@ class WebPhone extends EventEmitter {
 
         this.callSessions.push(new InboundCallSession(this, inboundMessage));
         // write it this way so that it will be compatible with manate, inboundCallSession will be managed
-        const inboundCallSession = this
-          .callSessions[this.callSessions.length - 1] as InboundCallSession;
+        const inboundCallSession = this.callSessions[
+          this.callSessions.length - 1
+        ] as InboundCallSession;
         this.emit("inboundCall", inboundCallSession);
 
         // tell SIP server that we are ringing
@@ -139,8 +140,9 @@ class WebPhone extends EventEmitter {
   ) {
     this.callSessions.push(new OutboundCallSession(this, callee));
     // write it this way so that it will be compatible with manate, outboundCallSession will be managed
-    const outboundCallSession = this
-      .callSessions[this.callSessions.length - 1] as OutboundCallSession;
+    const outboundCallSession = this.callSessions[
+      this.callSessions.length - 1
+    ] as OutboundCallSession;
     this.emit("outboundCall", outboundCallSession);
     await outboundCallSession.init();
     await outboundCallSession.call(callerId, options);

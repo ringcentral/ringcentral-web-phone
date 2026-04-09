@@ -8,8 +8,5 @@ export default {
     format: "umd",
     name: "WebPhone",
   },
-  plugins: [
-    nodeResolve(),
-    commonjs(),
-  ],
+  plugins: [nodeResolve(), commonjs()],
 };

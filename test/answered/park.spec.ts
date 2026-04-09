@@ -4,10 +4,7 @@ import { assertCallCount, callAndAnswer, testTwoPages } from "../common";
 
 testTwoPages("park", async ({ callerResource, calleeResource }) => {
   const { callerPage, calleePage, callerMessages, calleeMessages } =
-    await callAndAnswer(
-      callerResource,
-      calleeResource,
-    );
+    await callAndAnswer(callerResource, calleeResource);
 
   const parkResult = await calleePage.evaluate(async () => {
     return await globalThis.inboundCalls[0].park();
