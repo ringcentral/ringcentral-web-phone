@@ -1,41 +1,37 @@
 {
   "name": "ringcentral-web-phone",
   "version": "2.4.1-beta.2",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ringcentral/ringcentral-web-phone.git"
   },
   "license": "MIT",
   "types": "dist/esm/index.d.ts",
-  "module": "dist/esm/index.js",
-  "main": "dist/cjs/index.js",
+  "main": "dist/esm/index.js",
   "files": [
     "dist"
   ],
   "exports": {
     ".": {
       "types": "./dist/esm/index.d.ts",
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
+      "import": "./dist/esm/index.js"
     },
     "./*": {
       "types": "./dist/esm/*.d.ts",
-      "import": "./dist/esm/*.js",
-      "require": "./dist/cjs/*.js"
+      "import": "./dist/esm/*.js"
     },
     "./*/*": {
       "types": "./dist/esm/*/*.d.ts",
-      "import": "./dist/esm/*/*.js",
-      "require": "./dist/cjs/*/*.js"
+      "import": "./dist/esm/*/*.js"
     },
     "./*/*/*": {
       "types": "./dist/esm/*/*/*.d.ts",
-      "import": "./dist/esm/*/*/*.js",
-      "require": "./dist/cjs/*/*/*.js"
+      "import": "./dist/esm/*/*/*.js"
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.esm.json && tsc -p tsconfig.cjs.json && rollup -c",
+    "build": "tsc -p tsconfig.esm.json && rollup -c",
     "format": "biome format --write .",
     "lint": "biome lint --write .",
     "check": "biome check .",
