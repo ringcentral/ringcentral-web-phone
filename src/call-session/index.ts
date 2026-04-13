@@ -1,9 +1,10 @@
 import sdpTransform from "sdp-transform";
 
 import EventEmitter from "../event-emitter.js";
-import RequestMessage from "../sip-message/outbound/request.js";
-import type InboundMessage from "../sip-message/inbound.js";
 import type WebPhone from "../index.js";
+import type InboundMessage from "../sip-message/inbound.js";
+import RequestMessage from "../sip-message/outbound/request.js";
+import ResponseMessage from "../sip-message/outbound/response.js";
 import {
   branch,
   extractAddress,
@@ -12,7 +13,6 @@ import {
   fakeDomain,
   uuid,
 } from "../utils.js";
-import ResponseMessage from "../sip-message/outbound/response.js";
 import type OutboundCallSession from "./outbound.js";
 
 interface CommandResult {

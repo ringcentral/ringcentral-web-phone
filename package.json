@@ -39,7 +39,7 @@
     "build": "tsup && tsc -p tsconfig.esm.json --emitDeclarationOnly",
     "format": "biome format --write .",
     "lint": "biome lint --write .",
-    "check": "biome check .",
+    "check": "biome check . --write",
     "prepublishOnly": "yarn build",
     "postpublish": "rm -rf dist",
     "serve": "rm -rf .parcel-cache && parcel test/index.html --no-hmr",

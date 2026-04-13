@@ -1,8 +1,7 @@
 import { expect } from "@playwright/test";
-
-import { anotherNumber, assertCallCount, call, testTwoPages } from "../common";
-import RcMessage from "../../src/rc-message/rc-message";
 import callControlCommands from "../../src/rc-message/call-control-commands";
+import RcMessage from "../../src/rc-message/rc-message";
+import { anotherNumber, assertCallCount, call, testTwoPages } from "../common";
 
 testTwoPages(
   "forward inbound call",

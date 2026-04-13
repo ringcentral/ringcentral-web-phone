@@ -1,7 +1,6 @@
-import RequestMessage from "../sip-message/outbound/request.js";
-import type InboundMessage from "../sip-message/inbound.js";
 import type WebPhone from "../index.js";
-import CallSession from "./index.js";
+import type InboundMessage from "../sip-message/inbound.js";
+import RequestMessage from "../sip-message/outbound/request.js";
 import {
   branch,
   extractAddress,
@@ -11,6 +10,7 @@ import {
   uuid,
   withoutTag,
 } from "../utils.js";
+import CallSession from "./index.js";
 
 class OutboundCallSession extends CallSession {
   public constructor(webPhone: WebPhone, callee: string) {

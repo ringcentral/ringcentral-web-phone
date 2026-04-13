@@ -1,14 +1,13 @@
 import { expect } from "@playwright/test";
 import waitFor from "wait-for-async";
-
+import callControlCommands from "../../../src/rc-message/call-control-commands";
+import RcMessage from "../../../src/rc-message/rc-message";
 import {
   anotherNumber,
   assertCallCount,
   call,
   testTwoPages,
 } from "../../common";
-import RcMessage from "../../../src/rc-message/rc-message";
-import callControlCommands from "../../../src/rc-message/call-control-commands";
 
 testTwoPages(
   "reply with urgent",
