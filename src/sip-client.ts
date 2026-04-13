@@ -26,7 +26,7 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
   public constructor(options: SipClientOptions) {
     super();
     this.sipInfo = options.sipInfo;
-    this.instanceId = options.instanceId ?? this.sipInfo.authorizationId!;
+    this.instanceId = options.instanceId ?? this.sipInfo.authorizationId;
     this.debug = options.debug ?? false;
   }
 
@@ -127,7 +127,7 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
     clearTimeout(closeHandle);
     const wwwAuth =
       inboundMessage.headers["Www-Authenticate"] ||
-      inboundMessage!.headers["WWW-Authenticate"];
+      inboundMessage.headers["WWW-Authenticate"];
     if (wwwAuth) {
       const nonce = wwwAuth.match(/, nonce="(.+?)"/)![1];
       const newMessage = requestMessage.fork();

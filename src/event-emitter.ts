@@ -11,7 +11,7 @@ class EventEmitter {
     if (!this.listeners.has(eventName)) {
       this.listeners.set(eventName, []);
     }
-    this.listeners.get(eventName)!.push(listener);
+    this.listeners.get(eventName)?.push(listener);
   }
 
   // deno-lint-ignore no-explicit-any
@@ -19,7 +19,7 @@ class EventEmitter {
     if (!this.tempListeners.has(eventName)) {
       this.tempListeners.set(eventName, []);
     }
-    this.tempListeners.get(eventName)!.push(listener);
+    this.tempListeners.get(eventName)?.push(listener);
   }
 
   // deno-lint-ignore no-explicit-any
@@ -42,12 +42,12 @@ class EventEmitter {
 
   // deno-lint-ignore no-explicit-any
   public emit(eventName: string, ...args: any[]) {
-    (this.listeners.get(eventName) ?? []).forEach((listener) =>
-      listener(...args),
-    );
-    (this.tempListeners.get(eventName) ?? []).forEach((listener) =>
-      listener(...args),
-    );
+    (this.listeners.get(eventName) ?? []).forEach((listener) => {
+      listener(...args);
+    });
+    (this.tempListeners.get(eventName) ?? []).forEach((listener) => {
+      listener(...args);
+    });
     this.tempListeners.delete(eventName);
   }
 
