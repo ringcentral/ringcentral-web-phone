@@ -32,38 +32,7 @@ class OutboundCallSession extends CallSession {
       iceRestart: true,
     });
     await this.rtcPeerConnection.setLocalDescription(offer);
-
-    // wait for srflx ICE candidate or timeout after 2 seconds
-    await new Promise<void>((resolve) => {
-      const timeout = setTimeout(() => {
-        if (this.webPhone.options.debug) {
-          console.warn(
-            "srflx candidate not found within 2 seconds — proceeding anyway.",
-          );
-        }
-        cleanup();
-        resolve();
-      }, 2000);
-
-      const onIceCandidate = (event: RTCPeerConnectionIceEvent) => {
-        const candidate = event.candidate?.candidate;
-        if (!candidate) return;
-        if (candidate.includes("typ srflx")) {
-          cleanup();
-          setTimeout(() => {
-            resolve();
-          }, 500); // extra 500ms after got srflx candidate
-        }
-      };
-      const cleanup = () => {
-        clearTimeout(timeout);
-        this.rtcPeerConnection.removeEventListener(
-          "icecandidate",
-          onIceCandidate,
-        );
-      };
-      this.rtcPeerConnection.addEventListener("icecandidate", onIceCandidate);
-    });
+    await this.waitForIceGatheringComplete();
 
     const inviteMessage = new RequestMessage(
       `INVITE sip:${this.callee}@${this.webPhone.sipInfo.domain} SIP/2.0`,

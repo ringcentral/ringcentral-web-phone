@@ -131,16 +131,7 @@ class InboundCallSession extends CallSession {
       });
       const answer = await this.rtcPeerConnection.createAnswer();
       await this.rtcPeerConnection.setLocalDescription(answer);
-
-      // wait for ICE gathering to complete
-      await new Promise((resolve) => {
-        this.rtcPeerConnection.onicecandidate = (event) => {
-          if (event.candidate === null) {
-            resolve(true);
-          }
-        };
-        setTimeout(() => resolve(false), 2000);
-      });
+      await this.waitForIceGatheringComplete();
 
       const newMessage = new ResponseMessage(this.sipMessage, {
         responseCode: 200,
@@ -156,38 +147,7 @@ class InboundCallSession extends CallSession {
         iceRestart: true,
       });
       await this.rtcPeerConnection.setLocalDescription(offer);
-
-      // wait for srflx ICE candidate or timeout after 2 seconds
-      await new Promise<void>((resolve) => {
-        const timeout = setTimeout(() => {
-          if (this.webPhone.options.debug) {
-            console.warn(
-              "srflx candidate not found within 2 seconds — proceeding anyway.",
-            );
-          }
-          cleanup();
-          resolve();
-        }, 2000);
-
-        const onIceCandidate = (event: RTCPeerConnectionIceEvent) => {
-          const candidate = event.candidate?.candidate;
-          if (!candidate) return;
-          if (candidate.includes("typ srflx")) {
-            cleanup();
-            setTimeout(() => {
-              resolve();
-            }, 500); // extra 500ms after got srflx candidate
-          }
-        };
-        const cleanup = () => {
-          clearTimeout(timeout);
-          this.rtcPeerConnection.removeEventListener(
-            "icecandidate",
-            onIceCandidate,
-          );
-        };
-        this.rtcPeerConnection.addEventListener("icecandidate", onIceCandidate);
-      });
+      await this.waitForIceGatheringComplete();
 
       const newMessage = new ResponseMessage(this.sipMessage, {
         responseCode: 200,

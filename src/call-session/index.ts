@@ -298,6 +298,32 @@ class CallSession extends EventEmitter {
     });
   }
 
+  protected async waitForIceGatheringComplete(timeoutMs = 2000) {
+    if (this.rtcPeerConnection.iceGatheringState === "complete") {
+      return;
+    }
+    await new Promise<void>((resolve) => {
+      const timeout = setTimeout(() => {
+        cleanup();
+        resolve();
+      }, timeoutMs);
+      const onIceCandidate = (event: RTCPeerConnectionIceEvent) => {
+        if (event.candidate === null) {
+          cleanup();
+          resolve();
+        }
+      };
+      const cleanup = () => {
+        clearTimeout(timeout);
+        this.rtcPeerConnection.removeEventListener(
+          "icecandidate",
+          onIceCandidate,
+        );
+      };
+      this.rtcPeerConnection.addEventListener("icecandidate", onIceCandidate);
+    });
+  }
+
   // send re-INVITE.
   // If the call is on hold and you don't want to unhold it, set toReceive to false
   public async reInvite(toReceive: boolean = true) {
@@ -305,15 +331,7 @@ class CallSession extends EventEmitter {
       iceRestart: true,
     });
     await this.rtcPeerConnection.setLocalDescription(offer);
-    // wait for ICE gathering to complete
-    await new Promise((resolve) => {
-      this.rtcPeerConnection.onicecandidate = (event) => {
-        if (event.candidate === null) {
-          resolve(true);
-        }
-      };
-      setTimeout(() => resolve(false), 2000);
-    });
+    await this.waitForIceGatheringComplete();
     let sdp = this.rtcPeerConnection.localDescription!.sdp;
     // default value is `a=sendrecv`
     if (!toReceive) {
@@ -357,15 +375,7 @@ class CallSession extends EventEmitter {
     });
     const answer = await this.rtcPeerConnection.createAnswer();
     await this.rtcPeerConnection.setLocalDescription(answer);
-    // wait for ICE gathering to complete
-    await new Promise((resolve) => {
-      this.rtcPeerConnection.onicecandidate = (event) => {
-        if (event.candidate === null) {
-          resolve(true);
-        }
-      };
-      setTimeout(() => resolve(false), 2000);
-    });
+    await this.waitForIceGatheringComplete();
 
     const newMessage = new ResponseMessage(this.sipMessage, {
       responseCode: 200,
