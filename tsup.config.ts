@@ -28,4 +28,22 @@ export default defineConfig([
     target: "es2022",
     tsconfig: "tsconfig.esm.json",
   },
+  {
+    bundle: true,
+    clean: false,
+    dts: false,
+    entry: {
+      index: "browser-entry.ts",
+    },
+    format: ["iife"],
+    noExternal: [/.*/],
+    outDir: "dist/iife",
+    outExtension() {
+      return { js: ".js" };
+    },
+    platform: "browser",
+    sourcemap: false,
+    target: "es2022",
+    tsconfig: "tsconfig.esm.json",
+  },
 ]);

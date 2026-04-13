@@ -74,8 +74,30 @@ may need it for
 yarn add ringcentral-web-phone
 ```
 
-This package no longer ships a UMD browser build. Use it through ESM/CJS in a
-bundler/runtime environment.
+This package ships ESM/CJS builds and a browser IIFE build.
+### Without a bundling tool
+
+You can use this library without a bundling tool:
+
+```html
+<script src="/path/to/ringcentral-web-phone/dist/iife/index.js"></script>
+<script>
+  const webPhone = new WebPhone({ sipInfo });
+</script>
+```
+
+Or you can use a CDN:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/ringcentral-web-phone@2.4.1-beta.2/dist/iife/index.js"></script>
+<script>
+  const webPhone = new WebPhone({ sipInfo });
+</script>
+```
+
+Replace `2.4.1-beta.2` with the version you want to use. For available
+versions, check:
+https://www.npmjs.com/package/ringcentral-web-phone?activeTab=versions
 
 ## Initialization
 

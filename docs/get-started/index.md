@@ -33,8 +33,30 @@ Download and install the SDK from npmjs:
 yarn add ringcentral-web-phone
 ```
 
-This package does not provide a UMD browser build. Use it via ESM/CJS in a
-bundler/runtime environment.
+#### Alternative methods
+
+You can use this library directly without a bundling tool. Just download a
+release, unzip it, and load it via a `<script>` tag.
+
+=== "Locally"
+
+    ```html
+    <script src="/path/to/ringcentral-web-phone/dist/iife/index.js"></script>
+    <script>
+      const webPhone = new WebPhone({ sipInfo });
+    </script>
+    ```
+
+=== "CDN"
+
+    ```html
+    <script
+      src="https://cdn.jsdelivr.net/npm/ringcentral-web-phone@2.4.1-beta.2/dist/iife/index.js"
+    ></script>
+    <script>
+      const webPhone = new WebPhone({ sipInfo });
+    </script>
+    ```
 
 ## Register your web phone
 
