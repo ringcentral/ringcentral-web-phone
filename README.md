@@ -74,23 +74,8 @@ may need it for
 yarn add ringcentral-web-phone
 ```
 
-### Without a bundling tool
-
-You can use this library without a bundling tool:
-
-```html
-<script src="/path/to/ringcentral-web-phone/dist/esm/index.umd.js"></script>
-```
-
-Or you could use a CDN:
-
-```html
-<script src="https://cdn.jsdelivr.net/npm/ringcentral-web-phone@2.1.13/dist/esm/index.umd.js"></script>
-```
-
-You may need to replace 2.1.13 with latest version number. For latest version
-please check here:
-https://www.npmjs.com/package/ringcentral-web-phone?activeTab=versions
+This package no longer ships a UMD browser build. Use it through ESM/CJS in a
+bundler/runtime environment.
 
 ## Initialization
 
