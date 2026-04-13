@@ -159,6 +159,7 @@ class InboundCallSession extends CallSession {
       const ackMessage = await this.webPhone.sipClient.request(
         newMessage as RequestMessage,
       );
+      this.sipMessage = ackMessage;
       this.rtcPeerConnection.setRemoteDescription({
         type: "answer",
         sdp: ackMessage.body,
