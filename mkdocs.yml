@@ -8,9 +8,12 @@ repo_name: ringcentral/ringcentral-web-phone
 edit_uri: tree/main/docs
 docs_dir: docs
 
+exclude_docs: |
+  .#*
+  *.#*
+
 theme:
   name: material
-  custom_dir: overrides
   features:
     - navigation.path
     #      - navigation.sections
@@ -44,12 +47,7 @@ theme:
 plugins:
   - search:
       separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
-  - badges
   #  - with-pdf
-  - exclude:
-      regex:
-        - '^\.#.*'
-        - '.*\.\#.*$'
 extra:
   social:
     - icon: fontawesome/brands/github

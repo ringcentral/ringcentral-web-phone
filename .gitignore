@@ -8,3 +8,4 @@ test-results/
 .env.1.x
 *~
 \#.*
+.venv/
