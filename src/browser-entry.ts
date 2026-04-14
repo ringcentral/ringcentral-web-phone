@@ -1,4 +1,4 @@
-import WebPhone from "./src/index.js";
+import WebPhone from "./index.js";
 
 // Keep script-tag usage stable: `window.WebPhone` / `globalThis.WebPhone`.
 (

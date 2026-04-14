@@ -1,6 +1,6 @@
 import { defineConfig } from "tsup";
 
-const entries = ["src/**/*.ts"];
+const entries = ["src/**/*.ts", "!src/browser-entry.ts"];
 
 export default defineConfig([
   {
@@ -33,7 +33,7 @@ export default defineConfig([
     clean: false,
     dts: false,
     entry: {
-      index: "browser-entry.ts",
+      index: "src/browser-entry.ts",
     },
     format: ["iife"],
     noExternal: [/.*/],
