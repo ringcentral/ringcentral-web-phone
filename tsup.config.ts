@@ -12,7 +12,7 @@ export default defineConfig([
     outDir: "dist/esm",
     sourcemap: false,
     target: "es2022",
-    tsconfig: "tsconfig.esm.json",
+    tsconfig: "tsconfig.json",
   },
   {
     bundle: false,
@@ -26,7 +26,7 @@ export default defineConfig([
     },
     sourcemap: false,
     target: "es2022",
-    tsconfig: "tsconfig.esm.json",
+    tsconfig: "tsconfig.json",
   },
   {
     bundle: true,
@@ -44,6 +44,6 @@ export default defineConfig([
     platform: "browser",
     sourcemap: false,
     target: "es2022",
-    tsconfig: "tsconfig.esm.json",
+    tsconfig: "tsconfig.json",
   },
 ]);

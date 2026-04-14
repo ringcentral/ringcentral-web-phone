@@ -36,7 +36,7 @@
     }
   },
   "scripts": {
-    "build": "tsup && tsc -p tsconfig.esm.json --emitDeclarationOnly",
+    "build": "tsup && tsc -p tsconfig.json --emitDeclarationOnly",
     "format": "biome format --write .",
     "lint": "biome lint --write .",
     "check": "biome check . --write",
