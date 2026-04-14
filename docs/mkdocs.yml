@@ -6,7 +6,8 @@ site_url: https://ringcentral.github.io/ringcentral-web-phone
 repo_url: https://github.com/ringcentral/ringcentral-web-phone
 repo_name: ringcentral/ringcentral-web-phone
 edit_uri: tree/main/docs
-docs_dir: docs
+docs_dir: .
+site_dir: ../site
 
 exclude_docs: |
   .#*
