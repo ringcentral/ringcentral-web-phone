@@ -79,7 +79,8 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
         inboundMessage.subject.startsWith("BYE sip:") ||
         inboundMessage.subject.startsWith("CANCEL sip:") ||
         inboundMessage.subject.startsWith("INFO sip:") ||
-        inboundMessage.subject.startsWith("NOTIFY sip:")
+        inboundMessage.subject.startsWith("NOTIFY sip:") ||
+        inboundMessage.subject.startsWith("UPDATE sip:")
       ) {
         // Auto reply 200 OK to MESSAGE, BYE, CANCEL, INFO, NOTIFY
         await this.reply(
