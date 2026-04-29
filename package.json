@@ -47,14 +47,14 @@
   },
   "dependencies": {
     "blueimp-md5": "^2.19.0",
-    "fast-xml-parser": "^5.5.11",
+    "fast-xml-parser": "^5.7.2",
     "sdp-transform": "^3.0.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.11",
+    "@biomejs/biome": "^2.4.13",
     "@playwright/test": "^1.59.1",
     "@types/blueimp-md5": "^2.18.2",
-    "@types/node": "^25.5.2",
+    "@types/node": "^25.6.0",
     "@types/sdp-transform": "^2.15.0",
     "buffer": "^6.0.3",
     "dotenv-override-true": "^6.2.2",
@@ -65,11 +65,11 @@
     "stream-browserify": "^3.0.0",
     "string_decoder": "^1.3.0",
     "timers-browserify": "^2.0.12",
-    "tsx": "^4.21.0",
     "tsup": "^8.5.1",
-    "typescript": "^6.0.2",
-    "wait-for-async": "^0.8.0",
-    "yarn-upgrade-all": "^0.7.5"
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3",
+    "wait-for-async": "^0.8.1",
+    "yarn-upgrade-all": "^0.8.1"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
