@@ -1,45 +1,44 @@
-import { defineConfig } from "tsup";
+import { defineConfig } from "tsdown";
 
 const entries = ["src/**/*.ts", "!src/browser-entry.ts"];
 
 export default defineConfig([
   {
-    bundle: false,
     clean: true,
     dts: false,
     entry: entries,
+    fixedExtension: false,
     format: ["esm"],
     outDir: "dist/esm",
     sourcemap: false,
     target: "es2022",
     tsconfig: "tsconfig.json",
+    unbundle: true,
   },
   {
-    bundle: false,
+    cjsDefault: false,
     clean: false,
     dts: false,
     entry: entries,
     format: ["cjs"],
     outDir: "dist/cjs",
-    outExtension() {
-      return { js: ".cjs" };
-    },
+    outExtensions: () => ({ js: ".cjs" }),
     sourcemap: false,
     target: "es2022",
     tsconfig: "tsconfig.json",
+    unbundle: true,
   },
   {
-    bundle: true,
     clean: false,
+    noExternal: [/.*/],
     dts: false,
     entry: {
       index: "src/browser-entry.ts",
     },
     format: ["iife"],
-    noExternal: [/.*/],
     outDir: "dist/iife",
-    outExtension() {
-      return { js: ".js" };
+    outputOptions: {
+      entryFileNames: "[name].js",
     },
     platform: "browser",
     sourcemap: false,
