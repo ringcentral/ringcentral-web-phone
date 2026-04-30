@@ -41,7 +41,7 @@ release, unzip it, and load it via a `<script>` tag.
 === "Locally"
 
     ```html
-    <script src="/path/to/ringcentral-web-phone/dist/iife/index.js"></script>
+    <script src="/path/to/ringcentral-web-phone/dist/index.iife.js"></script>
     <script>
       const webPhone = new WebPhone({ sipInfo });
     </script>
@@ -51,7 +51,7 @@ release, unzip it, and load it via a `<script>` tag.
 
     ```html
     <script
-      src="https://cdn.jsdelivr.net/npm/ringcentral-web-phone@2.4.1-beta.2/dist/iife/index.js"
+      src="https://cdn.jsdelivr.net/npm/ringcentral-web-phone/dist/index.iife.js"
     ></script>
     <script>
       const webPhone = new WebPhone({ sipInfo });

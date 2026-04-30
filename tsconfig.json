@@ -7,7 +7,8 @@
     "declaration": true,
     "rootDir": "./src",
     "outDir": "./dist/esm",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "declarationMap": true
   },
   "include": ["src/**/*.ts"]
 }
