@@ -95,10 +95,6 @@ Or you can use a CDN:
 </script>
 ```
 
-Replace `2.4.1-beta.2` with the version you want to use. For available
-versions, check:
-https://www.npmjs.com/package/ringcentral-web-phone?activeTab=versions
-
 ## Initialization
 
 ```ts
