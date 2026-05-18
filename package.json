@@ -46,18 +46,19 @@
     "prepublishOnly": "pnpm build",
     "postpublish": "rm -rf dist",
     "serve": "rm -rf .parcel-cache && parcel serve test/index.html --no-hmr",
-    "test": "NODE_OPTIONS=--require=dotenv-override-true/config playwright test --workers=1"
+    "test": "NODE_OPTIONS=--require=dotenv-override-true/config playwright test --workers=1",
+    "upgrade": "pnpm update --latest"
   },
   "dependencies": {
     "blueimp-md5": "^2.19.0",
-    "fast-xml-parser": "^5.7.2",
+    "fast-xml-parser": "^5.8.0",
     "sdp-transform": "^3.0.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.13",
-    "@playwright/test": "^1.59.1",
+    "@biomejs/biome": "^2.4.15",
+    "@playwright/test": "^1.60.0",
     "@types/blueimp-md5": "^2.18.2",
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.7.0",
     "@types/sdp-transform": "^2.15.0",
     "buffer": "^6.0.3",
     "dotenv-override-true": "^6.2.2",
