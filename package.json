@@ -13,6 +13,9 @@
   "files": [
     "dist"
   ],
+  "targets": {
+    "types": false
+  },
   "exports": {
     ".": {
       "import": {
@@ -42,7 +45,7 @@
     "check": "biome check . --write",
     "prepublishOnly": "yarn build",
     "postpublish": "rm -rf dist",
-    "serve": "rm -rf .parcel-cache && parcel test/index.html --no-hmr",
+    "serve": "rm -rf .parcel-cache && parcel serve test/index.html --no-hmr",
     "test": "NODE_OPTIONS=--require=dotenv-override-true/config playwright test --workers=1"
   },
   "dependencies": {
