@@ -71,7 +71,7 @@ may need it for
 ## Installation
 
 ```
-yarn add ringcentral-web-phone
+pnpm add ringcentral-web-phone
 ```
 
 This package ships ESM/CJS builds and a browser IIFE build.
@@ -1523,7 +1523,7 @@ callee. You will need the `sipInfo` json string of the two extensions. Invoke
 [this API](https://developers.ringcentral.com/api-reference/Device-SIP-Registration/createSIPRegistration)
 to get `sipInfo`.
 
-You may need to `yarn playwright install chromium` if playwright cannot find
+You may need to `pnpm exec playwright install chromium` if playwright cannot find
 chromium.
 
 You will need one more number to test call forwarding/transferring.
@@ -1531,13 +1531,13 @@ You will need one more number to test call forwarding/transferring.
 To run all tests:
 
 ```
-yarn test
+pnpm test
 ```
 
 To run a test file:
 
 ```
-yarn test test/inbound/forward.spec.ts
+pnpm test test/inbound/forward.spec.ts
 ```
 
 ### Two kinds of special messages

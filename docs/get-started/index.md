@@ -30,7 +30,7 @@ later.
 Download and install the SDK from npmjs:
 
 ```
-yarn add ringcentral-web-phone
+pnpm add ringcentral-web-phone
 ```
 
 #### Alternative methods

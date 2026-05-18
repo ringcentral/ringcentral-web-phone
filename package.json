@@ -43,7 +43,7 @@
     "format": "biome format --write .",
     "lint": "biome lint --write .",
     "check": "biome check . --write",
-    "prepublishOnly": "yarn build",
+    "prepublishOnly": "pnpm build",
     "postpublish": "rm -rf dist",
     "serve": "rm -rf .parcel-cache && parcel serve test/index.html --no-hmr",
     "test": "NODE_OPTIONS=--require=dotenv-override-true/config playwright test --workers=1"
@@ -71,8 +71,7 @@
     "tsdown": "^0.21.10",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3",
-    "wait-for-async": "^0.8.1",
-    "yarn-upgrade-all": "^0.8.1"
+    "wait-for-async": "^0.8.1"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  "packageManager": "pnpm@10.33.1"
 }
