@@ -26,8 +26,6 @@ export interface SipInfo {
 }
 
 export type SipClient = EventEmitter & {
-  disposed: boolean;
-  wsc: WebSocket;
   start: () => Promise<void>;
   request: (message: RequestMessage) => Promise<InboundMessage>;
   reply: (message: ResponseMessage) => Promise<void>;
