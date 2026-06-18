@@ -1130,21 +1130,24 @@ https://github.com/ringcentral/web-phone-demo provides conference features. You
 may create conference, invite a number to the conference, merge an existing call
 to the conference, etc.
 
-## Mutiple instances and shared worker
+## Multiple instances and shared worker
 
-Some application allows users to open multiple tabs to run multiple instances.
+Some applications allow users to open multiple tabs to run multiple instances.
 If you want all of the web phones to work properly, you need to assign them
-different `instanceId`. If you don't know what is `instanceId`, please read
+different `instanceId`. If you don't know what `instanceId` is, please read the
 [Initialization](#initialization) section.
 
 But there is a limit of how many instances you can run for each extension. What
-if the user opens too many tabs? A better solution is to have one tab run a
-"real" phone while all other tabs run "dummy" phones. Dummy phones don't
-register itself to RingCentral Server. Real phone syncs its state to all dummy
-phones so that dummy phones are always in sync with the real phone. When user
-performs an action on a dummy phone, the dummy phone forwards the action to the
-real phone. The real phone then performs the action and syncs the state back to
-all dummy phones.
+if the user opens too many tabs?
+
+### Solution 1: real phone plus dummy phones
+
+A better solution is to have one tab run a "real" phone while all other tabs run
+"dummy" phones. Dummy phones don't register themselves to RingCentral Server.
+Real phone syncs its state to all dummy phones so that dummy phones are always
+in sync with the real phone. When user performs an action on a dummy phone, the
+dummy phone forwards the action to the real phone. The real phone then performs
+the action and syncs the state back to all dummy phones.
 
 In order to achieve this, you will need to use
 [SharedWorker](https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker).
@@ -1154,140 +1157,43 @@ In order to achieve this, you will need to use
    look identical to the real phone.
 2. When end user performs an action on a dummy phone, the dummy phone forwards
    the action to SharedWorker. SharedWorker forwards the action to the real
-   phone. The real phone performs the action and update its state. Go to step 1.
+   phone. The real phone performs the action and updates its state. Go to step
+   1.
 
 When the real phone quits (tab closing, navigating to another page, etc), a
-dummy phone will be prompted to a real phone.
+dummy phone will be promoted to a real phone.
 
 This way, there is always one and only one real phone. All other phones are
 dummy phones. Dummy phones always look identical to a real phone because they
 will always get the latest state of a real phone. All actions are performed by
 the real phone.
 
-### Technical details
+#### Working sample
 
-A real phone is initiated like this:
+A [fully working sample](https://github.com/ringcentral/web-phone-demo/tree/shared-worker)
+is available. You may run multiple tabs to see how it works.
 
-```ts
-import SipClient from "ringcentral-web-phone/sip-client";
+### Solution 2: shared SIP connection with per-tab call routing
 
-new WebPhone({ sipInfo, sipClient: new SipClient({ sipInfo }) });
-```
+Solution 1 is good, but it has two limitations:
 
-Or even simpler (since `sipClient` is optional with default value
-`new SipClient({ sipInfo })`):
+- If a real client quits, you will need to promote a dummy client to be real,
+  and it takes time. Let's say it takes 2 seconds; you may miss inbound calls
+  during those 2 seconds.
+- It assumes that all tabs must sync state so that they look identical. Some
+  apps may not want all tabs to be synced. They may want each tab to be
+  relatively independent.
 
-```ts
-new WebPhone({ sipInfo });
-```
+Solution 2 addresses the limitations above:
 
-A dummy phone is initiated like this:
+- It runs the WebSocket connection in SharedWorker, so it reduces missed inbound
+  calls during tab close while the shared worker remains alive.
+- It doesn't sync full UI state among all tabs. Each tab keeps its own UI and
+  WebPhone instance through a custom SIP client adapter, and calls are routed by
+  ownership.
 
-```ts
-import { DummySipClient } from "ringcentral-web-phone/sip-client";
-
-new WebPhone({ sipInfo, sipClient: new DummySipClient() });
-```
-
-You may need to re-initiate a dummy phone to a real phone when the previous real
-phone quits.
-
-A `DummySipClient` doesn't register itself to RingCentral Server. It doesn't
-send any SIP messages to RingCentral Server. It does nothing.
-
-You will need to implement a SharedWorker to:
-
-- sync the state from the real phone to all dummy phones.
-- forward actions from dummy phones to the real phone.
-
-### Sample SharedWorker
-
-```ts
-const dummyPorts = new Set<MessagePort>();
-let realPort: MessagePort | undefined;
-
-let syncCache: any;
-self.onconnect = (e) => {
-  const port = e.ports[0];
-  if (realPort) {
-    dummyPorts.add(port);
-    port.postMessage({ type: "role", role: "dummy" });
-  } else {
-    realPort = port;
-    port.postMessage({ type: "role", role: "real" });
-  }
-  port.onmessage = (e) => {
-    // a new dummy is ready to receive state
-    if (e.data.type === "ready") {
-      if (port !== realPort && syncCache) {
-        port.postMessage(syncCache);
-      }
-    } // a tab closed
-    else if (e.data.type === "close") {
-      if (port === realPort) {
-        realPort = undefined;
-
-        // if real closes, all call sessions are over.
-        dummyPorts.forEach((dummyPort) =>
-          dummyPort.postMessage({ type: "sync", jsonStr: "[]" })
-        );
-
-        // prompt a dummy to be a real
-        if (dummyPorts.size > 0) {
-          realPort = Array.from(dummyPorts)[0];
-          dummyPorts.delete(realPort);
-          realPort.postMessage({ type: "role", role: "real" });
-        }
-      } else {
-        dummyPorts.delete(port);
-      }
-    } else if (e.data.type === "action") {
-      // forward action to real
-      if (realPort) {
-        realPort.postMessage(e.data);
-      }
-    } else if (e.data.type === "sync") {
-      // sync state to all dummies
-      syncCache = e.data;
-      dummyPorts.forEach((dummyPort) => dummyPort.postMessage(e.data));
-    }
-  };
-};
-```
-
-### Sample client code
-
-```ts
-worker.port.onmessage = (e) => {
-  if (e.data.type === "role") {
-    // role assigned/updated
-    store.role = e.data.role;
-    // you may need to (re-)initiate the web phone
-  } else if (store.role === "real" && e.data.type === "action") {
-    // real gets action from dummy
-  } else if (store.role === "dummy" && e.data.type === "sync") {
-    // dummy gets state from real
-  }
-};
-```
-
-### A sample action processing code
-
-```ts
-public async transfer(callId: string, transferToNumber: string) {
-  if (this.role === 'dummy') {
-    worker.port.postMessage({ type: 'action', name: 'transfer', args: { callId, transferToNumber } });
-    return;
-  }
-  await this.webPhone.callSessions.find((cs) => cs.callId === callId)!.transfer(transferToNumber);
-}
-```
-
-### Working sample
-
-A fully working sample is here
-https://github.com/ringcentral/web-phone-demo/tree/shared-worker You may run
-mutiple tabs to see how it works.
+For more details, please refer to the readme file of the
+[multi-tab demo](https://github.com/tylerlong/rc-web-phone-multi-tabs-demo).
 
 ## monitor/whisper/barge/coach/takeover
 
