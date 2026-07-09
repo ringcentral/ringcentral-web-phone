@@ -14,6 +14,27 @@ import {
 } from "./utils.js";
 
 const maxExpires = 60;
+const getHeader = (headers: Record<string, string>, name: string) =>
+  Object.entries(headers).find(
+    ([key]) => key.toLowerCase() === name.toLowerCase(),
+  )?.[1];
+
+const assertRegistrationSucceeded = (inboundMessage: InboundMessage) => {
+  if (!inboundMessage.subject.startsWith("SIP/2.0 200 ")) {
+    throw new Error(`Registration failed: ${inboundMessage.subject}`);
+  }
+};
+
+const getRegistrationNonce = (inboundMessage: InboundMessage, auth: string) => {
+  const nonce = auth.match(/\bnonce="([^"]+)"/)?.[1];
+  if (!nonce) {
+    throw new Error(
+      `Registration failed: ${inboundMessage.subject} (missing nonce)`,
+    );
+  }
+  return nonce;
+};
+
 export class DefaultSipClient extends EventEmitter implements SipClient {
   public disposed = false;
   public wsc!: WebSocket;
@@ -126,26 +147,32 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
     const closeHandle = setTimeout(() => this.wsc.close(), 5000);
     let inboundMessage = await this.request(requestMessage);
     clearTimeout(closeHandle);
-    const wwwAuth =
-      inboundMessage.headers["Www-Authenticate"] ||
-      inboundMessage.headers["WWW-Authenticate"];
-    if (wwwAuth) {
-      const nonce = wwwAuth.match(/, nonce="(.+?)"/)![1];
-      const newMessage = requestMessage.fork();
-      newMessage.headers.Authorization = generateAuthorization(
-        this.sipInfo,
-        nonce,
-        "REGISTER",
-      );
-      inboundMessage = await this.request(newMessage);
-    } else if (inboundMessage.subject.startsWith("SIP/2.0 603 ")) {
-      throw new Error(`Registration failed: ${inboundMessage.subject}`);
+    if (!inboundMessage.subject.startsWith("SIP/2.0 200 ")) {
+      const wwwAuth = getHeader(inboundMessage.headers, "Www-Authenticate");
+      if (wwwAuth) {
+        const nonce = getRegistrationNonce(inboundMessage, wwwAuth);
+        const newMessage = requestMessage.fork();
+        newMessage.headers.Authorization = generateAuthorization(
+          this.sipInfo,
+          nonce,
+          "REGISTER",
+        );
+        inboundMessage = await this.request(newMessage);
+      }
     }
+    assertRegistrationSucceeded(inboundMessage);
     if (expires > 0) {
       // not for unregister
-      const serverExpires = Number(
-        inboundMessage.headers.Contact.match(/;expires=(\d+)/)![1],
-      );
+      const serverExpiresText = getHeader(
+        inboundMessage.headers,
+        "Contact",
+      )?.match(/;expires=(\d+)/)?.[1];
+      if (!serverExpiresText) {
+        throw new Error(
+          `Registration failed: ${inboundMessage.subject} (missing Contact expires)`,
+        );
+      }
+      const serverExpires = Number(serverExpiresText);
       this.timeoutHandle = setTimeout(
         () => {
           this.register(expires);
