@@ -21,6 +21,7 @@ pnpm release:backfill --apply
 ```
 
 `--apply` publishes real GitHub releases immediately. It does not create drafts.
+After each successful publish, the script prints progress.
 
 For `--apply`, provide `GITHUB_TOKEN` through the shell environment or the local
 private `.env` file. The token needs access to `ringcentral/ringcentral-web-phone`
@@ -38,5 +39,8 @@ Focused Node test coverage for the backfill script:
 - stable version discovery and prerelease skipping
 - release-note curation and maintenance fallback
 - current repository target count
+- rerun behavior for already-created releases
+- publish progress
 - write preflight behavior
 - conflict handling before any release is published
+- GitHub REST failure diagnostics

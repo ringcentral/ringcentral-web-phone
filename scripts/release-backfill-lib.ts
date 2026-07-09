@@ -58,6 +58,17 @@ export type CreatedRelease = {
   tag_name: string;
 };
 
+export type PublishProgress = {
+  index: number;
+  release: CreatedRelease;
+  target: ReleaseTarget;
+  total: number;
+};
+
+export type PublishOptions = {
+  onPublished?: (progress: PublishProgress) => void;
+};
+
 export type GitHubRepository = {
   full_name: string;
   permissions?: {
@@ -87,6 +98,7 @@ export class GitHubApiError extends Error {
     message: string,
     readonly status: number,
     readonly body: string,
+    readonly headers = new Headers(),
   ) {
     super(message);
   }
@@ -178,6 +190,7 @@ export class GitHubRestApi implements GitHubApi {
         `${init.method ?? "GET"} ${url} failed with ${response.status}: ${text}`,
         response.status,
         text,
+        response.headers,
       );
     }
 
@@ -384,9 +397,13 @@ export async function fetchExistingRemote(api: GitHubApi) {
   return { releases, tags };
 }
 
-export async function applyBackfill(api: GitHubApi, plan: BackfillPlan) {
+export async function applyBackfill(
+  api: GitHubApi,
+  plan: BackfillPlan,
+  options: PublishOptions = {},
+) {
   await preflightWrite(api, plan);
-  return createPublishedReleases(api, plan.targets);
+  return createPublishedReleases(api, plan.targets, options);
 }
 
 export async function preflightWrite(api: GitHubApi, plan: BackfillPlan) {
@@ -421,32 +438,71 @@ export async function preflightWrite(api: GitHubApi, plan: BackfillPlan) {
 export async function createPublishedReleases(
   api: GitHubApi,
   targets: ReleaseTarget[],
+  options: PublishOptions = {},
 ) {
   const releases: CreatedRelease[] = [];
+  const total = targets.length;
 
-  for (const target of targets) {
+  for (const [index, target] of targets.entries()) {
     try {
-      releases.push(
-        await api.createRelease({
-          body: target.body,
-          draft: false,
-          name: target.version,
-          prerelease: false,
-          tag_name: target.version,
-          target_commitish: target.sha,
-        }),
-      );
+      const release = await api.createRelease({
+        body: target.body,
+        draft: false,
+        name: target.version,
+        prerelease: false,
+        tag_name: target.version,
+        target_commitish: target.sha,
+      });
+      releases.push(release);
+      options.onPublished?.({
+        index: index + 1,
+        release,
+        target,
+        total,
+      });
     } catch (error) {
-      if (error instanceof GitHubApiError && error.status === 403) {
-        throw new Error(
-          `GitHub rejected release ${target.version}. Make sure GITHUB_TOKEN has Contents: Read and write for ${GITHUB_OWNER}/${GITHUB_REPO}.`,
-        );
+      if (error instanceof GitHubApiError) {
+        throw new Error(formatGitHubApiError(target.version, error));
       }
       throw error;
     }
   }
 
   return releases;
+}
+
+export function formatGitHubApiError(version: string, error: GitHubApiError) {
+  const parsed = parseGitHubErrorBody(error.body);
+  const headerLines = getGitHubDiagnosticHeaders(error.headers).map(
+    ([name, value]) => `${name}: ${value}`,
+  );
+  const lines = [
+    `GitHub rejected release ${version} with HTTP ${error.status}.`,
+  ];
+
+  if (parsed.message) {
+    lines.push(`Message: ${parsed.message}`);
+  }
+
+  if (parsed.documentationUrl) {
+    lines.push(`Documentation: ${parsed.documentationUrl}`);
+  }
+
+  if (error.body) {
+    lines.push(`Body: ${error.body}`);
+  }
+
+  if (headerLines.length > 0) {
+    lines.push(`Headers: ${headerLines.join(", ")}`);
+  }
+
+  if (error.status === 403) {
+    lines.push(
+      `Check GITHUB_TOKEN has Contents: Read and write for ${GITHUB_OWNER}/${GITHUB_REPO}.`,
+    );
+  }
+
+  return lines.join("\n");
 }
 
 export function formatPlan(plan: BackfillPlan) {
@@ -494,6 +550,38 @@ export function readGitHubToken(repoRoot: string) {
   }
 
   return readEnv(resolve(repoRoot, ".env")).GITHUB_TOKEN;
+}
+
+function getGitHubDiagnosticHeaders(headers: Headers) {
+  return [
+    "retry-after",
+    "x-ratelimit-remaining",
+    "x-ratelimit-reset",
+    "x-github-request-id",
+  ].flatMap((name) => {
+    const value = headers.get(name);
+    return value ? ([[name, value]] as Array<[string, string]>) : [];
+  });
+}
+
+function parseGitHubErrorBody(body: string) {
+  try {
+    const parsed: unknown = JSON.parse(body);
+    if (!parsed || typeof parsed !== "object") {
+      return {};
+    }
+
+    const values = parsed as Record<string, unknown>;
+    return {
+      documentationUrl:
+        typeof values.documentation_url === "string"
+          ? values.documentation_url
+          : undefined,
+      message: typeof values.message === "string" ? values.message : undefined,
+    };
+  } catch {
+    return {};
+  }
 }
 
 function readEnv(path: string) {

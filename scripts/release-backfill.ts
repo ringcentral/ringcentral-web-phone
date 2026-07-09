@@ -45,9 +45,12 @@ async function main() {
     return;
   }
 
-  const releases = await applyBackfill(api, plan);
-  console.log("\nPublished releases:");
-  for (const release of releases) {
-    console.log(`- ${release.tag_name}: ${release.html_url}`);
-  }
+  const releases = await applyBackfill(api, plan, {
+    onPublished: ({ index, release, total }) => {
+      console.log(
+        `Published ${index}/${total}: ${release.tag_name} ${release.html_url}`,
+      );
+    },
+  });
+  console.log(`\nFinished publishing ${releases.length} release(s).`);
 }
