@@ -43,24 +43,15 @@ class InboundCallSession extends CallSession {
   }
 
   public async toVoicemail() {
-    await this.sendRcMessage(callControlCommands.ClientVoicemail);
-    // wait for outbound reply to CANCEL
-    return new Promise<void>((resolve) => {
-      const handler = (outboundMessage: OutboundMessage) => {
-        if (
-          outboundMessage.headers["Call-Id"] === this.callId &&
-          outboundMessage.headers.CSeq.endsWith(" CANCEL")
-        ) {
-          this.webPhone.sipClient.off("outboundMessage", handler);
-          resolve();
-        }
-      };
-      this.webPhone.sipClient.on("outboundMessage", handler);
-    });
+    await this.sendAndWaitForCancel(callControlCommands.ClientVoicemail);
   }
 
   public async decline() {
-    await this.sendRcMessage(callControlCommands.ClientReject);
+    await this.sendAndWaitForCancel(callControlCommands.ClientReject);
+  }
+
+  private async sendAndWaitForCancel(cmd: number) {
+    await this.sendRcMessage(cmd);
     // wait for outbound reply to CANCEL
     return new Promise<void>((resolve) => {
       const handler = (outboundMessage: OutboundMessage) => {

@@ -18,22 +18,7 @@ const getHeader = (headers: Record<string, string>, name: string) =>
   Object.entries(headers).find(
     ([key]) => key.toLowerCase() === name.toLowerCase(),
   )?.[1];
-
-const assertRegistrationSucceeded = (inboundMessage: InboundMessage) => {
-  if (!inboundMessage.subject.startsWith("SIP/2.0 200 ")) {
-    throw new Error(`Registration failed: ${inboundMessage.subject}`);
-  }
-};
-
-const getRegistrationNonce = (inboundMessage: InboundMessage, auth: string) => {
-  const nonce = auth.match(/\bnonce="([^"]+)"/)?.[1];
-  if (!nonce) {
-    throw new Error(
-      `Registration failed: ${inboundMessage.subject} (missing nonce)`,
-    );
-  }
-  return nonce;
-};
+const autoReplyPattern = /^(MESSAGE|BYE|CANCEL|INFO|NOTIFY|UPDATE) sip:/;
 
 export class DefaultSipClient extends EventEmitter implements SipClient {
   public disposed = false;
@@ -95,14 +80,7 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
         console.log(`Receiving...(${new Date()})\n` + event.data);
       }
       this.emit("inboundMessage", inboundMessage);
-      if (
-        inboundMessage.subject.startsWith("MESSAGE sip:") ||
-        inboundMessage.subject.startsWith("BYE sip:") ||
-        inboundMessage.subject.startsWith("CANCEL sip:") ||
-        inboundMessage.subject.startsWith("INFO sip:") ||
-        inboundMessage.subject.startsWith("NOTIFY sip:") ||
-        inboundMessage.subject.startsWith("UPDATE sip:")
-      ) {
+      if (autoReplyPattern.test(inboundMessage.subject)) {
         // Auto reply 200 OK to MESSAGE, BYE, CANCEL, INFO, NOTIFY
         await this.reply(
           new ResponseMessage(inboundMessage, { responseCode: 200 }),
@@ -112,15 +90,13 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
 
     return new Promise<void>((resolve, reject) => {
       const openEventHandler = () => {
-        this.wsc.removeEventListener("open", openEventHandler);
         resolve();
       };
-      this.wsc.addEventListener("open", openEventHandler);
+      this.wsc.addEventListener("open", openEventHandler, { once: true });
       const errorEventHandler = (e: Event) => {
-        this.wsc.removeEventListener("error", errorEventHandler);
         reject(e);
       };
-      this.wsc.addEventListener("error", errorEventHandler);
+      this.wsc.addEventListener("error", errorEventHandler, { once: true });
     });
   }
 
@@ -146,11 +122,16 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
     // if cannot get response in 5 seconds, we close the connection
     const closeHandle = setTimeout(() => this.wsc.close(), 5000);
     let inboundMessage = await this.request(requestMessage);
+    const fail = (reason = inboundMessage.subject): never => {
+      throw new Error(`Registration failed: ${reason}`);
+    };
     clearTimeout(closeHandle);
     if (!inboundMessage.subject.startsWith("SIP/2.0 200 ")) {
       const wwwAuth = getHeader(inboundMessage.headers, "Www-Authenticate");
       if (wwwAuth) {
-        const nonce = getRegistrationNonce(inboundMessage, wwwAuth);
+        const nonce =
+          wwwAuth.match(/\bnonce="([^"]+)"/)?.[1] ??
+          fail(`${inboundMessage.subject} (missing nonce)`);
         const newMessage = requestMessage.fork();
         newMessage.headers.Authorization = generateAuthorization(
           this.sipInfo,
@@ -160,7 +141,9 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
         inboundMessage = await this.request(newMessage);
       }
     }
-    assertRegistrationSucceeded(inboundMessage);
+    if (!inboundMessage.subject.startsWith("SIP/2.0 200 ")) {
+      fail();
+    }
     if (expires > 0) {
       // not for unregister
       const serverExpiresText = getHeader(
@@ -168,9 +151,7 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
         "Contact",
       )?.match(/;expires=(\d+)/)?.[1];
       if (!serverExpiresText) {
-        throw new Error(
-          `Registration failed: ${inboundMessage.subject} (missing Contact expires)`,
-        );
+        fail(`${inboundMessage.subject} (missing Contact expires)`);
       }
       const serverExpires = Number(serverExpiresText);
       this.timeoutHandle = setTimeout(
@@ -186,7 +167,7 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
   }
 
   public async request(message: RequestMessage): Promise<InboundMessage> {
-    return await this.send(message, true);
+    return this.send(message, true);
   }
   public async reply(message: ResponseMessage): Promise<void> {
     await this.send(message, false);
@@ -198,9 +179,7 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
     this.wsc.send(message.toString());
     this.emit("outboundMessage", message);
     if (!waitForReply) {
-      return new Promise<InboundMessage>((resolve) => {
-        resolve(new InboundMessage());
-      });
+      return Promise.resolve(new InboundMessage());
     }
     return new Promise<InboundMessage>((resolve) => {
       const messageListerner = (inboundMessage: InboundMessage) => {

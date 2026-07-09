@@ -36,13 +36,12 @@ class SipMessage {
   }
 
   public toString() {
-    const r = [
+    return [
       this.subject,
       ...Object.keys(this.headers).map((key) => `${key}: ${this.headers[key]}`),
       "",
       this.body,
     ].join("\r\n");
-    return r;
   }
 
   public get shortString() {

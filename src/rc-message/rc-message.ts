@@ -16,11 +16,8 @@ class RcMessage {
     suppressEmptyNode: true,
   };
 
-  public static fromXml(_xmlStr: string) {
-    let xmlStr = _xmlStr;
-    if (xmlStr.startsWith("P-rc: ")) {
-      xmlStr = xmlStr.substring(6);
-    }
+  public static fromXml(xmlStr: string) {
+    xmlStr = xmlStr.replace(/^P-rc: /, "");
     const parser = new XMLParser(RcMessage.xmlOptions);
     const parsed = parser.parse(xmlStr);
     return new RcMessage(parsed.Msg.Hdr.$, parsed.Msg.Bdy.$);

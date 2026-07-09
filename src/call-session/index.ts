@@ -114,7 +114,7 @@ class CallSession extends EventEmitter {
       audio: true,
       video: false,
     });
-    tempStream.getTracks().forEach((track) => track.stop()); // 🔥 Stop immediately!
+    for (const track of tempStream.getTracks()) track.stop(); // 🔥 Stop immediately!
 
     this.inputDeviceId = await this.webPhone.deviceManager.getInputDeviceId();
     this.mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -152,7 +152,7 @@ class CallSession extends EventEmitter {
 
   public async changeInputDevice(deviceId: string) {
     this.inputDeviceId = deviceId;
-    this.mediaStream?.getAudioTracks().forEach((track) => track.stop());
+    for (const track of this.mediaStream?.getAudioTracks() ?? []) track.stop();
     this.mediaStream = await navigator.mediaDevices.getUserMedia({
       video: false,
       audio: { deviceId: { exact: deviceId } },
@@ -280,7 +280,7 @@ class CallSession extends EventEmitter {
 
   public dispose() {
     this.rtcPeerConnection?.close();
-    this.mediaStream?.getTracks().forEach((track) => track.stop());
+    for (const track of this.mediaStream?.getTracks() ?? []) track.stop();
     if (this.audioElement) {
       this.audioElement.srcObject = null;
     }
