@@ -139,7 +139,7 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
       );
       inboundMessage = await this.request(newMessage);
     } else if (inboundMessage.subject.startsWith("SIP/2.0 603 ")) {
-      throw new Error("Registration failed: " + inboundMessage.subject);
+      throw new Error(`Registration failed: ${inboundMessage.subject}`);
     }
     if (expires > 0) {
       // not for unregister
