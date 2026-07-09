@@ -386,7 +386,7 @@ export async function fetchExistingRemote(api: GitHubApi) {
 
 export async function applyBackfill(api: GitHubApi, plan: BackfillPlan) {
   await preflightWrite(api, plan);
-  return createDraftReleases(api, plan.targets);
+  return createPublishedReleases(api, plan.targets);
 }
 
 export async function preflightWrite(api: GitHubApi, plan: BackfillPlan) {
@@ -418,7 +418,7 @@ export async function preflightWrite(api: GitHubApi, plan: BackfillPlan) {
   return { repository, user };
 }
 
-export async function createDraftReleases(
+export async function createPublishedReleases(
   api: GitHubApi,
   targets: ReleaseTarget[],
 ) {
@@ -429,7 +429,7 @@ export async function createDraftReleases(
       releases.push(
         await api.createRelease({
           body: target.body,
-          draft: true,
+          draft: false,
           name: target.version,
           prerelease: false,
           tag_name: target.version,

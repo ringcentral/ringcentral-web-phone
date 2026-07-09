@@ -64,7 +64,7 @@ test("current repository dry-run has exactly 45 missing stable releases", () => 
   assert.equal(plan.targets.at(-1)?.version, "2.4.4");
 });
 
-test("apply preflights repository access and creates draft releases", async () => {
+test("apply preflights repository access and publishes releases", async () => {
   const api = new FakeGitHubApi();
   const plan = buildBackfillPlan(
     collectVersionChanges([
@@ -79,7 +79,7 @@ test("apply preflights repository access and creates draft releases", async () =
   assert.equal(api.preflighted, true);
   assert.deepEqual(api.created, [
     {
-      draft: true,
+      draft: false,
       name: "2.0.1",
       prerelease: false,
       tag_name: "2.0.1",

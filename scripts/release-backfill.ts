@@ -41,14 +41,12 @@ async function main() {
   console.log(formatPlan(plan));
 
   if (!apply) {
-    console.log(
-      "\nDry run only. Re-run with --apply to create draft releases.",
-    );
+    console.log("\nDry run only. Re-run with --apply to publish releases.");
     return;
   }
 
   const releases = await applyBackfill(api, plan);
-  console.log("\nCreated draft releases:");
+  console.log("\nPublished releases:");
   for (const release of releases) {
     console.log(`- ${release.tag_name}: ${release.html_url}`);
   }
