@@ -45,10 +45,8 @@
     "check": "biome check . --write",
     "prepublishOnly": "pnpm build",
     "postpublish": "rm -rf dist",
-    "release:backfill": "tsx scripts/release-backfill.ts",
     "serve": "rm -rf .parcel-cache && parcel serve test/index.html --no-hmr",
     "test": "NODE_OPTIONS=--require=dotenv-override-true/config playwright test --workers=1",
-    "test:release-backfill": "tsx --test scripts/release-backfill.test.ts",
     "upgrade": "pnpm update --latest"
   },
   "dependencies": {
