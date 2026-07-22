@@ -28,11 +28,7 @@ class OutboundCallSession extends CallSession {
     callerId?: string,
     options?: { headers?: Record<string, string> },
   ) {
-    const offer = await this.rtcPeerConnection.createOffer({
-      iceRestart: true,
-    });
-    await this.rtcPeerConnection.setLocalDescription(offer);
-    await this.waitForIceGatheringComplete();
+    const sdp = await this.createOffer();
 
     const inviteMessage = new RequestMessage(
       `INVITE sip:${this.callee}@${this.webPhone.sipInfo.domain} SIP/2.0`,
@@ -44,7 +40,7 @@ class OutboundCallSession extends CallSession {
         Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
         "Content-Type": "application/sdp",
       },
-      this.rtcPeerConnection.localDescription!.sdp,
+      sdp,
     );
     if (callerId) {
       inviteMessage.headers["P-Asserted-Identity"] =
@@ -103,10 +99,7 @@ class OutboundCallSession extends CallSession {
 
           this.state = "answered";
           this.emit("answered");
-          this.rtcPeerConnection.setRemoteDescription({
-            type: "answer",
-            sdp: message.body,
-          });
+          this.applyAnswer(message.body);
           const ackMessage = new RequestMessage(
             `ACK ${extractAddress(this.remotePeer)} SIP/2.0`,
             {

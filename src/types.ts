@@ -9,10 +9,28 @@ export interface SipClientOptions {
   debug?: boolean;
 }
 
+export interface WebRtcSession {
+  createOffer(options?: { iceRestart?: boolean }): Promise<string>;
+  createAnswer(offer: string): Promise<string>;
+  applyAnswer(answer: string): Promise<void>;
+  changeInputDevice(deviceId: string): Promise<void>;
+  changeOutputDevice(deviceId: string): Promise<void>;
+  setMuted(muted: boolean): void;
+  sendDtmf(tones: string, duration?: number, interToneGap?: number): void;
+  dispose(): void;
+}
+
+export type WebRtcSessionFactory = (context: {
+  callId: string;
+  direction: "inbound" | "outbound";
+  stunServers: string[];
+}) => WebRtcSession | Promise<WebRtcSession>;
+
 export type WebPhoneOptions = SipClientOptions & {
   sipClient?: SipClient;
   deviceManager?: DeviceManager;
   autoAnswer?: boolean;
+  webRtcSessionFactory?: WebRtcSessionFactory;
 };
 
 export interface SipInfo {

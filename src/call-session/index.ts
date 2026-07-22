@@ -5,6 +5,7 @@ import type WebPhone from "../index.js";
 import type InboundMessage from "../sip-message/inbound.js";
 import RequestMessage from "../sip-message/outbound/request.js";
 import ResponseMessage from "../sip-message/outbound/response.js";
+import type { WebRtcSession } from "../types.js";
 import {
   branch,
   extractAddress,
@@ -44,6 +45,8 @@ class CallSession extends EventEmitter {
 
   private reqid = 1;
   private sdpVersion = 1;
+  protected webRtcSession?: WebRtcSession;
+  protected webRtcLocalSdp?: string;
 
   public constructor(webPhone: WebPhone) {
     super();
@@ -102,6 +105,16 @@ class CallSession extends EventEmitter {
   }
 
   public async init() {
+    const factory = this.webPhone.options.webRtcSessionFactory;
+    if (factory) {
+      this.webRtcSession ??= await factory({
+        callId: this.callId,
+        direction: this.direction,
+        stunServers: this.webPhone.sipInfo.stunServers,
+      });
+      return;
+    }
+
     this.rtcPeerConnection = new RTCPeerConnection({
       iceServers:
         this.webPhone.sipInfo.stunServers?.map((url) => ({
@@ -151,6 +164,9 @@ class CallSession extends EventEmitter {
   }
 
   public async changeInputDevice(deviceId: string) {
+    if (this.webRtcSession) {
+      return await this.webRtcSession.changeInputDevice(deviceId);
+    }
     this.inputDeviceId = deviceId;
     for (const track of this.mediaStream?.getAudioTracks() ?? []) track.stop();
     this.mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -167,6 +183,9 @@ class CallSession extends EventEmitter {
   }
 
   public async changeOutputDevice(deviceId: string) {
+    if (this.webRtcSession) {
+      return await this.webRtcSession.changeOutputDevice(deviceId);
+    }
     this.outputDeviceId = deviceId;
     if (deviceId) {
       await this.audioElement.setSinkId(deviceId);
@@ -271,6 +290,10 @@ class CallSession extends EventEmitter {
   }
 
   public sendDtmf(tones: string, duration?: number, interToneGap?: number) {
+    if (this.webRtcSession) {
+      this.webRtcSession.sendDtmf(tones, duration, interToneGap);
+      return;
+    }
     for (const sender of this.rtcPeerConnection.getSenders()) {
       if (sender.dtmf?.canInsertDTMF) {
         sender.dtmf?.insertDTMF(tones, duration, interToneGap);
@@ -279,6 +302,7 @@ class CallSession extends EventEmitter {
   }
 
   public dispose() {
+    this.webRtcSession?.dispose();
     this.rtcPeerConnection?.close();
     for (const track of this.mediaStream?.getTracks() ?? []) track.stop();
     if (this.audioElement) {
@@ -291,6 +315,10 @@ class CallSession extends EventEmitter {
 
   // for mute/unmute
   protected toggleTrack(enabled: boolean) {
+    if (this.webRtcSession) {
+      this.webRtcSession.setMuted(!enabled);
+      return;
+    }
     this.rtcPeerConnection.getSenders().forEach((sender) => {
       if (sender.track) {
         sender.track.enabled = enabled;
@@ -324,15 +352,48 @@ class CallSession extends EventEmitter {
     });
   }
 
-  // send re-INVITE.
-  // If the call is on hold and you don't want to unhold it, set toReceive to false
-  public async reInvite(toReceive: boolean = true) {
+  protected async createOffer() {
+    if (this.webRtcSession) {
+      this.webRtcLocalSdp = await this.webRtcSession.createOffer({
+        iceRestart: true,
+      });
+      return this.webRtcLocalSdp;
+    }
     const offer = await this.rtcPeerConnection.createOffer({
       iceRestart: true,
     });
     await this.rtcPeerConnection.setLocalDescription(offer);
     await this.waitForIceGatheringComplete();
-    let sdp = this.rtcPeerConnection.localDescription!.sdp;
+    return this.rtcPeerConnection.localDescription!.sdp;
+  }
+
+  protected async createAnswer(offer: string) {
+    if (this.webRtcSession) {
+      this.webRtcLocalSdp = await this.webRtcSession.createAnswer(offer);
+      return this.webRtcLocalSdp;
+    }
+    await this.rtcPeerConnection.setRemoteDescription({
+      type: "offer",
+      sdp: offer,
+    });
+    const answer = await this.rtcPeerConnection.createAnswer();
+    await this.rtcPeerConnection.setLocalDescription(answer);
+    await this.waitForIceGatheringComplete();
+    return this.rtcPeerConnection.localDescription!.sdp;
+  }
+
+  protected applyAnswer(answer: string) {
+    if (this.webRtcSession) return this.webRtcSession.applyAnswer(answer);
+    return this.rtcPeerConnection.setRemoteDescription({
+      type: "answer",
+      sdp: answer,
+    });
+  }
+
+  // send re-INVITE.
+  // If the call is on hold and you don't want to unhold it, set toReceive to false
+  public async reInvite(toReceive: boolean = true) {
+    let sdp = await this.createOffer();
     // default value is `a=sendrecv`
     if (!toReceive) {
       sdp = sdp.replace(/a=sendrecv/g, "a=sendonly");
@@ -349,10 +410,7 @@ class CallSession extends EventEmitter {
       sdp,
     );
     const replyMessage = await this.webPhone.sipClient.request(requestMessage);
-    await this.rtcPeerConnection.setRemoteDescription({
-      type: "answer",
-      sdp: replyMessage.body,
-    });
+    await this.applyAnswer(replyMessage.body);
     const ackMessage = new RequestMessage(
       `ACK ${extractAddress(this.remotePeer)} SIP/2.0`,
       {
@@ -369,20 +427,14 @@ class CallSession extends EventEmitter {
   // handle re-INVITE from SIP server
   public async handleReInvite(reInviteMessage: InboundMessage) {
     this.sipMessage = reInviteMessage;
-    await this.rtcPeerConnection.setRemoteDescription({
-      type: "offer",
-      sdp: reInviteMessage.body,
-    });
-    const answer = await this.rtcPeerConnection.createAnswer();
-    await this.rtcPeerConnection.setLocalDescription(answer);
-    await this.waitForIceGatheringComplete();
+    const sdp = await this.createAnswer(reInviteMessage.body);
 
     const newMessage = new ResponseMessage(this.sipMessage, {
       responseCode: 200,
       headers: {
         "Content-Type": "application/sdp",
       },
-      body: this.rtcPeerConnection.localDescription!.sdp,
+      body: sdp,
     });
     await this.webPhone.sipClient.reply(newMessage);
 
@@ -393,10 +445,10 @@ class CallSession extends EventEmitter {
   // for hold/unhold
   // toggle between a=sendrecv and a=sendonly
   protected async toggleReceive(toReceive: boolean) {
-    if (!this.rtcPeerConnection?.localDescription) {
-      return;
-    }
-    let sdp = this.rtcPeerConnection.localDescription!.sdp;
+    let sdp = this.webRtcSession
+      ? this.webRtcLocalSdp
+      : this.rtcPeerConnection?.localDescription?.sdp;
+    if (sdp === undefined) return;
     // default value is `a=sendrecv`
     if (!toReceive) {
       sdp = sdp.replace(/a=sendrecv/g, "a=sendonly");
