@@ -1211,10 +1211,11 @@ const webRtcSessionFactory: WebRtcSessionFactory = (context) =>
 const webPhone = new WebPhone({ sipInfo, webRtcSessionFactory });
 ```
 
-The application-provided session performs WebRTC in a browser tab. The SDK
-continues to own SIP signaling, call-session state, re-INVITEs, and hold SDP.
-The application owns tab selection, communication, retries, and failure
-handling. Browser tabs do not create their own `WebPhone` instances.
+The factory synchronously creates an application proxy. Its `WebRtcSession`
+methods perform asynchronous worker/tab communication and WebRTC in a browser
+tab. The SDK continues to own SIP signaling, call-session state, re-INVITEs,
+and hold SDP. The application owns tab selection, communication, retries, and
+failure handling. Browser tabs do not create their own `WebPhone` instances.
 
 Without `webRtcSessionFactory`, the SDK uses its existing in-tab WebRTC behavior.
 Browser-only call-session properties such as `rtcPeerConnection`, `mediaStream`,

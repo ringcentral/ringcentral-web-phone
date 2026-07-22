@@ -24,7 +24,7 @@ export type WebRtcSessionFactory = (context: {
   callId: string;
   direction: "inbound" | "outbound";
   stunServers: string[];
-}) => WebRtcSession | Promise<WebRtcSession>;
+}) => WebRtcSession;
 
 export type WebPhoneOptions = SipClientOptions & {
   sipClient?: SipClient;

@@ -113,7 +113,7 @@ class CallSession extends EventEmitter {
   public async init() {
     const factory = this.webPhone.options.webRtcSessionFactory;
     if (factory) {
-      this.webRtcSession ??= await factory({
+      this.webRtcSession ??= factory({
         callId: this.callId,
         direction: this.direction,
         stunServers: this.webPhone.sipInfo.stunServers,

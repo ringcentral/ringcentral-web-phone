@@ -172,7 +172,6 @@ test("delegates an outbound call without browser WebRTC globals", async () => {
       return webRtcSession;
     },
   });
-
   const session = await webPhone.call("101");
   await session.init();
 
@@ -276,50 +275,26 @@ test("keeps hold SDP policy in CallSession", async () => {
   expect(webRtcSession.appliedAnswers).toEqual([NORMALIZED_REMOTE_ANSWER]);
 });
 
-test("retries the factory after initialization failure", async () => {
+test("retries a failed factory and initializes once", async () => {
   const sipClient = new FakeSipClient();
   const webRtcSession = new FakeWebRtcSession();
+  const factoryError = new Error("tab unavailable");
   let calls = 0;
   const webPhone = new WebPhone({
     sipInfo,
     sipClient,
     webRtcSessionFactory: () => {
       calls += 1;
-      if (calls === 1) throw new Error("tab unavailable");
+      if (calls === 1) throw factoryError;
       return webRtcSession;
     },
   });
   const session = new InboundCallSession(webPhone, inboundInvite());
 
-  await expect(session.init()).rejects.toThrow("tab unavailable");
-  await session.init();
-  await session.init();
+  await expect(session.init()).rejects.toBe(factoryError);
+  await Promise.all([session.init(), session.init()]);
 
   expect(calls).toBe(2);
-});
-
-test("does not use browser media while the factory is pending", async () => {
-  const webRtcSession = new FakeWebRtcSession();
-  let resolveFactory: (session: WebRtcSession) => void = () => {};
-  const webPhone = new WebPhone({
-    sipInfo,
-    sipClient: new FakeSipClient(),
-    webRtcSessionFactory: () =>
-      new Promise((resolve) => {
-        resolveFactory = resolve;
-      }),
-  });
-  const session = new InboundCallSession(webPhone, inboundInvite());
-  const initialization = session.init();
-  const error = "WebRTC session is not initialized";
-
-  expect(() => session.mute()).toThrow(error);
-  expect(() => session.sendDtmf("1")).toThrow(error);
-  await expect(session.changeInputDevice("input")).rejects.toThrow(error);
-  await expect(session.changeOutputDevice("output")).rejects.toThrow(error);
-
-  resolveFactory(webRtcSession);
-  await initialization;
 });
 
 test("preserves synchronous browser media behavior without a factory", () => {
