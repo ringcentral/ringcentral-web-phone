@@ -36,6 +36,8 @@ export interface MediaSession<M extends object> {
     duration?: number,
     interToneGap?: number,
   ) => Promise<void>;
+  // The SDK does not await provider cleanup. Remote providers own completion,
+  // timeout, and retry behavior after disposal is requested.
   dispose: () => Promise<void>;
 }
 

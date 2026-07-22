@@ -31,6 +31,9 @@ callSession.on("disposed", () => {
 
 ## CallSession events
 
+Media-provider cleanup is best-effort. A call session can emit `disposed`
+before a remote provider completes its own cleanup.
+
 | Event                                   | Description                                                                                                                                                                |
 | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`answered`](answered.md)               | Triggered when the call is answered.                                                                                                                                       |
