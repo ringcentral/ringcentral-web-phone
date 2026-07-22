@@ -104,9 +104,6 @@ class OutboundCallSession<
 
           this.state = "answered";
           this.emit("answered");
-          void Promise.resolve()
-            .then(() => this.requireMediaSession().applyAnswer(message.body))
-            .catch(() => {});
           const ackMessage = new RequestMessage(
             `ACK ${extractAddress(this.remotePeer)} SIP/2.0`,
             {
@@ -118,6 +115,7 @@ class OutboundCallSession<
             },
           );
           await this.webPhone.sipClient.reply(ackMessage);
+          this.applyAnswerDetached(message.body);
           resolve(true);
         }
       };

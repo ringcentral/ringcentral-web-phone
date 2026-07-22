@@ -67,7 +67,6 @@ const setup = async (replaceTrack: (track: FakeTrack) => Promise<void>) => {
       getOutputDeviceId: async () => undefined,
     },
   });
-  await mediaSession.init();
   return {
     mediaSession,
     firstTrack,

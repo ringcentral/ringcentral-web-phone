@@ -21,11 +21,7 @@ export interface MediaProviderContext {
 
 export interface MediaSession<M extends object> {
   media: M;
-  init: () => Promise<void>;
-  createOffer: (options?: {
-    iceRestart?: boolean;
-    receive?: boolean;
-  }) => Promise<string>;
+  createOffer: (options?: { iceRestart?: boolean }) => Promise<string>;
   answerOffer: (sdp: string) => Promise<string>;
   applyAnswer: (sdp: string) => Promise<void>;
   changeInputDevice: (deviceId: string) => Promise<void>;

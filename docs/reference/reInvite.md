@@ -18,9 +18,12 @@ recovery. For example, if the call was on hold, you want to recover the call but
 keep it on hold.
 
 !!! info "Technical details" `reInvite()` will generate new local SDP and do
-iceRestart. And after server replies with remote SDP, it will be set:
-`rtcPeerConnection.setRemoteDescription(remoteSDP)`. This is required because if
-network information changed, old SDPs won't work any more.
+iceRestart. After the server replies with remote SDP, the media provider applies
+it. This is required because if network information changed, old SDPs won't work
+any more.
+
+The SDK sends the SIP ACK before applying the remote SDP. If media setup then
+fails, `reInvite()` rejects.
 
 See also:
 

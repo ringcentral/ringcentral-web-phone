@@ -90,6 +90,7 @@ nav:
           - "answered": events/answered.md
           - "disposed": events/disposed.md
           - "inboundMessage": events/inboundMessage.md
+          - "mediaError": events/mediaError.md
           - "ringing": events/ringing.md
           - "outboundMessage": events/outboundMessage.md
   - "Reference":

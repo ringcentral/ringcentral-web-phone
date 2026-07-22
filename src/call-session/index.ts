@@ -52,7 +52,7 @@ class CallSession<M extends object = DefaultMediaObjects> extends EventEmitter {
     this.webPhone = webPhone;
   }
 
-  public get media(): M | undefined {
+  public get media(): Readonly<M> | undefined {
     return this.mediaSession?.media;
   }
   public get rtcPeerConnection(): MediaField<M, "rtcPeerConnection"> {
@@ -140,7 +140,6 @@ class CallSession<M extends object = DefaultMediaObjects> extends EventEmitter {
         onMediaStream: (stream) => this.emit("mediaStreamSet", stream),
       });
     }
-    await this.mediaSession.init();
   }
 
   public async changeInputDevice(deviceId: string) {
@@ -256,7 +255,7 @@ class CallSession<M extends object = DefaultMediaObjects> extends EventEmitter {
     await this.requireMediaSession().sendDtmf(tones, duration, interToneGap);
   }
 
-  public async dispose() {
+  public dispose() {
     void Promise.resolve()
       .then(() => this.mediaSession?.dispose())
       .catch(() => {});
@@ -268,10 +267,10 @@ class CallSession<M extends object = DefaultMediaObjects> extends EventEmitter {
   // send re-INVITE.
   // If the call is on hold and you don't want to unhold it, set toReceive to false
   public async reInvite(toReceive: boolean = true) {
-    const sdp = await this.createOffer({
-      iceRestart: true,
-      receive: toReceive,
-    });
+    let sdp = await this.createOffer({ iceRestart: true });
+    if (!toReceive) {
+      sdp = sdp.replace(/a=sendrecv/g, "a=sendonly");
+    }
     const requestMessage = new RequestMessage(
       `INVITE ${extractAddress(this.remotePeer)} SIP/2.0`,
       {
@@ -284,9 +283,6 @@ class CallSession<M extends object = DefaultMediaObjects> extends EventEmitter {
       sdp,
     );
     const replyMessage = await this.webPhone.sipClient.request(requestMessage);
-    void Promise.resolve()
-      .then(() => this.requireMediaSession().applyAnswer(replyMessage.body))
-      .catch(() => {});
     const ackMessage = new RequestMessage(
       `ACK ${extractAddress(this.remotePeer)} SIP/2.0`,
       {
@@ -298,6 +294,7 @@ class CallSession<M extends object = DefaultMediaObjects> extends EventEmitter {
       },
     );
     await this.webPhone.sipClient.reply(ackMessage);
+    await this.requireMediaSession().applyAnswer(replyMessage.body);
   }
 
   // handle re-INVITE from SIP server
@@ -373,10 +370,7 @@ class CallSession<M extends object = DefaultMediaObjects> extends EventEmitter {
     return this.mediaSession;
   }
 
-  protected async createOffer(options?: {
-    iceRestart?: boolean;
-    receive?: boolean;
-  }) {
+  protected async createOffer(options?: { iceRestart?: boolean }) {
     const sdp = await this.requireMediaSession().createOffer(options);
     this.localSdp = sdp;
     return sdp;
@@ -386,6 +380,12 @@ class CallSession<M extends object = DefaultMediaObjects> extends EventEmitter {
     const answer = await this.requireMediaSession().answerOffer(sdp);
     this.localSdp = answer;
     return answer;
+  }
+
+  protected applyAnswerDetached(sdp: string) {
+    void Promise.resolve()
+      .then(() => this.requireMediaSession().applyAnswer(sdp))
+      .catch((error) => this.emit("mediaError", error));
   }
 
   private mediaField<K extends PropertyKey>(key: K): MediaField<M, K> {

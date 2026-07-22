@@ -1,5 +1,3 @@
-import sdpTransform from "sdp-transform";
-
 import type {
   DefaultMediaObjects,
   MediaProvider,
@@ -13,13 +11,21 @@ export class DefaultMediaProvider
   public async create(
     context: MediaProviderContext,
   ): Promise<MediaSession<DefaultMediaObjects>> {
-    return new DefaultMediaSession(context);
+    const session = new DefaultMediaSession(context);
+    try {
+      await session.init();
+      return session;
+    } catch (error) {
+      try {
+        await session.dispose();
+      } catch {}
+      throw error;
+    }
   }
 }
 
 class DefaultMediaSession implements MediaSession<DefaultMediaObjects> {
   public media = {} as DefaultMediaObjects;
-  private sdpVersion = 1;
 
   public constructor(private context: MediaProviderContext) {}
 
@@ -59,10 +65,8 @@ class DefaultMediaSession implements MediaSession<DefaultMediaObjects> {
 
   public async createOffer({
     iceRestart = false,
-    receive = true,
   }: {
     iceRestart?: boolean;
-    receive?: boolean;
   } = {}) {
     const rtcPeerConnection = this.media.rtcPeerConnection;
     if (iceRestart || !rtcPeerConnection.localDescription) {
@@ -70,20 +74,7 @@ class DefaultMediaSession implements MediaSession<DefaultMediaObjects> {
       await rtcPeerConnection.setLocalDescription(offer);
       await this.waitForIceGatheringComplete();
     }
-    let sdp = rtcPeerConnection.localDescription!.sdp!;
-    if (!receive) {
-      sdp = sdp.replace(/a=sendrecv/g, "a=sendonly");
-    }
-    if (!iceRestart) {
-      const parsed = sdpTransform.parse(sdp);
-      this.sdpVersion = Math.max(
-        this.sdpVersion,
-        parsed.origin!.sessionVersion + 1,
-      );
-      parsed.origin!.sessionVersion = this.sdpVersion++;
-      sdp = sdpTransform.write(parsed);
-    }
-    return sdp;
+    return rtcPeerConnection.localDescription!.sdp!;
   }
 
   public async answerOffer(sdp: string) {

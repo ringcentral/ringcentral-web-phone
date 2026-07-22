@@ -44,7 +44,6 @@ const sipInfo: SipInfo = {
 test("uses provider-defined media without browser objects", async () => {
   const mediaSession: MediaSession<FakeMedia> = {
     media: { marker: "remote" },
-    init: async () => {},
     createOffer: async () => "",
     answerOffer: async () => "",
     applyAnswer: async () => {},
@@ -77,7 +76,6 @@ test("uses provider-defined media without browser objects", async () => {
 test("keeps legacy media fields writable", async () => {
   const mediaSession: MediaSession<FakeMedia> = {
     media: { marker: "remote" },
-    init: async () => {},
     createOffer: async () => "",
     answerOffer: async () => "",
     applyAnswer: async () => {},
@@ -131,7 +129,6 @@ test("holds without delegating SDP-only negotiation to the media provider", asyn
   };
   const mediaSession: MediaSession<FakeMedia> = {
     media: { marker: "remote" },
-    init: async () => {},
     createOffer: async () => {
       createOfferCalls += 1;
       return "";
@@ -167,10 +164,55 @@ test("holds without delegating SDP-only negotiation to the media provider", asyn
   expect(requests[0].body).toContain("a=sendonly");
 });
 
-test("disposes SDK state when provider cleanup fails", async () => {
+test("unholds with the raw SDP after a sendonly re-INVITE", async () => {
+  const requests: RequestMessage[] = [];
+  const sipClient = new FakeSipClient();
+  sipClient.request = async (message: RequestMessage) => {
+    requests.push(message);
+    return new InboundMessage("SIP/2.0 200 OK", {
+      Via: message.headers.Via,
+      CSeq: message.headers.CSeq,
+    });
+  };
   const mediaSession: MediaSession<FakeMedia> = {
     media: { marker: "remote" },
-    init: async () => {},
+    createOffer: async () =>
+      "v=0\r\no=- 1 1 IN IP4 127.0.0.1\r\na=sendrecv\r\n",
+    answerOffer: async () => "",
+    applyAnswer: async () => {},
+    changeInputDevice: async () => {},
+    changeOutputDevice: async () => {},
+    setMuted: async () => {},
+    sendDtmf: async () => {},
+    dispose: async () => {},
+  };
+  const invite = new InboundMessage("INVITE", {
+    "Call-Id": "call",
+    CSeq: "1 INVITE",
+    From: "<sip:remote@example.com>;tag=remote",
+    To: "<sip:local@example.com>;tag=local",
+  });
+  const session = new InboundCallSession(
+    new WebPhone<FakeMedia>({
+      sipInfo,
+      sipClient,
+      mediaProvider: { create: async () => mediaSession },
+    }),
+    invite,
+  );
+
+  await session.init();
+  await session.reInvite(false);
+  await session.unhold();
+
+  expect(requests[0].body).toContain("a=sendonly");
+  expect(requests[1].body).toContain("a=sendrecv");
+});
+
+test("retries media creation after initialization fails", async () => {
+  let createCalls = 0;
+  const mediaSession: MediaSession<FakeMedia> = {
+    media: { marker: "remote" },
     createOffer: async () => "",
     answerOffer: async () => "",
     applyAnswer: async () => {},
@@ -178,7 +220,40 @@ test("disposes SDK state when provider cleanup fails", async () => {
     changeOutputDevice: async () => {},
     setMuted: async () => {},
     sendDtmf: async () => {},
-    dispose: async () => {
+    dispose: async () => {},
+  };
+  const session = new InboundCallSession(
+    new WebPhone<FakeMedia>({
+      sipInfo,
+      sipClient: new FakeSipClient(),
+      mediaProvider: {
+        create: async () => {
+          createCalls += 1;
+          if (createCalls === 1) throw new Error("microphone failed");
+          return mediaSession;
+        },
+      },
+    }),
+    new InboundMessage("INVITE"),
+  );
+
+  await expect(session.init()).rejects.toThrow("microphone failed");
+  await expect(session.init()).resolves.toBeUndefined();
+  expect(createCalls).toBe(2);
+  expect(session.media).toBe(mediaSession.media);
+});
+
+test("disposes SDK state when provider cleanup fails", async () => {
+  const mediaSession: MediaSession<FakeMedia> = {
+    media: { marker: "remote" },
+    createOffer: async () => "",
+    answerOffer: async () => "",
+    applyAnswer: async () => {},
+    changeInputDevice: async () => {},
+    changeOutputDevice: async () => {},
+    setMuted: async () => {},
+    sendDtmf: async () => {},
+    dispose: () => {
       throw new Error("cleanup failed");
     },
   };
@@ -197,13 +272,13 @@ test("disposes SDK state when provider cleanup fails", async () => {
   });
 
   await session.init();
-  await session.dispose();
+  expect(session.dispose()).toBeUndefined();
 
   expect(session.state).toBe("disposed");
   expect(disposed).toBe(true);
 });
 
-test("ACKs an answered outbound call when applying media fails", async () => {
+test("ACKs an answered outbound call and emits mediaError when applying media fails", async () => {
   let requestCount = 0;
   let acked = false;
   const sipClient = new FakeSipClient();
@@ -226,7 +301,6 @@ test("ACKs an answered outbound call when applying media fails", async () => {
   };
   const mediaSession: MediaSession<FakeMedia> = {
     media: { marker: "remote" },
-    init: async () => {},
     createOffer: async () => "v=0\r\no=- 1 1 IN IP4 127.0.0.1\r\n",
     answerOffer: async () => "",
     applyAnswer: async () => {
@@ -244,6 +318,9 @@ test("ACKs an answered outbound call when applying media fails", async () => {
     mediaProvider: { create: async () => mediaSession },
   });
   const session = new OutboundCallSession(webPhone, "101");
+  const mediaError = new Promise<Error>((resolve) => {
+    session.once("mediaError", resolve);
+  });
 
   await session.init();
   const result = session.call();
@@ -257,4 +334,50 @@ test("ACKs an answered outbound call when applying media fails", async () => {
 
   await expect(result).resolves.toBe(true);
   expect(acked).toBe(true);
+  await expect(mediaError).resolves.toHaveProperty("message", "media failed");
+});
+
+test("ACKs a re-INVITE before surfacing an answer failure", async () => {
+  const order: string[] = [];
+  const sipClient = new FakeSipClient();
+  sipClient.request = async (message: RequestMessage) =>
+    new InboundMessage("SIP/2.0 200 OK", {
+      Via: message.headers.Via,
+      CSeq: message.headers.CSeq,
+    });
+  sipClient.reply = async () => {
+    order.push("ACK");
+  };
+  const mediaSession: MediaSession<FakeMedia> = {
+    media: { marker: "remote" },
+    createOffer: async () => "v=0\r\no=- 1 1 IN IP4 127.0.0.1\r\n",
+    answerOffer: async () => "",
+    applyAnswer: async () => {
+      order.push("answer");
+      throw new Error("media failed");
+    },
+    changeInputDevice: async () => {},
+    changeOutputDevice: async () => {},
+    setMuted: async () => {},
+    sendDtmf: async () => {},
+    dispose: async () => {},
+  };
+  const invite = new InboundMessage("INVITE", {
+    "Call-Id": "call",
+    CSeq: "1 INVITE",
+    From: "<sip:remote@example.com>;tag=remote",
+    To: "<sip:local@example.com>;tag=local",
+  });
+  const session = new InboundCallSession(
+    new WebPhone<FakeMedia>({
+      sipInfo,
+      sipClient,
+      mediaProvider: { create: async () => mediaSession },
+    }),
+    invite,
+  );
+
+  await session.init();
+  await expect(session.reInvite()).rejects.toThrow("media failed");
+  expect(order).toEqual(["ACK", "answer"]);
 });

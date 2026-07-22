@@ -216,9 +216,11 @@ WebPhone uses an in-process browser media provider by default. Supply a
 `mediaProvider` to run call media elsewhere or add provider-specific state.
 SIP dialogs and call lifecycle remain in the SDK.
 
-`callSession.media` contains the provider-defined shape. Legacy browser fields
-retain current behavior with the default provider; custom providers do not
-expose browser-object proxies.
+`mediaProvider.create()` must resolve only after media is ready. Failed creation
+is not cached, so a later initialization attempt retries it. `callSession.media`
+is a read-only view of the provider-defined shape. Legacy browser fields retain
+current behavior with the default provider; custom providers do not expose
+browser-object proxies.
 
 ## Enabling Local Ringtones
 

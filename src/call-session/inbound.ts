@@ -146,9 +146,7 @@ class InboundCallSession<
         newMessage as RequestMessage,
       );
       this.sipMessage = ackMessage;
-      void Promise.resolve()
-        .then(() => this.requireMediaSession().applyAnswer(ackMessage.body))
-        .catch(() => {});
+      this.applyAnswerDetached(ackMessage.body);
     }
 
     this.state = "answered";
