@@ -45,12 +45,18 @@ class CallSession extends EventEmitter {
 
   private reqid = 1;
   private sdpVersion = 1;
-  protected webRtcSession?: WebRtcSession;
-  protected webRtcLocalSdp?: string;
+  private webRtcSession?: WebRtcSession;
+  private baseLocalSdp?: string;
 
   public constructor(webPhone: WebPhone) {
     super();
     this.webPhone = webPhone;
+  }
+
+  private requireWebRtcSession() {
+    if (!this.webRtcSession)
+      throw new Error("WebRTC session is not initialized");
+    return this.webRtcSession;
   }
 
   public get mediaStream(): MediaStream | undefined {
@@ -164,8 +170,8 @@ class CallSession extends EventEmitter {
   }
 
   public async changeInputDevice(deviceId: string) {
-    if (this.webRtcSession) {
-      return await this.webRtcSession.changeInputDevice(deviceId);
+    if (this.webPhone.options.webRtcSessionFactory) {
+      return await this.requireWebRtcSession().changeInputDevice(deviceId);
     }
     this.inputDeviceId = deviceId;
     for (const track of this.mediaStream?.getAudioTracks() ?? []) track.stop();
@@ -183,8 +189,8 @@ class CallSession extends EventEmitter {
   }
 
   public async changeOutputDevice(deviceId: string) {
-    if (this.webRtcSession) {
-      return await this.webRtcSession.changeOutputDevice(deviceId);
+    if (this.webPhone.options.webRtcSessionFactory) {
+      return await this.requireWebRtcSession().changeOutputDevice(deviceId);
     }
     this.outputDeviceId = deviceId;
     if (deviceId) {
@@ -290,8 +296,8 @@ class CallSession extends EventEmitter {
   }
 
   public sendDtmf(tones: string, duration?: number, interToneGap?: number) {
-    if (this.webRtcSession) {
-      this.webRtcSession.sendDtmf(tones, duration, interToneGap);
+    if (this.webPhone.options.webRtcSessionFactory) {
+      this.requireWebRtcSession().sendDtmf(tones, duration, interToneGap);
       return;
     }
     for (const sender of this.rtcPeerConnection.getSenders()) {
@@ -302,11 +308,14 @@ class CallSession extends EventEmitter {
   }
 
   public dispose() {
-    this.webRtcSession?.dispose();
-    this.rtcPeerConnection?.close();
-    for (const track of this.mediaStream?.getTracks() ?? []) track.stop();
-    if (this.audioElement) {
-      this.audioElement.srcObject = null;
+    if (this.webPhone.options.webRtcSessionFactory) {
+      this.webRtcSession?.dispose();
+    } else {
+      this.rtcPeerConnection?.close();
+      for (const track of this.mediaStream?.getTracks() ?? []) track.stop();
+      if (this.audioElement) {
+        this.audioElement.srcObject = null;
+      }
     }
     this.state = "disposed";
     this.emit("disposed");
@@ -315,8 +324,8 @@ class CallSession extends EventEmitter {
 
   // for mute/unmute
   protected toggleTrack(enabled: boolean) {
-    if (this.webRtcSession) {
-      this.webRtcSession.setMuted(!enabled);
+    if (this.webPhone.options.webRtcSessionFactory) {
+      this.requireWebRtcSession().setMuted(!enabled);
       return;
     }
     this.rtcPeerConnection.getSenders().forEach((sender) => {
@@ -353,11 +362,11 @@ class CallSession extends EventEmitter {
   }
 
   protected async createOffer() {
-    if (this.webRtcSession) {
-      this.webRtcLocalSdp = await this.webRtcSession.createOffer({
+    if (this.webPhone.options.webRtcSessionFactory) {
+      this.baseLocalSdp = await this.requireWebRtcSession().createOffer({
         iceRestart: true,
       });
-      return this.webRtcLocalSdp;
+      return this.baseLocalSdp;
     }
     const offer = await this.rtcPeerConnection.createOffer({
       iceRestart: true,
@@ -368,9 +377,9 @@ class CallSession extends EventEmitter {
   }
 
   protected async createAnswer(offer: string) {
-    if (this.webRtcSession) {
-      this.webRtcLocalSdp = await this.webRtcSession.createAnswer(offer);
-      return this.webRtcLocalSdp;
+    if (this.webPhone.options.webRtcSessionFactory) {
+      this.baseLocalSdp = await this.requireWebRtcSession().createAnswer(offer);
+      return this.baseLocalSdp;
     }
     await this.rtcPeerConnection.setRemoteDescription({
       type: "offer",
@@ -383,7 +392,9 @@ class CallSession extends EventEmitter {
   }
 
   protected applyAnswer(answer: string) {
-    if (this.webRtcSession) return this.webRtcSession.applyAnswer(answer);
+    if (this.webPhone.options.webRtcSessionFactory) {
+      return this.requireWebRtcSession().applyAnswer(answer);
+    }
     return this.rtcPeerConnection.setRemoteDescription({
       type: "answer",
       sdp: answer,
@@ -445,8 +456,8 @@ class CallSession extends EventEmitter {
   // for hold/unhold
   // toggle between a=sendrecv and a=sendonly
   protected async toggleReceive(toReceive: boolean) {
-    let sdp = this.webRtcSession
-      ? this.webRtcLocalSdp
+    let sdp = this.webPhone.options.webRtcSessionFactory
+      ? this.baseLocalSdp
       : this.rtcPeerConnection?.localDescription?.sdp;
     if (sdp === undefined) return;
     // default value is `a=sendrecv`

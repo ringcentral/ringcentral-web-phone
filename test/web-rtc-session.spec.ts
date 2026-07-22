@@ -298,6 +298,30 @@ test("retries the factory after initialization failure", async () => {
   expect(calls).toBe(2);
 });
 
+test("does not use browser media while the factory is pending", async () => {
+  const webRtcSession = new FakeWebRtcSession();
+  let resolveFactory: (session: WebRtcSession) => void = () => {};
+  const webPhone = new WebPhone({
+    sipInfo,
+    sipClient: new FakeSipClient(),
+    webRtcSessionFactory: () =>
+      new Promise((resolve) => {
+        resolveFactory = resolve;
+      }),
+  });
+  const session = new InboundCallSession(webPhone, inboundInvite());
+  const initialization = session.init();
+  const error = "WebRTC session is not initialized";
+
+  expect(() => session.mute()).toThrow(error);
+  expect(() => session.sendDtmf("1")).toThrow(error);
+  await expect(session.changeInputDevice("input")).rejects.toThrow(error);
+  await expect(session.changeOutputDevice("output")).rejects.toThrow(error);
+
+  resolveFactory(webRtcSession);
+  await initialization;
+});
+
 test("preserves synchronous browser media behavior without a factory", () => {
   const webPhone = new WebPhone({ sipInfo, sipClient: new FakeSipClient() });
   const session = new CallSession(webPhone);
