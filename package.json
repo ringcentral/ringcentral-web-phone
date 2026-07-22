@@ -43,6 +43,7 @@
     "format": "biome format --write .",
     "lint": "biome lint --write .",
     "check": "biome check . --write",
+    "typecheck": "tsc --project test/tsconfig.json",
     "prepublishOnly": "pnpm build",
     "postpublish": "rm -rf dist",
     "serve": "rm -rf .parcel-cache && parcel serve test/index.html --no-hmr",

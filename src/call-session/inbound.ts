@@ -1,15 +1,17 @@
 import type WebPhone from "../index.js";
-import type { DefaultMediaObjects } from "../types.js";
 import callControlCommands from "../rc-message/call-control-commands.js";
 import RcMessage from "../rc-message/rc-message.js";
 import type InboundMessage from "../sip-message/inbound.js";
 import type OutboundMessage from "../sip-message/outbound/index.js";
 import RequestMessage from "../sip-message/outbound/request.js";
 import ResponseMessage from "../sip-message/outbound/response.js";
+import type { DefaultMediaObjects } from "../types.js";
 import { branch, fakeDomain, uuid } from "../utils.js";
 import CallSession from "./index.js";
 
-class InboundCallSession<M extends object = DefaultMediaObjects> extends CallSession<M> {
+class InboundCallSession<
+  M extends object = DefaultMediaObjects,
+> extends CallSession<M> {
   public constructor(webPhone: WebPhone<M>, inviteMessage: InboundMessage) {
     super(webPhone);
     this.sipMessage = inviteMessage;
@@ -117,9 +119,7 @@ class InboundCallSession<M extends object = DefaultMediaObjects> extends CallSes
 
     // most INVITE message will have a body with SDP offer.
     if (this.sipMessage.body.length > 0) {
-      const sdp = await this.requireMediaSession().answerOffer(
-        this.sipMessage.body,
-      );
+      const sdp = await this.answerOffer(this.sipMessage.body);
 
       const newMessage = new ResponseMessage(this.sipMessage, {
         responseCode: 200,
@@ -131,7 +131,7 @@ class InboundCallSession<M extends object = DefaultMediaObjects> extends CallSes
       await this.webPhone.sipClient.reply(newMessage);
     } else {
       // some INVITE message has an empty body. For example, when you invoke RESTful API /pickup to answer a call from a call queue
-      const sdp = await this.requireMediaSession().createOffer({
+      const sdp = await this.createOffer({
         iceRestart: true,
       });
 
@@ -146,7 +146,9 @@ class InboundCallSession<M extends object = DefaultMediaObjects> extends CallSes
         newMessage as RequestMessage,
       );
       this.sipMessage = ackMessage;
-      await this.requireMediaSession().applyAnswer(ackMessage.body);
+      void Promise.resolve()
+        .then(() => this.requireMediaSession().applyAnswer(ackMessage.body))
+        .catch(() => {});
     }
 
     this.state = "answered";

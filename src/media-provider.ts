@@ -28,7 +28,9 @@ class DefaultMediaSession implements MediaSession<DefaultMediaObjects> {
       return;
     }
     this.media.rtcPeerConnection = new RTCPeerConnection({
-      iceServers: this.context.iceServers.map((urls) => ({ urls: `stun:${urls}` })),
+      iceServers: this.context.iceServers.map((urls) => ({
+        urls: `stun:${urls}`,
+      })),
     });
 
     const tempStream = await navigator.mediaDevices.getUserMedia({
@@ -58,7 +60,10 @@ class DefaultMediaSession implements MediaSession<DefaultMediaObjects> {
   public async createOffer({
     iceRestart = false,
     receive = true,
-  }: { iceRestart?: boolean; receive?: boolean } = {}) {
+  }: {
+    iceRestart?: boolean;
+    receive?: boolean;
+  } = {}) {
     const rtcPeerConnection = this.media.rtcPeerConnection;
     if (iceRestart || !rtcPeerConnection.localDescription) {
       const offer = await rtcPeerConnection.createOffer({ iceRestart });

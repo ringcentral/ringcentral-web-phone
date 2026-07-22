@@ -8,8 +8,8 @@ import { DefaultSipClient } from "./sip-client.js";
 import type InboundMessage from "./sip-message/inbound.js";
 import ResponseMessage from "./sip-message/outbound/response.js";
 import type {
-  DeviceManager,
   DefaultMediaObjects,
+  DeviceManager,
   MediaProvider,
   SipClient,
   SipInfo,
@@ -40,8 +40,8 @@ class WebPhone<M extends object = DefaultMediaObjects> extends EventEmitter {
     this.sipInfo = options.sipInfo;
     this.sipClient = options.sipClient ?? new DefaultSipClient(options);
     this.deviceManager = options.deviceManager ?? new DefaultDeviceManager();
-    this.mediaProvider =
-      options.mediaProvider ?? (new DefaultMediaProvider() as MediaProvider<M>);
+    this.mediaProvider = (options.mediaProvider ??
+      new DefaultMediaProvider()) as MediaProvider<M>;
     this.autoAnswer = options.autoAnswer ?? true;
 
     this.sipClient.on(

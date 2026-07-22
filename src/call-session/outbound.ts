@@ -1,7 +1,7 @@
 import type WebPhone from "../index.js";
-import type { DefaultMediaObjects } from "../types.js";
 import type InboundMessage from "../sip-message/inbound.js";
 import RequestMessage from "../sip-message/outbound/request.js";
+import type { DefaultMediaObjects } from "../types.js";
 import {
   branch,
   extractAddress,
@@ -13,7 +13,9 @@ import {
 } from "../utils.js";
 import CallSession from "./index.js";
 
-class OutboundCallSession<M extends object = DefaultMediaObjects> extends CallSession<M> {
+class OutboundCallSession<
+  M extends object = DefaultMediaObjects,
+> extends CallSession<M> {
   public constructor(webPhone: WebPhone<M>, callee: string) {
     super(webPhone);
     this.callee = callee;
@@ -29,7 +31,7 @@ class OutboundCallSession<M extends object = DefaultMediaObjects> extends CallSe
     callerId?: string,
     options?: { headers?: Record<string, string> },
   ) {
-    const sdp = await this.requireMediaSession().createOffer({
+    const sdp = await this.createOffer({
       iceRestart: true,
     });
 
@@ -102,7 +104,9 @@ class OutboundCallSession<M extends object = DefaultMediaObjects> extends CallSe
 
           this.state = "answered";
           this.emit("answered");
-          await this.requireMediaSession().applyAnswer(message.body);
+          void Promise.resolve()
+            .then(() => this.requireMediaSession().applyAnswer(message.body))
+            .catch(() => {});
           const ackMessage = new RequestMessage(
             `ACK ${extractAddress(this.remotePeer)} SIP/2.0`,
             {

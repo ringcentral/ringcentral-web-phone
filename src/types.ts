@@ -49,13 +49,25 @@ export interface SipClientOptions {
   debug?: boolean;
 }
 
-export type WebPhoneOptions<M extends object = DefaultMediaObjects> =
-  SipClientOptions & {
+type CommonWebPhoneOptions = {
   sipClient?: SipClient;
   deviceManager?: DeviceManager;
   autoAnswer?: boolean;
-  mediaProvider?: MediaProvider<M>;
 };
+
+type IsDefaultMedia<M extends object> = [M] extends [DefaultMediaObjects]
+  ? [DefaultMediaObjects] extends [M]
+    ? true
+    : false
+  : false;
+
+type MediaProviderOption<M extends object> =
+  IsDefaultMedia<M> extends true
+    ? { mediaProvider?: MediaProvider<DefaultMediaObjects> }
+    : { mediaProvider: MediaProvider<M> };
+
+export type WebPhoneOptions<M extends object = DefaultMediaObjects> =
+  SipClientOptions & CommonWebPhoneOptions & MediaProviderOption<M>;
 
 export interface SipInfo {
   authorizationId: string;

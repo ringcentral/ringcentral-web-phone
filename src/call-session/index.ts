@@ -1,13 +1,11 @@
+import sdpTransform from "sdp-transform";
+
 import EventEmitter from "../event-emitter.js";
 import type WebPhone from "../index.js";
 import type InboundMessage from "../sip-message/inbound.js";
 import RequestMessage from "../sip-message/outbound/request.js";
 import ResponseMessage from "../sip-message/outbound/response.js";
-import type {
-  DefaultMediaObjects,
-  MediaProvider,
-  MediaSession,
-} from "../types.js";
+import type { DefaultMediaObjects, MediaSession } from "../types.js";
 import {
   branch,
   extractAddress,
@@ -44,6 +42,8 @@ class CallSession<M extends object = DefaultMediaObjects> extends EventEmitter {
     "init";
   public direction!: "inbound" | "outbound";
   private reqid = 1;
+  private sdpVersion = 1;
+  private localSdp?: string;
   private mediaSession?: MediaSession<M>;
   private mediaValues: Partial<M> = {};
 
@@ -257,7 +257,9 @@ class CallSession<M extends object = DefaultMediaObjects> extends EventEmitter {
   }
 
   public async dispose() {
-    await this.mediaSession?.dispose();
+    void Promise.resolve()
+      .then(() => this.mediaSession?.dispose())
+      .catch(() => {});
     this.state = "disposed";
     this.emit("disposed");
     this.removeAllListeners();
@@ -266,7 +268,7 @@ class CallSession<M extends object = DefaultMediaObjects> extends EventEmitter {
   // send re-INVITE.
   // If the call is on hold and you don't want to unhold it, set toReceive to false
   public async reInvite(toReceive: boolean = true) {
-    const sdp = await this.requireMediaSession().createOffer({
+    const sdp = await this.createOffer({
       iceRestart: true,
       receive: toReceive,
     });
@@ -282,7 +284,9 @@ class CallSession<M extends object = DefaultMediaObjects> extends EventEmitter {
       sdp,
     );
     const replyMessage = await this.webPhone.sipClient.request(requestMessage);
-    await this.requireMediaSession().applyAnswer(replyMessage.body);
+    void Promise.resolve()
+      .then(() => this.requireMediaSession().applyAnswer(replyMessage.body))
+      .catch(() => {});
     const ackMessage = new RequestMessage(
       `ACK ${extractAddress(this.remotePeer)} SIP/2.0`,
       {
@@ -299,9 +303,7 @@ class CallSession<M extends object = DefaultMediaObjects> extends EventEmitter {
   // handle re-INVITE from SIP server
   public async handleReInvite(reInviteMessage: InboundMessage) {
     this.sipMessage = reInviteMessage;
-    const sdp = await this.requireMediaSession().answerOffer(
-      reInviteMessage.body,
-    );
+    const sdp = await this.answerOffer(reInviteMessage.body);
 
     const newMessage = new ResponseMessage(this.sipMessage, {
       responseCode: 200,
@@ -322,7 +324,23 @@ class CallSession<M extends object = DefaultMediaObjects> extends EventEmitter {
     if (!this.mediaSession) {
       return;
     }
-    const sdp = await this.mediaSession.createOffer({ receive: toReceive });
+    let sdp = this.localSdp;
+    if (!sdp) {
+      return;
+    }
+    if (!toReceive) {
+      sdp = sdp.replace(/a=sendrecv/g, "a=sendonly");
+    }
+    const parsed = sdpTransform.parse(sdp);
+    if (!parsed.origin) {
+      throw new Error("Local SDP is missing an origin");
+    }
+    this.sdpVersion = Math.max(
+      this.sdpVersion,
+      parsed.origin.sessionVersion + 1,
+    );
+    parsed.origin.sessionVersion = this.sdpVersion++;
+    sdp = sdpTransform.write(parsed);
     const requestMessage = new RequestMessage(
       `INVITE ${extractAddress(this.remotePeer)} SIP/2.0`,
       {
@@ -355,16 +373,35 @@ class CallSession<M extends object = DefaultMediaObjects> extends EventEmitter {
     return this.mediaSession;
   }
 
+  protected async createOffer(options?: {
+    iceRestart?: boolean;
+    receive?: boolean;
+  }) {
+    const sdp = await this.requireMediaSession().createOffer(options);
+    this.localSdp = sdp;
+    return sdp;
+  }
+
+  protected async answerOffer(sdp: string) {
+    const answer = await this.requireMediaSession().answerOffer(sdp);
+    this.localSdp = answer;
+    return answer;
+  }
+
   private mediaField<K extends PropertyKey>(key: K): MediaField<M, K> {
     if (this.mediaSession) {
-      return this.mediaSession.media[
-        key as unknown as keyof M
-      ] as MediaField<M, K>;
+      return this.mediaSession.media[key as unknown as keyof M] as MediaField<
+        M,
+        K
+      >;
     }
     return this.mediaValues[key as unknown as keyof M] as MediaField<M, K>;
   }
 
-  private setMediaField<K extends PropertyKey>(key: K, value: MediaField<M, K>) {
+  private setMediaField<K extends PropertyKey>(
+    key: K,
+    value: MediaField<M, K>,
+  ) {
     if (this.mediaSession) {
       this.mediaSession.media[key as unknown as keyof M] = value as M[keyof M];
     } else {
