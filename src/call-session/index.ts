@@ -139,7 +139,6 @@ class CallSession<M extends object = DefaultMediaObjects> extends EventEmitter {
         deviceManager: this.webPhone.deviceManager,
         onMediaStream: (stream) => this.emit("mediaStreamSet", stream),
       });
-      Object.assign(this.mediaSession.media, this.mediaValues);
     }
     await this.mediaSession.init();
   }
@@ -357,14 +356,19 @@ class CallSession<M extends object = DefaultMediaObjects> extends EventEmitter {
   }
 
   private mediaField<K extends PropertyKey>(key: K): MediaField<M, K> {
-    return (this.media?.[key as unknown as keyof M] ??
-      this.mediaValues[key as unknown as keyof M]) as MediaField<M, K>;
+    if (this.mediaSession) {
+      return this.mediaSession.media[
+        key as unknown as keyof M
+      ] as MediaField<M, K>;
+    }
+    return this.mediaValues[key as unknown as keyof M] as MediaField<M, K>;
   }
 
   private setMediaField<K extends PropertyKey>(key: K, value: MediaField<M, K>) {
-    this.mediaValues[key as unknown as keyof M] = value as M[keyof M];
-    if (this.media) {
-      this.media[key as unknown as keyof M] = value as M[keyof M];
+    if (this.mediaSession) {
+      this.mediaSession.media[key as unknown as keyof M] = value as M[keyof M];
+    } else {
+      this.mediaValues[key as unknown as keyof M] = value as M[keyof M];
     }
   }
 

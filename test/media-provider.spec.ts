@@ -62,9 +62,16 @@ test("keeps legacy media fields writable", async () => {
   session.mediaStream = stream;
   session.inputDeviceId = "input";
 
+  expect(session.mediaStream).toBe(stream);
+  expect(session.inputDeviceId).toBe("input");
+
   await session.init();
 
   expect(emitted).toBe(stream);
+  expect(session.mediaStream).toBeUndefined();
+  expect(session.inputDeviceId).toBeUndefined();
+  mediaSession.media.mediaStream = stream;
   expect(session.mediaStream).toBe(stream);
-  expect(session.inputDeviceId).toBe("input");
+  mediaSession.media.mediaStream = undefined;
+  expect(session.mediaStream).toBeUndefined();
 });
