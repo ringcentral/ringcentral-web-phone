@@ -1,4 +1,5 @@
 import type WebPhone from "../index.js";
+import type { DefaultMediaObjects } from "../types.js";
 import type InboundMessage from "../sip-message/inbound.js";
 import RequestMessage from "../sip-message/outbound/request.js";
 import {
@@ -12,8 +13,8 @@ import {
 } from "../utils.js";
 import CallSession from "./index.js";
 
-class OutboundCallSession extends CallSession {
-  public constructor(webPhone: WebPhone, callee: string) {
+class OutboundCallSession<M extends object = DefaultMediaObjects> extends CallSession<M> {
+  public constructor(webPhone: WebPhone<M>, callee: string) {
     super(webPhone);
     this.callee = callee;
     this.direction = "outbound";
@@ -28,11 +29,9 @@ class OutboundCallSession extends CallSession {
     callerId?: string,
     options?: { headers?: Record<string, string> },
   ) {
-    const offer = await this.rtcPeerConnection.createOffer({
+    const sdp = await this.requireMediaSession().createOffer({
       iceRestart: true,
     });
-    await this.rtcPeerConnection.setLocalDescription(offer);
-    await this.waitForIceGatheringComplete();
 
     const inviteMessage = new RequestMessage(
       `INVITE sip:${this.callee}@${this.webPhone.sipInfo.domain} SIP/2.0`,
@@ -44,7 +43,7 @@ class OutboundCallSession extends CallSession {
         Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
         "Content-Type": "application/sdp",
       },
-      this.rtcPeerConnection.localDescription!.sdp,
+      sdp,
     );
     if (callerId) {
       inviteMessage.headers["P-Asserted-Identity"] =
@@ -96,17 +95,14 @@ class OutboundCallSession extends CallSession {
             if (index !== -1) {
               this.webPhone.callSessions.splice(index, 1);
             }
-            this.dispose();
+            await this.dispose();
             resolve(false);
             return;
           }
 
           this.state = "answered";
           this.emit("answered");
-          this.rtcPeerConnection.setRemoteDescription({
-            type: "answer",
-            sdp: message.body,
-          });
+          await this.requireMediaSession().applyAnswer(message.body);
           const ackMessage = new RequestMessage(
             `ACK ${extractAddress(this.remotePeer)} SIP/2.0`,
             {

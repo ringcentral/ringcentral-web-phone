@@ -3,16 +3,58 @@ import type InboundMessage from "./sip-message/inbound.js";
 import type RequestMessage from "./sip-message/outbound/request.js";
 import type ResponseMessage from "./sip-message/outbound/response.js";
 
+export interface DefaultMediaObjects {
+  rtcPeerConnection: RTCPeerConnection;
+  mediaStream?: MediaStream;
+  audioElement: HTMLAudioElement;
+  inputDeviceId: string;
+  outputDeviceId?: string;
+}
+
+export interface MediaProviderContext {
+  callId: string;
+  direction: "inbound" | "outbound";
+  iceServers: string[];
+  deviceManager: DeviceManager;
+  onMediaStream?: (stream: MediaStream) => void;
+}
+
+export interface MediaSession<M extends object> {
+  media: M;
+  init: () => Promise<void>;
+  createOffer: (options?: {
+    iceRestart?: boolean;
+    receive?: boolean;
+  }) => Promise<string>;
+  answerOffer: (sdp: string) => Promise<string>;
+  applyAnswer: (sdp: string) => Promise<void>;
+  changeInputDevice: (deviceId: string) => Promise<void>;
+  changeOutputDevice: (deviceId: string) => Promise<void>;
+  setMuted: (muted: boolean) => Promise<void>;
+  sendDtmf: (
+    tones: string,
+    duration?: number,
+    interToneGap?: number,
+  ) => Promise<void>;
+  dispose: () => Promise<void>;
+}
+
+export interface MediaProvider<M extends object = DefaultMediaObjects> {
+  create: (context: MediaProviderContext) => Promise<MediaSession<M>>;
+}
+
 export interface SipClientOptions {
   sipInfo: SipInfo;
   instanceId?: string; // ref: https://docs.oracle.com/cd/E95618_01/html/sbc_scz810_acliconfiguration/GUID-B2A15693-DA4A-4E24-86D4-58B19435F4DA.htm
   debug?: boolean;
 }
 
-export type WebPhoneOptions = SipClientOptions & {
+export type WebPhoneOptions<M extends object = DefaultMediaObjects> =
+  SipClientOptions & {
   sipClient?: SipClient;
   deviceManager?: DeviceManager;
   autoAnswer?: boolean;
+  mediaProvider?: MediaProvider<M>;
 };
 
 export interface SipInfo {

@@ -3,32 +3,46 @@ import type CallSession from "./call-session/index.js";
 import OutboundCallSession from "./call-session/outbound.js";
 import { DefaultDeviceManager } from "./device-manager.js";
 import EventEmitter from "./event-emitter.js";
+import { DefaultMediaProvider } from "./media-provider.js";
 import { DefaultSipClient } from "./sip-client.js";
 import type InboundMessage from "./sip-message/inbound.js";
 import ResponseMessage from "./sip-message/outbound/response.js";
 import type {
   DeviceManager,
+  DefaultMediaObjects,
+  MediaProvider,
   SipClient,
   SipInfo,
   WebPhoneOptions,
 } from "./types.js";
 
-class WebPhone extends EventEmitter {
+export { DefaultMediaProvider } from "./media-provider.js";
+export type {
+  DefaultMediaObjects,
+  MediaProvider,
+  MediaProviderContext,
+  MediaSession,
+} from "./types.js";
+
+class WebPhone<M extends object = DefaultMediaObjects> extends EventEmitter {
   public sipInfo: SipInfo;
   public sipClient: SipClient;
   public deviceManager: DeviceManager;
-  public callSessions: CallSession[] = [];
+  public callSessions: CallSession<M>[] = [];
+  public mediaProvider: MediaProvider<M>;
   public autoAnswer = true;
-  public options: WebPhoneOptions;
+  public options: WebPhoneOptions<M>;
 
   public disposed = false;
 
-  public constructor(options: WebPhoneOptions) {
+  public constructor(options: WebPhoneOptions<M>) {
     super();
     this.options = options;
     this.sipInfo = options.sipInfo;
     this.sipClient = options.sipClient ?? new DefaultSipClient(options);
     this.deviceManager = options.deviceManager ?? new DefaultDeviceManager();
+    this.mediaProvider =
+      options.mediaProvider ?? (new DefaultMediaProvider() as MediaProvider<M>);
     this.autoAnswer = options.autoAnswer ?? true;
 
     this.sipClient.on(
@@ -46,7 +60,7 @@ class WebPhone extends EventEmitter {
           if (index !== -1) {
             const callSession = this.callSessions[index];
             this.callSessions.splice(index, 1);
-            callSession.dispose();
+            await callSession.dispose();
           }
         }
 
@@ -68,11 +82,11 @@ class WebPhone extends EventEmitter {
           return;
         }
 
-        this.callSessions.push(new InboundCallSession(this, inboundMessage));
+        this.callSessions.push(new InboundCallSession<M>(this, inboundMessage));
         // write it this way so that it will be compatible with manate, inboundCallSession will be managed
         const inboundCallSession = this.callSessions[
           this.callSessions.length - 1
-        ] as InboundCallSession;
+        ] as InboundCallSession<M>;
         this.emit("inboundCall", inboundCallSession);
 
         // tell SIP server that we are ringing
@@ -122,9 +136,9 @@ class WebPhone extends EventEmitter {
       if (callSession.state === "answered") {
         await callSession.hangup();
       } else if (callSession.direction === "inbound") {
-        await (callSession as InboundCallSession).decline();
+        await (callSession as InboundCallSession<M>).decline();
       } else {
-        await (callSession as OutboundCallSession).cancel();
+        await (callSession as OutboundCallSession<M>).cancel();
       }
       // callSession.dispose() will be auto triggered by the above methods
     }
@@ -138,11 +152,11 @@ class WebPhone extends EventEmitter {
     callerId?: string,
     options?: { headers?: Record<string, string> },
   ) {
-    this.callSessions.push(new OutboundCallSession(this, callee));
+    this.callSessions.push(new OutboundCallSession<M>(this, callee));
     // write it this way so that it will be compatible with manate, outboundCallSession will be managed
     const outboundCallSession = this.callSessions[
       this.callSessions.length - 1
-    ] as OutboundCallSession;
+    ] as OutboundCallSession<M>;
     this.emit("outboundCall", outboundCallSession);
     await outboundCallSession.init();
     await outboundCallSession.call(callerId, options);

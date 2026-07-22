@@ -210,6 +210,16 @@ webPhone.on("inboundCall", (inbundCallSession: InboundCallSession) => {
 });
 ```
 
+## Media providers
+
+WebPhone uses an in-process browser media provider by default. Supply a
+`mediaProvider` to run call media elsewhere or add provider-specific state.
+SIP dialogs and call lifecycle remain in the SDK.
+
+`callSession.media` contains the provider-defined shape. Legacy browser fields
+retain current behavior with the default provider; custom providers do not
+expose browser-object proxies.
+
 ## Enabling Local Ringtones
 
 By default, the SDK does not play a local ringtone. To provide audio feedback,

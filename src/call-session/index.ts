@@ -1,10 +1,13 @@
-import sdpTransform from "sdp-transform";
-
 import EventEmitter from "../event-emitter.js";
 import type WebPhone from "../index.js";
 import type InboundMessage from "../sip-message/inbound.js";
 import RequestMessage from "../sip-message/outbound/request.js";
 import ResponseMessage from "../sip-message/outbound/response.js";
+import type {
+  DefaultMediaObjects,
+  MediaProvider,
+  MediaSession,
+} from "../types.js";
 import {
   branch,
   extractAddress,
@@ -28,34 +31,43 @@ type FlipResult = CommandResult & {
 };
 const DEFAULT_TRANSFER_TIMEOUT_MS = 10000;
 
-class CallSession extends EventEmitter {
-  public webPhone: WebPhone;
+type MediaField<M, K extends PropertyKey> = K extends keyof M
+  ? M[K]
+  : undefined;
+
+class CallSession<M extends object = DefaultMediaObjects> extends EventEmitter {
+  public webPhone: WebPhone<M>;
   public sipMessage!: InboundMessage;
   public localPeer!: string;
   public remotePeer!: string;
-  public rtcPeerConnection!: RTCPeerConnection;
-  public _mediaStream?: MediaStream;
-  public audioElement!: HTMLAudioElement;
   public state: "init" | "ringing" | "answered" | "disposed" | "failed" =
     "init";
   public direction!: "inbound" | "outbound";
-  public inputDeviceId!: string;
-  public outputDeviceId: string | undefined;
-
   private reqid = 1;
-  private sdpVersion = 1;
+  private mediaSession?: MediaSession<M>;
 
-  public constructor(webPhone: WebPhone) {
+  public constructor(webPhone: WebPhone<M>) {
     super();
     this.webPhone = webPhone;
   }
 
-  public get mediaStream(): MediaStream | undefined {
-    return this._mediaStream;
+  public get media(): M | undefined {
+    return this.mediaSession?.media;
   }
-  public set mediaStream(stream: MediaStream) {
-    this._mediaStream = stream;
-    this.emit("mediaStreamSet", stream);
+  public get rtcPeerConnection(): MediaField<M, "rtcPeerConnection"> {
+    return this.mediaField("rtcPeerConnection");
+  }
+  public get mediaStream(): MediaField<M, "mediaStream"> {
+    return this.mediaField("mediaStream");
+  }
+  public get audioElement(): MediaField<M, "audioElement"> {
+    return this.mediaField("audioElement");
+  }
+  public get inputDeviceId(): MediaField<M, "inputDeviceId"> {
+    return this.mediaField("inputDeviceId");
+  }
+  public get outputDeviceId(): MediaField<M, "outputDeviceId"> {
+    return this.mediaField("outputDeviceId");
   }
 
   // for inbound call, this.sipMessage?.headers["Call-Id"] will be the call id
@@ -102,75 +114,24 @@ class CallSession extends EventEmitter {
   }
 
   public async init() {
-    this.rtcPeerConnection = new RTCPeerConnection({
-      iceServers:
-        this.webPhone.sipInfo.stunServers?.map((url) => ({
-          urls: `stun:${url}`,
-        })) ?? [],
-    });
-
-    // line below is to make sure that you have the permission to access the microphone
-    const tempStream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-      video: false,
-    });
-    for (const track of tempStream.getTracks()) track.stop(); // 🔥 Stop immediately!
-
-    this.inputDeviceId = await this.webPhone.deviceManager.getInputDeviceId();
-    this.mediaStream = await navigator.mediaDevices.getUserMedia({
-      video: false,
-      audio: { deviceId: { exact: this.inputDeviceId } },
-    });
-    this.mediaStream.getAudioTracks().forEach((track) => {
-      const rtcRtpSender = this.rtcPeerConnection.addTrack(track);
-
-      // ref: https://github.com/ringcentral/ringcentral-web-phone/issues/257
-      const params = rtcRtpSender.getParameters();
-      if (!params.encodings || params.encodings.length === 0) {
-        params.encodings = [{}];
-      }
-      params.encodings.forEach((encoding) => {
-        encoding.priority = "high";
+    if (!this.mediaSession) {
+      this.mediaSession = await this.webPhone.mediaProvider.create({
+        callId: this.callId,
+        direction: this.direction,
+        iceServers: this.webPhone.sipInfo.stunServers ?? [],
+        deviceManager: this.webPhone.deviceManager,
+        onMediaStream: (stream) => this.emit("mediaStreamSet", stream),
       });
-      rtcRtpSender.setParameters(params);
-    });
-    this.rtcPeerConnection.ontrack = async (event) => {
-      const remoteStream = event.streams[0];
-      this.audioElement = document.createElement("audio") as HTMLAudioElement;
-      this.audioElement.hidden = true;
-      this.audioElement.autoplay = true;
-      this.audioElement.srcObject = remoteStream;
-
-      // this code should be run last
-      this.outputDeviceId =
-        await this.webPhone.deviceManager.getOutputDeviceId();
-      if (this.outputDeviceId) {
-        this.audioElement.setSinkId(this.outputDeviceId);
-      }
-    };
+    }
+    await this.mediaSession.init();
   }
 
   public async changeInputDevice(deviceId: string) {
-    this.inputDeviceId = deviceId;
-    for (const track of this.mediaStream?.getAudioTracks() ?? []) track.stop();
-    this.mediaStream = await navigator.mediaDevices.getUserMedia({
-      video: false,
-      audio: { deviceId: { exact: deviceId } },
-    });
-    const newAudioTrack = this.mediaStream.getAudioTracks()[0];
-    const sender = this.rtcPeerConnection
-      .getSenders()
-      .find((sender) => sender.track?.kind === "audio");
-    if (sender) {
-      sender.replaceTrack(newAudioTrack);
-    }
+    await this.requireMediaSession().changeInputDevice(deviceId);
   }
 
   public async changeOutputDevice(deviceId: string) {
-    this.outputDeviceId = deviceId;
-    if (deviceId) {
-      await this.audioElement.setSinkId(deviceId);
-    }
+    await this.requireMediaSession().changeOutputDevice(deviceId);
   }
 
   public async transfer(target: string, timeout = DEFAULT_TRANSFER_TIMEOUT_MS) {
@@ -183,7 +144,7 @@ class CallSession extends EventEmitter {
   ): Promise<{
     complete: () => Promise<void>;
     cancel: () => Promise<void>;
-    newSession: OutboundCallSession;
+    newSession: OutboundCallSession<M>;
   }> {
     await this.hold();
     // create a new session and user needs to talk to the target before transfer
@@ -206,7 +167,7 @@ class CallSession extends EventEmitter {
   }
 
   public async completeWarmTransfer(
-    existingSession: CallSession,
+    existingSession: CallSession<M>,
     timeout = DEFAULT_TRANSFER_TIMEOUT_MS,
   ) {
     const target = existingSession.remoteNumber;
@@ -263,80 +224,35 @@ class CallSession extends EventEmitter {
     await this.toggleReceive(true);
   }
 
-  public mute() {
-    this.toggleTrack(false);
+  public async mute() {
+    await this.requireMediaSession().setMuted(true);
   }
-  public unmute() {
-    this.toggleTrack(true);
-  }
-
-  public sendDtmf(tones: string, duration?: number, interToneGap?: number) {
-    for (const sender of this.rtcPeerConnection.getSenders()) {
-      if (sender.dtmf?.canInsertDTMF) {
-        sender.dtmf?.insertDTMF(tones, duration, interToneGap);
-      }
-    }
+  public async unmute() {
+    await this.requireMediaSession().setMuted(false);
   }
 
-  public dispose() {
-    this.rtcPeerConnection?.close();
-    for (const track of this.mediaStream?.getTracks() ?? []) track.stop();
-    if (this.audioElement) {
-      this.audioElement.srcObject = null;
-    }
+  public async sendDtmf(
+    tones: string,
+    duration?: number,
+    interToneGap?: number,
+  ) {
+    await this.requireMediaSession().sendDtmf(tones, duration, interToneGap);
+  }
+
+  public async dispose() {
+    await this.mediaSession?.dispose();
     this.state = "disposed";
     this.emit("disposed");
     this.removeAllListeners();
   }
 
-  // for mute/unmute
-  protected toggleTrack(enabled: boolean) {
-    this.rtcPeerConnection.getSenders().forEach((sender) => {
-      if (sender.track) {
-        sender.track.enabled = enabled;
-      }
-    });
-  }
-
-  protected async waitForIceGatheringComplete(timeoutMs = 2000) {
-    if (this.rtcPeerConnection.iceGatheringState === "complete") {
-      return;
-    }
-    await new Promise<void>((resolve) => {
-      const timeout = setTimeout(() => {
-        cleanup();
-        resolve();
-      }, timeoutMs);
-      const onIceCandidate = (event: RTCPeerConnectionIceEvent) => {
-        if (event.candidate === null) {
-          cleanup();
-          resolve();
-        }
-      };
-      const cleanup = () => {
-        clearTimeout(timeout);
-        this.rtcPeerConnection.removeEventListener(
-          "icecandidate",
-          onIceCandidate,
-        );
-      };
-      this.rtcPeerConnection.addEventListener("icecandidate", onIceCandidate);
-    });
-  }
-
   // send re-INVITE.
   // If the call is on hold and you don't want to unhold it, set toReceive to false
   public async reInvite(toReceive: boolean = true) {
-    const offer = await this.rtcPeerConnection.createOffer({
+    const sdp = await this.requireMediaSession().createOffer({
       iceRestart: true,
+      receive: toReceive,
     });
-    await this.rtcPeerConnection.setLocalDescription(offer);
-    await this.waitForIceGatheringComplete();
-    let sdp = this.rtcPeerConnection.localDescription!.sdp;
-    // default value is `a=sendrecv`
-    if (!toReceive) {
-      sdp = sdp.replace(/a=sendrecv/g, "a=sendonly");
-    }
     const requestMessage = new RequestMessage(
       `INVITE ${extractAddress(this.remotePeer)} SIP/2.0`,
       {
@@ -349,10 +265,7 @@ class CallSession extends EventEmitter {
       sdp,
     );
     const replyMessage = await this.webPhone.sipClient.request(requestMessage);
-    await this.rtcPeerConnection.setRemoteDescription({
-      type: "answer",
-      sdp: replyMessage.body,
-    });
+    await this.requireMediaSession().applyAnswer(replyMessage.body);
     const ackMessage = new RequestMessage(
       `ACK ${extractAddress(this.remotePeer)} SIP/2.0`,
       {
@@ -369,20 +282,16 @@ class CallSession extends EventEmitter {
   // handle re-INVITE from SIP server
   public async handleReInvite(reInviteMessage: InboundMessage) {
     this.sipMessage = reInviteMessage;
-    await this.rtcPeerConnection.setRemoteDescription({
-      type: "offer",
-      sdp: reInviteMessage.body,
-    });
-    const answer = await this.rtcPeerConnection.createAnswer();
-    await this.rtcPeerConnection.setLocalDescription(answer);
-    await this.waitForIceGatheringComplete();
+    const sdp = await this.requireMediaSession().answerOffer(
+      reInviteMessage.body,
+    );
 
     const newMessage = new ResponseMessage(this.sipMessage, {
       responseCode: 200,
       headers: {
         "Content-Type": "application/sdp",
       },
-      body: this.rtcPeerConnection.localDescription!.sdp,
+      body: sdp,
     });
     await this.webPhone.sipClient.reply(newMessage);
 
@@ -393,19 +302,10 @@ class CallSession extends EventEmitter {
   // for hold/unhold
   // toggle between a=sendrecv and a=sendonly
   protected async toggleReceive(toReceive: boolean) {
-    if (!this.rtcPeerConnection?.localDescription) {
+    if (!this.mediaSession) {
       return;
     }
-    let sdp = this.rtcPeerConnection.localDescription!.sdp;
-    // default value is `a=sendrecv`
-    if (!toReceive) {
-      sdp = sdp.replace(/a=sendrecv/g, "a=sendonly");
-    }
-    // increase the sdp version
-    const res = sdpTransform.parse(sdp);
-    this.sdpVersion = Math.max(this.sdpVersion, res.origin!.sessionVersion + 1);
-    res.origin!.sessionVersion = this.sdpVersion++;
-    sdp = sdpTransform.write(res);
+    const sdp = await this.mediaSession.createOffer({ receive: toReceive });
     const requestMessage = new RequestMessage(
       `INVITE ${extractAddress(this.remotePeer)} SIP/2.0`,
       {
@@ -429,6 +329,17 @@ class CallSession extends EventEmitter {
       },
     );
     await this.webPhone.sipClient.reply(ackMessage);
+  }
+
+  protected requireMediaSession() {
+    if (!this.mediaSession) {
+      throw new Error("Media session has not been initialized");
+    }
+    return this.mediaSession;
+  }
+
+  private mediaField<K extends PropertyKey>(key: K): MediaField<M, K> {
+    return this.media?.[key as unknown as keyof M] as MediaField<M, K>;
   }
 
   protected async sendJsonMessage<T>(

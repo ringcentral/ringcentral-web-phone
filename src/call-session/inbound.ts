@@ -1,4 +1,5 @@
 import type WebPhone from "../index.js";
+import type { DefaultMediaObjects } from "../types.js";
 import callControlCommands from "../rc-message/call-control-commands.js";
 import RcMessage from "../rc-message/rc-message.js";
 import type InboundMessage from "../sip-message/inbound.js";
@@ -8,8 +9,8 @@ import ResponseMessage from "../sip-message/outbound/response.js";
 import { branch, fakeDomain, uuid } from "../utils.js";
 import CallSession from "./index.js";
 
-class InboundCallSession extends CallSession {
-  public constructor(webPhone: WebPhone, inviteMessage: InboundMessage) {
+class InboundCallSession<M extends object = DefaultMediaObjects> extends CallSession<M> {
+  public constructor(webPhone: WebPhone<M>, inviteMessage: InboundMessage) {
     super(webPhone);
     this.sipMessage = inviteMessage;
     this.localPeer = inviteMessage.headers.To;
@@ -116,45 +117,36 @@ class InboundCallSession extends CallSession {
 
     // most INVITE message will have a body with SDP offer.
     if (this.sipMessage.body.length > 0) {
-      await this.rtcPeerConnection.setRemoteDescription({
-        type: "offer",
-        sdp: this.sipMessage.body,
-      });
-      const answer = await this.rtcPeerConnection.createAnswer();
-      await this.rtcPeerConnection.setLocalDescription(answer);
-      await this.waitForIceGatheringComplete();
+      const sdp = await this.requireMediaSession().answerOffer(
+        this.sipMessage.body,
+      );
 
       const newMessage = new ResponseMessage(this.sipMessage, {
         responseCode: 200,
         headers: {
           "Content-Type": "application/sdp",
         },
-        body: this.rtcPeerConnection.localDescription!.sdp,
+        body: sdp,
       });
       await this.webPhone.sipClient.reply(newMessage);
     } else {
       // some INVITE message has an empty body. For example, when you invoke RESTful API /pickup to answer a call from a call queue
-      const offer = await this.rtcPeerConnection.createOffer({
+      const sdp = await this.requireMediaSession().createOffer({
         iceRestart: true,
       });
-      await this.rtcPeerConnection.setLocalDescription(offer);
-      await this.waitForIceGatheringComplete();
 
       const newMessage = new ResponseMessage(this.sipMessage, {
         responseCode: 200,
         headers: {
           "Content-Type": "application/sdp",
         },
-        body: this.rtcPeerConnection.localDescription!.sdp,
+        body: sdp,
       });
       const ackMessage = await this.webPhone.sipClient.request(
         newMessage as RequestMessage,
       );
       this.sipMessage = ackMessage;
-      this.rtcPeerConnection.setRemoteDescription({
-        type: "answer",
-        sdp: ackMessage.body,
-      });
+      await this.requireMediaSession().applyAnswer(ackMessage.body);
     }
 
     this.state = "answered";
