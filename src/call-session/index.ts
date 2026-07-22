@@ -45,6 +45,7 @@ class CallSession<M extends object = DefaultMediaObjects> extends EventEmitter {
   public direction!: "inbound" | "outbound";
   private reqid = 1;
   private mediaSession?: MediaSession<M>;
+  private mediaValues: Partial<M> = {};
 
   public constructor(webPhone: WebPhone<M>) {
     super();
@@ -57,17 +58,33 @@ class CallSession<M extends object = DefaultMediaObjects> extends EventEmitter {
   public get rtcPeerConnection(): MediaField<M, "rtcPeerConnection"> {
     return this.mediaField("rtcPeerConnection");
   }
+  public set rtcPeerConnection(value: MediaField<M, "rtcPeerConnection">) {
+    this.setMediaField("rtcPeerConnection", value);
+  }
   public get mediaStream(): MediaField<M, "mediaStream"> {
     return this.mediaField("mediaStream");
+  }
+  public set mediaStream(value: MediaField<M, "mediaStream">) {
+    this.setMediaField("mediaStream", value);
+    if (value) this.emit("mediaStreamSet", value);
   }
   public get audioElement(): MediaField<M, "audioElement"> {
     return this.mediaField("audioElement");
   }
+  public set audioElement(value: MediaField<M, "audioElement">) {
+    this.setMediaField("audioElement", value);
+  }
   public get inputDeviceId(): MediaField<M, "inputDeviceId"> {
     return this.mediaField("inputDeviceId");
   }
+  public set inputDeviceId(value: MediaField<M, "inputDeviceId">) {
+    this.setMediaField("inputDeviceId", value);
+  }
   public get outputDeviceId(): MediaField<M, "outputDeviceId"> {
     return this.mediaField("outputDeviceId");
+  }
+  public set outputDeviceId(value: MediaField<M, "outputDeviceId">) {
+    this.setMediaField("outputDeviceId", value);
   }
 
   // for inbound call, this.sipMessage?.headers["Call-Id"] will be the call id
@@ -122,6 +139,7 @@ class CallSession<M extends object = DefaultMediaObjects> extends EventEmitter {
         deviceManager: this.webPhone.deviceManager,
         onMediaStream: (stream) => this.emit("mediaStreamSet", stream),
       });
+      Object.assign(this.mediaSession.media, this.mediaValues);
     }
     await this.mediaSession.init();
   }
@@ -339,7 +357,15 @@ class CallSession<M extends object = DefaultMediaObjects> extends EventEmitter {
   }
 
   private mediaField<K extends PropertyKey>(key: K): MediaField<M, K> {
-    return this.media?.[key as unknown as keyof M] as MediaField<M, K>;
+    return (this.media?.[key as unknown as keyof M] ??
+      this.mediaValues[key as unknown as keyof M]) as MediaField<M, K>;
+  }
+
+  private setMediaField<K extends PropertyKey>(key: K, value: MediaField<M, K>) {
+    this.mediaValues[key as unknown as keyof M] = value as M[keyof M];
+    if (this.media) {
+      this.media[key as unknown as keyof M] = value as M[keyof M];
+    }
   }
 
   protected async sendJsonMessage<T>(

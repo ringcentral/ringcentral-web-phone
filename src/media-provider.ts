@@ -37,9 +37,10 @@ class DefaultMediaSession implements MediaSession<DefaultMediaObjects> {
     });
     for (const track of tempStream.getTracks()) track.stop();
 
-    this.media.inputDeviceId =
-      await this.context.deviceManager.getInputDeviceId();
-    await this.setInputStream(this.media.inputDeviceId);
+    const inputDeviceId = await this.context.deviceManager.getInputDeviceId();
+    const stream = await this.getInputStream(inputDeviceId);
+    this.commitInputStream(inputDeviceId, stream);
+    this.addInputTracks(stream);
     this.media.rtcPeerConnection.ontrack = async (event) => {
       const audioElement = document.createElement("audio");
       audioElement.hidden = true;
@@ -97,16 +98,25 @@ class DefaultMediaSession implements MediaSession<DefaultMediaObjects> {
   }
 
   public async changeInputDevice(deviceId: string) {
-    for (const track of this.media.mediaStream?.getAudioTracks() ?? []) {
-      track.stop();
-    }
-    await this.setInputStream(deviceId);
-    const newAudioTrack = this.media.mediaStream!.getAudioTracks()[0];
+    const previousStream = this.media.mediaStream;
+    const stream = await this.getInputStream(deviceId);
+    const newAudioTrack = stream.getAudioTracks()[0];
     const sender = this.media.rtcPeerConnection
       .getSenders()
       .find((candidate) => candidate.track?.kind === "audio");
-    if (sender) {
-      await sender.replaceTrack(newAudioTrack);
+    try {
+      if (sender) {
+        await sender.replaceTrack(newAudioTrack);
+      } else {
+        this.addInputTracks(stream);
+      }
+    } catch (error) {
+      for (const track of stream.getTracks()) track.stop();
+      throw error;
+    }
+    this.commitInputStream(deviceId, stream);
+    for (const track of previousStream?.getAudioTracks() ?? []) {
+      track.stop();
     }
   }
 
@@ -145,14 +155,21 @@ class DefaultMediaSession implements MediaSession<DefaultMediaObjects> {
     }
   }
 
-  private async setInputStream(deviceId: string) {
-    this.media.inputDeviceId = deviceId;
-    this.media.mediaStream = await navigator.mediaDevices.getUserMedia({
+  private async getInputStream(deviceId: string) {
+    return await navigator.mediaDevices.getUserMedia({
       video: false,
       audio: { deviceId: { exact: deviceId } },
     });
-    this.context.onMediaStream?.(this.media.mediaStream);
-    this.media.mediaStream.getAudioTracks().forEach((track) => {
+  }
+
+  private commitInputStream(deviceId: string, stream: MediaStream) {
+    this.media.inputDeviceId = deviceId;
+    this.media.mediaStream = stream;
+    this.context.onMediaStream?.(stream);
+  }
+
+  private addInputTracks(stream: MediaStream) {
+    stream.getAudioTracks().forEach((track) => {
       const sender = this.media.rtcPeerConnection.addTrack(track);
       const params = sender.getParameters();
       if (!params.encodings || params.encodings.length === 0) {

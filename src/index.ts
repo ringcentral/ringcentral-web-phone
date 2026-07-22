@@ -16,7 +16,6 @@ import type {
   WebPhoneOptions,
 } from "./types.js";
 
-export { DefaultMediaProvider } from "./media-provider.js";
 export type {
   DefaultMediaObjects,
   MediaProvider,

@@ -8,7 +8,14 @@ import type { MediaProvider, MediaSession, SipClient, SipInfo } from "../src/typ
 import type RequestMessage from "../src/sip-message/outbound/request";
 import type ResponseMessage from "../src/sip-message/outbound/response";
 
-type FakeMedia = { marker: string };
+type FakeMedia = {
+  marker: string;
+  mediaStream?: MediaStream;
+  audioElement?: HTMLAudioElement;
+  rtcPeerConnection?: RTCPeerConnection;
+  inputDeviceId?: string;
+  outputDeviceId?: string;
+};
 
 class FakeSipClient extends EventEmitter implements SipClient {
   public async start() {}
@@ -37,4 +44,27 @@ test("uses provider-defined media without browser objects", async () => {
   expect(session.media).toEqual({ marker: "remote" });
   expect(session.rtcPeerConnection).toBeUndefined();
   expect(session.audioElement).toBeUndefined();
+});
+
+test("keeps legacy media fields writable", async () => {
+  const mediaSession: MediaSession<FakeMedia> = {
+    media: { marker: "remote" }, init: async () => {}, createOffer: async () => "",
+    answerOffer: async () => "", applyAnswer: async () => {}, changeInputDevice: async () => {},
+    changeOutputDevice: async () => {}, setMuted: async () => {}, sendDtmf: async () => {}, dispose: async () => {},
+  };
+  const webPhone = new WebPhone<FakeMedia>({
+    sipInfo, sipClient: new FakeSipClient(), mediaProvider: { create: async () => mediaSession },
+  });
+  const session = new InboundCallSession(webPhone, new InboundMessage("INVITE"));
+  const stream = {} as MediaStream;
+  let emitted: MediaStream | undefined;
+  session.on("mediaStreamSet", (value) => { emitted = value; });
+  session.mediaStream = stream;
+  session.inputDeviceId = "input";
+
+  await session.init();
+
+  expect(emitted).toBe(stream);
+  expect(session.mediaStream).toBe(stream);
+  expect(session.inputDeviceId).toBe("input");
 });
