@@ -116,45 +116,32 @@ class InboundCallSession extends CallSession {
 
     // most INVITE message will have a body with SDP offer.
     if (this.sipMessage.body.length > 0) {
-      await this.rtcPeerConnection.setRemoteDescription({
-        type: "offer",
-        sdp: this.sipMessage.body,
-      });
-      const answer = await this.rtcPeerConnection.createAnswer();
-      await this.rtcPeerConnection.setLocalDescription(answer);
-      await this.waitForIceGatheringComplete();
+      const sdp = await this.createAnswer(this.sipMessage.body);
 
       const newMessage = new ResponseMessage(this.sipMessage, {
         responseCode: 200,
         headers: {
           "Content-Type": "application/sdp",
         },
-        body: this.rtcPeerConnection.localDescription!.sdp,
+        body: sdp,
       });
       await this.webPhone.sipClient.reply(newMessage);
     } else {
       // some INVITE message has an empty body. For example, when you invoke RESTful API /pickup to answer a call from a call queue
-      const offer = await this.rtcPeerConnection.createOffer({
-        iceRestart: true,
-      });
-      await this.rtcPeerConnection.setLocalDescription(offer);
-      await this.waitForIceGatheringComplete();
+      const sdp = await this.createOffer();
 
       const newMessage = new ResponseMessage(this.sipMessage, {
         responseCode: 200,
         headers: {
           "Content-Type": "application/sdp",
         },
-        body: this.rtcPeerConnection.localDescription!.sdp,
+        body: sdp,
       });
       const ackMessage = await this.webPhone.sipClient.request(
         newMessage as RequestMessage,
       );
       this.sipMessage = ackMessage;
-      this.rtcPeerConnection.setRemoteDescription({
-        type: "answer",
-        sdp: ackMessage.body,
-      });
+      this.applyAnswer(ackMessage.body);
     }
 
     this.state = "answered";

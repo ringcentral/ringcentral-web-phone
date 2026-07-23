@@ -1195,6 +1195,33 @@ Solution 2 addresses the limitations above:
 For more details, please refer to the readme file of the
 [multi-tab demo](https://github.com/tylerlong/rc-web-phone-multi-tabs-demo).
 
+### Solution 3: SharedWorker WebPhone with delegated WebRTC
+
+This is an advanced option for applications that want one `WebPhone` instance
+to own SIP signaling and call sessions for every tab. Create that instance in a
+SharedWorker and provide a `webRtcSessionFactory`:
+
+```ts
+import WebPhone from "ringcentral-web-phone";
+import type { WebRtcSessionFactory } from "ringcentral-web-phone/types";
+
+const webRtcSessionFactory: WebRtcSessionFactory = (context) =>
+  application.createWebRtcSession(context);
+
+const webPhone = new WebPhone({ sipInfo, webRtcSessionFactory });
+```
+
+The factory synchronously creates an application proxy. Its `WebRtcSession`
+methods perform asynchronous worker/tab communication and WebRTC in a browser
+tab. The SDK continues to own SIP signaling, call-session state, re-INVITEs,
+and hold SDP. The application owns tab selection, communication, retries, and
+failure handling. Browser tabs do not create their own `WebPhone` instances.
+
+Without `webRtcSessionFactory`, the SDK uses its existing in-tab WebRTC behavior.
+Browser-only call-session properties such as `rtcPeerConnection`, `mediaStream`,
+and `audioElement` are available in that default mode and remain undefined when
+WebRTC is delegated.
+
 ## monitor/whisper/barge/coach/takeover
 
 These features are available to all phone clients, not just clients powered by
