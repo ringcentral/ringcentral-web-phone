@@ -165,7 +165,7 @@ class InboundCallSession extends CallSession {
     });
   }
 
-  protected async sendRcMessage(
+  public async sendRcMessage(
     cmd: number,
     body:
       | Record<string | number | symbol, never>
