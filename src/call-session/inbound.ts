@@ -88,11 +88,33 @@ class InboundCallSession extends CallSession {
   public async startReply() {
     await this.sendRcMessage(callControlCommands.ClientStartReply);
   }
-  public async reply(text: string): Promise<RcMessage> {
-    await this.sendRcMessage(callControlCommands.ClientReply, {
-      RepTp: "0",
-      Bdy: text,
-    });
+  public async reply(text: string): Promise<RcMessage>;
+  public async reply(options: {
+    RepTp: number;
+    Bdy?: string;
+    Dir?: number;
+    Units?: number;
+    Vl?: number;
+  }): Promise<RcMessage>;
+  public async reply(
+    arg:
+      | string
+      | {
+          RepTp: number;
+          Bdy?: string;
+          Dir?: number;
+          Units?: number;
+          Vl?: number;
+        },
+  ): Promise<RcMessage> {
+    const body =
+      typeof arg === "string"
+        ? {
+            RepTp: 0,
+            Bdy: arg,
+          }
+        : arg;
+    await this.sendRcMessage(callControlCommands.ClientReply, body);
     return new Promise((resolve) => {
       const sessionCloseHandler = async (inboundMessage: InboundMessage) => {
         if (inboundMessage.subject.startsWith("MESSAGE sip:")) {
@@ -165,13 +187,16 @@ class InboundCallSession extends CallSession {
     });
   }
 
-  public async sendRcMessage(
+  protected async sendRcMessage(
     cmd: number,
     body:
       | Record<string | number | symbol, never>
       | {
-          RepTp: string;
-          Bdy: string;
+          RepTp: number;
+          Bdy?: string;
+          Dir?: number;
+          Units?: number;
+          Vl?: number;
         }
       | {
           FwdDly: string;
@@ -193,7 +218,9 @@ class InboundCallSession extends CallSession {
       },
       {
         Cln: this.webPhone.sipInfo.authorizationId,
-        ...body,
+        ...Object.fromEntries(
+          Object.entries(body).map(([k, v]) => [k, String(v)]),
+        ),
       },
     );
     const requestSipMessage = new RequestMessage(
