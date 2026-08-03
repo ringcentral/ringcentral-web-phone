@@ -305,6 +305,29 @@ const response = await inbundCallSession.reply(text);
 
 #### More ways to reply
 
+```ts
+const response = await inbundCallSession.reply({
+  RepTp: number;
+  Bdy?: string;
+  Dir?: number;
+  Units?: number;
+  Vl?: number;
+});
+```
+
+example:
+
+```ts
+const response = await inbundCallSession.reply({
+  RepTp: 1,
+  Dir: 0,
+  Units: 2,
+  Vl: 4
+});
+```
+It means: "I will call you back in 4 days".
+
+
 - RepTp – reply type.  32 bit integer.
   - Custom = 0
   - CallYouBack = 1
