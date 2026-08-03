@@ -297,11 +297,36 @@ the call or redirecting the call to voicemail.
 await inbundCallSession.startReply();
 ```
 
-Reply the call with text:
+#### Reply the call with text:
 
 ```ts
 const response = await inbundCallSession.reply(text);
 ```
+
+#### More ways to reply
+
+- RepTp – reply type.  32 bit integer.
+  - Custom = 0
+  - CallYouBack = 1
+  - OnMyWay = 2
+  - OnOtherLine = 3
+  - CallYouBackLater = 4
+  - InAMeeting = 5
+  - OnOtherLineNoCall = 6
+- Vl – value. 32 bit integer. Used with reply type CallYouBack (“I’ll call you back in %Vl  …”)and represent number of minues, hours or days
+- Units – units. 32 bit integer. Used with reply type CallYouBack (“I’ll call you back in %Vl  %Units”)and represent minutes, hours or days.
+  - Minutes = 0
+  - Hours = 1
+  - Days = 2
+- Dir – direction. 32 bit integre. Used with reply type rteCallYouBack and defines who will call whom: caller to user (DirectionFrom) or user to caller (DirectionTo).
+  - DirectionTo = 0
+  - DirectionFrom = 1
+- Bdy – body. String. Used with reply type Custom and represents speech to be played to caller
+
+So `inbundCallSession.reply(text)` equals to `inbundCallSession.reply({RepTp: 0, Bdy: text})`.
+
+
+#### What will happen after the reply?
 
 After this method call, the call session will be ended for the callee. But the
 call session will not end yet for the caller. And the caller will receive the
