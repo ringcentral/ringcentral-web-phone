@@ -294,94 +294,63 @@ The server will give the user more time to edit the reply message before ending
 the call or redirecting the call to voicemail.
 
 ```ts
-await inbundCallSession.startReply();
+await inboundCallSession.startReply();
 ```
 
-#### Reply the call with text:
+#### Reply with custom text
 
 ```ts
-const response = await inbundCallSession.reply(text);
+const response = await inboundCallSession.reply(
+  "I will call you back in 4 days",
+);
 ```
 
-#### More ways to reply
+The exact text is played to the caller. Your application is responsible for
+localizing it.
+
+#### Use a server-localized reply
+
+Use a structured reply when the RingCentral server should localize a predefined
+message. For example, this means "I will call you back in 4 days":
 
 ```ts
-const response = await inbundCallSession.reply({
-  RepTp: number;
-  Bdy?: string;
-  Dir?: number;
-  Units?: number;
-  Vl?: number;
+const response = await inboundCallSession.reply({
+  type: "callYouBack",
+  direction: "toCaller",
+  delay: 4,
+  unit: "days",
 });
 ```
 
-examples:
+Other examples:
 
 ```ts
-const response = await inbundCallSession.reply({
-  RepTp: 1,
-  Dir: 0,
-  Units: 2,
-  Vl: 4
-});
-```
-It means: "I will call you back in 4 days".
-
-
-`inbundCallSession.reply(text)` equals to `inbundCallSession.reply({RepTp: 0, Bdy: text})`.
-
-
-- RepTp – reply type.  32 bit integer.
-  - Custom = 0
-    - must also specify `Bdy`
-  - CallYouBack = 1
-    - must also specify `Dir`, `Vl` and `Units`
-  - OnMyWay = 2
-  - OnOtherLine = 3
-  - CallYouBackLater = 4
-    - must also specify `Dir`
-  - InAMeeting = 5
-  - OnOtherLineNoCall = 6
-- Vl – value. 32 bit integer. Used with reply type CallYouBack (“I’ll call you back in %Vl  …”)and represent number of minues, hours or days
-- Units – units. 32 bit integer. Used with reply type CallYouBack (“I’ll call you back in %Vl  %Units”)and represent minutes, hours or days.
-  - Minutes = 0
-  - Hours = 1
-  - Days = 2
-- Dir – direction. 32 bit integre. Used with reply type rteCallYouBack and defines who will call whom: caller to user (DirectionFrom) or user to caller (DirectionTo).
-  - DirectionTo = 0
-  - DirectionFrom = 1
-- Bdy – body. String. Used with reply type Custom and represents speech to be played to caller
-
-
-#### Replying to Inbound Calls: String vs. Object Payload
-
-When using `inboundCallSession.reply()`, you can pass either a plain text string or a structured object. 
-The approach you choose dictates how your application handles localization (i18n).
-
-**Option 1: Server-Side Localization (Object Payload)**
-By passing a structured object, you delegate the translation to the RingCentral server. The server will automatically generate and deliver the message in the participants' native languages.
-```ts
-inboundCallSession.reply({
-  RepTp: 1,
-  Dir: 0,
-  Units: 2,
-  Vl: 4
+await inboundCallSession.reply({
+  type: "callYouBackLater",
+  direction: "toCaller",
 });
 
-**Option 2: Client-Side Localization (String Payload)**
-By passing a plain string, your application assumes full responsibility for translation. The exact string you provide is what will be sent.
-```ts
-inboundCallSession.reply("I will call you back in 4 days");
+await inboundCallSession.reply({ type: "onMyWay" });
 ```
 
-**Summary**
-If both parties speak English, the two examples above yield the exact same result. However, for multi-language environments, this SDK gives you flexibility: rely on the RingCentral server to handle translations by sending an object, or handle translations natively within your app by sending a localized string.
+| `type` | Required properties |
+| --- | --- |
+| `callYouBack` | `direction`, `delay`, `unit` |
+| `callYouBackLater` | `direction` |
+| `onMyWay` | None |
+| `onOtherLine` | None |
+| `inAMeeting` | None |
+| `onOtherLineNoCall` | None |
+
+`direction` is either `toCaller` when the user will call the inbound caller, or
+`fromCaller` when the inbound caller should call the user. `unit` is `minutes`,
+`hours`, or `days`.
 
 #### What will happen after the reply?
 
 After this method call, the call session will be ended for the callee. But the
-call session will not end yet for the caller. And the caller will receive the
-replied `text` via text-to-speech. The caller will then have several options:
+call session will not end yet for the caller. The caller will hear the reply via
+text-to-speech and then have several options:
 
 - press 1 to repeat the message
 - press 2 to leave a voicemail

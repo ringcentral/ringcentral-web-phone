@@ -8,6 +8,32 @@ import ResponseMessage from "../sip-message/outbound/response.js";
 import { branch, fakeDomain, uuid } from "../utils.js";
 import CallSession from "./index.js";
 
+export type ReplyOptions =
+  | {
+      type: "callYouBack";
+      direction: "toCaller" | "fromCaller";
+      delay: number;
+      unit: "minutes" | "hours" | "days";
+    }
+  | {
+      type: "callYouBackLater";
+      direction: "toCaller" | "fromCaller";
+    }
+  | {
+      type: "onMyWay" | "onOtherLine" | "inAMeeting" | "onOtherLineNoCall";
+    };
+
+const replyTypes = {
+  callYouBack: 1,
+  onMyWay: 2,
+  onOtherLine: 3,
+  callYouBackLater: 4,
+  inAMeeting: 5,
+  onOtherLineNoCall: 6,
+};
+const replyDirections = { toCaller: 0, fromCaller: 1 };
+const replyUnits = { minutes: 0, hours: 1, days: 2 };
+
 class InboundCallSession extends CallSession {
   public constructor(webPhone: WebPhone, inviteMessage: InboundMessage) {
     super(webPhone);
@@ -88,32 +114,23 @@ class InboundCallSession extends CallSession {
   public async startReply() {
     await this.sendRcMessage(callControlCommands.ClientStartReply);
   }
-  public async reply(text: string): Promise<RcMessage>;
-  public async reply(options: {
-    RepTp: number;
-    Bdy?: string;
-    Dir?: number;
-    Units?: number;
-    Vl?: number;
-  }): Promise<RcMessage>;
-  public async reply(
-    arg:
-      | string
-      | {
-          RepTp: number;
-          Bdy?: string;
-          Dir?: number;
-          Units?: number;
-          Vl?: number;
-        },
-  ): Promise<RcMessage> {
-    const body =
-      typeof arg === "string"
-        ? {
-            RepTp: 0,
-            Bdy: arg,
-          }
-        : arg;
+  public async reply(arg: string | ReplyOptions): Promise<RcMessage> {
+    let body: Record<string, string | number>;
+    if (typeof arg === "string") {
+      body = { RepTp: 0, Bdy: arg };
+    } else {
+      body = { RepTp: replyTypes[arg.type] };
+      if (arg.type === "callYouBack" || arg.type === "callYouBackLater") {
+        body.Dir = replyDirections[arg.direction];
+      }
+      if (arg.type === "callYouBack") {
+        body.Vl = arg.delay;
+        body.Units = replyUnits[arg.unit];
+      }
+    }
+    if (Object.values(body).some((value) => value === undefined)) {
+      throw new Error("Invalid reply options");
+    }
     await this.sendRcMessage(callControlCommands.ClientReply, body);
     return new Promise((resolve) => {
       const sessionCloseHandler = async (inboundMessage: InboundMessage) => {
@@ -189,20 +206,7 @@ class InboundCallSession extends CallSession {
 
   protected async sendRcMessage(
     cmd: number,
-    body:
-      | Record<string | number | symbol, never>
-      | {
-          RepTp: number;
-          Bdy?: string;
-          Dir?: number;
-          Units?: number;
-          Vl?: number;
-        }
-      | {
-          FwdDly: string;
-          Phn: string;
-          PhnTp: string;
-        } = {},
+    body: Record<string, string | number> = {},
   ) {
     if (!this.sipMessage.headers["P-rc"]) {
       return;
