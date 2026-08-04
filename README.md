@@ -315,7 +315,7 @@ const response = await inbundCallSession.reply({
 });
 ```
 
-example:
+examples:
 
 ```ts
 const response = await inbundCallSession.reply({
@@ -328,12 +328,18 @@ const response = await inbundCallSession.reply({
 It means: "I will call you back in 4 days".
 
 
+`inbundCallSession.reply(text)` equals to `inbundCallSession.reply({RepTp: 0, Bdy: text})`.
+
+
 - RepTp – reply type.  32 bit integer.
   - Custom = 0
+    - must also specify `Bdy`
   - CallYouBack = 1
+    - must also specify `Dir`, `Vl` and `Units`
   - OnMyWay = 2
   - OnOtherLine = 3
   - CallYouBackLater = 4
+    - must also specify `Dir`
   - InAMeeting = 5
   - OnOtherLineNoCall = 6
 - Vl – value. 32 bit integer. Used with reply type CallYouBack (“I’ll call you back in %Vl  …”)and represent number of minues, hours or days
@@ -346,8 +352,30 @@ It means: "I will call you back in 4 days".
   - DirectionFrom = 1
 - Bdy – body. String. Used with reply type Custom and represents speech to be played to caller
 
-So `inbundCallSession.reply(text)` equals to `inbundCallSession.reply({RepTp: 0, Bdy: text})`.
 
+#### Replying to Inbound Calls: String vs. Object Payload
+
+When using `inboundCallSession.reply()`, you can pass either a plain text string or a structured object. 
+The approach you choose dictates how your application handles localization (i18n).
+
+**Option 1: Server-Side Localization (Object Payload)**
+By passing a structured object, you delegate the translation to the RingCentral server. The server will automatically generate and deliver the message in the participants' native languages.
+```ts
+inboundCallSession.reply({
+  RepTp: 1,
+  Dir: 0,
+  Units: 2,
+  Vl: 4
+});
+
+**Option 2: Client-Side Localization (String Payload)**
+By passing a plain string, your application assumes full responsibility for translation. The exact string you provide is what will be sent.
+```ts
+inboundCallSession.reply("I will call you back in 4 days");
+```
+
+**Summary**
+If both parties speak English, the two examples above yield the exact same result. However, for multi-language environments, this SDK gives you flexibility: rely on the RingCentral server to handle translations by sending an object, or handle translations natively within your app by sending a localized string.
 
 #### What will happen after the reply?
 
