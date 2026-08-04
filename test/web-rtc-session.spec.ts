@@ -67,6 +67,7 @@ class FakeSipClient extends EventEmitter implements SipClient {
 }
 
 class FakeWebRtcSession implements WebRtcSession {
+  public localSdp = LOCAL_SDP;
   public offers: Array<{ iceRestart?: boolean } | undefined> = [];
   public offerAnswers: string[] = [];
   public appliedAnswers: string[] = [];
@@ -78,11 +79,11 @@ class FakeWebRtcSession implements WebRtcSession {
 
   public async createOffer(options?: { iceRestart?: boolean }) {
     this.offers.push(options);
-    return LOCAL_SDP;
+    return this.localSdp;
   }
   public async createAnswer(offer: string) {
     this.offerAnswers.push(offer);
-    return LOCAL_SDP;
+    return this.localSdp;
   }
   public async applyAnswer(answer: string) {
     this.appliedAnswers.push(answer);
@@ -273,6 +274,61 @@ test("keeps hold SDP policy in CallSession", async () => {
   expect(sipClient.requests[2].body).toContain("a=sendonly");
   expect(sipClient.requests[3].body).toContain("a=sendrecv");
   expect(webRtcSession.appliedAnswers).toEqual([NORMALIZED_REMOTE_ANSWER]);
+});
+
+test("updates only the SDP origin version and direction", async () => {
+  const sipClient = new FakeSipClient();
+  const webRtcSession = new FakeWebRtcSession();
+  webRtcSession.localSdp = `${[
+    "v=0",
+    "o=- 100 7 IN IP4 127.0.0.1",
+    "s=-",
+    "t=0 0",
+    "m=audio 9 RTP/AVP 0",
+    "c=IN IP4 0.0.0.0",
+    "a=x-before:keep",
+    "a=sendrecv",
+    "a=x-after:keep",
+  ].join("\r\n")}\r\n`;
+  const webPhone = new WebPhone({
+    sipInfo,
+    sipClient,
+    webRtcSessionFactory: () => webRtcSession,
+  });
+  const session = new InboundCallSession(webPhone, inboundInvite());
+  await session.init();
+  await session.handleReInvite(inboundInvite());
+
+  await session.hold();
+  await session.unhold();
+
+  expect(sipClient.requests.map((request) => request.body)).toEqual([
+    webRtcSession.localSdp
+      .replace("o=- 100 7", "o=- 100 8")
+      .replace("a=sendrecv", "a=sendonly"),
+    webRtcSession.localSdp.replace("o=- 100 7", "o=- 100 9"),
+  ]);
+});
+
+test("rejects SDP with a missing or malformed origin", async () => {
+  for (const origin of [undefined, "o=invalid"]) {
+    const sipClient = new FakeSipClient();
+    const webRtcSession = new FakeWebRtcSession();
+    webRtcSession.localSdp = ["v=0", origin, "s=-", "t=0 0"]
+      .filter((line) => line !== undefined)
+      .join("\r\n");
+    const webPhone = new WebPhone({
+      sipInfo,
+      sipClient,
+      webRtcSessionFactory: () => webRtcSession,
+    });
+    const session = new InboundCallSession(webPhone, inboundInvite());
+    await session.init();
+    await session.handleReInvite(inboundInvite());
+
+    await expect(session.hold()).rejects.toThrow("Invalid SDP origin");
+    expect(sipClient.requests).toHaveLength(0);
+  }
 });
 
 test("retries a failed factory and initializes once", async () => {

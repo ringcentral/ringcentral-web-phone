@@ -1,5 +1,3 @@
-import sdpTransform from "sdp-transform";
-
 import EventEmitter from "../event-emitter.js";
 import type WebPhone from "../index.js";
 import type InboundMessage from "../sip-message/inbound.js";
@@ -465,10 +463,10 @@ class CallSession extends EventEmitter {
       sdp = sdp.replace(/a=sendrecv/g, "a=sendonly");
     }
     // increase the sdp version
-    const res = sdpTransform.parse(sdp);
-    this.sdpVersion = Math.max(this.sdpVersion, res.origin!.sessionVersion + 1);
-    res.origin!.sessionVersion = this.sdpVersion++;
-    sdp = sdpTransform.write(res);
+    const origin = sdp.match(/^(o=\S+ \d+) (\d+)/m);
+    if (!origin) throw new Error("Invalid SDP origin");
+    this.sdpVersion = Math.max(this.sdpVersion, Number(origin[2]) + 1);
+    sdp = sdp.replace(origin[0], `${origin[1]} ${this.sdpVersion++}`);
     const requestMessage = new RequestMessage(
       `INVITE ${extractAddress(this.remotePeer)} SIP/2.0`,
       {

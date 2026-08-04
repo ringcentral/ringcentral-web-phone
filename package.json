@@ -51,15 +51,13 @@
   },
   "dependencies": {
     "blueimp-md5": "^2.19.0",
-    "fast-xml-parser": "^5.9.3",
-    "sdp-transform": "^3.0.0"
+    "fast-xml-parser": "^5.9.3"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.2",
     "@playwright/test": "^1.61.1",
     "@types/blueimp-md5": "^2.18.2",
     "@types/node": "^25.9.4",
-    "@types/sdp-transform": "^2.15.0",
     "buffer": "^6.0.3",
     "dotenv-override-true": "^6.2.2",
     "events": "^3.3.0",
