@@ -134,6 +134,72 @@ const completeInboundAnswer = async (
   await answer;
 };
 
+test("projects inbound SIP messages onto the matching live Call Session", async () => {
+  const sipClient = new FakeSipClient();
+  const webPhone = new WebPhone({ sipInfo, sipClient, autoAnswer: false });
+  const globalMessages: InboundMessage[] = [];
+  sipClient.on("inboundMessage", (message) => globalMessages.push(message));
+
+  const invite = inboundInvite();
+  const callId = invite.headers["Call-Id"];
+  invite.headers["Call-ID"] = callId;
+  delete invite.headers["Call-Id"];
+  sipClient.emit("inboundMessage", invite);
+  const session = webPhone.callSessions[0];
+  expect(session.callId).toBe(callId);
+  const scopedMessages: InboundMessage[] = [];
+  session.on("inboundMessage", (message) => scopedMessages.push(message));
+
+  await expect.poll(() => sipClient.replies).toHaveLength(2);
+  expect(scopedMessages).toEqual([]);
+
+  for (const [index, header] of ["Call-Id", "Call-ID", "call-id"].entries()) {
+    const message = new InboundMessage("INFO sip:100@example.com SIP/2.0", {
+      CSeq: `${index + 2} INFO`,
+      From: `<sip:101@example.com>;tag=other-${index}`,
+      To: `<sip:100@example.com>;tag=different-${index}`,
+      [header]: callId,
+    });
+    sipClient.emit("inboundMessage", message);
+    expect(scopedMessages.at(-1)).toBe(message);
+  }
+
+  for (const headers of [
+    { "Call-Id": callId.toUpperCase() },
+    { CSeq: "5 INFO" },
+    { i: callId },
+  ]) {
+    sipClient.emit(
+      "inboundMessage",
+      new InboundMessage("INFO sip:100@example.com SIP/2.0", {
+        CSeq: "5 INFO",
+        ...headers,
+      }),
+    );
+  }
+  expect(scopedMessages).toHaveLength(3);
+
+  const bye = new InboundMessage("BYE sip:100@example.com SIP/2.0", {
+    CSeq: "6 BYE",
+    "Call-Id": callId,
+  });
+  sipClient.emit("inboundMessage", bye);
+  expect(scopedMessages.at(-1)).toBe(bye);
+  expect(scopedMessages).toHaveLength(4);
+  expect(webPhone.callSessions).toEqual([]);
+
+  sipClient.emit(
+    "inboundMessage",
+    new InboundMessage("INFO sip:100@example.com SIP/2.0", {
+      CSeq: "7 INFO",
+      "Call-Id": callId,
+    }),
+  );
+  expect(scopedMessages).toHaveLength(4);
+  expect(globalMessages[0]).toBe(invite);
+  expect(globalMessages).toHaveLength(9);
+});
+
 test("delegates an outbound call without browser WebRTC globals", async () => {
   const sipClient = new FakeSipClient();
   const webRtcSession = new FakeWebRtcSession();

@@ -10,14 +10,11 @@ import {
   fakeDomain,
   fakeEmail,
   generateAuthorization,
+  getHeader,
   uuid,
 } from "./utils.js";
 
 const maxExpires = 60;
-const getHeader = (headers: Record<string, string>, name: string) =>
-  Object.entries(headers).find(
-    ([key]) => key.toLowerCase() === name.toLowerCase(),
-  )?.[1];
 const autoReplyPattern = /^(MESSAGE|BYE|CANCEL|INFO|NOTIFY|UPDATE) sip:/;
 
 export class DefaultSipClient extends EventEmitter implements SipClient {

@@ -35,6 +35,12 @@ callSession.on("disposed", () => {
 | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`answered`](answered.md)               | Triggered when the call is answered.                                                                                                                                       |
 | [`disposed`](disposed.md)               | For answered calls, this event is triggered when someone hangs up. For inbound calls, it is triggered if the caller hangs up or if the call is answered on another device. |
-| [`inboundMessage`](inboundMessage.md)   | Triggered when you receive a SIP message.                                                                                                                                  |
-| [`outboundMessage`](outboundMessage.md) | Triggered when a SIP message is sent.                                                                                                                                      |
+| [`inboundMessage`](inboundMessage.md)   | Triggered for inbound SIP messages with the same exact Call-ID as this live Call Session.                                                                                  |
 | [`ringing`](ringing.md)                 | This event does exist, but it is effectively implied by the existence of other events.                                                                                     |
+
+## SIP Client events
+
+| Event                                   | Description                                                  |
+| --------------------------------------- | ------------------------------------------------------------ |
+| [`inboundMessage`](inboundMessage.md)   | Triggered for every inbound SIP message received by the SIP Client. |
+| [`outboundMessage`](outboundMessage.md) | Triggered when the SIP Client sends a SIP message.            |

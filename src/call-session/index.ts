@@ -10,6 +10,7 @@ import {
   extractNumber,
   extractTag,
   fakeDomain,
+  getHeader,
   uuid,
 } from "../utils.js";
 import type OutboundCallSession from "./outbound.js";
@@ -69,7 +70,9 @@ class CallSession extends EventEmitter {
   // for outbound call, this._callId will be the call id. Once the call session is out of "init" state, this.sipMessage will be set
   private _callId = uuid();
   public get callId() {
-    return this.sipMessage?.headers["Call-Id"] ?? this._callId;
+    return this.sipMessage
+      ? (getHeader(this.sipMessage.headers, "Call-Id") ?? this._callId)
+      : this._callId;
   }
 
   public get sessionId() {

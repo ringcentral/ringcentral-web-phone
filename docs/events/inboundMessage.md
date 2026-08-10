@@ -1,49 +1,36 @@
-# callSession.on(`inboundMessage`, callback)
+# inboundMessage
 
-Registers a callback function to be invoked when a new inbound SIP message is
-received over the WebSocket connection.
+The SIP Client and Call Session expose the same raw `InboundMessage` object at
+different scopes:
 
-The inboundMessage event is emitted whenever the SIP client receives an inbound
-SIP message from the server. This includes various SIP methods such as INVITE,
-BYE, CANCEL, INFO, NOTIFY, and MESSAGE.
+| Subscription | Scope |
+| --- | --- |
+| `webPhone.sipClient.on("inboundMessage", callback)` | Every inbound SIP message received by the SIP Client. |
+| `callSession.on("inboundMessage", callback)` | Inbound SIP messages whose exact, case-sensitive Call-ID value matches that live Call Session. |
 
-This event provides access to the raw SIP message, allowing developers to handle
-custom SIP interactions or monitor SIP traffic for debugging and analytics
-purposes.
+Call-ID header names use the normal case-insensitive SIP header matching, so
+`Call-Id`, `Call-ID`, and `call-id` are supported. The compact `i` header is not
+supported. From and To tags do not affect the match.
 
-## Callback Parameters
+The initial inbound INVITE creates its Call Session and is not replayed on the
+scoped event. Later matching messages, including terminal messages, are
+eligible.
 
-The callback function receives a single parameter:
+## Global SIP Client feed
 
-| Parameter | Type             | Description                                                                                               |
-| --------- | ---------------- | --------------------------------------------------------------------------------------------------------- |
-| `message` | `InboundMessage` | An object representing the inbound SIP message, containing properties such as subject, headers, and body. |
-
-## Usage Example
-
-```js
-sipClient.on("inboundMessage", (message) => {
-  console.log("Received SIP message:", message.subject);
-  // Custom handling based on message type
-  if (message.subject.startsWith("MESSAGE sip:")) {
-    // Handle SIP MESSAGE
-  }
+```ts
+webPhone.sipClient.on("inboundMessage", (message) => {
+  console.log("Received an inbound SIP message:", message.subject);
 });
 ```
 
-## Notes
+## Call-ID-scoped Call Session feed
 
-- **Automatic 200 OK Responses**: For certain SIP methods (MESSAGE, BYE, CANCEL,
-  INFO, and NOTIFY), the SIP client automatically sends a 200 OK response upon
-  receiving the message. This behavior ensures compliance with SIP protocol
-  expectations and reduces the need for manual acknowledgment.
+```ts
+callSession.on("inboundMessage", (message) => {
+  console.log("Received a message for this Call Session:", message.subject);
+});
+```
 
-- **Message Filtering**: The SIP client includes logic to filter out messages
-  not intended for the current instance, based on the `Cln` (Client ID) field in
-  the message body. If the `Cln` does not match the client's authorization ID,
-  the message is ignored.
-
-- **Debugging**: If the SIP client is initialized with
-  [debugging enabled](../get-started/instances.md#turning-on-debug-mode) (debug:
-  true), incoming messages are logged to the console, providing visibility into
-  SIP traffic for troubleshooting purposes.
+Both callbacks receive the original `InboundMessage`, with its `subject`,
+`headers`, and `body`.

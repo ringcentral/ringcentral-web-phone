@@ -764,6 +764,20 @@ at the time that you get the `callSession` object, `callSession.mediaStream` is
 already set. It would be too late to subscribe for `mediaStreamSet` event. In
 such case you can access `callSession.mediaStream` directly.
 
+#### `inboundMessage` event
+
+This event receives the original inbound SIP message when its exact,
+case-sensitive Call-ID matches this live Call Session. Full Call-ID header names
+are matched case-insensitively; From and To tags do not affect the match. The
+initial inbound INVITE is not replayed, while later matching messages, including
+terminal messages, are eligible.
+
+```ts
+callSession.on("inboundMessage", (message) => {
+  console.log("Received a message for this Call Session:", message.subject);
+});
+```
+
 #### Where is the `ringing` event?
 
 `ringing` event is implicit.
@@ -823,10 +837,11 @@ this.webPhone.call(toNumber, this.fromNumber);
 - `inboundMessage`
 - `outboundMessage`
 
-These events represent low-level SIP messages received from or sent to the SIP
-server by the web phone instance. Most developers won’t need to interact with
-these directly, but they’re exposed for advanced use cases that require greater
-flexibility.
+These global events represent every low-level SIP message received from or sent
+to the SIP server by the web phone instance. Unlike
+`callSession.inboundMessage`, `sipClient.inboundMessage` is not scoped to one
+Call-ID. Most developers won’t need to interact with these directly, but they’re
+exposed for advanced use cases that require greater flexibility.
 
 **Example:**
 
