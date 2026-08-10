@@ -105,7 +105,7 @@ class FakeWebRtcSession implements WebRtcSession {
   }
 }
 
-const inboundInvite = (body = REMOTE_OFFER) =>
+const inboundInvite = (body = REMOTE_OFFER, callId = "call-id") =>
   new InboundMessage(
     "INVITE sip:100@example.com SIP/2.0",
     {
@@ -113,24 +113,29 @@ const inboundInvite = (body = REMOTE_OFFER) =>
       CSeq: "1 INVITE",
       From: "<sip:101@example.com>;tag=remote",
       To: "<sip:100@example.com>;tag=local",
-      "Call-Id": "call-id",
+      "Call-Id": callId,
+      "P-rc": new RcMessage(
+        { SID: "sid", Req: "req", From: "101", To: "100" },
+        {},
+      ).toXml(),
     },
     body,
   );
 
-const alreadyProcessedMessage = () =>
+const alreadyProcessedMessage = (callId = "call-id") =>
   new InboundMessage(
     "MESSAGE sip:100@example.com SIP/2.0",
-    { CSeq: "2 MESSAGE" },
+    { CSeq: "2 MESSAGE", "Call-Id": callId },
     new RcMessage({ Cmd: "7" }, {}).toXml(),
   );
 
 const completeInboundAnswer = async (
   sipClient: FakeSipClient,
   answer: Promise<void>,
+  callId = "call-id",
 ) => {
   await expect.poll(() => sipClient.replies.length).toBe(1);
-  sipClient.emit("inboundMessage", alreadyProcessedMessage());
+  sipClient.emit("inboundMessage", alreadyProcessedMessage(callId));
   await answer;
 };
 
@@ -221,9 +226,19 @@ test("delegates an outbound call without browser WebRTC globals", async () => {
     setTimeout(() => {
       sipClient.emit(
         "inboundMessage",
+        new InboundMessage("SIP/2.0 486 Busy Here", {
+          CSeq: progress.headers.CSeq,
+          "Call-Id": "other-call",
+        }),
+      );
+      sipClient.emit(
+        "inboundMessage",
         new InboundMessage(
           "SIP/2.0 200 OK",
-          { CSeq: progress.headers.CSeq },
+          {
+            CSeq: progress.headers.CSeq,
+            "Call-Id": message.headers["Call-Id"],
+          },
           REMOTE_ANSWER,
         ),
       );
@@ -284,6 +299,7 @@ test("delegates inbound offer and offerless call negotiation", async () => {
     webRtcSessionFactory: () => sessions.shift() as WebRtcSession,
   });
   const offered = new InboundCallSession(webPhone, inboundInvite());
+  webPhone.callSessions.push(offered);
   const offeredAnswer = offered.answer();
 
   await completeInboundAnswer(sipClient, offeredAnswer);
@@ -298,17 +314,175 @@ test("delegates inbound offer and offerless call negotiation", async () => {
       {
         Via: message.headers.Via,
         CSeq: message.headers.CSeq.replace(" INVITE", " ACK"),
+        "Call-Id": message.headers["Call-Id"],
       },
       REMOTE_ANSWER,
     );
-  const offerless = new InboundCallSession(webPhone, inboundInvite(""));
+  webPhone.callSessions.length = 0;
+  const offerless = new InboundCallSession(
+    webPhone,
+    inboundInvite("", "offerless-call"),
+  );
+  webPhone.callSessions.push(offerless);
   const offerlessAnswer = offerless.answer();
 
   await expect.poll(() => offerless.state).toBe("answered");
   expect(offerlessWebRtc.offers).toEqual([{ iceRestart: true }]);
   expect(offerlessWebRtc.appliedAnswers).toEqual([NORMALIZED_REMOTE_ANSWER]);
-  sipClient.emit("inboundMessage", alreadyProcessedMessage());
+  sipClient.emit("inboundMessage", alreadyProcessedMessage("other-call"));
+  let completed = false;
+  void offerlessAnswer.then(() => {
+    completed = true;
+  });
+  await new Promise((resolve) => setTimeout(resolve));
+  expect(completed).toBe(false);
+  sipClient.emit("inboundMessage", alreadyProcessedMessage("offerless-call"));
   await offerlessAnswer;
+});
+
+test("correlates JSON command results on the Call Session", async () => {
+  const sipClient = new FakeSipClient();
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const session = new InboundCallSession(webPhone, inboundInvite());
+  webPhone.callSessions.push(session);
+
+  const resultPromise = session.startRecording();
+  await expect.poll(() => sipClient.requests).toHaveLength(1);
+  const request = JSON.parse(sipClient.requests[0].body).request;
+  const emitResult = (
+    callId: string,
+    reqid: number,
+    command: string,
+    code: number,
+  ) => {
+    sipClient.emit(
+      "inboundMessage",
+      new InboundMessage(
+        "INFO sip:100@example.com SIP/2.0",
+        { CSeq: "2 INFO", "Call-Id": callId },
+        JSON.stringify({
+          response: {
+            reqid,
+            command,
+            result: { code, description: String(code) },
+          },
+        }),
+      ),
+    );
+  };
+  emitResult("other-call", request.reqid, request.command, 1);
+  emitResult(session.callId, request.reqid + 1, request.command, 2);
+  emitResult(session.callId, request.reqid, "stopcallrecord", 3);
+  emitResult(session.callId, request.reqid, request.command, 0);
+
+  await expect(resultPromise).resolves.toEqual({ code: 0, description: "0" });
+});
+
+test("completes and times out transfers on the Call Session", async () => {
+  const sipClient = new FakeSipClient();
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const session = new InboundCallSession(webPhone, inboundInvite());
+  webPhone.callSessions.push(session);
+  let completed = false;
+  const transfer = session.transfer("102", 100).then(() => {
+    completed = true;
+  });
+  await expect.poll(() => sipClient.requests).toHaveLength(1);
+  sipClient.emit(
+    "inboundMessage",
+    new InboundMessage("BYE sip:100@example.com SIP/2.0", {
+      CSeq: "2 BYE",
+      "Call-Id": "other-call",
+    }),
+  );
+  await new Promise((resolve) => setTimeout(resolve));
+  expect(completed).toBe(false);
+  sipClient.emit(
+    "inboundMessage",
+    new InboundMessage("BYE sip:100@example.com SIP/2.0", {
+      CSeq: "3 BYE",
+      "Call-Id": session.callId,
+    }),
+  );
+  await transfer;
+  expect(session.state).toBe("disposed");
+  expect(webPhone.callSessions).toEqual([]);
+
+  const timedOut = new InboundCallSession(
+    webPhone,
+    inboundInvite(REMOTE_OFFER, "timeout-call"),
+  );
+  webPhone.callSessions.push(timedOut);
+  await expect(timedOut.transfer("102", 1)).rejects.toThrow("timed out");
+});
+
+test("completes inbound forward on the Call Session CANCEL", async () => {
+  const sipClient = new FakeSipClient();
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const session = new InboundCallSession(webPhone, inboundInvite());
+  webPhone.callSessions.push(session);
+  let completed = false;
+  const forward = session.forward("102").then(() => {
+    completed = true;
+  });
+  await expect.poll(() => sipClient.requests).toHaveLength(1);
+  sipClient.emit(
+    "inboundMessage",
+    new InboundMessage("CANCEL sip:100@example.com SIP/2.0", {
+      CSeq: "2 CANCEL",
+      "Call-Id": "other-call",
+    }),
+  );
+  await new Promise((resolve) => setTimeout(resolve));
+  expect(completed).toBe(false);
+  sipClient.emit(
+    "inboundMessage",
+    new InboundMessage("CANCEL sip:100@example.com SIP/2.0", {
+      CSeq: "3 CANCEL",
+      "Call-Id": session.callId,
+    }),
+  );
+  await forward;
+  expect(session.state).toBe("disposed");
+  expect(webPhone.callSessions).toEqual([]);
+});
+
+test("reports an outbound final-response failure on the Call Session", async () => {
+  const sipClient = new FakeSipClient();
+  sipClient.requestHandler = async (message) => {
+    if (!message.headers["Proxy-Authorization"]) {
+      return new InboundMessage("SIP/2.0 407 Proxy Authentication Required", {
+        "Proxy-Authenticate": 'Digest, nonce="nonce"',
+      });
+    }
+    const progress = new InboundMessage("SIP/2.0 183 Session Progress", {
+      Via: message.headers.Via,
+      CSeq: message.headers.CSeq,
+      From: message.headers.From,
+      To: `${message.headers.To};tag=remote`,
+      "Call-Id": message.headers["Call-Id"],
+    });
+    setTimeout(() => {
+      sipClient.emit(
+        "inboundMessage",
+        new InboundMessage("SIP/2.0 486 Busy Here", {
+          CSeq: progress.headers.CSeq,
+          "Call-Id": message.headers["Call-Id"],
+        }),
+      );
+    });
+    return progress;
+  };
+  const webPhone = new WebPhone({
+    sipInfo,
+    sipClient,
+    webRtcSessionFactory: () => new FakeWebRtcSession(),
+  });
+
+  const session = await webPhone.call("invalid");
+
+  expect(session.state).toBe("disposed");
+  expect(webPhone.callSessions).toEqual([]);
 });
 
 test("keeps hold SDP policy in CallSession", async () => {

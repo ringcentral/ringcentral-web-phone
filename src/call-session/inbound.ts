@@ -103,11 +103,11 @@ class InboundCallSession extends CallSession {
     return new Promise<void>((resolve) => {
       const handler = (inboundMessage: InboundMessage) => {
         if (inboundMessage.subject.startsWith("CANCEL sip:")) {
-          this.webPhone.sipClient.off("inboundMessage", handler);
+          this.off("inboundMessage", handler);
           resolve();
         }
       };
-      this.webPhone.sipClient.on("inboundMessage", handler);
+      this.on("inboundMessage", handler);
     });
   }
 
@@ -140,13 +140,13 @@ class InboundCallSession extends CallSession {
             rcMessage.headers.Cmd ===
             callControlCommands.SessionClose.toString()
           ) {
-            this.webPhone.sipClient.off("inboundMessage", sessionCloseHandler);
+            this.off("inboundMessage", sessionCloseHandler);
             resolve(rcMessage);
             // no need to dispose session here, session will dispose unpon CANCEL or BYE
           }
         }
       };
-      this.webPhone.sipClient.on("inboundMessage", sessionCloseHandler);
+      this.on("inboundMessage", sessionCloseHandler);
     });
   }
 
@@ -195,12 +195,12 @@ class InboundCallSession extends CallSession {
             rcMessage.headers.Cmd ===
             callControlCommands.AlreadyProcessed.toString()
           ) {
-            this.webPhone.sipClient.off("inboundMessage", handler);
+            this.off("inboundMessage", handler);
             resolve();
           }
         }
       };
-      this.webPhone.sipClient.on("inboundMessage", handler);
+      this.on("inboundMessage", handler);
     });
   }
 

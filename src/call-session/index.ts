@@ -526,10 +526,10 @@ class CallSession extends EventEmitter {
         ) {
           return;
         }
-        this.webPhone.sipClient.off("inboundMessage", resultHandler);
+        this.off("inboundMessage", resultHandler);
         resolve(response.result);
       };
-      this.webPhone.sipClient.on("inboundMessage", resultHandler);
+      this.on("inboundMessage", resultHandler);
     });
   }
 
@@ -554,17 +554,14 @@ class CallSession extends EventEmitter {
     let timeoutId: ReturnType<typeof setTimeout>;
     return new Promise<void>((resolve, reject) => {
       const handler = (inboundMessage: InboundMessage) => {
-        if (
-          inboundMessage.subject.startsWith("BYE sip:") &&
-          inboundMessage.headers["Call-Id"] === this.callId
-        ) {
+        if (inboundMessage.subject.startsWith("BYE sip:")) {
           clearTimeout(timeoutId);
-          this.webPhone.sipClient.off("inboundMessage", handler);
+          this.off("inboundMessage", handler);
           resolve();
         }
       };
       timeoutId = setTimeout(() => {
-        this.webPhone.sipClient.off("inboundMessage", handler);
+        this.off("inboundMessage", handler);
         reject(
           new Error(
             `"REFER ${extractAddress(
@@ -573,7 +570,7 @@ class CallSession extends EventEmitter {
           ),
         );
       }, timeout);
-      this.webPhone.sipClient.on("inboundMessage", handler);
+      this.on("inboundMessage", handler);
     });
   }
 }

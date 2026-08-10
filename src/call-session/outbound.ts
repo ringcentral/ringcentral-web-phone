@@ -78,7 +78,7 @@ class OutboundCallSession extends CallSession {
     return new Promise<boolean>((resolve) => {
       const answerHandler = async (message: InboundMessage) => {
         if (message.headers.CSeq === this.sipMessage.headers.CSeq) {
-          this.webPhone.sipClient.off("inboundMessage", answerHandler);
+          this.off("inboundMessage", answerHandler);
 
           // outbound call failed, for example, invalid number
           // or emergency address is not configured properly
@@ -114,7 +114,7 @@ class OutboundCallSession extends CallSession {
           resolve(true);
         }
       };
-      this.webPhone.sipClient.on("inboundMessage", answerHandler);
+      this.on("inboundMessage", answerHandler);
     });
   }
 
