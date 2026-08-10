@@ -46,10 +46,9 @@ class WebPhone extends EventEmitter {
           inboundMessage.headers.CSeq.endsWith(" BYE") ||
           inboundMessage.headers.CSeq.endsWith(" CANCEL")
         ) {
-          const index = this.callSessions.findIndex(
-            (callSession) =>
-              callSession.callId === inboundMessage.headers["Call-Id"],
-          );
+          const index = scopedCallSession
+            ? this.callSessions.indexOf(scopedCallSession)
+            : -1;
           if (index !== -1) {
             const callSession = this.callSessions[index];
             this.callSessions.splice(index, 1);

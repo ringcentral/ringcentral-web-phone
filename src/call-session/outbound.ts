@@ -85,10 +85,7 @@ class OutboundCallSession extends CallSession {
           if (message.subject !== "SIP/2.0 200 OK") {
             this.state = "failed";
             this.emit("failed", message.subject);
-            const index = this.webPhone.callSessions.findIndex(
-              (callSession) =>
-                callSession.callId === message.headers["Call-Id"],
-            );
+            const index = this.webPhone.callSessions.indexOf(this);
             if (index !== -1) {
               this.webPhone.callSessions.splice(index, 1);
             }

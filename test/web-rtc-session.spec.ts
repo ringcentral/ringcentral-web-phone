@@ -186,12 +186,12 @@ test("projects inbound SIP messages onto the matching live Call Session", async 
 
   const bye = new InboundMessage("BYE sip:100@example.com SIP/2.0", {
     CSeq: "6 BYE",
-    "Call-Id": callId,
+    "Call-ID": callId,
   });
   sipClient.emit("inboundMessage", bye);
   expect(scopedMessages.at(-1)).toBe(bye);
   expect(scopedMessages).toHaveLength(4);
-  expect(webPhone.callSessions).toEqual([]);
+  expect(webPhone.callSessions).toHaveLength(0);
 
   sipClient.emit(
     "inboundMessage",
@@ -467,7 +467,7 @@ test("reports an outbound final-response failure on the Call Session", async () 
         "inboundMessage",
         new InboundMessage("SIP/2.0 486 Busy Here", {
           CSeq: progress.headers.CSeq,
-          "Call-Id": message.headers["Call-Id"],
+          "call-id": message.headers["Call-Id"],
         }),
       );
     });
@@ -482,7 +482,7 @@ test("reports an outbound final-response failure on the Call Session", async () 
   const session = await webPhone.call("invalid");
 
   expect(session.state).toBe("disposed");
-  expect(webPhone.callSessions).toEqual([]);
+  expect(webPhone.callSessions).toHaveLength(0);
 });
 
 test("keeps hold SDP policy in CallSession", async () => {
