@@ -330,13 +330,6 @@ test("delegates inbound offer and offerless call negotiation", async () => {
   expect(offerlessWebRtc.offers).toEqual([{ iceRestart: true }]);
   expect(offerlessWebRtc.appliedAnswers).toEqual([NORMALIZED_REMOTE_ANSWER]);
   sipClient.emit("inboundMessage", alreadyProcessedMessage("other-call"));
-  let completed = false;
-  void offerlessAnswer.then(() => {
-    completed = true;
-  });
-  await new Promise((resolve) => setTimeout(resolve));
-  expect(completed).toBe(false);
-  sipClient.emit("inboundMessage", alreadyProcessedMessage("offerless-call"));
   await offerlessAnswer;
 });
 

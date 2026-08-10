@@ -195,12 +195,12 @@ class InboundCallSession extends CallSession {
             rcMessage.headers.Cmd ===
             callControlCommands.AlreadyProcessed.toString()
           ) {
-            this.off("inboundMessage", handler);
+            this.webPhone.sipClient.off("inboundMessage", handler);
             resolve();
           }
         }
       };
-      this.on("inboundMessage", handler);
+      this.webPhone.sipClient.on("inboundMessage", handler);
     });
   }
 
