@@ -173,6 +173,7 @@ export const callAndAnswer = async (
   await calleePage.evaluate(async () => {
     await globalThis.inboundCalls[0].answer();
   });
+  await expect.poll(() => calleeMessages).toHaveLength(4);
   callerMessages.length = 0;
   calleeMessages.length = 0;
   return { callerPage, calleePage, callerMessages, calleeMessages };

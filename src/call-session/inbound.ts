@@ -103,11 +103,11 @@ class InboundCallSession extends CallSession {
     return new Promise<void>((resolve) => {
       const handler = (inboundMessage: InboundMessage) => {
         if (inboundMessage.subject.startsWith("CANCEL sip:")) {
-          this.webPhone.sipClient.off("inboundMessage", handler);
+          this.off("inboundMessage", handler);
           resolve();
         }
       };
-      this.webPhone.sipClient.on("inboundMessage", handler);
+      this.on("inboundMessage", handler);
     });
   }
 
@@ -131,6 +131,7 @@ class InboundCallSession extends CallSession {
     if (Object.values(body).some((value) => value === undefined)) {
       throw new Error("Invalid reply options");
     }
+    const sid = RcMessage.fromXml(this.sipMessage.headers["P-rc"]).headers.SID;
     await this.sendRcMessage(callControlCommands.ClientReply, body);
     return new Promise((resolve) => {
       const sessionCloseHandler = async (inboundMessage: InboundMessage) => {
@@ -138,7 +139,8 @@ class InboundCallSession extends CallSession {
           const rcMessage = await RcMessage.fromXml(inboundMessage.body);
           if (
             rcMessage.headers.Cmd ===
-            callControlCommands.SessionClose.toString()
+              callControlCommands.SessionClose.toString() &&
+            rcMessage.headers.SID === sid
           ) {
             this.webPhone.sipClient.off("inboundMessage", sessionCloseHandler);
             resolve(rcMessage);
@@ -185,23 +187,6 @@ class InboundCallSession extends CallSession {
 
     this.state = "answered";
     this.emit("answered");
-
-    // wait for the final SIP message
-    return new Promise<void>((resolve) => {
-      const handler = async (inboundMessage: InboundMessage) => {
-        if (inboundMessage.subject.startsWith("MESSAGE sip:")) {
-          const rcMessage = await RcMessage.fromXml(inboundMessage.body);
-          if (
-            rcMessage.headers.Cmd ===
-            callControlCommands.AlreadyProcessed.toString()
-          ) {
-            this.webPhone.sipClient.off("inboundMessage", handler);
-            resolve();
-          }
-        }
-      };
-      this.webPhone.sipClient.on("inboundMessage", handler);
-    });
   }
 
   protected async sendRcMessage(

@@ -12,6 +12,7 @@ import type {
   SipInfo,
   WebPhoneOptions,
 } from "./types.js";
+import { getHeader } from "./utils.js";
 
 class WebPhone extends EventEmitter {
   public sipInfo: SipInfo;
@@ -34,15 +35,20 @@ class WebPhone extends EventEmitter {
     this.sipClient.on(
       "inboundMessage",
       async (inboundMessage: InboundMessage) => {
+        const scopedCallSession = this.callSessions.find(
+          (callSession) =>
+            callSession.callId === getHeader(inboundMessage.headers, "Call-Id"),
+        );
+        scopedCallSession?.emit("inboundMessage", inboundMessage);
+
         // either inbound BYE/CANCEL or server reply to outbound BYE/CANCEL
         if (
           inboundMessage.headers.CSeq.endsWith(" BYE") ||
           inboundMessage.headers.CSeq.endsWith(" CANCEL")
         ) {
-          const index = this.callSessions.findIndex(
-            (callSession) =>
-              callSession.callId === inboundMessage.headers["Call-Id"],
-          );
+          const index = scopedCallSession
+            ? this.callSessions.indexOf(scopedCallSession)
+            : -1;
           if (index !== -1) {
             const callSession = this.callSessions[index];
             this.callSessions.splice(index, 1);

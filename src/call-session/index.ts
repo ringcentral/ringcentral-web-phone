@@ -10,6 +10,7 @@ import {
   extractNumber,
   extractTag,
   fakeDomain,
+  getHeader,
   uuid,
 } from "../utils.js";
 import type OutboundCallSession from "./outbound.js";
@@ -69,7 +70,9 @@ class CallSession extends EventEmitter {
   // for outbound call, this._callId will be the call id. Once the call session is out of "init" state, this.sipMessage will be set
   private _callId = uuid();
   public get callId() {
-    return this.sipMessage?.headers["Call-Id"] ?? this._callId;
+    return this.sipMessage
+      ? (getHeader(this.sipMessage.headers, "Call-Id") ?? this._callId)
+      : this._callId;
   }
 
   public get sessionId() {
@@ -523,10 +526,10 @@ class CallSession extends EventEmitter {
         ) {
           return;
         }
-        this.webPhone.sipClient.off("inboundMessage", resultHandler);
+        this.off("inboundMessage", resultHandler);
         resolve(response.result);
       };
-      this.webPhone.sipClient.on("inboundMessage", resultHandler);
+      this.on("inboundMessage", resultHandler);
     });
   }
 
@@ -551,17 +554,14 @@ class CallSession extends EventEmitter {
     let timeoutId: ReturnType<typeof setTimeout>;
     return new Promise<void>((resolve, reject) => {
       const handler = (inboundMessage: InboundMessage) => {
-        if (
-          inboundMessage.subject.startsWith("BYE sip:") &&
-          inboundMessage.headers["Call-Id"] === this.callId
-        ) {
+        if (inboundMessage.subject.startsWith("BYE sip:")) {
           clearTimeout(timeoutId);
-          this.webPhone.sipClient.off("inboundMessage", handler);
+          this.off("inboundMessage", handler);
           resolve();
         }
       };
       timeoutId = setTimeout(() => {
-        this.webPhone.sipClient.off("inboundMessage", handler);
+        this.off("inboundMessage", handler);
         reject(
           new Error(
             `"REFER ${extractAddress(
@@ -570,7 +570,7 @@ class CallSession extends EventEmitter {
           ),
         );
       }, timeout);
-      this.webPhone.sipClient.on("inboundMessage", handler);
+      this.on("inboundMessage", handler);
     });
   }
 }

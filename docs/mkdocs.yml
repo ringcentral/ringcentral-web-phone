@@ -91,6 +91,8 @@ nav:
           - "disposed": events/disposed.md
           - "inboundMessage": events/inboundMessage.md
           - "ringing": events/ringing.md
+      - "SIP Client events":
+          - "inboundMessage": events/inboundMessage.md
           - "outboundMessage": events/outboundMessage.md
   - "Reference":
       - "Overview": reference/index.md

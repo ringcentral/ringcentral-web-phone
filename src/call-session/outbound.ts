@@ -78,17 +78,14 @@ class OutboundCallSession extends CallSession {
     return new Promise<boolean>((resolve) => {
       const answerHandler = async (message: InboundMessage) => {
         if (message.headers.CSeq === this.sipMessage.headers.CSeq) {
-          this.webPhone.sipClient.off("inboundMessage", answerHandler);
+          this.off("inboundMessage", answerHandler);
 
           // outbound call failed, for example, invalid number
           // or emergency address is not configured properly
           if (message.subject !== "SIP/2.0 200 OK") {
             this.state = "failed";
             this.emit("failed", message.subject);
-            const index = this.webPhone.callSessions.findIndex(
-              (callSession) =>
-                callSession.callId === message.headers["Call-Id"],
-            );
+            const index = this.webPhone.callSessions.indexOf(this);
             if (index !== -1) {
               this.webPhone.callSessions.splice(index, 1);
             }
@@ -114,7 +111,7 @@ class OutboundCallSession extends CallSession {
           resolve(true);
         }
       };
-      this.webPhone.sipClient.on("inboundMessage", answerHandler);
+      this.on("inboundMessage", answerHandler);
     });
   }
 

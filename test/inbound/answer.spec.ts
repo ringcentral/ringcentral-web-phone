@@ -18,6 +18,7 @@ testTwoPages(
     await assertCallCount(callerPage, 1);
 
     // callee
+    await expect.poll(() => calleeMessages).toHaveLength(4);
     const messages = calleeMessages.map((m) => m.shortString);
     expect(messages).toHaveLength(4);
     expect(messages[0]).toMatch(/^outbound - SIP\/2.0 200 OK$/);
