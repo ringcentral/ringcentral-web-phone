@@ -122,23 +122,6 @@ const inboundInvite = (body = REMOTE_OFFER, callId = "call-id") =>
     body,
   );
 
-const alreadyProcessedMessage = (callId = "call-id") =>
-  new InboundMessage(
-    "MESSAGE sip:100@example.com SIP/2.0",
-    { CSeq: "2 MESSAGE", "Call-Id": callId },
-    new RcMessage({ Cmd: "7" }, {}).toXml(),
-  );
-
-const completeInboundAnswer = async (
-  sipClient: FakeSipClient,
-  answer: Promise<void>,
-  callId = "call-id",
-) => {
-  await expect.poll(() => sipClient.replies.length).toBe(1);
-  sipClient.emit("inboundMessage", alreadyProcessedMessage(callId));
-  await answer;
-};
-
 test("projects inbound SIP messages onto the matching live Call Session", async () => {
   const sipClient = new FakeSipClient();
   const webPhone = new WebPhone({ sipInfo, sipClient, autoAnswer: false });
@@ -302,7 +285,7 @@ test("delegates inbound offer and offerless call negotiation", async () => {
   webPhone.callSessions.push(offered);
   const offeredAnswer = offered.answer();
 
-  await completeInboundAnswer(sipClient, offeredAnswer);
+  await expect(offeredAnswer).resolves.toBeUndefined();
 
   expect(offeredWebRtc.offerAnswers).toEqual([offered.sipMessage.body]);
   expect(sipClient.replies[0].body).toBe(`${LOCAL_SDP}\r\n`);
@@ -329,7 +312,6 @@ test("delegates inbound offer and offerless call negotiation", async () => {
   await expect.poll(() => offerless.state).toBe("answered");
   expect(offerlessWebRtc.offers).toEqual([{ iceRestart: true }]);
   expect(offerlessWebRtc.appliedAnswers).toEqual([NORMALIZED_REMOTE_ANSWER]);
-  sipClient.emit("inboundMessage", alreadyProcessedMessage("other-call"));
   await offerlessAnswer;
 });
 

@@ -20,11 +20,11 @@ const sipInfo: SipInfo = {
   stunServers: [],
 };
 
-const sessionCloseMessage = (callId: string, status: string) =>
+const sessionCloseMessage = (callId: string, sid: string, status: string) =>
   new InboundMessage(
     "MESSAGE sip:100@example.com SIP/2.0",
     { CSeq: "2 MESSAGE", "Call-Id": callId },
-    new RcMessage({ Cmd: "9" }, { Sts: status }).toXml(),
+    new RcMessage({ SID: sid, Cmd: "9" }, { Sts: status }).toXml(),
   );
 
 class FakeSipClient extends EventEmitter implements SipClient {
@@ -34,8 +34,14 @@ class FakeSipClient extends EventEmitter implements SipClient {
   public async request(message: RequestMessage) {
     this.requests.push(message);
     setTimeout(() => {
-      this.emit("inboundMessage", sessionCloseMessage("other-call", "wrong"));
-      this.emit("inboundMessage", sessionCloseMessage("call-id", "complete"));
+      this.emit(
+        "inboundMessage",
+        sessionCloseMessage("call-id", "other-sid", "wrong"),
+      );
+      this.emit(
+        "inboundMessage",
+        sessionCloseMessage("other-call", "sid", "complete"),
+      );
     });
     return new InboundMessage("SIP/2.0 200 OK", { CSeq: "1 MESSAGE" });
   }
