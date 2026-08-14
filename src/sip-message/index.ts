@@ -1,4 +1,4 @@
-import { uuid } from "../utils.js";
+import { getHeader, uuid } from "../utils.js";
 
 class SipMessage {
   public static fromString(str: string) {
@@ -46,6 +46,10 @@ class SipMessage {
 
   public get shortString() {
     return `${this.direction} - ${this.subject}`;
+  }
+
+  public getHeader(name: string): string | undefined {
+    return getHeader(this.headers, name);
   }
 }
 
