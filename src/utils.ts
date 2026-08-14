@@ -13,11 +13,6 @@ export const uuid = () => {
 
 export const branch = () => "z9hG4bK-" + uuid();
 
-export const getHeader = (headers: Record<string, string>, name: string) =>
-  Object.entries(headers).find(
-    ([key]) => key.toLowerCase() === name.toLowerCase(),
-  )?.[1];
-
 const generateResponse = (
   sipInfo: SipInfo,
   endpoint: string,

@@ -1,4 +1,4 @@
-import { getHeader, uuid } from "../utils.js";
+import { uuid } from "../utils.js";
 
 class SipMessage {
   public static fromString(str: string) {
@@ -49,7 +49,9 @@ class SipMessage {
   }
 
   public getHeader(name: string): string | undefined {
-    return getHeader(this.headers, name);
+    return Object.entries(this.headers).find(
+      ([key]) => key.toLowerCase() === name.toLowerCase(),
+    )?.[1];
   }
 }
 
