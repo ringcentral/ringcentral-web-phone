@@ -1,4 +1,7 @@
 import { expect, test } from "@playwright/test";
+import InboundCallSession from "../src/call-session/inbound.js";
+import type WebPhone from "../src/index.js";
+import InboundMessage from "../src/sip-message/inbound.js";
 import SipMessage from "../src/sip-message/index.js";
 
 test("getHeader resolves a header case-insensitively and returns undefined when absent", () => {
@@ -59,4 +62,77 @@ test("fromString preserves exact wire casing in the public headers field", () =>
   expect(message.headers["call-id"]).toBe("wire-case-1@example.com");
   expect(message.headers.To).toMatch(/^<sip:bob@example\.com>;tag=/);
   expect(message.headers["ALERT-INFO"]).toBe("<http://example.com/beep.wav>");
+});
+
+// Mixed-case INVITE as a peer might actually send it on the wire.
+const mixedCaseInvite = [
+  "INVITE sip:callee@example.com SIP/2.0",
+  "Via: SIP/2.0/WSS x.invalid;branch=z9hG4bK-abc",
+  "call-id: abc-inbound@example.com",
+  "cseq: 2 INVITE",
+  "to: <sip:callee@example.com>;tag=9876",
+  "from: <sip:caller@example.com>;tag=1234",
+  "ALERT-INFO: Auto Answer",
+  "call-info: <224981555_132089748@example.com>;purpose=info;Answer-After=2",
+  'P-RC: <?xml version="1.0"?><rc><SID>sess-1</SID></rc>',
+  "p-rc-api-call-info: callAttributes=queue-call,reject;callerIdName=WIRELESS CALLER;displayInfo=queueName;displayInfoSub=callerIdName;queueName=Tyler's call queue",
+  "p-rc-api-ids: party-id=p-abc123-1;session-id=s-abc123",
+  "Content-Length: 0",
+  "",
+  "",
+].join("\r\n");
+
+test("inbound call handling reads resolve under non-canonical wire casing", () => {
+  const inviteMessage = InboundMessage.fromString(mixedCaseInvite);
+
+  // AUTO-ANSWER / Answer-After read path (WebPhone inbound handler).
+  expect(inviteMessage.getHeader("Alert-Info")).toBe("Auto Answer");
+  const delay = inviteMessage
+    .getHeader("Call-Info")
+    ?.match(/Answer-After=(\d+)/)?.[1];
+  expect(delay).toBe("2");
+
+  // RC command id and call-queue metadata are still present, raw-record unmodified.
+  expect(inviteMessage.getHeader("P-rc")).toContain("sess-1");
+
+  // The InboundCallSession reads To/From (peers), p-rc-api-call-info (queue
+  // metadata), p-rc-api-ids (session/party ids) and Call-Id from the wire.
+  const session = new InboundCallSession(
+    {} as unknown as WebPhone,
+    inviteMessage,
+  );
+  expect(session.localPeer).toBe("<sip:callee@example.com>;tag=9876");
+  expect(session.remotePeer).toBe("<sip:caller@example.com>;tag=1234");
+  expect(session.rcApiCallInfo?.callerIdName).toBe("WIRELESS CALLER");
+  expect(session.rcApiCallInfo?.queueName).toBe("Tyler's call queue");
+  expect(session.callId).toBe("abc-inbound@example.com");
+  expect(session.partyId).toBe("p-abc123-1");
+  expect(session.sessionId).toBe("s-abc123");
+});
+
+test("BYE/CANCEL matching resolves under non-canonical wire casing", () => {
+  const bye = InboundMessage.fromString(
+    [
+      "BYE sip:example.com SIP/2.0",
+      "call-id: bye-inbound@example.com",
+      "cseq: 4 BYE",
+      "to: <sip:callee@example.com>;tag=9876",
+      "from: <sip:caller@example.com>;tag=1234",
+      "Content-Length: 0",
+      "",
+      "",
+    ].join("\r\n"),
+  );
+
+  // WebPhone inbound handler matched CSeq against these suffixes.
+  expect(bye.getHeader("CSeq")?.endsWith(" BYE")).toBe(true);
+  expect(bye.getHeader("CSeq")?.endsWith(" CANCEL")).toBe(false);
+
+  // re-INVITE matching compares Call-Id with the active session's call id.
+  const session = new InboundCallSession(
+    {} as unknown as WebPhone,
+    InboundMessage.fromString(mixedCaseInvite),
+  );
+  expect(bye.getHeader("Call-Id")).toBe("bye-inbound@example.com");
+  expect(bye.getHeader("Call-Id")).not.toBe(session.callId);
 });

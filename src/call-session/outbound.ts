@@ -58,7 +58,7 @@ class OutboundCallSession extends CallSession {
       // for exmaple, webPhone.sipRegister(0) has been called
       return;
     }
-    const proxyAuthenticate = inboundMessage.headers["Proxy-Authenticate"];
+    const proxyAuthenticate = inboundMessage.getHeader("Proxy-Authenticate")!;
     const nonce = proxyAuthenticate.match(/, nonce="(.+?)"/)![1];
     const newMessage = inviteMessage.fork();
     newMessage.headers["Proxy-Authorization"] = generateAuthorization(
@@ -70,14 +70,14 @@ class OutboundCallSession extends CallSession {
     this.sipMessage = progressMessage;
     this.state = "ringing";
     this.emit("ringing");
-    this.localPeer = progressMessage.headers.From;
-    this.remotePeer = progressMessage.headers.To;
+    this.localPeer = progressMessage.getHeader("From")!;
+    this.remotePeer = progressMessage.getHeader("To")!;
 
     // wait for the call to be answered
     // by SIP server design, this happens immediately, even if the callee has not received the INVITE
     return new Promise<boolean>((resolve) => {
       const answerHandler = async (message: InboundMessage) => {
-        if (message.headers.CSeq === this.sipMessage.headers.CSeq) {
+        if (message.getHeader("CSeq") === this.sipMessage.getHeader("CSeq")) {
           this.off("inboundMessage", answerHandler);
 
           // outbound call failed, for example, invalid number
@@ -103,8 +103,10 @@ class OutboundCallSession extends CallSession {
               "Call-Id": this.callId,
               From: this.localPeer,
               To: this.remotePeer,
-              Via: this.sipMessage.headers.Via,
-              CSeq: this.sipMessage.headers.CSeq.replace(" INVITE", " ACK"),
+              Via: this.sipMessage.getHeader("Via")!,
+              CSeq: this.sipMessage
+                .getHeader("CSeq")!
+                .replace(" INVITE", " ACK"),
             },
           );
           await this.webPhone.sipClient.reply(ackMessage);
@@ -122,8 +124,8 @@ class OutboundCallSession extends CallSession {
         "Call-Id": this.callId,
         From: this.localPeer,
         To: withoutTag(this.remotePeer),
-        Via: this.sipMessage.headers.Via,
-        CSeq: this.sipMessage.headers.CSeq.replace(" INVITE", " CANCEL"),
+        Via: this.sipMessage.getHeader("Via")!,
+        CSeq: this.sipMessage.getHeader("CSeq")!.replace(" INVITE", " CANCEL"),
       },
     );
     await this.webPhone.sipClient.request(requestMessage);

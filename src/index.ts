@@ -12,7 +12,6 @@ import type {
   SipInfo,
   WebPhoneOptions,
 } from "./types.js";
-import { getHeader } from "./utils.js";
 
 class WebPhone extends EventEmitter {
   public sipInfo: SipInfo;
@@ -37,14 +36,14 @@ class WebPhone extends EventEmitter {
       async (inboundMessage: InboundMessage) => {
         const scopedCallSession = this.callSessions.find(
           (callSession) =>
-            callSession.callId === getHeader(inboundMessage.headers, "Call-Id"),
+            callSession.callId === inboundMessage.getHeader("Call-Id"),
         );
         scopedCallSession?.emit("inboundMessage", inboundMessage);
 
         // either inbound BYE/CANCEL or server reply to outbound BYE/CANCEL
         if (
-          inboundMessage.headers.CSeq.endsWith(" BYE") ||
-          inboundMessage.headers.CSeq.endsWith(" CANCEL")
+          inboundMessage.getHeader("CSeq")?.endsWith(" BYE") ||
+          inboundMessage.getHeader("CSeq")?.endsWith(" CANCEL")
         ) {
           const index = scopedCallSession
             ? this.callSessions.indexOf(scopedCallSession)
@@ -64,9 +63,9 @@ class WebPhone extends EventEmitter {
         // re-INVITE
         const callSession = this.callSessions.find((callSession) => {
           return (
-            callSession.callId === inboundMessage.headers["Call-Id"] &&
-            callSession.localPeer === inboundMessage.headers.To &&
-            callSession.remotePeer === inboundMessage.headers.From
+            callSession.callId === inboundMessage.getHeader("Call-Id") &&
+            callSession.localPeer === inboundMessage.getHeader("To") &&
+            callSession.remotePeer === inboundMessage.getHeader("From")
           );
         });
         if (callSession) {
@@ -97,13 +96,14 @@ class WebPhone extends EventEmitter {
           return;
         }
         if (
-          inboundCallSession.sipMessage.headers["Alert-Info"] !== "Auto Answer"
+          inboundCallSession.sipMessage.getHeader("Alert-Info") !==
+          "Auto Answer"
         ) {
           return;
         }
         let delay = 0;
         const callInfoHeader =
-          inboundCallSession.sipMessage.headers["Call-Info"];
+          inboundCallSession.sipMessage.getHeader("Call-Info");
         if (callInfoHeader) {
           const match = callInfoHeader.match(/Answer-After=(\d+)/);
           if (match) {

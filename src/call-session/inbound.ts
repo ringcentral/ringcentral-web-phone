@@ -38,8 +38,8 @@ class InboundCallSession extends CallSession {
   public constructor(webPhone: WebPhone, inviteMessage: InboundMessage) {
     super(webPhone);
     this.sipMessage = inviteMessage;
-    this.localPeer = inviteMessage.headers.To;
-    this.remotePeer = inviteMessage.headers.From;
+    this.localPeer = inviteMessage.getHeader("To")!;
+    this.remotePeer = inviteMessage.getHeader("From")!;
     this.direction = "inbound";
     this.state = "ringing";
     this.emit("ringing");
@@ -49,11 +49,12 @@ class InboundCallSession extends CallSession {
   // p-rc-api-call-info: callAttributes=queue-call,reject;callerIdName=WIRELESS CALLER;displayInfo=queueName;displayInfoSub=callerIdName;queueName=Tyler's call queue
   // when there is no such a header, the method returns undefined
   public get rcApiCallInfo() {
-    if (!this.sipMessage.headers["p-rc-api-call-info"]) {
+    const header = this.sipMessage.getHeader("p-rc-api-call-info");
+    if (!header) {
       return undefined;
     }
     return Object.fromEntries(
-      this.sipMessage.headers["p-rc-api-call-info"]
+      header
         .split(";")
         .map((pair) => pair.trim())
         .filter(Boolean)
@@ -131,7 +132,8 @@ class InboundCallSession extends CallSession {
     if (Object.values(body).some((value) => value === undefined)) {
       throw new Error("Invalid reply options");
     }
-    const sid = RcMessage.fromXml(this.sipMessage.headers["P-rc"]).headers.SID;
+    const sid = RcMessage.fromXml(this.sipMessage.getHeader("P-rc")!).headers
+      .SID;
     await this.sendRcMessage(callControlCommands.ClientReply, body);
     return new Promise((resolve) => {
       const sessionCloseHandler = async (inboundMessage: InboundMessage) => {
@@ -193,10 +195,11 @@ class InboundCallSession extends CallSession {
     cmd: number,
     body: Record<string, string | number> = {},
   ) {
-    if (!this.sipMessage.headers["P-rc"]) {
+    const pRc = this.sipMessage.getHeader("P-rc");
+    if (!pRc) {
       return;
     }
-    const rcMessage = await RcMessage.fromXml(this.sipMessage.headers["P-rc"]);
+    const rcMessage = await RcMessage.fromXml(pRc);
     const newRcMessage = new RcMessage(
       {
         SID: rcMessage.headers.SID,

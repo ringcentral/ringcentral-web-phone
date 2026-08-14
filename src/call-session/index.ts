@@ -10,7 +10,6 @@ import {
   extractNumber,
   extractTag,
   fakeDomain,
-  getHeader,
   uuid,
 } from "../utils.js";
 import type OutboundCallSession from "./outbound.js";
@@ -70,21 +69,19 @@ class CallSession extends EventEmitter {
   // for outbound call, this._callId will be the call id. Once the call session is out of "init" state, this.sipMessage will be set
   private _callId = uuid();
   public get callId() {
-    return this.sipMessage
-      ? (getHeader(this.sipMessage.headers, "Call-Id") ?? this._callId)
-      : this._callId;
+    return this.sipMessage?.getHeader("Call-Id") ?? this._callId;
   }
 
   public get sessionId() {
-    return this.sipMessage?.headers["p-rc-api-ids"].match(
-      /session-id=(s-[0-9a-fz]+?)$/,
-    )?.[1];
+    return this.sipMessage
+      ?.getHeader("p-rc-api-ids")
+      ?.match(/session-id=(s-[0-9a-fz]+?)$/)?.[1];
   }
 
   public get partyId() {
-    return this.sipMessage?.headers["p-rc-api-ids"].match(
-      /party-id=(p-[0-9a-fz]+?-\d);/,
-    )?.[1];
+    return this.sipMessage
+      ?.getHeader("p-rc-api-ids")
+      ?.match(/party-id=(p-[0-9a-fz]+?-\d);/)?.[1];
   }
 
   public get remoteNumber(): string {

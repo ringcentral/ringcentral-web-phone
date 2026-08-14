@@ -10,7 +10,6 @@ import {
   fakeDomain,
   fakeEmail,
   generateAuthorization,
-  getHeader,
   uuid,
 } from "./utils.js";
 
@@ -124,7 +123,7 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
     };
     clearTimeout(closeHandle);
     if (!inboundMessage.subject.startsWith("SIP/2.0 200 ")) {
-      const wwwAuth = getHeader(inboundMessage.headers, "Www-Authenticate");
+      const wwwAuth = inboundMessage.getHeader("Www-Authenticate");
       if (wwwAuth) {
         const nonce =
           wwwAuth.match(/\bnonce="([^"]+)"/)?.[1] ??
@@ -143,10 +142,9 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
     }
     if (expires > 0) {
       // not for unregister
-      const serverExpiresText = getHeader(
-        inboundMessage.headers,
-        "Contact",
-      )?.match(/;expires=(\d+)/)?.[1];
+      const serverExpiresText = inboundMessage
+        .getHeader("Contact")
+        ?.match(/;expires=(\d+)/)?.[1];
       if (!serverExpiresText) {
         fail(`${inboundMessage.subject} (missing Contact expires)`);
       }
@@ -181,7 +179,7 @@ export class DefaultSipClient extends EventEmitter implements SipClient {
     return new Promise<InboundMessage>((resolve) => {
       const messageListerner = (inboundMessage: InboundMessage) => {
         if (
-          inboundMessage.headers.CSeq.trim().split(/\s+/)[0] !==
+          inboundMessage.getHeader("CSeq")!.trim().split(/\s+/)[0] !==
           message.headers.CSeq.trim().split(/\s+/)[0]
         ) {
           return;
