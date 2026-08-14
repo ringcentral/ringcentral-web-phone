@@ -18,8 +18,11 @@ class ResponseMessage extends OutboundMessage {
     super(undefined, { ...headers }, body);
     this.subject = `SIP/2.0 ${responseCode} ${responseCodes[responseCode]}`;
     for (const key of ["Via", "From", "To", "Call-Id", "CSeq"]) {
-      if (inboundMessage.headers[key]) {
-        this.headers[key] = inboundMessage.headers[key];
+      const entry = Object.entries(inboundMessage.headers).find(
+        ([headerKey]) => headerKey.toLowerCase() === key.toLowerCase(),
+      );
+      if (entry) {
+        this.headers[entry[0]] = entry[1];
       }
     }
   }

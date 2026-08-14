@@ -3,6 +3,7 @@ import InboundCallSession from "../src/call-session/inbound.js";
 import type WebPhone from "../src/index.js";
 import InboundMessage from "../src/sip-message/inbound.js";
 import SipMessage from "../src/sip-message/index.js";
+import ResponseMessage from "../src/sip-message/outbound/response.js";
 
 test("getHeader resolves a header case-insensitively and returns undefined when absent", () => {
   // Deliberately mixed wire casing, as a peer might send it.
@@ -43,6 +44,58 @@ test("getHeader resolves a header case-insensitively and returns undefined when 
   expect(message.getHeader("Content-Type")).toBeUndefined();
   expect(message.getHeader("vIA")).toBeUndefined();
   expect(message.getHeader("not-a-header")).toBeUndefined();
+});
+
+test("provisional reply echoes each echoed header under the exact wire casing the peer sent", () => {
+  // Deliberately mixed wire casing for the echoed Via/From/To/Call-Id/CSeq.
+  const raw = [
+    "INVITE sip:callee@example.com SIP/2.0",
+    "vIA: SIP/2.0/UDP 192.0.2.1:5060;branch=z9hG4bK-123",
+    "fRom: <sip:caller@example.com>;tag=abcd1234",
+    "to: <sip:callee@example.com>",
+    "call-iD: abc123@example.com",
+    "cSeQ: 1 INVITE",
+    "Content-Length: 0",
+    "",
+    "",
+  ].join("\r\n");
+
+  const inbound = InboundMessage.fromString(raw);
+  const reply = new ResponseMessage(inbound, { responseCode: 180 });
+
+  // Every echoed header keeps the peer's exact casing (key + value verbatim).
+  expect(reply.headers["vIA"]).toBe(
+    "SIP/2.0/UDP 192.0.2.1:5060;branch=z9hG4bK-123",
+  );
+  expect(reply.headers["fRom"]).toBe("<sip:caller@example.com>;tag=abcd1234");
+  expect(reply.headers["to"]).toBe("<sip:callee@example.com>");
+  expect(reply.headers["call-iD"]).toBe("abc123@example.com");
+  expect(reply.headers["cSeQ"]).toBe("1 INVITE");
+
+  // The canonical-cased keys are NOT introduced.
+  expect(reply.headers["Via"]).toBeUndefined();
+  expect(reply.headers["From"]).toBeUndefined();
+  expect(reply.headers["To"]).toBeUndefined();
+  expect(reply.headers["Call-Id"]).toBeUndefined();
+  expect(reply.headers["CSeq"]).toBeUndefined();
+});
+
+test("provisional reply still omits headers that are absent from the inbound message", () => {
+  // Inbound message has no Via/From/CSeq at all; To/Call-Id present.
+  const raw = [
+    "INVITE sip:callee@example.com SIP/2.0",
+    "to: <sip:callee@example.com>",
+    "call-id: abc123@example.com",
+    "",
+    "",
+  ].join("\r\n");
+
+  const inbound = InboundMessage.fromString(raw);
+  const reply = new ResponseMessage(inbound, { responseCode: 180 });
+
+  expect(Object.keys(reply.headers)).not.toContain("Via");
+  expect(Object.keys(reply.headers)).not.toContain("From");
+  expect(Object.keys(reply.headers)).not.toContain("CSeq");
 });
 
 test("fromString preserves exact wire casing in the public headers field", () => {
