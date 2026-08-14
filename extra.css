@@ -1,0 +1,66 @@
+:root {
+  --md-primary-fg-color: #002755;
+}
+
+.md-banner {
+  text-align: center;
+  font-weight: bold;
+  background-color: rgb(255, 122, 0);
+}
+.md-banner .upgrade-button {
+  display: inline-block;
+  border-radius: 20px;
+  padding: 3px 10px;
+  background: white;
+  margin-left: 10px;
+}
+.md-banner .md-typeset a {
+  color: rgb(122, 36, 0);
+}
+.md-typeset a {
+  color: #066fac;
+}
+
+#config-table td:first-child {
+  text-wrap: nowrap;
+}
+
+.badge {
+  font-size: 0.85em;
+  color: rgb(64, 81, 181) !important;
+  line-height: 0.9rem;
+}
+.badge .title {
+  border-top-left-radius: 0.1rem;
+  border-bottom-left-radius: 0.1rem;
+  background-color: var(--md-accent-fg-color--transparent) !important;
+  color: rgb(64, 81, 181) !important;
+  padding: 0rem;
+}
+
+.badge .value {
+  border-top-right-radius: 0.1rem;
+  border-bottom-right-radius: 0.1rem;
+  box-shadow: 0 0 0 1px inset var(--md-accent-fg-color--transparent);
+  padding: 0.2rem 0.3rem;
+  background-color: white !important;
+  color: rgb(64, 81, 181) !important;
+}
+
+.badge.version .title::before {
+  content: "\f02b";
+}
+
+.md-typeset .mdx-badge {
+  font-size: 0.85em;
+}
+
+.md-typeset .mdx-badge__icon {
+  background: var(--md-accent-fg-color--transparent);
+  padding: 0.2rem;
+}
+
+.md-typeset .mdx-badge__text {
+  box-shadow: 0 0 0 1px inset var(--md-accent-fg-color--transparent);
+  padding: 0.2rem 0.3rem;
+}
