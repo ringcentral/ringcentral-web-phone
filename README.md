@@ -647,6 +647,10 @@ network to another. Let's say you are having a call with your friend and you
 switch from WiFi network to cellular. The call will become "silent". You can
 restore the call by invoking `callSession.reInvite()`.
 
+An inbound INVITE whose Call-ID matches an existing call session is handled by
+that session as a re-INVITE, by Call-ID alone, so it never spawns a duplicate
+session.
+
 Network outage/issue/change is a big topic and we have a dedicated section for
 that. For example, if the network change, the WebSocket connection will break
 too. So, it is not as easy as invoking `callSession.reInvite()`. Please read the
