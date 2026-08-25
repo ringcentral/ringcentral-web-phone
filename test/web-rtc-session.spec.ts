@@ -568,6 +568,49 @@ test("retries a failed factory and initializes once", async () => {
   expect(calls).toBe(2);
 });
 
+test("routes a same-Call-ID inbound INVITE to a live Call Session by Call-ID alone", async () => {
+  const sipClient = new FakeSipClient();
+  const webRtcSession = new FakeWebRtcSession();
+  const webPhone = new WebPhone({
+    sipInfo,
+    sipClient,
+    webRtcSessionFactory: () => webRtcSession,
+  });
+  let inboundCalls = 0;
+  webPhone.on("inboundCall", () => {
+    inboundCalls += 1;
+  });
+
+  const firstInvite = inboundInvite();
+  const callId = firstInvite.headers["Call-Id"];
+  firstInvite.headers["Call-ID"] = callId;
+  delete firstInvite.headers["Call-Id"];
+  sipClient.emit("inboundMessage", firstInvite);
+
+  await expect.poll(() => webPhone.callSessions).toHaveLength(1);
+  await expect.poll(() => sipClient.replies).toHaveLength(2);
+  expect(inboundCalls).toBe(1);
+  expect(webPhone.callSessions[0].localPeer).toBe(firstInvite.headers.To);
+  expect(webPhone.callSessions[0].remotePeer).toBe(firstInvite.headers.From);
+  await webPhone.callSessions[0].init();
+
+  const sessionCount = webPhone.callSessions.length;
+  const differentTagInvite = inboundInvite(`v=${callId}`, callId);
+  differentTagInvite.headers.To = "<sip:100@example.com>;tag=other-local";
+  differentTagInvite.headers.From = "<sip:101@example.com>;tag=other-remote";
+  differentTagInvite.headers["Call-ID"] = callId;
+  sipClient.emit("inboundMessage", differentTagInvite);
+
+  await expect
+    .poll(() => webRtcSession.offerAnswers)
+    .toContain(differentTagInvite.body);
+  expect(webPhone.callSessions).toHaveLength(sessionCount);
+  expect(inboundCalls).toBe(1);
+  expect(webPhone.callSessions[0].callId).toBe(callId);
+  expect(webPhone.callSessions[0].localPeer).toBe(firstInvite.headers.To);
+  expect(webPhone.callSessions[0].remotePeer).toBe(firstInvite.headers.From);
+});
+
 test("preserves synchronous browser media behavior without a factory", () => {
   const webPhone = new WebPhone({ sipInfo, sipClient: new FakeSipClient() });
   const session = new CallSession(webPhone);

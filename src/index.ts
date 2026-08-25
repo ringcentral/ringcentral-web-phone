@@ -60,13 +60,12 @@ class WebPhone extends EventEmitter {
           return;
         }
 
-        // re-INVITE
+        // re-INVITE: one Call-ID maps to at most one live Call Session, so a
+        // same-Call-ID inbound INVITE is always routed by Call-ID alone to the
+        // matching session and handled as a re-INVITE, preserving that session's
+        // original dialog identity (a different To/From tag does not fork it).
         const callSession = this.callSessions.find((callSession) => {
-          return (
-            callSession.callId === inboundMessage.getHeader("Call-Id") &&
-            callSession.localPeer === inboundMessage.getHeader("To") &&
-            callSession.remotePeer === inboundMessage.getHeader("From")
-          );
+          return callSession.callId === inboundMessage.getHeader("Call-Id");
         });
         if (callSession) {
           callSession.handleReInvite(inboundMessage);
