@@ -9,7 +9,7 @@ const declineInboundCall = async (page: Page) => {
 };
 
 // after the callee declines, the SIP server does not terminate the caller's
-// outbound leg, so the caller hangs it up to clean it up
+// outbound Call Session, so the caller hangs it up to clean it up
 const hangUpOutboundCall = async (page: Page) => {
   await page.evaluate(async () => {
     await globalThis.outboundCalls[0].hangup();
@@ -52,7 +52,9 @@ testThreePages(
       if (await pageB.evaluate(() => globalThis.inboundCalls?.length > 0)) {
         break;
       }
-      await waitFor({ interval: 1000 });
+      // poll A tightly so that any unexpected inbound call fails the test
+      // immediately instead of waiting for the next one-second tick
+      await waitFor({ interval: 100 });
     }
     // wait one second, the superseded Web Phone A must remain without an
     // inbound call session
@@ -83,7 +85,7 @@ testThreePages(
     await waitForCleanup(pageA);
     await waitForCleanup(pageC);
 
-    // leg 3: the other superseded Web Phone B remains able to make outbound calls
+    // leg 3: the active Web Phone B remains able to make outbound calls
     await pageB.evaluate(
       async ({ calleeNumber, callerNumber }) => {
         await globalThis.webPhone.call(callerNumber, calleeNumber);
