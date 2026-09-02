@@ -11,3 +11,7 @@ _Avoid_: SIP dialog, call leg
 **Wire case**:
 The casing a SIP header name carries on the wire, as sent by the peer or emitted by the SDK. SIP header names are case-insensitive, so inbound headers are stored in the exact wire case received rather than being normalized; reads are case-insensitive and replies echo the wire case unchanged.
 _Avoid_: canonical case, assuming a fixed casing
+
+**Superseded Web Phone**:
+A Web Phone whose shared instance ID was subsequently registered by another Web Phone. It remains able to make outbound calls but no longer receives inbound calls for that shared instance ID.
+_Avoid_: older instance, which can be confused with object creation time
