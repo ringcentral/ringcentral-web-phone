@@ -2,10 +2,10 @@ import { autoRun, manage } from "manate";
 
 import WebPhone from "../src";
 
-globalThis.setup = async (sipInfo: string) => {
+globalThis.setup = async (sipInfo: string, instanceId?: string) => {
   const webPhone = new WebPhone({
     sipInfo: JSON.parse(sipInfo),
-    instanceId: "rc-web-phone-test-uniq-id",
+    instanceId: instanceId ?? "rc-web-phone-test-uniq-id",
     debug: true,
   });
   globalThis.webPhone = manage(webPhone);

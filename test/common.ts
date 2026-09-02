@@ -13,7 +13,7 @@ import OutboundMessage from "../src/sip-message/outbound";
 declare global {
   interface Window {
     webPhone: WebPhone;
-    setup: (jwt: string) => Promise<void>;
+    setup: (sipInfo: string, instanceId?: string) => Promise<void>;
     teardown: () => Promise<void>;
     outboundCalls: OutboundCallSession[];
     inboundCalls: InboundCallSession[];
@@ -39,11 +39,13 @@ const setupPage = async ({
   context,
   sipInfo,
   name,
+  instanceId,
   debug,
 }: {
   context: BrowserContext;
   sipInfo: string;
   name: string;
+  instanceId?: string;
   debug?: boolean;
 }) => {
   const page = await context.newPage();
@@ -76,9 +78,12 @@ const setupPage = async ({
       console.log(`\n[${name}] ${msg.text()}`);
     });
   }
-  await page.evaluate(async (sipInfo) => {
-    await globalThis.setup(sipInfo);
-  }, sipInfo);
+  await page.evaluate(
+    async ({ sipInfo, instanceId }) => {
+      await globalThis.setup(sipInfo, instanceId);
+    },
+    { sipInfo, instanceId },
+  );
   messages.length = 0;
   return { page, messages };
 };
@@ -125,6 +130,55 @@ export const testTwoPages = test.extend<{
       context,
       sipInfo: calleeSipInfo,
       name: "callee",
+      debug: false,
+    });
+    await use({ page, messages });
+    await teardownPage(page);
+  },
+});
+
+export const testThreePages = test.extend<{
+  sharedInstanceId: string;
+  phoneAResource: PageResource;
+  phoneBResource: PageResource;
+  phoneCResource: PageResource;
+}>({
+  // biome-ignore lint/correctness/noEmptyPattern: playwright requires the first fixture argument to be a destructuring pattern
+  sharedInstanceId: async ({}, use) => {
+    // unique per test run, to avoid interference from stale registrations
+    // left behind by an interrupted run
+    const sharedInstanceId = `rc-web-phone-test-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2)}`;
+    await use(sharedInstanceId);
+  },
+  phoneAResource: async ({ context, sharedInstanceId }, use) => {
+    const { page, messages } = await setupPage({
+      context,
+      sipInfo: calleeSipInfo,
+      name: "phone-a",
+      instanceId: sharedInstanceId,
+      debug: false,
+    });
+    await use({ page, messages });
+    await teardownPage(page);
+  },
+  phoneBResource: async ({ context, sharedInstanceId }, use) => {
+    const { page, messages } = await setupPage({
+      context,
+      sipInfo: calleeSipInfo,
+      name: "phone-b",
+      instanceId: sharedInstanceId,
+      debug: false,
+    });
+    await use({ page, messages });
+    await teardownPage(page);
+  },
+  phoneCResource: async ({ context }, use) => {
+    const { page, messages } = await setupPage({
+      context,
+      sipInfo: callerSipInfo,
+      name: "phone-c",
       debug: false,
     });
     await use({ page, messages });
