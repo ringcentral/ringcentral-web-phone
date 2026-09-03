@@ -460,6 +460,39 @@ test("reports an outbound final-response failure on the Call Session", async () 
   expect(webPhone.callSessions).toHaveLength(0);
 });
 
+test("handles an outbound failure returned as the authenticated INVITE response", async () => {
+  const sipClient = new FakeSipClient();
+  sipClient.requestHandler = async (message) => {
+    if (!message.headers["Proxy-Authorization"]) {
+      return new InboundMessage("SIP/2.0 407 Proxy Authentication Required", {
+        "Proxy-Authenticate": 'Digest, nonce="nonce"',
+      });
+    }
+    return new InboundMessage("SIP/2.0 486 Busy Here", {
+      Via: message.headers.Via,
+      CSeq: message.headers.CSeq,
+      From: message.headers.From,
+      To: `${message.headers.To};tag=remote`,
+      "Call-Id": message.headers["Call-Id"],
+    });
+  };
+  const webPhone = new WebPhone({
+    sipInfo,
+    sipClient,
+    webRtcSessionFactory: () => new FakeWebRtcSession(),
+  });
+
+  const session = await Promise.race([
+    webPhone.call("invalid"),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("call did not resolve")), 50),
+    ),
+  ]);
+
+  expect(session.state).toBe("disposed");
+  expect(webPhone.callSessions).toHaveLength(0);
+});
+
 test("keeps hold SDP policy in CallSession", async () => {
   const sipClient = new FakeSipClient();
   const webRtcSession = new FakeWebRtcSession();
