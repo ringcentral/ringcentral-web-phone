@@ -121,7 +121,7 @@ class WebPhone extends EventEmitter {
   public async dispose() {
     this.disposed = true;
     // properly dispose all call sessions
-    for (const callSession of this.callSessions) {
+    for (const callSession of [...this.callSessions]) {
       if (callSession.state === "answered") {
         await callSession.hangup();
       } else if (callSession.direction === "inbound") {
