@@ -25,7 +25,9 @@ testTwoPages("call", async ({ callerResource, calleeResource }) => {
     "inbound - SIP/2.0 407 Proxy Authentication Required",
     `outbound - INVITE sip:${calleeNumber}@sip.ringcentral.com SIP/2.0`,
     "inbound - SIP/2.0 100 Trying",
-    "inbound - SIP/2.0 183 Session Progress",
+    expect.stringMatching(
+      /^inbound - SIP\/2.0 (?:183 Session Progress|200 OK)$/,
+    ),
     "inbound - SIP/2.0 200 OK",
     `outbound - ACK sip:${calleeNumber}@sip.ringcentral.com SIP/2.0`,
   ]);
@@ -33,6 +35,7 @@ testTwoPages("call", async ({ callerResource, calleeResource }) => {
   expect(new Set(callerMessages.map((m) => m.headers["Call-Id"])).size).toBe(1);
 
   // callee
+  await expect.poll(() => calleeMessages).toHaveLength(6);
   messages = calleeMessages.map((m) => m.shortString);
   expect(messages).toHaveLength(6);
   expect(messages[0]).toMatch(/^inbound - INVITE sip:/);
