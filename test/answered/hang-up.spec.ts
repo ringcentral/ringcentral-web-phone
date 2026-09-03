@@ -24,13 +24,17 @@ testTwoPages("caller hang up", async ({ callerResource, calleeResource }) => {
   messages = calleeMessages.map((m) => m.shortString);
   expect(messages).toHaveLength(4);
 
-  // pay attention: sometimes we receive BYE first, sometimes we receive MESSAGE first
-  // especially, if you enable call recording, you may receive MESSAGE first
-  expect(messages[0]).toMatch(/^inbound - BYE sip:/);
-  expect(messages[1]).toMatch(/^outbound - SIP\/2.0 200 OK$/);
-  expect(messages[2]).toMatch(/^inbound - MESSAGE sip:/);
-  expect(messages[3]).toMatch(/^outbound - SIP\/2.0 200 OK$/);
-  const rcMessage = await RcMessage.fromXml(calleeMessages[2].body);
+  const byeIndex = messages.findIndex((message) =>
+    /^inbound - BYE sip:/.test(message),
+  );
+  const messageIndex = messages.findIndex((message) =>
+    /^inbound - MESSAGE sip:/.test(message),
+  );
+  expect(byeIndex).toBeGreaterThanOrEqual(0);
+  expect(messageIndex).toBeGreaterThanOrEqual(0);
+  expect(messages[byeIndex + 1]).toMatch(/^outbound - SIP\/2.0 200 OK$/);
+  expect(messages[messageIndex + 1]).toMatch(/^outbound - SIP\/2.0 200 OK$/);
+  const rcMessage = await RcMessage.fromXml(calleeMessages[messageIndex].body);
   expect(rcMessage.headers.Cmd).toBe(
     callControlCommands.ServerFreeResources.toString(),
   );
