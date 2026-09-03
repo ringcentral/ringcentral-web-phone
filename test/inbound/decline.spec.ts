@@ -18,6 +18,7 @@ testTwoPages(
     await assertCallCount(callerPage, 1);
 
     // callee
+    await expect.poll(() => calleeMessages).toHaveLength(7);
     const messages = calleeMessages.map((m) => m.shortString);
     expect(messages).toHaveLength(7);
     expect(
