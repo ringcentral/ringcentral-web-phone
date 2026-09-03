@@ -18,16 +18,17 @@ testTwoPages("call", async ({ callerResource, calleeResource }) => {
 
   // caller
   let messages = callerMessages.map((m) => m.shortString);
-  expect(messages).toHaveLength(8);
+  const sessionProgress =
+    messages[5] === "inbound - SIP/2.0 183 Session Progress"
+      ? [messages[5]]
+      : [];
   expect(messages).toEqual([
     `outbound - INVITE sip:${calleeNumber}@sip.ringcentral.com SIP/2.0`,
     "inbound - SIP/2.0 100 Trying",
     "inbound - SIP/2.0 407 Proxy Authentication Required",
     `outbound - INVITE sip:${calleeNumber}@sip.ringcentral.com SIP/2.0`,
     "inbound - SIP/2.0 100 Trying",
-    expect.stringMatching(
-      /^inbound - SIP\/2.0 (?:183 Session Progress|200 OK)$/,
-    ),
+    ...sessionProgress,
     "inbound - SIP/2.0 200 OK",
     `outbound - ACK sip:${calleeNumber}@sip.ringcentral.com SIP/2.0`,
   ]);

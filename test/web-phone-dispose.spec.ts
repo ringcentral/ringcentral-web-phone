@@ -155,7 +155,7 @@ test("disposes all three Call Sessions when the Web Phone is disposed while term
     autoAnswer: false,
     webRtcSessionFactory: () => new FakeWebRtcSession(),
   });
-  const teardown: string[] = [];
+  const teardown = sipClient.teardown;
 
   sipClient.emit("inboundMessage", inboundInvite("answered-call"));
   await expect.poll(() => sipClient.requests).toHaveLength(1);
