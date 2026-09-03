@@ -29,9 +29,13 @@ testTwoPages("warm transfer", async ({ callerResource, calleeResource }) => {
   await assertCallCount(callerPage, 1);
 
   // callee
-  calleeMessages.splice(0, 4); // 4 messages is for hold
-  calleeMessages.splice(0, 8); // 8 message is for outbound call
-  const messages = calleeMessages.map((m) => m.shortString);
+  const referIndex = calleeMessages.findIndex((message) =>
+    /^outbound - REFER sip:/.test(message.shortString),
+  );
+  expect(referIndex).toBeGreaterThanOrEqual(0);
+  const messages = calleeMessages
+    .slice(referIndex)
+    .map((message) => message.shortString);
   expect(messages).toHaveLength(10);
   expect(messages[0]).toMatch(/^outbound - REFER sip:/);
   expect(messages[1]).toMatch(/^inbound - SIP\/2.0 202 Accepted$/);

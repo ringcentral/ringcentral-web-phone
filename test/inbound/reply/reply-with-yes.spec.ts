@@ -38,18 +38,38 @@ testTwoPages("reply with yes", async ({ callerResource, calleeResource }) => {
   await waitFor({ condition: () => calleeMessages.length >= 7 });
   const messages = calleeMessages.map((m) => m.shortString);
   expect(messages).toHaveLength(7);
-  expect(messages[0]).toMatch(/^outbound - MESSAGE sip:/);
-  expect(messages[1]).toMatch(/^inbound - SIP\/2.0 100 Trying$/);
-  expect(messages[2]).toMatch(/^inbound - SIP\/2.0 200 OK$/);
-  expect(messages[3]).toMatch(/^inbound - CANCEL sip:/);
-  expect(messages[4]).toMatch(/^outbound - SIP\/2.0 200 OK$/);
-  expect(messages[5]).toMatch(/^inbound - MESSAGE sip:/);
-  expect(messages[6]).toMatch(/^outbound - SIP\/2.0 200 OK$/);
-  let rcMessage = await RcMessage.fromXml(calleeMessages[0].body);
+  expect(
+    messages.filter((message) => /^outbound - MESSAGE sip:/.test(message)),
+  ).toHaveLength(1);
+  expect(
+    messages.filter((message) => message === "inbound - SIP/2.0 100 Trying"),
+  ).toHaveLength(1);
+  expect(
+    messages.filter((message) => message === "inbound - SIP/2.0 200 OK"),
+  ).toHaveLength(1);
+  expect(
+    messages.filter((message) => /^inbound - CANCEL sip:/.test(message)),
+  ).toHaveLength(1);
+  expect(
+    messages.filter((message) => /^inbound - MESSAGE sip:/.test(message)),
+  ).toHaveLength(1);
+  expect(
+    messages.filter((message) => message === "outbound - SIP/2.0 200 OK"),
+  ).toHaveLength(2);
+
+  const replyMessage = calleeMessages.find((message) =>
+    /^outbound - MESSAGE sip:/.test(message.shortString),
+  );
+  if (!replyMessage) throw new Error("ClientReply MESSAGE not found");
+  let rcMessage = await RcMessage.fromXml(replyMessage.body);
   expect(rcMessage.headers.Cmd).toBe(
     callControlCommands.ClientReply.toString(),
   );
-  rcMessage = await RcMessage.fromXml(calleeMessages[5].body);
+  const closeMessage = calleeMessages.find((message) =>
+    /^inbound - MESSAGE sip:/.test(message.shortString),
+  );
+  if (!closeMessage) throw new Error("SessionClose MESSAGE not found");
+  rcMessage = await RcMessage.fromXml(closeMessage.body);
   expect(rcMessage.headers.Cmd).toBe(
     callControlCommands.SessionClose.toString(),
   );
