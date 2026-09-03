@@ -555,7 +555,8 @@ class CallSession extends EventEmitter {
         "Referred-By": `<${extractAddress(this.localPeer)}>`,
       },
     );
-    let timeoutId: ReturnType<typeof setTimeout>;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    let settled = false;
     let resolveTransfer!: () => void;
     let rejectTransfer!: (error: Error) => void;
     const transferCompleted = new Promise<void>((resolve, reject) => {
@@ -566,25 +567,28 @@ class CallSession extends EventEmitter {
     // otherwise an early BYE could be missed
     const handler = (inboundMessage: InboundMessage) => {
       if (inboundMessage.subject.startsWith("BYE sip:")) {
+        settled = true;
         clearTimeout(timeoutId);
         this.off("inboundMessage", handler);
         resolveTransfer();
       }
     };
     this.on("inboundMessage", handler);
-    // wait for the final SIP message
-    timeoutId = setTimeout(() => {
-      this.off("inboundMessage", handler);
-      rejectTransfer(
-        new Error(
-          `"REFER ${extractAddress(
-            this.remotePeer,
-          )} SIP/2.0" request timed out. It often means either you don't have permission or the call is not in a correct state.`,
-        ),
-      );
-    }, timeout);
     try {
       await this.webPhone.sipClient.request(requestMessage);
+      // wait for the final SIP message
+      if (!settled) {
+        timeoutId = setTimeout(() => {
+          this.off("inboundMessage", handler);
+          rejectTransfer(
+            new Error(
+              `"REFER ${extractAddress(
+                this.remotePeer,
+              )} SIP/2.0" request timed out. It often means either you don't have permission or the call is not in a correct state.`,
+            ),
+          );
+        }, timeout);
+      }
       return await transferCompleted;
     } catch (error) {
       clearTimeout(timeoutId);
