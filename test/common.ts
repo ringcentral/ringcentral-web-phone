@@ -21,6 +21,7 @@ declare global {
       complete: () => Promise<void>;
       cancel: () => Promise<void>;
     };
+    consultationSession: OutboundCallSession;
   }
 }
 
