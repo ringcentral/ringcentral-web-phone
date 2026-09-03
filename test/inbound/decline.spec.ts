@@ -19,29 +19,42 @@ testTwoPages(
 
     // callee
     const messages = calleeMessages.map((m) => m.shortString);
-    expect(messages.length >= 5).toBe(true);
-    expect(messages[0]).toMatch(/^outbound - MESSAGE sip:/);
-    expect(messages[1]).toMatch(/^inbound - SIP\/2.0 100 Trying$/);
-    expect(messages[2]).toMatch(/^inbound - SIP\/2.0 200 OK$/);
-    // expect(messages[5]).toMatch(/^inbound - MESSAGE sip:/);
-    // expect(messages[6]).toMatch(/^outbound - SIP\/2.0 200 OK$/);
-    // expect(messages[3]).toMatch(/^inbound - CANCEL sip:/);
-    // expect(messages[4]).toMatch(/^outbound - SIP\/2.0 200 OK$/);
-    const rcMessage = await RcMessage.fromXml(calleeMessages[0].body);
-    expect(rcMessage.headers.Cmd).toBe(
+    expect(messages).toHaveLength(7);
+    expect(
+      messages.filter((m) => /^outbound - MESSAGE sip:/.test(m)),
+    ).toHaveLength(1);
+    expect(
+      messages.filter((m) => m === "inbound - SIP/2.0 100 Trying"),
+    ).toHaveLength(1);
+    expect(
+      messages.filter((m) => m === "inbound - SIP/2.0 200 OK"),
+    ).toHaveLength(1);
+    expect(
+      messages.filter((m) => /^inbound - CANCEL sip:/.test(m)),
+    ).toHaveLength(1);
+    expect(
+      messages.filter((m) => /^inbound - MESSAGE sip:/.test(m)),
+    ).toHaveLength(1);
+    expect(
+      messages.filter((m) => m === "outbound - SIP/2.0 200 OK"),
+    ).toHaveLength(2);
+
+    const rejectMessage = calleeMessages.find((message) =>
+      /^outbound - MESSAGE sip:/.test(message.shortString),
+    );
+    if (!rejectMessage) throw new Error("ClientReject MESSAGE not found");
+    const rejectRcMessage = await RcMessage.fromXml(rejectMessage.body);
+    expect(rejectRcMessage.headers.Cmd).toBe(
       callControlCommands.ClientReject.toString(),
     );
-    const hasCancel = messages.slice(3).some((msg) => {
-      if (msg.match(/^inbound - CANCEL sip:/)) {
-        return true;
-      }
-      return false;
-    });
-    expect(hasCancel).toBe(true);
-    // rcMessage = await RcMessage.fromXml(calleeMessages[5].body);
-    // expect(rcMessage.headers.Cmd).toBe(
-    //   callControlCommands.SessionClose.toString(),
-    // );
+    const releaseMessage = calleeMessages.find((message) =>
+      /^inbound - MESSAGE sip:/.test(message.shortString),
+    );
+    if (!releaseMessage) throw new Error("SessionClose MESSAGE not found");
+    const closeRcMessage = await RcMessage.fromXml(releaseMessage.body);
+    expect(closeRcMessage.headers.Cmd).toBe(
+      callControlCommands.SessionClose.toString(),
+    );
     await assertCallCount(calleePage, 0);
   },
 );
