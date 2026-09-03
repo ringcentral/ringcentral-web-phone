@@ -353,6 +353,62 @@ test("correlates JSON command results on the Call Session", async () => {
   await expect(resultPromise).resolves.toEqual({ code: 0, description: "0" });
 });
 
+test("completes a JSON command on an early result INFO before the INFO response", async () => {
+  const sipClient = new FakeSipClient();
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const session = new InboundCallSession(webPhone, inboundInvite());
+  webPhone.callSessions.push(session);
+  sipClient.requestHandler = async (message) => {
+    if (message.subject.startsWith("INFO ")) {
+      const request = JSON.parse(message.body).request;
+      sipClient.emit(
+        "inboundMessage",
+        new InboundMessage(
+          "INFO sip:100@example.com SIP/2.0",
+          { CSeq: "2 INFO", "Call-Id": "other-call" },
+          JSON.stringify({
+            response: {
+              reqid: request.reqid,
+              command: request.command,
+              result: { code: 1, description: "1" },
+            },
+          }),
+        ),
+      );
+      sipClient.emit(
+        "inboundMessage",
+        new InboundMessage(
+          "INFO sip:100@example.com SIP/2.0",
+          { CSeq: "3 INFO", "Call-Id": session.callId },
+          JSON.stringify({
+            response: {
+              reqid: request.reqid,
+              command: request.command,
+              result: { code: 0, description: "0" },
+            },
+          }),
+        ),
+      );
+    }
+    return new InboundMessage("SIP/2.0 200 OK", {
+      Via: message.headers.Via,
+      CSeq: message.headers.CSeq,
+    });
+  };
+
+  let commandResult: { code: number; description: string } | undefined;
+  const result = await Promise.race([
+    session.startRecording().then((startRecordingResult) => {
+      commandResult = startRecordingResult;
+      return "resolved";
+    }),
+    new Promise((resolve) => setTimeout(() => resolve("timeout"), 50)),
+  ]);
+
+  expect(result).toBe("resolved");
+  expect(commandResult).toEqual({ code: 0, description: "0" });
+});
+
 test("completes and times out transfers on the Call Session", async () => {
   const sipClient = new FakeSipClient();
   const webPhone = new WebPhone({ sipInfo, sipClient });
@@ -391,6 +447,40 @@ test("completes and times out transfers on the Call Session", async () => {
   await expect(timedOut.transfer("102", 1)).rejects.toThrow("timed out");
 });
 
+test("completes a transfer on an early BYE before the REFER response", async () => {
+  const sipClient = new FakeSipClient();
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const session = new InboundCallSession(webPhone, inboundInvite());
+  webPhone.callSessions.push(session);
+  sipClient.requestHandler = async (message) => {
+    if (message.subject.startsWith("REFER ")) {
+      sipClient.emit(
+        "inboundMessage",
+        new InboundMessage("BYE sip:100@example.com SIP/2.0", {
+          CSeq: "2 BYE",
+          "Call-Id": "other-call",
+        }),
+      );
+      sipClient.emit(
+        "inboundMessage",
+        new InboundMessage("BYE sip:100@example.com SIP/2.0", {
+          CSeq: "3 BYE",
+          "Call-Id": session.callId,
+        }),
+      );
+    }
+    return new InboundMessage("SIP/2.0 200 OK", {
+      Via: message.headers.Via,
+      CSeq: message.headers.CSeq,
+    });
+  };
+
+  await session.transfer("102", 50);
+
+  expect(session.state).toBe("disposed");
+  expect(webPhone.callSessions).toEqual([]);
+});
+
 test("completes inbound forward on the Call Session CANCEL", async () => {
   const sipClient = new FakeSipClient();
   const webPhone = new WebPhone({ sipInfo, sipClient });
@@ -418,6 +508,44 @@ test("completes inbound forward on the Call Session CANCEL", async () => {
     }),
   );
   await forward;
+  expect(session.state).toBe("disposed");
+  expect(webPhone.callSessions).toEqual([]);
+});
+
+test("completes inbound forward on an early CANCEL before the response", async () => {
+  const sipClient = new FakeSipClient();
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const session = new InboundCallSession(webPhone, inboundInvite());
+  webPhone.callSessions.push(session);
+  sipClient.requestHandler = async (message) => {
+    if (message.subject.startsWith("MESSAGE ")) {
+      sipClient.emit(
+        "inboundMessage",
+        new InboundMessage("CANCEL sip:100@example.com SIP/2.0", {
+          CSeq: "2 CANCEL",
+          "Call-Id": "other-call",
+        }),
+      );
+      sipClient.emit(
+        "inboundMessage",
+        new InboundMessage("CANCEL sip:100@example.com SIP/2.0", {
+          CSeq: "3 CANCEL",
+          "Call-Id": session.callId,
+        }),
+      );
+    }
+    return new InboundMessage("SIP/2.0 200 OK", {
+      Via: message.headers.Via,
+      CSeq: message.headers.CSeq,
+    });
+  };
+
+  const result = await Promise.race([
+    session.forward("102").then(() => "resolved"),
+    new Promise((resolve) => setTimeout(() => resolve("timeout"), 50)),
+  ]);
+
+  expect(result).toBe("resolved");
   expect(session.state).toBe("disposed");
   expect(webPhone.callSessions).toEqual([]);
 });

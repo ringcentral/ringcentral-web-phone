@@ -509,25 +509,35 @@ class CallSession extends EventEmitter {
       },
       jsonBody,
     );
-    await this.webPhone.sipClient.request(requestMessage);
-    return new Promise<T>((resolve) => {
-      const resultHandler = (inboundMessage: InboundMessage) => {
-        if (!inboundMessage.subject.startsWith("INFO sip:")) {
-          return;
-        }
-        const response = JSON.parse(inboundMessage.body).response;
-        if (
-          !response ||
-          response.reqid !== reqid ||
-          response.command !== command
-        ) {
-          return;
-        }
-        this.off("inboundMessage", resultHandler);
-        resolve(response.result);
-      };
-      this.on("inboundMessage", resultHandler);
+    let resolveResult!: (result: T) => void;
+    const resultReply = new Promise<T>((resolve) => {
+      resolveResult = resolve;
     });
+    // register the completion listener before sending the request,
+    // otherwise an early command result could be missed
+    const resultHandler = (inboundMessage: InboundMessage) => {
+      if (!inboundMessage.subject.startsWith("INFO sip:")) {
+        return;
+      }
+      const response = JSON.parse(inboundMessage.body).response;
+      if (
+        !response ||
+        response.reqid !== reqid ||
+        response.command !== command
+      ) {
+        return;
+      }
+      this.off("inboundMessage", resultHandler);
+      resolveResult(response.result);
+    };
+    this.on("inboundMessage", resultHandler);
+    try {
+      await this.webPhone.sipClient.request(requestMessage);
+      return await resultReply;
+    } catch (error) {
+      this.off("inboundMessage", resultHandler);
+      throw error;
+    }
   }
 
   protected async _transfer(
@@ -545,30 +555,42 @@ class CallSession extends EventEmitter {
         "Referred-By": `<${extractAddress(this.localPeer)}>`,
       },
     );
-    await this.webPhone.sipClient.request(requestMessage);
-
-    // wait for the final SIP message
     let timeoutId: ReturnType<typeof setTimeout>;
-    return new Promise<void>((resolve, reject) => {
-      const handler = (inboundMessage: InboundMessage) => {
-        if (inboundMessage.subject.startsWith("BYE sip:")) {
-          clearTimeout(timeoutId);
-          this.off("inboundMessage", handler);
-          resolve();
-        }
-      };
-      timeoutId = setTimeout(() => {
-        this.off("inboundMessage", handler);
-        reject(
-          new Error(
-            `"REFER ${extractAddress(
-              this.remotePeer,
-            )} SIP/2.0" request timed out. It often means either you don't have permission or the call is not in a correct state.`,
-          ),
-        );
-      }, timeout);
-      this.on("inboundMessage", handler);
+    let resolveTransfer!: () => void;
+    let rejectTransfer!: (error: Error) => void;
+    const transferCompleted = new Promise<void>((resolve, reject) => {
+      resolveTransfer = resolve;
+      rejectTransfer = reject;
     });
+    // register the completion listener before sending the request,
+    // otherwise an early BYE could be missed
+    const handler = (inboundMessage: InboundMessage) => {
+      if (inboundMessage.subject.startsWith("BYE sip:")) {
+        clearTimeout(timeoutId);
+        this.off("inboundMessage", handler);
+        resolveTransfer();
+      }
+    };
+    this.on("inboundMessage", handler);
+    // wait for the final SIP message
+    timeoutId = setTimeout(() => {
+      this.off("inboundMessage", handler);
+      rejectTransfer(
+        new Error(
+          `"REFER ${extractAddress(
+            this.remotePeer,
+          )} SIP/2.0" request timed out. It often means either you don't have permission or the call is not in a correct state.`,
+        ),
+      );
+    }, timeout);
+    try {
+      await this.webPhone.sipClient.request(requestMessage);
+      return await transferCompleted;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      this.off("inboundMessage", handler);
+      throw error;
+    }
   }
 }
 

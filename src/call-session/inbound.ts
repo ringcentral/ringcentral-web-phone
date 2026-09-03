@@ -102,21 +102,31 @@ class InboundCallSession extends CallSession {
   }
 
   public async forward(target: string) {
-    await this.sendRcMessage(callControlCommands.ClientForward, {
-      FwdDly: "0",
-      Phn: target,
-      PhnTp: "3",
+    let resolveForward!: () => void;
+    const forwardReply = new Promise<void>((resolve) => {
+      resolveForward = resolve;
     });
-    // wait for the final SIP message
-    return new Promise<void>((resolve) => {
-      const handler = (inboundMessage: InboundMessage) => {
-        if (inboundMessage.subject.startsWith("CANCEL sip:")) {
-          this.off("inboundMessage", handler);
-          resolve();
-        }
-      };
-      this.on("inboundMessage", handler);
-    });
+    // register the completion listener before sending the request,
+    // otherwise an early CANCEL could be missed
+    const handler = (inboundMessage: InboundMessage) => {
+      if (inboundMessage.subject.startsWith("CANCEL sip:")) {
+        this.off("inboundMessage", handler);
+        resolveForward();
+      }
+    };
+    this.on("inboundMessage", handler);
+    try {
+      await this.sendRcMessage(callControlCommands.ClientForward, {
+        FwdDly: "0",
+        Phn: target,
+        PhnTp: "3",
+      });
+      // wait for the final SIP message
+      await forwardReply;
+    } catch (error) {
+      this.off("inboundMessage", handler);
+      throw error;
+    }
   }
 
   public async startReply() {
@@ -141,24 +151,34 @@ class InboundCallSession extends CallSession {
     }
     const sid = RcMessage.fromXml(this.sipMessage.getHeader("P-rc")!).headers
       .SID;
-    await this.sendRcMessage(callControlCommands.ClientReply, body);
-    return new Promise((resolve) => {
-      const sessionCloseHandler = async (inboundMessage: InboundMessage) => {
-        if (inboundMessage.subject.startsWith("MESSAGE sip:")) {
-          const rcMessage = await RcMessage.fromXml(inboundMessage.body);
-          if (
-            rcMessage.headers.Cmd ===
-              callControlCommands.SessionClose.toString() &&
-            rcMessage.headers.SID === sid
-          ) {
-            this.webPhone.sipClient.off("inboundMessage", sessionCloseHandler);
-            resolve(rcMessage);
-            // no need to dispose session here, session will dispose unpon CANCEL or BYE
-          }
-        }
-      };
-      this.webPhone.sipClient.on("inboundMessage", sessionCloseHandler);
+    let resolveReply!: (rcMessage: RcMessage) => void;
+    const replyResult = new Promise<RcMessage>((resolve) => {
+      resolveReply = resolve;
     });
+    // register the completion listener before sending the request,
+    // otherwise an early SessionClose could be missed
+    const sessionCloseHandler = async (inboundMessage: InboundMessage) => {
+      if (inboundMessage.subject.startsWith("MESSAGE sip:")) {
+        const rcMessage = await RcMessage.fromXml(inboundMessage.body);
+        if (
+          rcMessage.headers.Cmd ===
+            callControlCommands.SessionClose.toString() &&
+          rcMessage.headers.SID === sid
+        ) {
+          this.webPhone.sipClient.off("inboundMessage", sessionCloseHandler);
+          resolveReply(rcMessage);
+          // no need to dispose session here, session will dispose unpon CANCEL or BYE
+        }
+      }
+    };
+    this.webPhone.sipClient.on("inboundMessage", sessionCloseHandler);
+    try {
+      await this.sendRcMessage(callControlCommands.ClientReply, body);
+      return await replyResult;
+    } catch (error) {
+      this.webPhone.sipClient.off("inboundMessage", sessionCloseHandler);
+      throw error;
+    }
   }
 
   public async answer() {

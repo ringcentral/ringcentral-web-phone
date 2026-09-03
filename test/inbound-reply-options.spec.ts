@@ -151,6 +151,37 @@ test("decline observes a CANCEL reply sent before the reject response", async ()
   expect(result).toBe("resolved");
 });
 
+test("reply observes a SessionClose sent before the reply response", async () => {
+  const { session, sipClient } = createSession();
+  sipClient.request = async (message) => {
+    sipClient.requests.push(message);
+    sipClient.emit(
+      "inboundMessage",
+      sessionCloseMessage("other-call", "other-sid", "complete"),
+    );
+    sipClient.emit(
+      "inboundMessage",
+      sessionCloseMessage("call-id", "sid", "complete"),
+    );
+    return new InboundMessage("SIP/2.0 200 OK", {
+      CSeq: message.headers.CSeq,
+    });
+  };
+
+  let replyResult: RcMessage | undefined;
+  const result = await Promise.race([
+    session.reply("Custom reply").then((rcMessage) => {
+      replyResult = rcMessage;
+      return "resolved";
+    }),
+    new Promise((resolve) => setTimeout(() => resolve("timeout"), 50)),
+  ]);
+
+  expect(result).toBe("resolved");
+  expect(replyResult?.headers.Cmd).toBe("9");
+  expect(replyResult?.body.Sts).toBe("complete");
+});
+
 const checkReplyTypes = (session: InboundCallSession) => {
   session.reply("Custom reply");
   session.reply({
