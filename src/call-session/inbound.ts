@@ -78,20 +78,27 @@ class InboundCallSession extends CallSession {
   }
 
   private async sendAndWaitForCancel(cmd: number) {
-    await this.sendRcMessage(cmd);
-    // wait for outbound reply to CANCEL
-    return new Promise<void>((resolve) => {
-      const handler = (outboundMessage: OutboundMessage) => {
-        if (
-          outboundMessage.headers["Call-Id"] === this.callId &&
-          outboundMessage.headers.CSeq.endsWith(" CANCEL")
-        ) {
-          this.webPhone.sipClient.off("outboundMessage", handler);
-          resolve();
-        }
-      };
-      this.webPhone.sipClient.on("outboundMessage", handler);
+    const handler = (outboundMessage: OutboundMessage) => {
+      if (
+        outboundMessage.headers["Call-Id"] === this.callId &&
+        outboundMessage.headers.CSeq.endsWith(" CANCEL")
+      ) {
+        this.webPhone.sipClient.off("outboundMessage", handler);
+        resolveCancel();
+      }
+    };
+    let resolveCancel!: () => void;
+    const cancelReply = new Promise<void>((resolve) => {
+      resolveCancel = resolve;
     });
+    this.webPhone.sipClient.on("outboundMessage", handler);
+    try {
+      await this.sendRcMessage(cmd);
+      await cancelReply;
+    } catch (error) {
+      this.webPhone.sipClient.off("outboundMessage", handler);
+      throw error;
+    }
   }
 
   public async forward(target: string) {

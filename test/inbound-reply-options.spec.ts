@@ -7,7 +7,7 @@ import WebPhone from "../src/index.js";
 import RcMessage from "../src/rc-message/rc-message.js";
 import InboundMessage from "../src/sip-message/inbound.js";
 import type RequestMessage from "../src/sip-message/outbound/request.js";
-import type ResponseMessage from "../src/sip-message/outbound/response.js";
+import ResponseMessage from "../src/sip-message/outbound/response.js";
 import type { SipClient, SipInfo } from "../src/types.js";
 
 const sipInfo: SipInfo = {
@@ -124,6 +124,31 @@ test("reply rejects invalid options before sending", async () => {
     );
     expect(sipClient.requests).toHaveLength(0);
   }
+});
+
+test("decline observes a CANCEL reply sent before the reject response", async () => {
+  const { session, sipClient } = createSession();
+  sipClient.request = async (message) => {
+    sipClient.requests.push(message);
+    const cancel = new InboundMessage("CANCEL sip:100@example.com SIP/2.0", {
+      CSeq: "2 CANCEL",
+      "Call-Id": "call-id",
+    });
+    sipClient.emit(
+      "outboundMessage",
+      new ResponseMessage(cancel, { responseCode: 200 }),
+    );
+    return new InboundMessage("SIP/2.0 200 OK", {
+      CSeq: message.headers.CSeq,
+    });
+  };
+
+  const result = await Promise.race([
+    session.decline().then(() => "resolved"),
+    new Promise((resolve) => setTimeout(() => resolve("timeout"), 50)),
+  ]);
+
+  expect(result).toBe("resolved");
 });
 
 const checkReplyTypes = (session: InboundCallSession) => {
