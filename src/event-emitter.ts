@@ -1,59 +1,81 @@
+// deno-lint-ignore no-explicit-any
+type Listener = (...args: any[]) => void;
+
+// One registration of a listener on an event. Persistent and one-time
+// listeners share a single list per event so that they are invoked in
+// overall registration order.
+interface Registration {
+  // The original callback. It is what off() matches against, so consumers
+  // can remove a registration without knowing about any wrapper.
+  listener: Listener;
+  // For a one-time registration: the wrapper actually invoked by emit().
+  // It consumes the registration before invoking the original callback, so
+  // a re-entrant emission cannot invoke it again, and a throwing callback
+  // stays removed. Undefined for a persistent registration.
+  wrapper?: Listener;
+}
+
 class EventEmitter {
-  // deno-lint-ignore no-explicit-any
-  private listeners = new Map<string, ((...args: any[]) => void)[]>();
+  private listeners = new Map<string, Registration[]>();
 
-  // This is used to store temporary listeners that are only called once
-  // deno-lint-ignore no-explicit-any
-  private tempListeners = new Map<string, ((...args: any[]) => void)[]>();
-
-  // deno-lint-ignore no-explicit-any
-  public on(eventName: string, listener: (...args: any[]) => void) {
-    if (!this.listeners.has(eventName)) {
-      this.listeners.set(eventName, []);
-    }
-    this.listeners.get(eventName)?.push(listener);
+  public on(eventName: string, listener: Listener) {
+    this.getOrCreateList(eventName).push({ listener });
   }
 
-  // deno-lint-ignore no-explicit-any
-  public once(eventName: string, listener: (...args: any[]) => void) {
-    if (!this.tempListeners.has(eventName)) {
-      this.tempListeners.set(eventName, []);
-    }
-    this.tempListeners.get(eventName)?.push(listener);
+  public once(eventName: string, listener: Listener) {
+    const registration: Registration = { listener };
+    // deno-lint-ignore no-explicit-any
+    registration.wrapper = (...args: any[]) => {
+      this.remove(eventName, registration);
+      listener(...args);
+    };
+    this.getOrCreateList(eventName).push(registration);
   }
 
-  // deno-lint-ignore no-explicit-any
-  public off(eventName: string, listener: (...args: any[]) => void) {
-    let list = this.listeners.get(eventName);
+  public off(eventName: string, listener: Listener) {
+    const list = this.listeners.get(eventName);
     if (list) {
       this.listeners.set(
         eventName,
-        list.filter((l) => l !== listener),
-      );
-    }
-    list = this.tempListeners.get(eventName);
-    if (list) {
-      this.tempListeners.set(
-        eventName,
-        list.filter((l) => l !== listener),
+        list.filter((registration) => registration.listener !== listener),
       );
     }
   }
 
-  // deno-lint-ignore no-explicit-any
   public emit(eventName: string, ...args: any[]) {
-    (this.listeners.get(eventName) ?? []).forEach((listener) => {
-      listener(...args);
-    });
-    (this.tempListeners.get(eventName) ?? []).forEach((listener) => {
-      listener(...args);
-    });
-    this.tempListeners.delete(eventName);
+    const list = this.listeners.get(eventName);
+    if (!list) {
+      return;
+    }
+    // Iterate a snapshot: listeners may add or remove registrations (or
+    // emit re-entrantly) during this emission.
+    for (const registration of [...list]) {
+      (registration.wrapper ?? registration.listener)(...args);
+    }
   }
 
   public removeAllListeners() {
     this.listeners.clear();
-    this.tempListeners.clear();
+  }
+
+  private getOrCreateList(eventName: string): Registration[] {
+    let list = this.listeners.get(eventName);
+    if (!list) {
+      list = [];
+      this.listeners.set(eventName, list);
+    }
+    return list;
+  }
+
+  private remove(eventName: string, registration: Registration) {
+    const list = this.listeners.get(eventName);
+    if (!list) {
+      return;
+    }
+    const index = list.indexOf(registration);
+    if (index !== -1) {
+      list.splice(index, 1);
+    }
   }
 }
 
