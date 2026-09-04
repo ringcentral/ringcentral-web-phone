@@ -39,6 +39,20 @@ test("a re-entrant emission does not re-invoke a consumed one-time registration"
   expect(calls).toEqual(["persistent", "one-time", "persistent"]);
 });
 
+test("a once() callback re-reached by a nested emission from an earlier once() callback runs exactly once", () => {
+  const emitter = new EventEmitter();
+  const calls: string[] = [];
+  emitter.once("event", () => {
+    calls.push("first");
+    emitter.emit("event");
+  });
+  emitter.once("event", () => {
+    calls.push("second");
+  });
+  emitter.emit("event");
+  expect(calls).toEqual(["first", "second"]);
+});
+
 test("a throwing once() callback propagates its original error and remains removed", () => {
   const emitter = new EventEmitter();
   const boom = new Error("boom");

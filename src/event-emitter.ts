@@ -24,8 +24,16 @@ class EventEmitter {
 
   public once(eventName: string, listener: Listener) {
     const registration: Registration = { listener };
+    // Guards against invoking the same one-time registration twice when an
+    // emission triggered inside a listener reaches it again through the
+    // snapshot of an outer emission.
+    let fired = false;
     // deno-lint-ignore no-explicit-any
     registration.wrapper = (...args: any[]) => {
+      if (fired) {
+        return;
+      }
+      fired = true;
       this.remove(eventName, registration);
       listener(...args);
     };
