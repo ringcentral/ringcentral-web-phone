@@ -104,7 +104,8 @@ class WebPhone extends EventEmitter {
         if (callInfoHeader) {
           const match = callInfoHeader.match(/Answer-After=(\d+)/);
           if (match) {
-            delay = parseInt(match[1], 10); // Convert the captured value to an integer
+            // Answer-After is measured in seconds, the timeout is in milliseconds
+            delay = parseInt(match[1], 10) * 1000;
           }
         }
         setTimeout(() => {

@@ -550,6 +550,64 @@ test("completes inbound forward on an early CANCEL before the response", async (
   expect(webPhone.callSessions).toEqual([]);
 });
 
+const autoAnswerInvite = (callId: string, callInfo: string) => {
+  const invite = inboundInvite(REMOTE_OFFER, callId);
+  invite.headers["Alert-Info"] = "Auto Answer";
+  invite.headers["Call-Info"] = callInfo;
+  return invite;
+};
+
+for (const [answerAfter, expectedDelay] of [
+  ["2", 2000],
+  ["0", 0],
+] as const) {
+  test(`auto-answers Answer-After=${answerAfter} as seconds (delay ${expectedDelay}ms)`, async () => {
+    const sipClient = new FakeSipClient();
+    const webRtcSession = new FakeWebRtcSession();
+    const webPhone = new WebPhone({
+      sipInfo,
+      sipClient,
+      webRtcSessionFactory: () => webRtcSession,
+    });
+
+    const captured: Array<{ callback: () => void; delay: number }> = [];
+    const originalSetTimeout = globalThis.setTimeout;
+    globalThis.setTimeout = ((callback: () => void, delay?: number) => {
+      captured.push({ callback, delay: delay ?? 0 });
+      return 0 as unknown as ReturnType<typeof setTimeout>;
+    }) as unknown as typeof setTimeout;
+    try {
+      sipClient.emit(
+        "inboundMessage",
+        autoAnswerInvite(
+          `auto-answer-${answerAfter}-call`,
+          `<224981555_132089748@example.com>;purpose=info;Answer-After=${answerAfter}`,
+        ),
+      );
+      while (captured.length === 0 || sipClient.replies.length < 2) {
+        await new Promise((resolve) => originalSetTimeout(resolve));
+      }
+    } finally {
+      globalThis.setTimeout = originalSetTimeout;
+    }
+
+    expect(captured).toHaveLength(1);
+    expect(captured[0].delay).toBe(expectedDelay);
+    const session = webPhone.callSessions[0];
+    // the captured timeout has not run yet, so the call must not be answered
+    expect(session.state).toBe("ringing");
+    expect(webRtcSession.offerAnswers).toEqual([]);
+    expect(sipClient.replies).toHaveLength(2);
+
+    await captured[0].callback();
+    await expect.poll(() => session.state).toBe("answered");
+    expect(webRtcSession.offerAnswers).toEqual([session.sipMessage.body]);
+    expect(sipClient.replies).toHaveLength(3);
+    expect(sipClient.replies[2].headers.CSeq).toBe("1 INVITE");
+    expect(sipClient.replies[2].body).toBe(`${LOCAL_SDP}\r\n`);
+  });
+}
+
 test("reports an outbound final-response failure on the Call Session", async () => {
   const sipClient = new FakeSipClient();
   sipClient.requestHandler = async (message) => {

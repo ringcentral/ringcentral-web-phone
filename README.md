@@ -1385,7 +1385,7 @@ When this feature is enabled, whenever there is an inbound call, the SIP
 `INVITE` message will be inspected. If there is a header "Alert-Info: Auto
 Answer", the call will be auto answered. The `Call-Info` header will also be
 checked, if it contains `Answer-After=<a-number-here>`, that would be the delay
-before the call is answered.
+(in seconds) before the call is answered.
 
 For example, if the inbound call `INVITE` message has the following headers, the
 call will be auto answered immediately:
