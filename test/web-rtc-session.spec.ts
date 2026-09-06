@@ -481,6 +481,65 @@ test("completes a transfer on an early BYE before the REFER response", async () 
   expect(webPhone.callSessions).toEqual([]);
 });
 
+test("completes an existing-session warm transfer on the original Call Session", async () => {
+  const sipClient = new FakeSipClient();
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const originalInvite = inboundInvite(REMOTE_OFFER, "original-call");
+  originalInvite.headers.From = "<sip:101@example.com>;tag=original-remote";
+  originalInvite.headers.To = "<sip:100@example.com>;tag=original-local";
+  const original = new InboundCallSession(webPhone, originalInvite);
+  webPhone.callSessions.push(original);
+  const existingInvite = inboundInvite(REMOTE_OFFER, "existing-call");
+  existingInvite.headers.From = "<sip:102@example.com>;tag=existing-remote";
+  existingInvite.headers.To = "<sip:100@example.com>;tag=existing-local";
+  const existing = new InboundCallSession(webPhone, existingInvite);
+  webPhone.callSessions.push(existing);
+
+  let completed = false;
+  const transfer = original.completeWarmTransfer(existing, 100).then(() => {
+    completed = true;
+  });
+  await expect.poll(() => sipClient.requests).toHaveLength(1);
+
+  const refer = sipClient.requests[0];
+  expect(refer.subject).toBe("REFER sip:101@example.com SIP/2.0");
+  expect(refer.headers["Call-Id"]).toBe(original.callId);
+  expect(refer.headers.From).toBe(original.localPeer);
+  expect(refer.headers.To).toBe(original.remotePeer);
+  expect(refer.headers["Refer-To"]).toBe(
+    `"102@sip.ringcentral.com" <sip:102@sip.ringcentral.com;transport=wss?Replaces=existing-call%3Bto-tag%3Dexisting-remote%3Bfrom-tag%3Dexisting-local>`,
+  );
+
+  sipClient.emit(
+    "inboundMessage",
+    new InboundMessage("BYE sip:100@example.com SIP/2.0", {
+      CSeq: "2 BYE",
+      "Call-Id": "other-call",
+    }),
+  );
+  await new Promise((resolve) => setTimeout(resolve));
+  expect(completed).toBe(false);
+  sipClient.emit(
+    "inboundMessage",
+    new InboundMessage("BYE sip:100@example.com SIP/2.0", {
+      CSeq: "3 BYE",
+      "Call-Id": "existing-call",
+    }),
+  );
+  await new Promise((resolve) => setTimeout(resolve));
+  expect(completed).toBe(false);
+  sipClient.emit(
+    "inboundMessage",
+    new InboundMessage("BYE sip:100@example.com SIP/2.0", {
+      CSeq: "4 BYE",
+      "Call-Id": "original-call",
+    }),
+  );
+  await transfer;
+  expect(original.state).toBe("disposed");
+  expect(webPhone.callSessions).toEqual([]);
+});
+
 test("completes inbound forward on the Call Session CANCEL", async () => {
   const sipClient = new FakeSipClient();
   const webPhone = new WebPhone({ sipInfo, sipClient });
