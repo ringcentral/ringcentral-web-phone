@@ -200,6 +200,20 @@ https://developers.ringcentral.com/api-reference/Phone-Numbers/listExtensionPhon
 Don't forget to filter the phone numbers that have
 `"features": [..., "CallerId", ...]`.
 
+### Trickle ICE
+
+SDK-managed WebRTC uses Trickle ICE by default for initial calls, re-INVITEs,
+and ICE restarts. The Web Phone sends the generated SDP immediately without
+removing candidates already present, then sends later candidates one at a time
+through the Call Session's SIP signaling. No option or manual candidate API is
+required.
+
+If candidate signaling fails, the Web Phone stops sending candidates for that
+ICE generation without failing the Call Session or starting a fallback
+re-INVITE. This behavior implements the subset supported by RingCentral; it is
+not a claim of complete RFC 8840 interoperability or support for arbitrary SIP
+servers.
+
 ## Get inbound call sessions
 
 To get inbound call sessions, you can listen to the `inboundCall` event:

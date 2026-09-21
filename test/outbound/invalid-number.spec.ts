@@ -1,13 +1,15 @@
 import { expect } from "@playwright/test";
 
-import { testOnePage } from "../common";
+import { testOnePage, withoutTrickleIceMessages } from "../common";
 
 testOnePage("register", async ({ pageResource }) => {
   const { page, messages: sipMessages } = pageResource;
   await page.evaluate(async () => {
     await globalThis.webPhone.call("78654");
   });
-  const messages = sipMessages.map((m) => m.shortString);
+  const messages = withoutTrickleIceMessages(sipMessages).map(
+    (m) => m.shortString,
+  );
   expect(messages).toHaveLength(7);
   expect(messages[0]).toMatch(/^outbound - INVITE sip:/);
   expect(messages[1]).toMatch(/^inbound - SIP\/2.0 100 Trying$/);

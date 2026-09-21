@@ -36,6 +36,47 @@ interface PageResource {
   messages: SipMessage[];
 }
 
+export const completedLocalIceGeneration = (messages: SipMessage[]) => {
+  const endOfCandidates = messages.find(
+    (message) =>
+      message.direction === "outbound" &&
+      message.subject.startsWith("INFO ") &&
+      message.body.includes("a=end-of-candidates"),
+  );
+  return (
+    endOfCandidates !== undefined &&
+    messages.some(
+      (message) =>
+        message.direction === "inbound" &&
+        message.subject === "SIP/2.0 200 OK" &&
+        message.getHeader("CSeq") === endOfCandidates.getHeader("CSeq"),
+    )
+  );
+};
+
+export const withoutTrickleIceMessages = (messages: SipMessage[]) => {
+  const cseqs = new Set(
+    messages
+      .filter(
+        (message) =>
+          message.direction === "outbound" &&
+          message.getHeader("Content-Type") ===
+            "application/trickle-ice-sdpfrag",
+      )
+      .map((message) => message.getHeader("CSeq")),
+  );
+  return messages.filter(
+    (message) =>
+      !(
+        message.getHeader("Content-Type") ===
+          "application/trickle-ice-sdpfrag" ||
+        (message.direction === "inbound" &&
+          message.subject.startsWith("SIP/2.0 ") &&
+          cseqs.has(message.getHeader("CSeq")))
+      ),
+  );
+};
+
 const setupPage = async ({
   context,
   sipInfo,
@@ -209,6 +250,9 @@ export const call = async (
   ) {
     await waitFor({ interval: 1000 });
   }
+  await expect
+    .poll(() => completedLocalIceGeneration(callerMessages))
+    .toBe(true);
 
   if (!keepMessages) {
     callerMessages.length = 0;
@@ -228,7 +272,22 @@ export const callAndAnswer = async (
   await calleePage.evaluate(async () => {
     await globalThis.inboundCalls[0].answer();
   });
-  await expect.poll(() => calleeMessages).toHaveLength(4);
+  await expect
+    .poll(
+      () =>
+        completedLocalIceGeneration(calleeMessages) &&
+        calleeMessages.some(
+          (message) =>
+            message.direction === "inbound" &&
+            message.subject.startsWith("ACK "),
+        ) &&
+        calleeMessages.some(
+          (message) =>
+            message.direction === "inbound" &&
+            message.subject.startsWith("MESSAGE "),
+        ),
+    )
+    .toBe(true);
   callerMessages.length = 0;
   calleeMessages.length = 0;
   return { callerPage, calleePage, callerMessages, calleeMessages };

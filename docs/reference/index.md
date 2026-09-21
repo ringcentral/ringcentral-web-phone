@@ -1,5 +1,7 @@
 # WebPhone SDK Reference
 
+- [Trickle ICE behavior](trickle-ice.md)
+
 ## WebPhone methods
 
 | Method                    | Description                              |

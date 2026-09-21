@@ -7,6 +7,7 @@ import {
   calleeNumber,
   callerNumber,
   testTwoPages,
+  withoutTrickleIceMessages,
 } from "../common";
 
 testTwoPages("call", async ({ callerResource, calleeResource }) => {
@@ -17,7 +18,9 @@ testTwoPages("call", async ({ callerResource, calleeResource }) => {
   );
 
   // caller
-  let messages = callerMessages.map((m) => m.shortString);
+  let messages = withoutTrickleIceMessages(callerMessages).map(
+    (m) => m.shortString,
+  );
   const sessionProgress =
     messages[5] === "inbound - SIP/2.0 183 Session Progress"
       ? [messages[5]]

@@ -52,6 +52,7 @@ class OutboundCallSession extends CallSession {
         inviteMessage.headers[key] = value;
       }
     }
+    this.addTrickleIceSupport(inviteMessage.headers);
 
     const inboundMessage = await this.webPhone.sipClient.request(inviteMessage);
     if (inboundMessage.subject.startsWith("SIP/2.0 403 ")) {
@@ -66,12 +67,16 @@ class OutboundCallSession extends CallSession {
       nonce,
       "INVITE",
     );
-    const authenticatedInviteResponse = await this.webPhone.sipClient.request(newMessage);
+    const authenticatedInviteResponse =
+      await this.webPhone.sipClient.request(newMessage);
     this.sipMessage = authenticatedInviteResponse;
     this.state = "ringing";
     this.emit("ringing");
     this.localPeer = authenticatedInviteResponse.getHeader("From")!;
     this.remotePeer = authenticatedInviteResponse.getHeader("To")!;
+    if (/^SIP\/2\.0 [12]\d\d /.test(authenticatedInviteResponse.subject)) {
+      this.startLocalIceCandidateSending();
+    }
 
     const handleFinalResponse = async (message: InboundMessage) => {
       // outbound call failed, for example, invalid number

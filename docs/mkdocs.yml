@@ -96,6 +96,7 @@ nav:
           - "outboundMessage": events/outboundMessage.md
   - "Reference":
       - "Overview": reference/index.md
+      - "Trickle ICE": reference/trickle-ice.md
       - "WebPhone":
           - "call()": reference/call.md
           - "dispose()": reference/dispose.md

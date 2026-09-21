@@ -27,6 +27,15 @@ type FlipResult = CommandResult & {
 };
 const DEFAULT_TRANSFER_TIMEOUT_MS = 10000;
 
+interface LocalIceGeneration {
+  active: boolean;
+  ended: boolean;
+  ready: boolean;
+  sdp: string;
+  candidates: Array<RTCIceCandidate | null>;
+  listener: (event: RTCPeerConnectionIceEvent) => void;
+}
+
 class CallSession extends EventEmitter {
   public webPhone: WebPhone;
   public sipMessage!: InboundMessage;
@@ -45,6 +54,8 @@ class CallSession extends EventEmitter {
   private sdpVersion = 1;
   private webRtcSession?: WebRtcSession;
   private baseLocalSdp?: string;
+  private localIceGeneration?: LocalIceGeneration;
+  private localIceSending = false;
 
   public constructor(webPhone: WebPhone) {
     super();
@@ -306,6 +317,7 @@ class CallSession extends EventEmitter {
   }
 
   public dispose() {
+    this.stopLocalIceGeneration();
     if (this.webPhone.options.webRtcSessionFactory) {
       this.webRtcSession?.dispose();
     } else {
@@ -333,32 +345,6 @@ class CallSession extends EventEmitter {
     });
   }
 
-  protected async waitForIceGatheringComplete(timeoutMs = 2000) {
-    if (this.rtcPeerConnection.iceGatheringState === "complete") {
-      return;
-    }
-    await new Promise<void>((resolve) => {
-      const timeout = setTimeout(() => {
-        cleanup();
-        resolve();
-      }, timeoutMs);
-      const onIceCandidate = (event: RTCPeerConnectionIceEvent) => {
-        if (event.candidate === null) {
-          cleanup();
-          resolve();
-        }
-      };
-      const cleanup = () => {
-        clearTimeout(timeout);
-        this.rtcPeerConnection.removeEventListener(
-          "icecandidate",
-          onIceCandidate,
-        );
-      };
-      this.rtcPeerConnection.addEventListener("icecandidate", onIceCandidate);
-    });
-  }
-
   protected async createOffer() {
     if (this.webPhone.options.webRtcSessionFactory) {
       this.baseLocalSdp = await this.requireWebRtcSession().createOffer({
@@ -369,9 +355,7 @@ class CallSession extends EventEmitter {
     const offer = await this.rtcPeerConnection.createOffer({
       iceRestart: true,
     });
-    await this.rtcPeerConnection.setLocalDescription(offer);
-    await this.waitForIceGatheringComplete();
-    return this.rtcPeerConnection.localDescription!.sdp;
+    return await this.setLocalDescriptionForTrickleIce(offer);
   }
 
   protected async createAnswer(offer: string) {
@@ -384,9 +368,7 @@ class CallSession extends EventEmitter {
       sdp: offer,
     });
     const answer = await this.rtcPeerConnection.createAnswer();
-    await this.rtcPeerConnection.setLocalDescription(answer);
-    await this.waitForIceGatheringComplete();
-    return this.rtcPeerConnection.localDescription!.sdp;
+    return await this.setLocalDescriptionForTrickleIce(answer);
   }
 
   protected applyAnswer(answer: string) {
@@ -415,10 +397,12 @@ class CallSession extends EventEmitter {
         To: this.remotePeer,
         Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
         "Content-Type": "application/sdp",
+        ...this.trickleIceHeaders,
       },
       sdp,
     );
     const replyMessage = await this.webPhone.sipClient.request(requestMessage);
+    this.startLocalIceCandidateSending();
     await this.applyAnswer(replyMessage.body);
     const ackMessage = new RequestMessage(
       `ACK ${extractAddress(this.remotePeer)} SIP/2.0`,
@@ -442,10 +426,12 @@ class CallSession extends EventEmitter {
       responseCode: 200,
       headers: {
         "Content-Type": "application/sdp",
+        ...this.trickleIceHeaders,
       },
       body: sdp,
     });
     await this.webPhone.sipClient.reply(newMessage);
+    this.startLocalIceCandidateSending();
 
     // note: no need to wait for the final SIP message (refer to inbound call answer function)
     // because nobody is supposed to proactively invoke this function.
@@ -475,6 +461,7 @@ class CallSession extends EventEmitter {
         To: this.remotePeer,
         Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
         "Content-Type": "application/sdp",
+        ...this.trickleIceHeaders,
       },
       sdp,
     );
@@ -490,6 +477,174 @@ class CallSession extends EventEmitter {
       },
     );
     await this.webPhone.sipClient.reply(ackMessage);
+  }
+
+  protected get trickleIceHeaders(): Record<string, string> {
+    return this.webPhone.options.webRtcSessionFactory
+      ? {}
+      : { Supported: "trickle-ice" };
+  }
+
+  protected addTrickleIceSupport(headers: Record<string, string>) {
+    if (this.webPhone.options.webRtcSessionFactory) return;
+    const key = Object.keys(headers).find(
+      (header) => header.toLowerCase() === "supported",
+    );
+    if (!key) {
+      headers.Supported = "trickle-ice";
+    } else if (
+      !headers[key]
+        .split(",")
+        .some((token) => token.trim().toLowerCase() === "trickle-ice")
+    ) {
+      headers[key] += ", trickle-ice";
+    }
+  }
+
+  protected startLocalIceCandidateSending() {
+    if (!this.localIceGeneration) return;
+    this.localIceGeneration.ready = true;
+    void this.sendLocalIceCandidates(this.localIceGeneration);
+  }
+
+  private beginLocalIceGeneration(sdp: string) {
+    this.stopLocalIceGeneration();
+    const generation: LocalIceGeneration = {
+      active: true,
+      ended: false,
+      ready: false,
+      sdp,
+      candidates: [],
+      listener: (event) => {
+        if (!generation.active || generation.ended) return;
+        generation.candidates.push(event.candidate);
+        generation.ended = event.candidate === null;
+        void this.sendLocalIceCandidates(generation);
+      },
+    };
+    this.localIceGeneration = generation;
+    this.rtcPeerConnection.addEventListener(
+      "icecandidate",
+      generation.listener,
+    );
+    return generation;
+  }
+
+  private async setLocalDescriptionForTrickleIce(
+    description: RTCSessionDescriptionInit,
+  ) {
+    if (!description.sdp) throw new Error("Local description is missing SDP");
+    const generation = this.beginLocalIceGeneration(description.sdp);
+    try {
+      await this.rtcPeerConnection.setLocalDescription(description);
+      const localSdp = this.rtcPeerConnection.localDescription?.sdp;
+      if (!localSdp) throw new Error("Local description is missing SDP");
+      generation.sdp = localSdp;
+      generation.candidates = generation.candidates.filter(
+        (candidate) =>
+          candidate === null ||
+          !generation.sdp.includes(`a=${candidate.candidate}`),
+      );
+      return generation.sdp;
+    } catch (error) {
+      this.deactivateLocalIceGeneration(generation);
+      throw error;
+    }
+  }
+
+  private stopLocalIceGeneration() {
+    const generation = this.localIceGeneration;
+    if (!generation) return;
+    this.deactivateLocalIceGeneration(generation);
+  }
+
+  private deactivateLocalIceGeneration(generation: LocalIceGeneration) {
+    generation.active = false;
+    generation.candidates.length = 0;
+    this.rtcPeerConnection?.removeEventListener(
+      "icecandidate",
+      generation.listener,
+    );
+    if (this.localIceGeneration === generation) {
+      this.localIceGeneration = undefined;
+    }
+  }
+
+  private async sendLocalIceCandidates(generation: LocalIceGeneration) {
+    if (!generation.active || !generation.ready || this.localIceSending) return;
+    this.localIceSending = true;
+    try {
+      while (
+        generation.active &&
+        generation === this.localIceGeneration &&
+        generation.candidates.length > 0
+      ) {
+        const candidate = generation.candidates.shift();
+        if (candidate === undefined) break;
+        const response = await this.webPhone.sipClient.request(
+          new RequestMessage(
+            `INFO sip:${this.webPhone.sipInfo.domain} SIP/2.0`,
+            {
+              "Call-Id": this.callId,
+              From: this.localPeer,
+              To: this.remotePeer,
+              Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
+              "Info-Package": "trickle-ice",
+              "Content-Type": "application/trickle-ice-sdpfrag",
+              "Content-Disposition": "Info-Package",
+            },
+            this.createLocalIceFragment(generation.sdp, candidate),
+          ),
+        );
+        if (!/^SIP\/2\.0 2\d\d /.test(response.subject)) {
+          this.deactivateLocalIceGeneration(generation);
+        }
+      }
+    } catch {
+      this.deactivateLocalIceGeneration(generation);
+    } finally {
+      this.localIceSending = false;
+      if (this.localIceGeneration !== generation && this.localIceGeneration) {
+        void this.sendLocalIceCandidates(this.localIceGeneration);
+      }
+    }
+  }
+
+  private createLocalIceFragment(
+    sdp: string,
+    candidate: RTCIceCandidate | null,
+  ) {
+    const lines = sdp.trim().split(/\r?\n/);
+    const mediaIndexes = lines.flatMap((line, index) =>
+      line.startsWith("m=") ? [index] : [],
+    );
+    const mediaIndex =
+      candidate?.sdpMid === null || candidate?.sdpMid === undefined
+        ? mediaIndexes[candidate?.sdpMLineIndex ?? 0]
+        : lines.indexOf(`a=mid:${candidate.sdpMid}`);
+    const sectionStart = lines.findLastIndex(
+      (line, index) => index <= mediaIndex && line.startsWith("m="),
+    );
+    const sectionEnd =
+      mediaIndexes.find((index) => index > sectionStart) ?? lines.length;
+    const section = lines.slice(sectionStart, sectionEnd);
+    const session = lines.slice(0, mediaIndexes[0]);
+    const findAttribute = (prefix: string) =>
+      section.find((line) => line.startsWith(prefix)) ??
+      session.find((line) => line.startsWith(prefix));
+    const iceUfrag = findAttribute("a=ice-ufrag:");
+    const icePwd = findAttribute("a=ice-pwd:");
+    const mid = section.find((line) => line.startsWith("a=mid:"));
+    if (!iceUfrag || !icePwd || sectionStart === -1 || !mid) {
+      throw new Error("Local SDP is missing Trickle ICE fragment fields");
+    }
+    return [
+      iceUfrag,
+      icePwd,
+      lines[sectionStart],
+      mid,
+      candidate ? `a=${candidate.candidate}` : "a=end-of-candidates",
+    ].join("\r\n");
   }
 
   protected async sendJsonMessage<T>(

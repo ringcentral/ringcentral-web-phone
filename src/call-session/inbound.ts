@@ -192,10 +192,12 @@ class InboundCallSession extends CallSession {
         responseCode: 200,
         headers: {
           "Content-Type": "application/sdp",
+          ...this.trickleIceHeaders,
         },
         body: sdp,
       });
       await this.webPhone.sipClient.reply(newMessage);
+      this.startLocalIceCandidateSending();
     } else {
       // some INVITE message has an empty body. For example, when you invoke RESTful API /pickup to answer a call from a call queue
       const sdp = await this.createOffer();
@@ -204,6 +206,7 @@ class InboundCallSession extends CallSession {
         responseCode: 200,
         headers: {
           "Content-Type": "application/sdp",
+          ...this.trickleIceHeaders,
         },
         body: sdp,
       });
@@ -211,6 +214,7 @@ class InboundCallSession extends CallSession {
         newMessage as RequestMessage,
       );
       this.sipMessage = ackMessage;
+      this.startLocalIceCandidateSending();
       this.applyAnswer(ackMessage.body);
     }
 

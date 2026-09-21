@@ -1,7 +1,13 @@
 import { expect } from "@playwright/test";
 import callControlCommands from "../../src/rc-message/call-control-commands";
 import RcMessage from "../../src/rc-message/rc-message";
-import { assertCallCount, call, testTwoPages } from "../common";
+import {
+  assertCallCount,
+  call,
+  completedLocalIceGeneration,
+  testTwoPages,
+  withoutTrickleIceMessages,
+} from "../common";
 
 testTwoPages(
   "answer inbound call",
@@ -18,14 +24,17 @@ testTwoPages(
     await assertCallCount(callerPage, 1);
 
     // callee
-    await expect.poll(() => calleeMessages).toHaveLength(4);
-    const messages = calleeMessages.map((m) => m.shortString);
+    await expect
+      .poll(() => completedLocalIceGeneration(calleeMessages))
+      .toBe(true);
+    const signalingMessages = withoutTrickleIceMessages(calleeMessages);
+    const messages = signalingMessages.map((m) => m.shortString);
     expect(messages).toHaveLength(4);
     expect(messages[0]).toMatch(/^outbound - SIP\/2.0 200 OK$/);
     expect(messages[1]).toMatch(/^inbound - ACK sip:/);
     expect(messages[2]).toMatch(/^inbound - MESSAGE sip:/);
     expect(messages[3]).toMatch(/^outbound - SIP\/2.0 200 OK$/);
-    const rcMessage = await RcMessage.fromXml(calleeMessages[2].body);
+    const rcMessage = await RcMessage.fromXml(signalingMessages[2].body);
     expect(rcMessage.headers.Cmd).toBe(
       callControlCommands.AlreadyProcessed.toString(),
     );
