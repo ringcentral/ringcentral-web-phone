@@ -51,18 +51,18 @@
   },
   "dependencies": {
     "blueimp-md5": "^2.19.0",
-    "fast-xml-parser": "^5.11.0"
+    "fast-xml-parser": "^5.11.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.9",
-    "@playwright/test": "^1.62.1",
+    "@biomejs/biome": "^2.5.14",
+    "@playwright/test": "^1.63.0",
     "@types/blueimp-md5": "^2.18.2",
-    "@types/node": "^26.2.0",
+    "@types/node": "^26.6.1",
     "dotenv-override-true": "^6.2.2",
     "manate": "^2.0.3",
-    "tsdown": "^0.22.14",
+    "tsdown": "^0.23.0",
     "typescript": "^7.0.2",
-    "vite": "^8.2.2",
+    "vite": "^8.3.0",
     "wait-for-async": "^0.8.1"
   },
   "packageManager": "pnpm@10.33.1"
