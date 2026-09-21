@@ -15,3 +15,15 @@ _Avoid_: canonical case, assuming a fixed casing
 **Superseded Web Phone**:
 A Web Phone whose shared instance ID was subsequently registered by another Web Phone. It remains able to make outbound calls but no longer receives inbound calls for that shared instance ID.
 _Avoid_: older instance, which can be confused with object creation time
+
+**SDK-managed WebRTC**:
+A WebRTC media session created and controlled directly by the Web Phone alongside its Call Session.
+_Avoid_: native WebRTC, default WebRTC
+
+**Delegated WebRTC**:
+An application-controlled WebRTC media session for which the Web Phone retains SIP signaling and Call Session ownership. It may opt into Trickle ICE by exchanging candidate data with the Web Phone, without constructing SIP messages itself.
+_Avoid_: custom WebRTC, remote WebRTC
+
+**Trickle ICE**:
+For this SDK, incremental delivery of local ICE candidates after the initial SDP so a Call Session does not wait for ICE gathering to finish. It applies by default to SDK-managed WebRTC and is available to participating delegated WebRTC, but does not mean complete RFC 8840 interoperability.
+_Avoid_: full RFC 8840 support
