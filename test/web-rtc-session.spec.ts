@@ -28,6 +28,20 @@ const LOCAL_SDP = [
 const REMOTE_OFFER = "remote offer";
 const REMOTE_ANSWER = "remote answer";
 const NORMALIZED_REMOTE_ANSWER = `${REMOTE_ANSWER}\r\n`;
+const trickleSdp = (ice: "local" | "remote") =>
+  `${[
+    "v=0",
+    "o=- 1 1 IN IP4 127.0.0.1",
+    "s=-",
+    "t=0 0",
+    `a=ice-ufrag:${ice}-ufrag`,
+    `a=ice-pwd:${ice}-password`,
+    "a=ice-options:trickle",
+    "m=audio 9 UDP/TLS/RTP/SAVPF 111",
+    "c=IN IP4 0.0.0.0",
+    "a=mid:audio",
+    "a=sendrecv",
+  ].join("\r\n")}\r\n`;
 
 const sipInfo: SipInfo = {
   authorizationId: "id",
@@ -76,13 +90,47 @@ class FakeWebRtcSession implements WebRtcSession {
   public muted: boolean[] = [];
   public dtmf: Array<[string, number | undefined, number | undefined]> = [];
   public disposed = false;
+  public localCandidateHandler?: (
+    candidate: RTCIceCandidateInit | null,
+  ) => void;
+  public remoteCandidates: Array<RTCIceCandidateInit | null> = [];
+  public localCandidatesOnCreate: Array<RTCIceCandidateInit | null> = [];
+  public failedRemoteCandidate?: string;
+  public trickleIce?: {
+    setLocalCandidateHandler: (
+      handler: (candidate: RTCIceCandidateInit | null) => void,
+    ) => void;
+    addRemoteCandidate: (
+      candidate: RTCIceCandidateInit | null,
+    ) => Promise<void>;
+  };
+
+  public enableTrickleIce() {
+    this.trickleIce = {
+      setLocalCandidateHandler: (handler) => {
+        this.localCandidateHandler = handler;
+      },
+      addRemoteCandidate: async (candidate) => {
+        this.remoteCandidates.push(candidate);
+        if (candidate?.candidate === this.failedRemoteCandidate) {
+          throw new Error("Candidate failed");
+        }
+      },
+    };
+  }
 
   public async createOffer(options?: { iceRestart?: boolean }) {
     this.offers.push(options);
+    for (const candidate of this.localCandidatesOnCreate) {
+      this.localCandidateHandler?.(candidate);
+    }
     return this.localSdp;
   }
   public async createAnswer(offer: string) {
     this.offerAnswers.push(offer);
+    for (const candidate of this.localCandidatesOnCreate) {
+      this.localCandidateHandler?.(candidate);
+    }
     return this.localSdp;
   }
   public async applyAnswer(answer: string) {
@@ -120,6 +168,23 @@ const inboundInvite = (body = REMOTE_OFFER, callId = "call-id") =>
       ).toXml(),
     },
     body,
+  );
+
+const remoteCandidateInfo = (callId: string, candidate: string | null) =>
+  new InboundMessage(
+    "INFO sip:100@example.com SIP/2.0",
+    {
+      "Call-Id": callId,
+      "Info-Package": "trickle-ice",
+      "Content-Type": "application/trickle-ice-sdpfrag",
+    },
+    [
+      "a=ice-ufrag:remote-ufrag",
+      "a=ice-pwd:remote-password",
+      "m=audio 9 UDP/TLS/RTP/SAVPF 111",
+      "a=mid:audio",
+      candidate === null ? "a=end-of-candidates" : `a=${candidate}`,
+    ].join("\r\n"),
   );
 
 test("projects inbound SIP messages onto the matching live Call Session", async () => {
@@ -249,6 +314,7 @@ test("delegates an outbound call without browser WebRTC globals", async () => {
   expect(webRtcSession.offers).toEqual([{ iceRestart: true }]);
   expect(webRtcSession.appliedAnswers).toEqual([NORMALIZED_REMOTE_ANSWER]);
   expect(sipClient.requests[0].body).toBe(`${LOCAL_SDP}\r\n`);
+  expect(sipClient.requests[0].headers.Supported).toBeUndefined();
   expect(
     sipClient.replies.some((message) => message.headers.CSeq.endsWith(" ACK")),
   ).toBe(true);
@@ -289,6 +355,7 @@ test("delegates inbound offer and offerless call negotiation", async () => {
 
   expect(offeredWebRtc.offerAnswers).toEqual([offered.sipMessage.body]);
   expect(sipClient.replies[0].body).toBe(`${LOCAL_SDP}\r\n`);
+  expect(sipClient.replies[0].headers.Supported).toBeUndefined();
 
   sipClient.replies = [];
   sipClient.requestHandler = async (message) =>
@@ -313,6 +380,156 @@ test("delegates inbound offer and offerless call negotiation", async () => {
   expect(offerlessWebRtc.offers).toEqual([{ iceRestart: true }]);
   expect(offerlessWebRtc.appliedAnswers).toEqual([NORMALIZED_REMOTE_ANSWER]);
   await offerlessAnswer;
+});
+
+test("exchanges delegated Trickle ICE candidates through the Call Session", async () => {
+  const sipClient = new FakeSipClient();
+  const webRtcSession = new FakeWebRtcSession();
+  webRtcSession.localSdp = trickleSdp("local").replace(
+    "a=ice-options:trickle",
+    "a=ice-options:trickle renomination",
+  );
+  webRtcSession.enableTrickleIce();
+  webRtcSession.localCandidatesOnCreate = [
+    {
+      candidate: "candidate:local",
+      sdpMid: "audio",
+      sdpMLineIndex: 0,
+    },
+    null,
+  ];
+  webRtcSession.failedRemoteCandidate = "candidate:rejected";
+  const webPhone = new WebPhone({
+    sipInfo,
+    sipClient,
+    webRtcSessionFactory: () => webRtcSession,
+  });
+  const session = new InboundCallSession(
+    webPhone,
+    inboundInvite(trickleSdp("remote")),
+  );
+  webPhone.callSessions.push(session);
+
+  sipClient.emit(
+    "inboundMessage",
+    remoteCandidateInfo(session.callId, "candidate:rejected"),
+  );
+  sipClient.emit(
+    "inboundMessage",
+    remoteCandidateInfo(session.callId, "candidate:accepted"),
+  );
+  sipClient.emit("inboundMessage", remoteCandidateInfo(session.callId, null));
+  await session.answer();
+
+  expect(sipClient.replies[0].headers.Supported).toBe("trickle-ice");
+  await expect.poll(() => webRtcSession.remoteCandidates).toHaveLength(3);
+  expect(webRtcSession.remoteCandidates).toEqual([
+    {
+      candidate: "candidate:rejected",
+      sdpMid: "audio",
+      sdpMLineIndex: 0,
+      usernameFragment: "remote-ufrag",
+    },
+    {
+      candidate: "candidate:accepted",
+      sdpMid: "audio",
+      sdpMLineIndex: 0,
+      usernameFragment: "remote-ufrag",
+    },
+    null,
+  ]);
+  expect(session.state).toBe("answered");
+
+  await expect
+    .poll(
+      () =>
+        sipClient.requests.filter((request) =>
+          request.subject.startsWith("INFO "),
+        ).length,
+    )
+    .toBe(2);
+  expect(
+    sipClient.requests
+      .filter((request) => request.subject.startsWith("INFO "))
+      .map((request) => request.body.trim().split("\r\n").at(-1)),
+  ).toEqual(["a=candidate:local", "a=end-of-candidates"]);
+});
+
+test("advertises delegated Trickle ICE on an outbound offer", async () => {
+  const sipClient = new FakeSipClient();
+  sipClient.requestHandler = async (message) => {
+    if (!message.headers["Proxy-Authorization"]) {
+      return new InboundMessage("SIP/2.0 407 Proxy Authentication Required", {
+        "Proxy-Authenticate": 'Digest, nonce="nonce"',
+      });
+    }
+    return new InboundMessage(
+      "SIP/2.0 200 OK",
+      {
+        Via: message.headers.Via,
+        CSeq: message.headers.CSeq,
+        From: message.headers.From,
+        To: `${message.headers.To};tag=remote`,
+        "Call-Id": message.headers["Call-Id"],
+      },
+      trickleSdp("remote"),
+    );
+  };
+  const webRtcSession = new FakeWebRtcSession();
+  webRtcSession.localSdp = trickleSdp("local");
+  webRtcSession.enableTrickleIce();
+  const webPhone = new WebPhone({
+    sipInfo,
+    sipClient,
+    webRtcSessionFactory: () => webRtcSession,
+  });
+
+  const session = await webPhone.call("101");
+
+  expect(
+    sipClient.requests
+      .filter((request) => request.subject.startsWith("INVITE "))
+      .map((request) => request.headers.Supported),
+  ).toEqual(["trickle-ice", "trickle-ice"]);
+  sipClient.emit(
+    "inboundMessage",
+    remoteCandidateInfo(session.callId, "candidate:remote"),
+  );
+  await expect.poll(() => webRtcSession.remoteCandidates).toHaveLength(1);
+});
+
+test("rejects delegated Trickle ICE offer and answer SDP without its advertisement", async () => {
+  const offerSipClient = new FakeSipClient();
+  const offerWebRtc = new FakeWebRtcSession();
+  offerWebRtc.enableTrickleIce();
+  const offerWebPhone = new WebPhone({
+    sipInfo,
+    sipClient: offerSipClient,
+    webRtcSessionFactory: () => offerWebRtc,
+  });
+
+  await expect(offerWebPhone.call("101")).rejects.toThrow(
+    "Delegated WebRTC SDP must advertise a=ice-options:trickle",
+  );
+  expect(offerSipClient.requests).toEqual([]);
+
+  const answerSipClient = new FakeSipClient();
+  const answerWebRtc = new FakeWebRtcSession();
+  answerWebRtc.enableTrickleIce();
+  const answerWebPhone = new WebPhone({
+    sipInfo,
+    sipClient: answerSipClient,
+    webRtcSessionFactory: () => answerWebRtc,
+  });
+  const answerSession = new InboundCallSession(
+    answerWebPhone,
+    inboundInvite(trickleSdp("remote")),
+  );
+
+  await expect(answerSession.answer()).rejects.toThrow(
+    "Delegated WebRTC SDP must advertise a=ice-options:trickle",
+  );
+  expect(answerSipClient.replies).toEqual([]);
 });
 
 test("correlates JSON command results on the Call Session", async () => {

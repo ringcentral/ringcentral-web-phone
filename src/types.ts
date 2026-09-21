@@ -18,6 +18,12 @@ export interface WebRtcSession {
   setMuted(muted: boolean): void;
   sendDtmf(tones: string, duration?: number, interToneGap?: number): void;
   dispose(): void;
+  trickleIce?: {
+    setLocalCandidateHandler(
+      handler: (candidate: RTCIceCandidateInit | null) => void,
+    ): void;
+    addRemoteCandidate(candidate: RTCIceCandidateInit | null): Promise<void>;
+  };
 }
 
 export type WebRtcSessionFactory = (context: {

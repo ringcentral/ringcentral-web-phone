@@ -208,6 +208,11 @@ removing candidates already present, then sends later candidates one at a time
 through the Call Session's SIP signaling. No option or manual candidate API is
 required.
 
+Delegated WebRTC sessions can opt in through the `WebRtcSession.trickleIce`
+capability described under [SharedWorker WebPhone with delegated
+WebRTC](#solution-3-sharedworker-webphone-with-delegated-webrtc). Sessions
+without that complete capability keep the existing complete-SDP behavior.
+
 If candidate signaling fails, the Web Phone stops sending candidates for that
 ICE generation without failing the Call Session or starting a fallback
 re-INVITE. This behavior implements the subset supported by RingCentral; it is
@@ -1295,10 +1300,33 @@ tab. The SDK continues to own SIP signaling, call-session state, re-INVITEs,
 and hold SDP. The application owns tab selection, communication, retries, and
 failure handling. Browser tabs do not create their own `WebPhone` instances.
 
-Without `webRtcSessionFactory`, the SDK uses its existing in-tab WebRTC behavior.
-Browser-only call-session properties such as `rtcPeerConnection`, `mediaStream`,
-and `audioElement` are available in that default mode and remain undefined when
-WebRTC is delegated.
+To opt into Trickle ICE, the returned session exposes one complete optional
+capability:
+
+```ts
+trickleIce: {
+  setLocalCandidateHandler(handler) {
+    application.onLocalCandidate(handler);
+  },
+  async addRemoteCandidate(candidate) {
+    await application.addRemoteCandidate(candidate);
+  },
+}
+```
+
+Both methods exchange `RTCIceCandidateInit | null`, where `null` marks
+end-of-candidates. The application must call the registered handler for each
+local candidate and must return offer and answer SDP containing
+`a=ice-options:trickle`. The Web Phone applies incoming candidates through
+`addRemoteCandidate` in arrival order and continues to own all SIP signaling.
+Candidate failures do not fail the Call Session. This supports the RingCentral
+subset described here, not complete RFC 8840 interoperability.
+
+Without the complete `trickleIce` capability, delegated sessions retain their
+existing complete-SDP behavior. Without `webRtcSessionFactory`, the SDK uses its
+existing in-tab WebRTC behavior. Browser-only call-session properties such as
+`rtcPeerConnection`, `mediaStream`, and `audioElement` are available in that
+default mode and remain undefined when WebRTC is delegated.
 
 ## monitor/whisper/barge/coach/takeover
 

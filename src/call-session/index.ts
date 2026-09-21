@@ -32,8 +32,8 @@ interface LocalIceGeneration {
   ended: boolean;
   ready: boolean;
   sdp: string;
-  candidates: Array<RTCIceCandidate | null>;
-  listener: (event: RTCPeerConnectionIceEvent) => void;
+  candidates: Array<RTCIceCandidateInit | null>;
+  listener?: (event: RTCPeerConnectionIceEvent) => void;
 }
 
 interface RemoteIceFragment {
@@ -96,6 +96,17 @@ class CallSession extends EventEmitter {
     if (!this.webRtcSession)
       throw new Error("WebRTC session is not initialized");
     return this.webRtcSession;
+  }
+
+  private get delegatedTrickleIce() {
+    return this.webRtcSession?.trickleIce;
+  }
+
+  private get supportsTrickleIce() {
+    return (
+      !this.webPhone.options.webRtcSessionFactory ||
+      this.delegatedTrickleIce !== undefined
+    );
   }
 
   public get mediaStream(): MediaStream | undefined {
@@ -378,10 +389,28 @@ class CallSession extends EventEmitter {
 
   protected async createOffer() {
     if (this.webPhone.options.webRtcSessionFactory) {
-      this.baseLocalSdp = await this.requireWebRtcSession().createOffer({
-        iceRestart: true,
-      });
-      return this.baseLocalSdp;
+      if (!this.delegatedTrickleIce) {
+        this.baseLocalSdp = await this.requireWebRtcSession().createOffer({
+          iceRestart: true,
+        });
+        return this.baseLocalSdp;
+      }
+      const remoteGeneration = this.beginRemoteIceGeneration();
+      const localGeneration = this.beginDelegatedLocalIceGeneration();
+      try {
+        this.baseLocalSdp = await this.requireWebRtcSession().createOffer({
+          iceRestart: true,
+        });
+        this.setDelegatedLocalIceDescription(
+          localGeneration,
+          this.baseLocalSdp,
+        );
+        return this.baseLocalSdp;
+      } catch (error) {
+        this.deactivateLocalIceGeneration(localGeneration);
+        this.deactivateRemoteIceGeneration(remoteGeneration);
+        throw error;
+      }
     }
     const generation = this.beginRemoteIceGeneration();
     try {
@@ -397,8 +426,32 @@ class CallSession extends EventEmitter {
 
   protected async createAnswer(offer: string) {
     if (this.webPhone.options.webRtcSessionFactory) {
-      this.baseLocalSdp = await this.requireWebRtcSession().createAnswer(offer);
-      return this.baseLocalSdp;
+      if (!this.delegatedTrickleIce) {
+        this.stopRemoteIceGeneration();
+        this.baseLocalSdp =
+          await this.requireWebRtcSession().createAnswer(offer);
+        return this.baseLocalSdp;
+      }
+      const remoteGeneration =
+        this.remoteIceGeneration?.active &&
+        this.remoteIceGeneration.sdp === offer
+          ? this.remoteIceGeneration
+          : this.beginRemoteIceGeneration(offer);
+      const localGeneration = this.beginDelegatedLocalIceGeneration();
+      try {
+        this.baseLocalSdp =
+          await this.requireWebRtcSession().createAnswer(offer);
+        this.setDelegatedLocalIceDescription(
+          localGeneration,
+          this.baseLocalSdp,
+        );
+        this.setRemoteIceDescription(remoteGeneration, offer);
+        return this.baseLocalSdp;
+      } catch (error) {
+        this.deactivateLocalIceGeneration(localGeneration);
+        this.deactivateRemoteIceGeneration(remoteGeneration);
+        throw error;
+      }
     }
     const generation =
       this.remoteIceGeneration?.active && this.remoteIceGeneration.sdp === offer
@@ -420,7 +473,11 @@ class CallSession extends EventEmitter {
 
   protected async applyAnswer(answer: string) {
     if (this.webPhone.options.webRtcSessionFactory) {
-      return this.requireWebRtcSession().applyAnswer(answer);
+      await this.requireWebRtcSession().applyAnswer(answer);
+      if (this.remoteIceGeneration && this.delegatedTrickleIce) {
+        this.setRemoteIceDescription(this.remoteIceGeneration, answer);
+      }
+      return;
     }
     const generation = this.remoteIceGeneration;
     await this.rtcPeerConnection.setRemoteDescription({
@@ -529,13 +586,11 @@ class CallSession extends EventEmitter {
   }
 
   protected get trickleIceHeaders(): Record<string, string> {
-    return this.webPhone.options.webRtcSessionFactory
-      ? {}
-      : { Supported: "trickle-ice" };
+    return this.supportsTrickleIce ? { Supported: "trickle-ice" } : {};
   }
 
   protected addTrickleIceSupport(headers: Record<string, string>) {
-    if (this.webPhone.options.webRtcSessionFactory) return;
+    if (!this.supportsTrickleIce) return;
     const key = Object.keys(headers).find(
       (header) => header.toLowerCase() === "supported",
     );
@@ -572,11 +627,55 @@ class CallSession extends EventEmitter {
       },
     };
     this.localIceGeneration = generation;
-    this.rtcPeerConnection.addEventListener(
-      "icecandidate",
-      generation.listener,
-    );
+    const listener = generation.listener;
+    if (listener) {
+      this.rtcPeerConnection.addEventListener("icecandidate", listener);
+    }
     return generation;
+  }
+
+  private beginDelegatedLocalIceGeneration() {
+    this.stopLocalIceGeneration();
+    const generation: LocalIceGeneration = {
+      active: true,
+      ended: false,
+      ready: false,
+      sdp: "",
+      candidates: [],
+    };
+    this.localIceGeneration = generation;
+    this.delegatedTrickleIce?.setLocalCandidateHandler((candidate) => {
+      if (
+        !generation.active ||
+        generation.ended ||
+        (candidate !== null && !candidate.candidate)
+      )
+        return;
+      generation.candidates.push(candidate);
+      generation.ended = candidate === null;
+      void this.sendLocalIceCandidates(generation);
+    });
+    return generation;
+  }
+
+  private setDelegatedLocalIceDescription(
+    generation: LocalIceGeneration,
+    sdp: string,
+  ) {
+    const prefix = "a=ice-options:";
+    const advertisesTrickle = sdp
+      .split(/\r?\n/)
+      .some(
+        (line) =>
+          line.startsWith(prefix) &&
+          line.slice(prefix.length).split(/\s+/).includes("trickle"),
+      );
+    if (!advertisesTrickle) {
+      throw new Error(
+        "Delegated WebRTC SDP must advertise a=ice-options:trickle",
+      );
+    }
+    generation.sdp = sdp;
   }
 
   private async setLocalDescriptionForTrickleIce(
@@ -610,10 +709,12 @@ class CallSession extends EventEmitter {
   private deactivateLocalIceGeneration(generation: LocalIceGeneration) {
     generation.active = false;
     generation.candidates.length = 0;
-    this.rtcPeerConnection?.removeEventListener(
-      "icecandidate",
-      generation.listener,
-    );
+    if (generation.listener) {
+      this.rtcPeerConnection?.removeEventListener(
+        "icecandidate",
+        generation.listener,
+      );
+    }
     if (this.localIceGeneration === generation) {
       this.localIceGeneration = undefined;
     }
@@ -661,7 +762,7 @@ class CallSession extends EventEmitter {
 
   private createLocalIceFragment(
     sdp: string,
-    candidate: RTCIceCandidate | null,
+    candidate: RTCIceCandidateInit | null,
   ) {
     const lines = sdp.trim().split(/\r?\n/);
     const mediaIndexes = lines.flatMap((line, index) =>
@@ -735,11 +836,15 @@ class CallSession extends EventEmitter {
 
   private receiveRemoteIceCandidate(body: string) {
     if (this.state === "disposed") return;
+    if (
+      this.webPhone.options.webRtcSessionFactory &&
+      this.webRtcSession &&
+      !this.delegatedTrickleIce
+    )
+      return;
     const generation =
       this.remoteIceGeneration ??
-      (!this.webPhone.options.webRtcSessionFactory &&
-      this.direction === "inbound" &&
-      this.sipMessage.body
+      (this.direction === "inbound" && this.sipMessage.body
         ? this.beginRemoteIceGeneration(this.sipMessage.body)
         : undefined);
     const candidate = this.parseRemoteIceFragment(body);
@@ -803,7 +908,11 @@ class CallSession extends EventEmitter {
         );
         if (candidate === undefined) continue;
         try {
-          await this.rtcPeerConnection.addIceCandidate(candidate);
+          if (this.webPhone.options.webRtcSessionFactory) {
+            await this.delegatedTrickleIce?.addRemoteCandidate(candidate);
+          } else {
+            await this.rtcPeerConnection.addIceCandidate(candidate);
+          }
         } catch {}
       }
     } finally {
