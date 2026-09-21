@@ -36,6 +36,22 @@ interface LocalIceGeneration {
   listener: (event: RTCPeerConnectionIceEvent) => void;
 }
 
+interface RemoteIceFragment {
+  iceUfrag: string;
+  icePwd: string;
+  media: string;
+  mid: string;
+  candidate: string | null;
+}
+
+interface RemoteIceGeneration {
+  active: boolean;
+  applying: boolean;
+  ready: boolean;
+  sdp?: string;
+  candidates: RemoteIceFragment[];
+}
+
 class CallSession extends EventEmitter {
   public webPhone: WebPhone;
   public sipMessage!: InboundMessage;
@@ -56,10 +72,24 @@ class CallSession extends EventEmitter {
   private baseLocalSdp?: string;
   private localIceGeneration?: LocalIceGeneration;
   private localIceSending = false;
+  private remoteIceGeneration?: RemoteIceGeneration;
 
   public constructor(webPhone: WebPhone) {
     super();
     this.webPhone = webPhone;
+    this.on("inboundMessage", (message: InboundMessage) => {
+      if (
+        message.subject.startsWith("INFO sip:") &&
+        message.getHeader("Info-Package")?.toLowerCase() === "trickle-ice" &&
+        message
+          .getHeader("Content-Type")
+          ?.split(";", 1)[0]
+          .trim()
+          .toLowerCase() === "application/trickle-ice-sdpfrag"
+      ) {
+        queueMicrotask(() => this.receiveRemoteIceCandidate(message.body));
+      }
+    });
   }
 
   private requireWebRtcSession() {
@@ -318,6 +348,7 @@ class CallSession extends EventEmitter {
 
   public dispose() {
     this.stopLocalIceGeneration();
+    this.stopRemoteIceGeneration();
     if (this.webPhone.options.webRtcSessionFactory) {
       this.webRtcSession?.dispose();
     } else {
@@ -352,10 +383,16 @@ class CallSession extends EventEmitter {
       });
       return this.baseLocalSdp;
     }
-    const offer = await this.rtcPeerConnection.createOffer({
-      iceRestart: true,
-    });
-    return await this.setLocalDescriptionForTrickleIce(offer);
+    const generation = this.beginRemoteIceGeneration();
+    try {
+      const offer = await this.rtcPeerConnection.createOffer({
+        iceRestart: true,
+      });
+      return await this.setLocalDescriptionForTrickleIce(offer);
+    } catch (error) {
+      this.deactivateRemoteIceGeneration(generation);
+      throw error;
+    }
   }
 
   protected async createAnswer(offer: string) {
@@ -363,22 +400,34 @@ class CallSession extends EventEmitter {
       this.baseLocalSdp = await this.requireWebRtcSession().createAnswer(offer);
       return this.baseLocalSdp;
     }
-    await this.rtcPeerConnection.setRemoteDescription({
-      type: "offer",
-      sdp: offer,
-    });
-    const answer = await this.rtcPeerConnection.createAnswer();
-    return await this.setLocalDescriptionForTrickleIce(answer);
+    const generation =
+      this.remoteIceGeneration?.active && this.remoteIceGeneration.sdp === offer
+        ? this.remoteIceGeneration
+        : this.beginRemoteIceGeneration(offer);
+    try {
+      await this.rtcPeerConnection.setRemoteDescription({
+        type: "offer",
+        sdp: offer,
+      });
+      this.setRemoteIceDescription(generation, offer);
+      const answer = await this.rtcPeerConnection.createAnswer();
+      return await this.setLocalDescriptionForTrickleIce(answer);
+    } catch (error) {
+      this.deactivateRemoteIceGeneration(generation);
+      throw error;
+    }
   }
 
-  protected applyAnswer(answer: string) {
+  protected async applyAnswer(answer: string) {
     if (this.webPhone.options.webRtcSessionFactory) {
       return this.requireWebRtcSession().applyAnswer(answer);
     }
-    return this.rtcPeerConnection.setRemoteDescription({
+    const generation = this.remoteIceGeneration;
+    await this.rtcPeerConnection.setRemoteDescription({
       type: "answer",
       sdp: answer,
     });
+    if (generation) this.setRemoteIceDescription(generation, answer);
   }
 
   // send re-INVITE.
@@ -645,6 +694,159 @@ class CallSession extends EventEmitter {
       mid,
       candidate ? `a=${candidate.candidate}` : "a=end-of-candidates",
     ].join("\r\n");
+  }
+
+  private beginRemoteIceGeneration(sdp?: string) {
+    this.stopRemoteIceGeneration();
+    const generation: RemoteIceGeneration = {
+      active: true,
+      applying: false,
+      ready: false,
+      sdp,
+      candidates: [],
+    };
+    this.remoteIceGeneration = generation;
+    return generation;
+  }
+
+  private stopRemoteIceGeneration() {
+    if (this.remoteIceGeneration) {
+      this.deactivateRemoteIceGeneration(this.remoteIceGeneration);
+    }
+  }
+
+  private deactivateRemoteIceGeneration(generation: RemoteIceGeneration) {
+    generation.active = false;
+    generation.candidates.length = 0;
+    if (this.remoteIceGeneration === generation) {
+      this.remoteIceGeneration = undefined;
+    }
+  }
+
+  private setRemoteIceDescription(
+    generation: RemoteIceGeneration,
+    sdp: string,
+  ) {
+    if (!generation.active || generation !== this.remoteIceGeneration) return;
+    generation.sdp = sdp;
+    generation.ready = true;
+    void this.applyRemoteIceCandidates(generation);
+  }
+
+  private receiveRemoteIceCandidate(body: string) {
+    if (this.state === "disposed") return;
+    const generation =
+      this.remoteIceGeneration ??
+      (!this.webPhone.options.webRtcSessionFactory &&
+      this.direction === "inbound" &&
+      this.sipMessage.body
+        ? this.beginRemoteIceGeneration(this.sipMessage.body)
+        : undefined);
+    const candidate = this.parseRemoteIceFragment(body);
+    if (!generation?.active || !candidate) return;
+    generation.candidates.push(candidate);
+    void this.applyRemoteIceCandidates(generation);
+  }
+
+  private parseRemoteIceFragment(body: string): RemoteIceFragment | undefined {
+    const lines = body.trim().split(/\r?\n/);
+    const readUniqueValue = (prefix: string) => {
+      const matches = lines.filter((line) => line.startsWith(prefix));
+      return matches.length === 1 ? matches[0].slice(prefix.length) : undefined;
+    };
+    const iceUfrag = readUniqueValue("a=ice-ufrag:");
+    const icePwd = readUniqueValue("a=ice-pwd:");
+    const media = readUniqueValue("m=");
+    const mid = readUniqueValue("a=mid:");
+    const candidates = lines.filter((line) => line.startsWith("a=candidate:"));
+    const endMarkerCount = lines.filter(
+      (line) => line === "a=end-of-candidates",
+    ).length;
+    if (
+      !iceUfrag ||
+      !icePwd ||
+      !media ||
+      !mid ||
+      candidates.length + endMarkerCount !== 1
+    ) {
+      return;
+    }
+    return {
+      iceUfrag,
+      icePwd,
+      media: `m=${media}`,
+      mid,
+      candidate: candidates[0]?.slice(2) ?? null,
+    };
+  }
+
+  private async applyRemoteIceCandidates(generation: RemoteIceGeneration) {
+    if (
+      !generation.active ||
+      !generation.ready ||
+      !generation.sdp ||
+      generation.applying
+    )
+      return;
+    generation.applying = true;
+    try {
+      while (
+        generation.active &&
+        generation === this.remoteIceGeneration &&
+        generation.candidates.length > 0
+      ) {
+        const fragment = generation.candidates.shift();
+        if (!fragment) break;
+        const candidate = this.matchRemoteIceCandidate(
+          generation.sdp,
+          fragment,
+        );
+        if (candidate === undefined) continue;
+        try {
+          await this.rtcPeerConnection.addIceCandidate(candidate);
+        } catch {}
+      }
+    } finally {
+      generation.applying = false;
+    }
+  }
+
+  private matchRemoteIceCandidate(
+    sdp: string,
+    fragment: RemoteIceFragment,
+  ): RTCIceCandidateInit | null | undefined {
+    const lines = sdp.trim().split(/\r?\n/);
+    const mediaIndexes = lines.flatMap((line, index) =>
+      line.startsWith("m=") ? [index] : [],
+    );
+    const mediaIndex = mediaIndexes.findIndex((start, index) => {
+      const section = lines.slice(start, mediaIndexes[index + 1]);
+      return (
+        section[0]?.split(/\s+/, 1)[0] === fragment.media.split(/\s+/, 1)[0] &&
+        section.includes(`a=mid:${fragment.mid}`)
+      );
+    });
+    if (mediaIndex === -1) return;
+    const start = mediaIndexes[mediaIndex];
+    const section = lines.slice(start, mediaIndexes[mediaIndex + 1]);
+    const session = lines.slice(0, mediaIndexes[0]);
+    const attribute = (prefix: string) =>
+      section.find((line) => line.startsWith(prefix)) ??
+      session.find((line) => line.startsWith(prefix));
+    if (
+      attribute("a=ice-ufrag:") !== `a=ice-ufrag:${fragment.iceUfrag}` ||
+      attribute("a=ice-pwd:") !== `a=ice-pwd:${fragment.icePwd}`
+    ) {
+      return;
+    }
+    return fragment.candidate
+      ? {
+          candidate: fragment.candidate,
+          sdpMid: fragment.mid,
+          sdpMLineIndex: mediaIndex,
+          usernameFragment: fragment.iceUfrag,
+        }
+      : null;
   }
 
   protected async sendJsonMessage<T>(

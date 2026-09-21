@@ -4,6 +4,7 @@ import WebPhone from "../src";
 import InboundCallSession from "../src/call-session/inbound";
 import OutboundCallSession from "../src/call-session/outbound";
 import EventEmitter from "../src/event-emitter";
+import { DefaultSipClient } from "../src/sip-client";
 import InboundMessage from "../src/sip-message/inbound";
 import type RequestMessage from "../src/sip-message/outbound/request";
 import type ResponseMessage from "../src/sip-message/outbound/response";
@@ -23,6 +24,8 @@ const LOCAL_SDP = `${[
   "a=candidate:present 1 udp 1 192.0.2.1 5000 typ host",
 ].join("\r\n")}\r\n`;
 
+const REMOTE_SDP = LOCAL_SDP.replaceAll("local-", "remote-");
+
 const sipInfo: SipInfo = {
   authorizationId: "id",
   domain: "example.com",
@@ -38,6 +41,8 @@ class FakeSipClient extends EventEmitter implements SipClient {
   public replies: ResponseMessage[] = [];
   public deferInfo = false;
   public infoFailure?: "reject" | "non-2xx";
+  public deferInviteAnswer = false;
+  public pendingInvite?: RequestMessage;
   public pendingInfoReplies: Array<(message: InboundMessage) => void> = [];
 
   public async start() {}
@@ -66,6 +71,16 @@ class FakeSipClient extends EventEmitter implements SipClient {
         "Proxy-Authenticate": 'Digest, nonce="nonce"',
       });
     }
+    if (message.subject.startsWith("INVITE ") && this.deferInviteAnswer) {
+      this.pendingInvite = message;
+      return new InboundMessage("SIP/2.0 100 Trying", {
+        Via: message.headers.Via,
+        CSeq: message.headers.CSeq,
+        From: message.headers.From,
+        To: `${message.headers.To};tag=remote`,
+        "Call-Id": message.headers["Call-Id"],
+      });
+    }
     return new InboundMessage(
       "SIP/2.0 200 OK",
       {
@@ -75,7 +90,7 @@ class FakeSipClient extends EventEmitter implements SipClient {
         To: `${message.headers.To};tag=remote`,
         "Call-Id": message.headers["Call-Id"],
       },
-      "remote answer",
+      REMOTE_SDP,
     );
   }
   public async reply(message: ResponseMessage) {
@@ -86,6 +101,24 @@ class FakeSipClient extends EventEmitter implements SipClient {
   public replyToNextInfo(subject = "SIP/2.0 200 OK") {
     this.pendingInfoReplies.shift()?.(new InboundMessage(subject));
   }
+
+  public answerInvite() {
+    if (!this.pendingInvite) throw new Error("No pending INVITE");
+    this.emit(
+      "inboundMessage",
+      new InboundMessage(
+        "SIP/2.0 200 OK",
+        {
+          Via: this.pendingInvite.headers.Via,
+          CSeq: this.pendingInvite.headers.CSeq,
+          From: this.pendingInvite.headers.From,
+          To: `${this.pendingInvite.headers.To};tag=remote`,
+          "Call-Id": this.pendingInvite.headers["Call-Id"],
+        },
+        REMOTE_SDP,
+      ),
+    );
+  }
 }
 
 class FakePeerConnection extends EventTarget {
@@ -93,6 +126,10 @@ class FakePeerConnection extends EventTarget {
   public localDescription: RTCSessionDescription | null = null;
   public remoteDescription: RTCSessionDescription | null = null;
   public candidatesOnSetLocalDescription: Array<RTCIceCandidate | null> = [];
+  public remoteCandidates: Array<RTCIceCandidateInit | null> = [];
+  public deferRemoteCandidates = false;
+  public failedRemoteCandidate?: string;
+  public pendingRemoteCandidates: Array<() => void> = [];
 
   public async createOffer() {
     return { type: "offer", sdp: LOCAL_SDP } as RTCSessionDescriptionInit;
@@ -109,6 +146,17 @@ class FakePeerConnection extends EventTarget {
   }
   public async setRemoteDescription(description: RTCSessionDescriptionInit) {
     this.remoteDescription = description as RTCSessionDescription;
+  }
+  public async addIceCandidate(candidate: RTCIceCandidateInit | null) {
+    this.remoteCandidates.push(candidate);
+    if (candidate?.candidate === this.failedRemoteCandidate) {
+      throw new Error("Candidate failed");
+    }
+    if (this.deferRemoteCandidates) {
+      await new Promise<void>((resolve) => {
+        this.pendingRemoteCandidates.push(resolve);
+      });
+    }
   }
   public emitCandidate(candidate: RTCIceCandidate | null) {
     this.dispatchEvent(Object.assign(new Event("icecandidate"), { candidate }));
@@ -139,6 +187,313 @@ const candidate = (value: string) =>
     sdpMid: "audio",
     sdpMLineIndex: 0,
   }) as RTCIceCandidate;
+
+const remoteCandidateInfo = (
+  callId: string,
+  value: string | null,
+  {
+    iceUfrag = "remote-ufrag",
+    icePwd = "remote-password",
+    media = "audio 9 UDP/TLS/RTP/SAVPF 111",
+    mid = "audio",
+  }: {
+    iceUfrag?: string;
+    icePwd?: string;
+    media?: string;
+    mid?: string;
+  } = {},
+) =>
+  new InboundMessage(
+    "INFO sip:100@example.com SIP/2.0",
+    {
+      "Call-Id": callId,
+      "Info-Package": "trickle-ice",
+      "Content-Type": "application/trickle-ice-sdpfrag",
+    },
+    [
+      `a=ice-ufrag:${iceUfrag}`,
+      `a=ice-pwd:${icePwd}`,
+      `m=${media}`,
+      `a=mid:${mid}`,
+      value === null ? "a=end-of-candidates" : `a=candidate:${value}`,
+    ].join("\r\n"),
+  );
+
+test("routes and queues remote candidates until the matching description is ready", async () => {
+  const sipClient = new FakeSipClient();
+  sipClient.deferInviteAnswer = true;
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const session = new OutboundCallSession(webPhone, "101");
+  const peerConnection = new FakePeerConnection();
+  session.rtcPeerConnection = peerConnection as unknown as RTCPeerConnection;
+  webPhone.callSessions.push(session);
+
+  const call = session.call();
+  await expect.poll(() => session.state).toBe("ringing");
+  sipClient.emit("inboundMessage", remoteCandidateInfo("other-call", "other"));
+  sipClient.emit(
+    "inboundMessage",
+    remoteCandidateInfo(session.callId, "first"),
+  );
+  sipClient.emit(
+    "inboundMessage",
+    remoteCandidateInfo(session.callId, "second"),
+  );
+  sipClient.emit("inboundMessage", remoteCandidateInfo(session.callId, null));
+
+  expect(peerConnection.remoteCandidates).toEqual([]);
+  sipClient.answerInvite();
+  await call;
+  await expect.poll(() => peerConnection.remoteCandidates).toHaveLength(3);
+  expect(peerConnection.remoteCandidates).toEqual([
+    {
+      candidate: "candidate:first",
+      sdpMid: "audio",
+      sdpMLineIndex: 0,
+      usernameFragment: "remote-ufrag",
+    },
+    {
+      candidate: "candidate:second",
+      sdpMid: "audio",
+      sdpMLineIndex: 0,
+      usernameFragment: "remote-ufrag",
+    },
+    null,
+  ]);
+});
+
+test("retains inbound remote candidates received before answer", async () => {
+  const sipClient = new FakeSipClient();
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const session = new NativeInboundCallSession(
+    webPhone,
+    new InboundMessage(
+      "INVITE sip:100@example.com SIP/2.0",
+      inboundInvite().headers,
+      REMOTE_SDP,
+    ),
+  );
+  const peerConnection = new FakePeerConnection();
+  session.rtcPeerConnection = peerConnection as unknown as RTCPeerConnection;
+  webPhone.callSessions.push(session);
+
+  sipClient.emit(
+    "inboundMessage",
+    remoteCandidateInfo(session.callId, "before-answer"),
+  );
+  expect(peerConnection.remoteCandidates).toEqual([]);
+
+  await session.answer();
+  await expect
+    .poll(() => peerConnection.remoteCandidates)
+    .toEqual([
+      {
+        candidate: "candidate:before-answer",
+        sdpMid: "audio",
+        sdpMLineIndex: 0,
+        usernameFragment: "remote-ufrag",
+      },
+    ]);
+});
+
+test("ignores malformed and mismatched fragments and continues after candidate failure", async () => {
+  const sipClient = new FakeSipClient();
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const session = new OutboundCallSession(webPhone, "101");
+  const peerConnection = new FakePeerConnection();
+  peerConnection.failedRemoteCandidate = "candidate:rejected";
+  session.rtcPeerConnection = peerConnection as unknown as RTCPeerConnection;
+  webPhone.callSessions.push(session);
+  await session.call();
+
+  sipClient.emit(
+    "inboundMessage",
+    new InboundMessage(
+      "INFO sip:100@example.com SIP/2.0",
+      {
+        "Call-Id": session.callId,
+        "Info-Package": "trickle-ice",
+        "Content-Type": "application/trickle-ice-sdpfrag",
+      },
+      "not an SDP fragment",
+    ),
+  );
+  sipClient.emit(
+    "inboundMessage",
+    remoteCandidateInfo(session.callId, "wrong-generation", {
+      iceUfrag: "stale-ufrag",
+    }),
+  );
+  sipClient.emit(
+    "inboundMessage",
+    remoteCandidateInfo(session.callId, "wrong-media", { mid: "video" }),
+  );
+  sipClient.emit(
+    "inboundMessage",
+    remoteCandidateInfo(session.callId, "rejected"),
+  );
+  sipClient.emit(
+    "inboundMessage",
+    remoteCandidateInfo(session.callId, "different-port", {
+      media: "audio 5000 UDP/TLS/RTP/SAVPF 111",
+    }),
+  );
+  sipClient.emit(
+    "inboundMessage",
+    remoteCandidateInfo(session.callId, "accepted"),
+  );
+  sipClient.emit("inboundMessage", remoteCandidateInfo(session.callId, null));
+
+  await expect.poll(() => peerConnection.remoteCandidates).toHaveLength(4);
+  expect(
+    peerConnection.remoteCandidates.map((item) => item?.candidate),
+  ).toEqual([
+    "candidate:rejected",
+    "candidate:different-port",
+    "candidate:accepted",
+    undefined,
+  ]);
+  expect(session.state).toBe("answered");
+});
+
+test("drops queued remote candidates when their generation is superseded", async () => {
+  const sipClient = new FakeSipClient();
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const session = new OutboundCallSession(webPhone, "101");
+  const peerConnection = new FakePeerConnection();
+  session.rtcPeerConnection = peerConnection as unknown as RTCPeerConnection;
+  webPhone.callSessions.push(session);
+  await session.call();
+  peerConnection.deferRemoteCandidates = true;
+
+  sipClient.emit(
+    "inboundMessage",
+    remoteCandidateInfo(session.callId, "pending-old"),
+  );
+  sipClient.emit(
+    "inboundMessage",
+    remoteCandidateInfo(session.callId, "queued-old"),
+  );
+  await expect
+    .poll(() => peerConnection.pendingRemoteCandidates)
+    .toHaveLength(1);
+
+  await session.reInvite();
+  peerConnection.pendingRemoteCandidates.shift()?.();
+  sipClient.emit(
+    "inboundMessage",
+    remoteCandidateInfo(session.callId, "new-generation"),
+  );
+  await expect
+    .poll(() => peerConnection.pendingRemoteCandidates)
+    .toHaveLength(1);
+  peerConnection.pendingRemoteCandidates.shift()?.();
+
+  await expect.poll(() => peerConnection.remoteCandidates).toHaveLength(2);
+  expect(
+    peerConnection.remoteCandidates.map((item) => item?.candidate),
+  ).toEqual(["candidate:pending-old", "candidate:new-generation"]);
+});
+
+test("drops queued remote candidates when the Call Session is disposed", async () => {
+  const sipClient = new FakeSipClient();
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const session = new OutboundCallSession(webPhone, "101");
+  const peerConnection = new FakePeerConnection();
+  session.rtcPeerConnection = peerConnection as unknown as RTCPeerConnection;
+  webPhone.callSessions.push(session);
+  await session.call();
+  peerConnection.deferRemoteCandidates = true;
+
+  sipClient.emit(
+    "inboundMessage",
+    remoteCandidateInfo(session.callId, "pending"),
+  );
+  sipClient.emit(
+    "inboundMessage",
+    remoteCandidateInfo(session.callId, "queued"),
+  );
+  await expect
+    .poll(() => peerConnection.pendingRemoteCandidates)
+    .toHaveLength(1);
+  session.dispose();
+  peerConnection.pendingRemoteCandidates.shift()?.();
+  await new Promise((resolve) => setTimeout(resolve));
+
+  expect(
+    peerConnection.remoteCandidates.map((item) => item?.candidate),
+  ).toEqual(["candidate:pending"]);
+});
+
+test("the default SIP client replies before remote candidate application settles", async () => {
+  class FakeWebSocket extends EventTarget {
+    public static instance?: FakeWebSocket;
+    public sent: string[] = [];
+    public onSend?: () => void;
+
+    public constructor() {
+      super();
+      FakeWebSocket.instance = this;
+    }
+    public send(message: string) {
+      this.onSend?.();
+      this.sent.push(message);
+    }
+    public close() {}
+  }
+
+  const OriginalWebSocket = globalThis.WebSocket;
+  globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
+  try {
+    const sipClient = new DefaultSipClient({ sipInfo });
+    const webPhone = new WebPhone({ sipInfo, sipClient });
+    const connecting = sipClient.connect();
+    const socket = FakeWebSocket.instance;
+    if (!socket) throw new Error("WebSocket was not created");
+    socket.dispatchEvent(new Event("open"));
+    await connecting;
+
+    const session = new NativeInboundCallSession(
+      webPhone,
+      new InboundMessage(
+        "INVITE sip:100@example.com SIP/2.0",
+        inboundInvite().headers,
+        REMOTE_SDP,
+      ),
+    );
+    const peerConnection = new FakePeerConnection();
+    peerConnection.deferRemoteCandidates = true;
+    session.rtcPeerConnection = peerConnection as unknown as RTCPeerConnection;
+    webPhone.callSessions.push(session);
+    await session.answer();
+    socket.sent.length = 0;
+    let candidatesAtResponse = -1;
+    socket.onSend = () => {
+      candidatesAtResponse = peerConnection.remoteCandidates.length;
+    };
+
+    const info = remoteCandidateInfo(session.callId, "pending");
+    Object.assign(info.headers, {
+      Via: "SIP/2.0/WSS example.com;branch=branch",
+      CSeq: "2 INFO",
+      From: session.remotePeer,
+      To: session.localPeer,
+    });
+    socket.dispatchEvent(
+      new MessageEvent("message", { data: info.toString() }),
+    );
+
+    await expect
+      .poll(() => peerConnection.pendingRemoteCandidates)
+      .toHaveLength(1);
+    expect(socket.sent).toHaveLength(1);
+    expect(socket.sent[0]).toMatch(/^SIP\/2\.0 200 OK/);
+    expect(candidatesAtResponse).toBe(0);
+    peerConnection.pendingRemoteCandidates.shift()?.();
+  } finally {
+    globalThis.WebSocket = OriginalWebSocket;
+  }
+});
 
 test("sends an SDK-managed offer immediately and preserves its SDP", async () => {
   const sipClient = new FakeSipClient();
