@@ -28,7 +28,6 @@ type FlipResult = CommandResult & {
 const DEFAULT_TRANSFER_TIMEOUT_MS = 10000;
 
 interface LocalIceGeneration {
-  ended: boolean;
   ready: boolean;
   sending: Promise<void>;
   sdp?: string;
@@ -76,12 +75,7 @@ class CallSession extends EventEmitter {
     this.on("inboundMessage", (message: InboundMessage) => {
       if (
         message.subject.startsWith("INFO sip:") &&
-        message.getHeader("Info-Package")?.toLowerCase() === "trickle-ice" &&
-        message
-          .getHeader("Content-Type")
-          ?.split(";", 1)[0]
-          .trim()
-          .toLowerCase() === "application/trickle-ice-sdpfrag"
+        message.getHeader("Info-Package")?.toLowerCase() === "trickle-ice"
       ) {
         queueMicrotask(() => this.receiveRemoteIceCandidate(message.body));
       }
@@ -547,7 +541,6 @@ class CallSession extends EventEmitter {
   private beginLocalIceGeneration() {
     this.stopLocalIceGeneration();
     const generation: LocalIceGeneration = {
-      ended: false,
       ready: false,
       sending: Promise.resolve(),
       candidates: [],
@@ -561,9 +554,8 @@ class CallSession extends EventEmitter {
     generation: LocalIceGeneration,
     candidate: RTCIceCandidateInit | null,
   ) {
-    if (generation !== this.localIceGeneration || generation.ended) return;
+    if (generation !== this.localIceGeneration) return;
     generation.candidates.push(candidate);
-    generation.ended = candidate === null;
     this.sendLocalIceCandidates(generation);
   }
 
@@ -733,14 +725,8 @@ class CallSession extends EventEmitter {
 
   private readLocalIceFragmentPrefix(sdp?: string) {
     const lines = (sdp ?? "").trim().split(/\r?\n/);
-    const mediaIndex = lines.findIndex((line) => line.startsWith("m="));
-    const mediaEnd = lines.findIndex(
-      (line, index) => index > mediaIndex && line.startsWith("m="),
-    );
-    const section = lines.slice(
-      mediaIndex,
-      mediaEnd === -1 ? undefined : mediaEnd,
-    );
+    const mediaIndex = lines.findIndex((line) => line.startsWith("m=audio "));
+    const section = lines.slice(mediaIndex);
     const findAttribute = (prefix: string) =>
       section.find((line) => line.startsWith(prefix)) ??
       lines.slice(0, mediaIndex).find((line) => line.startsWith(prefix));

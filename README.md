@@ -1318,8 +1318,9 @@ trickleIce: {
 
 Both methods exchange `RTCIceCandidateInit | null`, where `null` marks
 end-of-candidates. The application must call the registered handler for each
-local candidate and must return offer and answer SDP containing
-`a=ice-options:trickle`. The Web Phone forwards incoming candidates through
+local candidate, report completion once per generation, and return offer and
+answer SDP with one audio media section and `a=ice-options:trickle`. The Web
+Phone forwards incoming candidates through
 `addRemoteCandidate` in arrival order for the application to validate and
 apply, and continues to own all SIP signaling. Candidate failures do not fail
 the Call Session. This supports the RingCentral audio calling subset described

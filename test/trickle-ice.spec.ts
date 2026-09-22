@@ -236,10 +236,9 @@ test("routes and queues remote candidates until the matching description is read
     "inboundMessage",
     remoteCandidateInfo(session.callId, "first"),
   );
-  sipClient.emit(
-    "inboundMessage",
-    remoteCandidateInfo(session.callId, "second"),
-  );
+  const packageOnlyInfo = remoteCandidateInfo(session.callId, "second");
+  delete packageOnlyInfo.headers["Content-Type"];
+  sipClient.emit("inboundMessage", packageOnlyInfo);
   sipClient.emit("inboundMessage", remoteCandidateInfo(session.callId, null));
 
   expect(peerConnection.remoteCandidates).toEqual([]);
@@ -618,7 +617,6 @@ test("serializes local candidate INFO requests and ends the generation", async (
   await session.call();
 
   peerConnection.emitCandidate(candidate("second"));
-  peerConnection.emitCandidate(null);
   peerConnection.emitCandidate(null);
 
   const infoRequests = () =>

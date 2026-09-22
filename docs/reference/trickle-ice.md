@@ -44,16 +44,17 @@ trickleIce: {
 ```
 
 The application registers and emits browser-shaped local candidates through
-`setLocalCandidateHandler`; `null` marks end-of-candidates. Emitted candidates
-are forwarded as received, so candidate validation stays with the application.
+`setLocalCandidateHandler`; it emits one `null` end-of-candidates marker per ICE
+generation. Emitted candidates are forwarded as received, so candidate
+validation stays with the application.
 Incoming candidates are passed to `addRemoteCandidate` for the application to
 apply. The Web Phone owns SIP construction, dialog routing, candidate ordering,
 and generation lifetime.
 
-An opted-in session's offer and answer SDP must contain
-`a=ice-options:trickle`. The Web Phone rejects missing advertisements rather
-than rewriting application-owned SDP. A delegated session without the complete
-capability retains the existing complete-SDP behavior.
+An opted-in session's offer and answer SDP must contain one audio media section
+and `a=ice-options:trickle`. The Web Phone rejects missing advertisements
+rather than rewriting application-owned SDP. A delegated session without the
+complete capability retains the existing complete-SDP behavior.
 
 ## Supported scope
 
