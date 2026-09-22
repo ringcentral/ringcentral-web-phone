@@ -36,12 +36,9 @@ interface LocalIceGeneration {
   listener?: (event: RTCPeerConnectionIceEvent) => void;
 }
 
-interface RemoteIceFragment {
-  iceUfrag: string;
-  icePwd: string;
-  media: string;
-  mid: string;
-  candidate: string | null;
+interface RemoteIceCandidate {
+  candidate: RTCIceCandidateInit | null;
+  usernameFragment: string;
 }
 
 interface RemoteIceGeneration {
@@ -49,7 +46,7 @@ interface RemoteIceGeneration {
   applying: boolean;
   ready: boolean;
   sdp?: string;
-  candidates: RemoteIceFragment[];
+  candidates: RemoteIceCandidate[];
 }
 
 class CallSession extends EventEmitter {
@@ -847,42 +844,44 @@ class CallSession extends EventEmitter {
       (this.direction === "inbound" && this.sipMessage.body
         ? this.beginRemoteIceGeneration(this.sipMessage.body)
         : undefined);
-    const candidate = this.parseRemoteIceFragment(body);
-    if (!generation?.active || !candidate) return;
-    generation.candidates.push(candidate);
+    const candidates = this.parseRemoteIceCandidates(body);
+    if (!generation?.active || !candidates) return;
+    generation.candidates.push(...candidates);
     void this.applyRemoteIceCandidates(generation);
   }
 
-  private parseRemoteIceFragment(body: string): RemoteIceFragment | undefined {
+  private parseRemoteIceCandidates(
+    body: string,
+  ): RemoteIceCandidate[] | undefined {
     const lines = body.trim().split(/\r?\n/);
-    const readUniqueValue = (prefix: string) => {
-      const matches = lines.filter((line) => line.startsWith(prefix));
-      return matches.length === 1 ? matches[0].slice(prefix.length) : undefined;
-    };
-    const iceUfrag = readUniqueValue("a=ice-ufrag:");
-    const icePwd = readUniqueValue("a=ice-pwd:");
-    const media = readUniqueValue("m=");
-    const mid = readUniqueValue("a=mid:");
-    const candidates = lines.filter((line) => line.startsWith("a=candidate:"));
-    const endMarkerCount = lines.filter(
-      (line) => line === "a=end-of-candidates",
-    ).length;
-    if (
-      !iceUfrag ||
-      !icePwd ||
-      !media ||
-      !mid ||
-      candidates.length + endMarkerCount !== 1
-    ) {
-      return;
+    const usernameFragment = this.readIceUsernameFragment(body);
+    const mid = lines
+      .find((line) => line.startsWith("a=mid:"))
+      ?.slice("a=mid:".length);
+    if (!usernameFragment || !mid) return;
+    const candidates: RemoteIceCandidate[] = [];
+    for (const line of lines) {
+      if (line.startsWith("a=candidate:")) {
+        candidates.push({
+          candidate: {
+            candidate: line.slice(2),
+            sdpMid: mid,
+            usernameFragment,
+          },
+          usernameFragment,
+        });
+      } else if (line === "a=end-of-candidates") {
+        candidates.push({ candidate: null, usernameFragment });
+      }
     }
-    return {
-      iceUfrag,
-      icePwd,
-      media: `m=${media}`,
-      mid,
-      candidate: candidates[0]?.slice(2) ?? null,
-    };
+    return candidates.length > 0 ? candidates : undefined;
+  }
+
+  private readIceUsernameFragment(sdp: string) {
+    return sdp
+      .split(/\r?\n/)
+      .find((line) => line.startsWith("a=ice-ufrag:"))
+      ?.slice("a=ice-ufrag:".length);
   }
 
   private async applyRemoteIceCandidates(generation: RemoteIceGeneration) {
@@ -900,62 +899,25 @@ class CallSession extends EventEmitter {
         generation === this.remoteIceGeneration &&
         generation.candidates.length > 0
       ) {
-        const fragment = generation.candidates.shift();
-        if (!fragment) break;
-        const candidate = this.matchRemoteIceCandidate(
-          generation.sdp,
-          fragment,
-        );
-        if (candidate === undefined) continue;
+        const entry = generation.candidates.shift();
+        if (!entry) break;
+        if (
+          entry.candidate === null &&
+          entry.usernameFragment !==
+            this.readIceUsernameFragment(generation.sdp)
+        )
+          continue;
         try {
           if (this.webPhone.options.webRtcSessionFactory) {
-            await this.delegatedTrickleIce?.addRemoteCandidate(candidate);
+            await this.delegatedTrickleIce?.addRemoteCandidate(entry.candidate);
           } else {
-            await this.rtcPeerConnection.addIceCandidate(candidate);
+            await this.rtcPeerConnection.addIceCandidate(entry.candidate);
           }
         } catch {}
       }
     } finally {
       generation.applying = false;
     }
-  }
-
-  private matchRemoteIceCandidate(
-    sdp: string,
-    fragment: RemoteIceFragment,
-  ): RTCIceCandidateInit | null | undefined {
-    const lines = sdp.trim().split(/\r?\n/);
-    const mediaIndexes = lines.flatMap((line, index) =>
-      line.startsWith("m=") ? [index] : [],
-    );
-    const mediaIndex = mediaIndexes.findIndex((start, index) => {
-      const section = lines.slice(start, mediaIndexes[index + 1]);
-      return (
-        section[0]?.split(/\s+/, 1)[0] === fragment.media.split(/\s+/, 1)[0] &&
-        section.includes(`a=mid:${fragment.mid}`)
-      );
-    });
-    if (mediaIndex === -1) return;
-    const start = mediaIndexes[mediaIndex];
-    const section = lines.slice(start, mediaIndexes[mediaIndex + 1]);
-    const session = lines.slice(0, mediaIndexes[0]);
-    const attribute = (prefix: string) =>
-      section.find((line) => line.startsWith(prefix)) ??
-      session.find((line) => line.startsWith(prefix));
-    if (
-      attribute("a=ice-ufrag:") !== `a=ice-ufrag:${fragment.iceUfrag}` ||
-      attribute("a=ice-pwd:") !== `a=ice-pwd:${fragment.icePwd}`
-    ) {
-      return;
-    }
-    return fragment.candidate
-      ? {
-          candidate: fragment.candidate,
-          sdpMid: fragment.mid,
-          sdpMLineIndex: mediaIndex,
-          usernameFragment: fragment.iceUfrag,
-        }
-      : null;
   }
 
   protected async sendJsonMessage<T>(

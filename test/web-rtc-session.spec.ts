@@ -427,13 +427,11 @@ test("exchanges delegated Trickle ICE candidates through the Call Session", asyn
     {
       candidate: "candidate:rejected",
       sdpMid: "audio",
-      sdpMLineIndex: 0,
       usernameFragment: "remote-ufrag",
     },
     {
       candidate: "candidate:accepted",
       sdpMid: "audio",
-      sdpMLineIndex: 0,
       usernameFragment: "remote-ufrag",
     },
     null,

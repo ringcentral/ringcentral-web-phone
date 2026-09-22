@@ -249,13 +249,11 @@ test("routes and queues remote candidates until the matching description is read
     {
       candidate: "candidate:first",
       sdpMid: "audio",
-      sdpMLineIndex: 0,
       usernameFragment: "remote-ufrag",
     },
     {
       candidate: "candidate:second",
       sdpMid: "audio",
-      sdpMLineIndex: 0,
       usernameFragment: "remote-ufrag",
     },
     null,
@@ -290,18 +288,91 @@ test("retains inbound remote candidates received before answer", async () => {
       {
         candidate: "candidate:before-answer",
         sdpMid: "audio",
-        sdpMLineIndex: 0,
         usernameFragment: "remote-ufrag",
       },
     ]);
 });
 
-test("ignores malformed and mismatched fragments and continues after candidate failure", async () => {
+test("ignores unusable fragments and continues after candidate failure", async () => {
   const sipClient = new FakeSipClient();
   const webPhone = new WebPhone({ sipInfo, sipClient });
   const session = new OutboundCallSession(webPhone, "101");
   const peerConnection = new FakePeerConnection();
   peerConnection.failedRemoteCandidate = "candidate:rejected";
+  session.rtcPeerConnection = peerConnection as unknown as RTCPeerConnection;
+  webPhone.callSessions.push(session);
+  await session.call();
+
+  const trickleInfo = (body: string) =>
+    new InboundMessage(
+      "INFO sip:100@example.com SIP/2.0",
+      {
+        "Call-Id": session.callId,
+        "Info-Package": "trickle-ice",
+        "Content-Type": "application/trickle-ice-sdpfrag",
+      },
+      body,
+    );
+  sipClient.emit("inboundMessage", trickleInfo("not an SDP fragment"));
+  sipClient.emit(
+    "inboundMessage",
+    trickleInfo(
+      "a=ice-pwd:remote-password\r\na=candidate:no-username-fragment",
+    ),
+  );
+  sipClient.emit(
+    "inboundMessage",
+    trickleInfo(
+      "a=ice-ufrag:remote-ufrag\r\na=ice-pwd:remote-password\r\na=candidate:no-mid",
+    ),
+  );
+  sipClient.emit(
+    "inboundMessage",
+    remoteCandidateInfo(session.callId, "stale-generation", {
+      iceUfrag: "stale-ufrag",
+    }),
+  );
+  sipClient.emit(
+    "inboundMessage",
+    remoteCandidateInfo(session.callId, "rejected"),
+  );
+  sipClient.emit(
+    "inboundMessage",
+    remoteCandidateInfo(session.callId, "accepted"),
+  );
+  sipClient.emit(
+    "inboundMessage",
+    remoteCandidateInfo(session.callId, null, { iceUfrag: "stale-ufrag" }),
+  );
+  sipClient.emit("inboundMessage", remoteCandidateInfo(session.callId, null));
+
+  await expect.poll(() => peerConnection.remoteCandidates).toHaveLength(4);
+  expect(peerConnection.remoteCandidates).toEqual([
+    {
+      candidate: "candidate:stale-generation",
+      sdpMid: "audio",
+      usernameFragment: "stale-ufrag",
+    },
+    {
+      candidate: "candidate:rejected",
+      sdpMid: "audio",
+      usernameFragment: "remote-ufrag",
+    },
+    {
+      candidate: "candidate:accepted",
+      sdpMid: "audio",
+      usernameFragment: "remote-ufrag",
+    },
+    null,
+  ]);
+  expect(session.state).toBe("answered");
+});
+
+test("delivers multiple candidates from one fragment in wire order before its end marker", async () => {
+  const sipClient = new FakeSipClient();
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const session = new OutboundCallSession(webPhone, "101");
+  const peerConnection = new FakePeerConnection();
   session.rtcPeerConnection = peerConnection as unknown as RTCPeerConnection;
   webPhone.callSessions.push(session);
   await session.call();
@@ -315,45 +386,33 @@ test("ignores malformed and mismatched fragments and continues after candidate f
         "Info-Package": "trickle-ice",
         "Content-Type": "application/trickle-ice-sdpfrag",
       },
-      "not an SDP fragment",
+      [
+        "a=ice-ufrag:remote-ufrag",
+        "a=ice-pwd:remote-password",
+        "m=audio 9 UDP/TLS/RTP/SAVPF 111",
+        "a=mid:audio",
+        "a=candidate:first",
+        "a=candidate:second",
+        "a=end-of-candidates",
+      ].join("\r\n"),
     ),
   );
-  sipClient.emit(
-    "inboundMessage",
-    remoteCandidateInfo(session.callId, "wrong-generation", {
-      iceUfrag: "stale-ufrag",
-    }),
-  );
-  sipClient.emit(
-    "inboundMessage",
-    remoteCandidateInfo(session.callId, "wrong-media", { mid: "video" }),
-  );
-  sipClient.emit(
-    "inboundMessage",
-    remoteCandidateInfo(session.callId, "rejected"),
-  );
-  sipClient.emit(
-    "inboundMessage",
-    remoteCandidateInfo(session.callId, "different-port", {
-      media: "audio 5000 UDP/TLS/RTP/SAVPF 111",
-    }),
-  );
-  sipClient.emit(
-    "inboundMessage",
-    remoteCandidateInfo(session.callId, "accepted"),
-  );
-  sipClient.emit("inboundMessage", remoteCandidateInfo(session.callId, null));
 
-  await expect.poll(() => peerConnection.remoteCandidates).toHaveLength(4);
-  expect(
-    peerConnection.remoteCandidates.map((item) => item?.candidate),
-  ).toEqual([
-    "candidate:rejected",
-    "candidate:different-port",
-    "candidate:accepted",
-    undefined,
-  ]);
-  expect(session.state).toBe("answered");
+  await expect
+    .poll(() => peerConnection.remoteCandidates)
+    .toEqual([
+      {
+        candidate: "candidate:first",
+        sdpMid: "audio",
+        usernameFragment: "remote-ufrag",
+      },
+      {
+        candidate: "candidate:second",
+        sdpMid: "audio",
+        usernameFragment: "remote-ufrag",
+      },
+      null,
+    ]);
 });
 
 test("drops queued remote candidates when their generation is superseded", async () => {
