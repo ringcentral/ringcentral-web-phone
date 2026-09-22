@@ -28,9 +28,9 @@ type FlipResult = CommandResult & {
 const DEFAULT_TRANSFER_TIMEOUT_MS = 10000;
 
 interface LocalIceGeneration {
-  active: boolean;
   ended: boolean;
   ready: boolean;
+  sending: Promise<void>;
   sdp?: string;
   candidates: Array<RTCIceCandidateInit | null>;
   listener?: (event: RTCPeerConnectionIceEvent) => void;
@@ -43,10 +43,9 @@ interface RemoteIceCandidate {
 }
 
 interface RemoteIceGeneration {
-  active: boolean;
-  applying: boolean;
   ready: boolean;
-  sdp?: string;
+  applying: Promise<void>;
+  sdp: string;
   candidates: RemoteIceCandidate[];
 }
 
@@ -69,7 +68,6 @@ class CallSession extends EventEmitter {
   private webRtcSession?: WebRtcSession;
   private baseLocalSdp?: string;
   private localIceGeneration?: LocalIceGeneration;
-  private localIceSending = false;
   private remoteIceGeneration?: RemoteIceGeneration;
 
   public constructor(webPhone: WebPhone) {
@@ -393,33 +391,13 @@ class CallSession extends EventEmitter {
         });
         return this.baseLocalSdp;
       }
-      const remoteGeneration = this.beginRemoteIceGeneration();
-      const localGeneration = this.beginDelegatedLocalIceGeneration();
-      try {
-        this.baseLocalSdp = await this.requireWebRtcSession().createOffer({
-          iceRestart: true,
-        });
-        this.setDelegatedLocalIceDescription(
-          localGeneration,
-          this.baseLocalSdp,
-        );
-        return this.baseLocalSdp;
-      } catch (error) {
-        this.deactivateLocalIceGeneration(localGeneration);
-        this.deactivateRemoteIceGeneration(remoteGeneration);
-        throw error;
-      }
+      return await this.delegatedIceSdp((session) =>
+        session.createOffer({ iceRestart: true }),
+      );
     }
-    const generation = this.beginRemoteIceGeneration();
-    try {
-      const offer = await this.rtcPeerConnection.createOffer({
-        iceRestart: true,
-      });
-      return await this.setLocalDescriptionForTrickleIce(offer);
-    } catch (error) {
-      this.deactivateRemoteIceGeneration(generation);
-      throw error;
-    }
+    return await this.sdkManagedIceSdp(() =>
+      this.rtcPeerConnection.createOffer({ iceRestart: true }),
+    );
   }
 
   protected async createAnswer(offer: string) {
@@ -430,58 +408,27 @@ class CallSession extends EventEmitter {
           await this.requireWebRtcSession().createAnswer(offer);
         return this.baseLocalSdp;
       }
-      const remoteGeneration =
-        this.remoteIceGeneration?.active &&
-        this.remoteIceGeneration.sdp === offer
-          ? this.remoteIceGeneration
-          : this.beginRemoteIceGeneration(offer);
-      const localGeneration = this.beginDelegatedLocalIceGeneration();
-      try {
-        this.baseLocalSdp =
-          await this.requireWebRtcSession().createAnswer(offer);
-        this.setDelegatedLocalIceDescription(
-          localGeneration,
-          this.baseLocalSdp,
-        );
-        this.setRemoteIceDescription(remoteGeneration, offer);
-        return this.baseLocalSdp;
-      } catch (error) {
-        this.deactivateLocalIceGeneration(localGeneration);
-        this.deactivateRemoteIceGeneration(remoteGeneration);
-        throw error;
-      }
+      return await this.delegatedIceSdp(
+        (session) => session.createAnswer(offer),
+        offer,
+      );
     }
-    const generation =
-      this.remoteIceGeneration?.active && this.remoteIceGeneration.sdp === offer
-        ? this.remoteIceGeneration
-        : this.beginRemoteIceGeneration(offer);
-    try {
-      await this.rtcPeerConnection.setRemoteDescription({
-        type: "offer",
-        sdp: offer,
-      });
-      this.setRemoteIceDescription(generation, offer);
-      const answer = await this.rtcPeerConnection.createAnswer();
-      return await this.setLocalDescriptionForTrickleIce(answer);
-    } catch (error) {
-      this.deactivateRemoteIceGeneration(generation);
-      throw error;
-    }
+    return await this.sdkManagedIceSdp(
+      () => this.rtcPeerConnection.createAnswer(),
+      offer,
+    );
   }
 
   protected async applyAnswer(answer: string) {
+    const generation = this.remoteIceGeneration;
     if (this.webPhone.options.webRtcSessionFactory) {
       await this.requireWebRtcSession().applyAnswer(answer);
-      if (this.remoteIceGeneration && this.delegatedTrickleIce) {
-        this.setRemoteIceDescription(this.remoteIceGeneration, answer);
-      }
-      return;
+    } else {
+      await this.rtcPeerConnection.setRemoteDescription({
+        type: "answer",
+        sdp: answer,
+      });
     }
-    const generation = this.remoteIceGeneration;
-    await this.rtcPeerConnection.setRemoteDescription({
-      type: "answer",
-      sdp: answer,
-    });
     if (generation) this.setRemoteIceDescription(generation, answer);
   }
 
@@ -493,52 +440,62 @@ class CallSession extends EventEmitter {
     if (!toReceive) {
       sdp = sdp.replace(/a=sendrecv/g, "a=sendonly");
     }
-    const requestMessage = new RequestMessage(
-      `INVITE ${extractAddress(this.remotePeer)} SIP/2.0`,
-      {
-        "Call-Id": this.callId,
-        From: this.localPeer,
-        To: this.remotePeer,
-        Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
-        "Content-Type": "application/sdp",
-        ...this.trickleIceHeaders,
-      },
-      sdp,
-    );
-    const replyMessage = await this.webPhone.sipClient.request(requestMessage);
+    const replyMessage = await this.sendReInvite(sdp);
     this.startLocalIceCandidateSending();
     await this.applyAnswer(replyMessage.body);
-    const ackMessage = new RequestMessage(
-      `ACK ${extractAddress(this.remotePeer)} SIP/2.0`,
-      {
-        "Call-Id": this.callId,
-        From: this.localPeer,
-        To: this.remotePeer,
-        Via: replyMessage.headers.Via,
-        CSeq: replyMessage.headers.CSeq.replace(" INVITE", " ACK"),
-      },
-    );
-    await this.webPhone.sipClient.reply(ackMessage);
   }
 
   // handle re-INVITE from SIP server
   public async handleReInvite(reInviteMessage: InboundMessage) {
     this.sipMessage = reInviteMessage;
-    const sdp = await this.createAnswer(reInviteMessage.body);
-
-    const newMessage = new ResponseMessage(this.sipMessage, {
-      responseCode: 200,
-      headers: {
-        "Content-Type": "application/sdp",
-        ...this.trickleIceHeaders,
-      },
-      body: sdp,
-    });
-    await this.webPhone.sipClient.reply(newMessage);
-    this.startLocalIceCandidateSending();
+    await this.replySessionSdp(await this.createAnswer(reInviteMessage.body));
 
     // note: no need to wait for the final SIP message (refer to inbound call answer function)
     // because nobody is supposed to proactively invoke this function.
+  }
+
+  // reply a 200 OK with SDP to the current inbound INVITE and start sending
+  // local ICE candidates for the new generation
+  protected async replySessionSdp(sdp: string) {
+    await this.webPhone.sipClient.reply(
+      new ResponseMessage(this.sipMessage, {
+        responseCode: 200,
+        headers: {
+          "Content-Type": "application/sdp",
+          ...this.trickleIceHeaders,
+        },
+        body: sdp,
+      }),
+    );
+    this.startLocalIceCandidateSending();
+  }
+
+  // send an in-dialog INVITE (re-INVITE) and acknowledge its final response
+  private async sendReInvite(sdp: string) {
+    const replyMessage = await this.webPhone.sipClient.request(
+      new RequestMessage(
+        `INVITE ${extractAddress(this.remotePeer)} SIP/2.0`,
+        {
+          "Call-Id": this.callId,
+          From: this.localPeer,
+          To: this.remotePeer,
+          Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
+          "Content-Type": "application/sdp",
+          ...this.trickleIceHeaders,
+        },
+        sdp,
+      ),
+    );
+    await this.webPhone.sipClient.reply(
+      new RequestMessage(`ACK ${extractAddress(this.remotePeer)} SIP/2.0`, {
+        "Call-Id": this.callId,
+        From: this.localPeer,
+        To: this.remotePeer,
+        Via: replyMessage.headers.Via,
+        CSeq: replyMessage.headers.CSeq.replace(" INVITE", " ACK"),
+      }),
+    );
+    return replyMessage;
   }
 
   // for hold/unhold
@@ -557,30 +514,7 @@ class CallSession extends EventEmitter {
     if (!origin) throw new Error("Invalid SDP origin");
     this.sdpVersion = Math.max(this.sdpVersion, Number(origin[2]) + 1);
     sdp = sdp.replace(origin[0], `${origin[1]} ${this.sdpVersion++}`);
-    const requestMessage = new RequestMessage(
-      `INVITE ${extractAddress(this.remotePeer)} SIP/2.0`,
-      {
-        "Call-Id": this.callId,
-        From: this.localPeer,
-        To: this.remotePeer,
-        Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
-        "Content-Type": "application/sdp",
-        ...this.trickleIceHeaders,
-      },
-      sdp,
-    );
-    const replyMessage = await this.webPhone.sipClient.request(requestMessage);
-    const ackMessage = new RequestMessage(
-      `ACK ${extractAddress(this.remotePeer)} SIP/2.0`,
-      {
-        "Call-Id": this.callId,
-        From: this.localPeer,
-        To: this.remotePeer,
-        Via: replyMessage.headers.Via,
-        CSeq: replyMessage.headers.CSeq.replace(" INVITE", " ACK"),
-      },
-    );
-    await this.webPhone.sipClient.reply(ackMessage);
+    await this.sendReInvite(sdp);
   }
 
   protected get trickleIceHeaders(): Record<string, string> {
@@ -604,17 +538,18 @@ class CallSession extends EventEmitter {
   }
 
   protected startLocalIceCandidateSending() {
-    if (!this.localIceGeneration) return;
-    this.localIceGeneration.ready = true;
-    void this.sendLocalIceCandidates(this.localIceGeneration);
+    const generation = this.localIceGeneration;
+    if (!generation) return;
+    generation.ready = true;
+    this.sendLocalIceCandidates(generation);
   }
 
   private beginLocalIceGeneration() {
     this.stopLocalIceGeneration();
     const generation: LocalIceGeneration = {
-      active: true,
       ended: false,
       ready: false,
+      sending: Promise.resolve(),
       candidates: [],
     };
     this.localIceGeneration = generation;
@@ -625,19 +560,10 @@ class CallSession extends EventEmitter {
     generation: LocalIceGeneration,
     candidate: RTCIceCandidateInit | null,
   ) {
-    if (!generation.active || generation.ended) return;
+    if (generation !== this.localIceGeneration || generation.ended) return;
     generation.candidates.push(candidate);
     generation.ended = candidate === null;
-    void this.sendLocalIceCandidates(generation);
-  }
-
-  private beginDelegatedLocalIceGeneration() {
-    const generation = this.beginLocalIceGeneration();
-    this.delegatedTrickleIce?.setLocalCandidateHandler((candidate) => {
-      if (candidate !== null && !candidate.candidate) return;
-      this.enqueueLocalIceCandidate(generation, candidate);
-    });
-    return generation;
+    this.sendLocalIceCandidates(generation);
   }
 
   private setLocalIceDescription(generation: LocalIceGeneration, sdp: string) {
@@ -668,6 +594,55 @@ class CallSession extends EventEmitter {
     this.setLocalIceDescription(generation, sdp);
   }
 
+  private async delegatedIceSdp(
+    createSdp: (session: WebRtcSession) => Promise<string>,
+    offer?: string,
+  ) {
+    const remoteGeneration =
+      offer !== undefined && this.remoteIceGeneration?.sdp === offer
+        ? this.remoteIceGeneration
+        : this.beginRemoteIceGeneration(offer);
+    const localGeneration = this.beginLocalIceGeneration();
+    this.delegatedTrickleIce?.setLocalCandidateHandler((candidate) =>
+      this.enqueueLocalIceCandidate(localGeneration, candidate),
+    );
+    try {
+      this.baseLocalSdp = await createSdp(this.requireWebRtcSession());
+      this.setDelegatedLocalIceDescription(localGeneration, this.baseLocalSdp);
+      if (offer !== undefined) {
+        this.setRemoteIceDescription(remoteGeneration, offer);
+      }
+      return this.baseLocalSdp;
+    } catch (error) {
+      this.stopLocalIceGeneration(localGeneration);
+      this.stopRemoteIceGeneration(remoteGeneration);
+      throw error;
+    }
+  }
+
+  private async sdkManagedIceSdp(
+    createSdp: () => Promise<RTCSessionDescriptionInit>,
+    offer?: string,
+  ) {
+    const remoteGeneration =
+      offer !== undefined && this.remoteIceGeneration?.sdp === offer
+        ? this.remoteIceGeneration
+        : this.beginRemoteIceGeneration(offer);
+    try {
+      if (offer !== undefined) {
+        await this.rtcPeerConnection.setRemoteDescription({
+          type: "offer",
+          sdp: offer,
+        });
+        this.setRemoteIceDescription(remoteGeneration, offer);
+      }
+      return await this.setLocalDescriptionForTrickleIce(await createSdp());
+    } catch (error) {
+      this.stopRemoteIceGeneration(remoteGeneration);
+      throw error;
+    }
+  }
+
   private async setLocalDescriptionForTrickleIce(
     description: RTCSessionDescriptionInit,
   ) {
@@ -684,19 +659,13 @@ class CallSession extends EventEmitter {
       this.setLocalIceDescription(generation, localSdp);
       return localSdp;
     } catch (error) {
-      this.deactivateLocalIceGeneration(generation);
+      this.stopLocalIceGeneration(generation);
       throw error;
     }
   }
 
-  private stopLocalIceGeneration() {
-    const generation = this.localIceGeneration;
-    if (!generation) return;
-    this.deactivateLocalIceGeneration(generation);
-  }
-
-  private deactivateLocalIceGeneration(generation: LocalIceGeneration) {
-    generation.active = false;
+  private stopLocalIceGeneration(generation = this.localIceGeneration) {
+    if (!generation || generation !== this.localIceGeneration) return;
     generation.candidates.length = 0;
     if (generation.listener) {
       this.rtcPeerConnection?.removeEventListener(
@@ -704,30 +673,24 @@ class CallSession extends EventEmitter {
         generation.listener,
       );
     }
-    if (this.localIceGeneration === generation) {
-      this.localIceGeneration = undefined;
-    }
+    this.localIceGeneration = undefined;
   }
 
-  private async sendLocalIceCandidates(generation: LocalIceGeneration) {
-    if (!generation.active || !generation.ready || this.localIceSending) return;
-    this.localIceSending = true;
-    try {
-      while (
-        generation.active &&
-        generation === this.localIceGeneration &&
-        generation.candidates.length > 0
-      ) {
-        const candidate = generation.candidates.shift();
-        if (candidate === undefined) break;
+  private sendLocalIceCandidates(generation: LocalIceGeneration) {
+    if (!generation.ready) return;
+    generation.sending = generation.sending.then(() =>
+      this.sendLocalIceCandidate(generation),
+    );
+  }
+
+  private async sendLocalIceCandidate(generation: LocalIceGeneration) {
+    while (generation === this.localIceGeneration) {
+      const candidate = generation.candidates.shift();
+      if (candidate === undefined) return;
+      try {
         const response = await this.webPhone.sipClient.request(
-          new RequestMessage(
-            `INFO sip:${this.webPhone.sipInfo.domain} SIP/2.0`,
+          this.infoRequest(
             {
-              "Call-Id": this.callId,
-              From: this.localPeer,
-              To: this.remotePeer,
-              Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
               "Info-Package": "trickle-ice",
               "Content-Type": "application/trickle-ice-sdpfrag",
               "Content-Disposition": "Info-Package",
@@ -735,18 +698,24 @@ class CallSession extends EventEmitter {
             this.createLocalIceFragment(generation, candidate),
           ),
         );
-        if (!/^SIP\/2\.0 2\d\d /.test(response.subject)) {
-          this.deactivateLocalIceGeneration(generation);
-        }
-      }
-    } catch {
-      this.deactivateLocalIceGeneration(generation);
-    } finally {
-      this.localIceSending = false;
-      if (this.localIceGeneration !== generation && this.localIceGeneration) {
-        void this.sendLocalIceCandidates(this.localIceGeneration);
-      }
+        if (/^SIP\/2\.0 2\d\d /.test(response.subject)) continue;
+      } catch {}
+      this.stopLocalIceGeneration(generation);
     }
+  }
+
+  private infoRequest(headers: Record<string, string>, body: string) {
+    return new RequestMessage(
+      `INFO sip:${this.webPhone.sipInfo.domain} SIP/2.0`,
+      {
+        "Call-Id": this.callId,
+        From: this.localPeer,
+        To: this.remotePeer,
+        Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
+        ...headers,
+      },
+      body,
+    );
   }
 
   private createLocalIceFragment(
@@ -786,57 +755,44 @@ class CallSession extends EventEmitter {
   private beginRemoteIceGeneration(sdp?: string) {
     this.stopRemoteIceGeneration();
     const generation: RemoteIceGeneration = {
-      active: true,
-      applying: false,
       ready: false,
-      sdp,
+      applying: Promise.resolve(),
+      sdp: sdp ?? "",
       candidates: [],
     };
     this.remoteIceGeneration = generation;
     return generation;
   }
 
-  private stopRemoteIceGeneration() {
-    if (this.remoteIceGeneration) {
-      this.deactivateRemoteIceGeneration(this.remoteIceGeneration);
-    }
-  }
-
-  private deactivateRemoteIceGeneration(generation: RemoteIceGeneration) {
-    generation.active = false;
+  private stopRemoteIceGeneration(generation = this.remoteIceGeneration) {
+    if (!generation || generation !== this.remoteIceGeneration) return;
     generation.candidates.length = 0;
-    if (this.remoteIceGeneration === generation) {
-      this.remoteIceGeneration = undefined;
-    }
+    this.remoteIceGeneration = undefined;
   }
 
   private setRemoteIceDescription(
     generation: RemoteIceGeneration,
     sdp: string,
   ) {
-    if (!generation.active || generation !== this.remoteIceGeneration) return;
+    if (generation !== this.remoteIceGeneration) return;
     generation.sdp = sdp;
     generation.ready = true;
-    void this.applyRemoteIceCandidates(generation);
+    this.applyRemoteIceCandidates(generation);
   }
 
   private receiveRemoteIceCandidate(body: string) {
     if (this.state === "disposed") return;
-    if (
-      this.webPhone.options.webRtcSessionFactory &&
-      this.webRtcSession &&
-      !this.delegatedTrickleIce
-    )
-      return;
+    // a delegated session without the trickleIce capability ignores candidates
+    if (this.webRtcSession && !this.delegatedTrickleIce) return;
     const generation =
       this.remoteIceGeneration ??
       (this.direction === "inbound" && this.sipMessage.body
         ? this.beginRemoteIceGeneration(this.sipMessage.body)
         : undefined);
     const candidates = this.parseRemoteIceCandidates(body);
-    if (!generation?.active || !candidates) return;
+    if (!generation || !candidates) return;
     generation.candidates.push(...candidates);
-    void this.applyRemoteIceCandidates(generation);
+    this.applyRemoteIceCandidates(generation);
   }
 
   private parseRemoteIceCandidates(
@@ -873,39 +829,29 @@ class CallSession extends EventEmitter {
       ?.slice("a=ice-ufrag:".length);
   }
 
-  private async applyRemoteIceCandidates(generation: RemoteIceGeneration) {
-    if (
-      !generation.active ||
-      !generation.ready ||
-      !generation.sdp ||
-      generation.applying
-    )
-      return;
-    generation.applying = true;
-    try {
-      while (
-        generation.active &&
-        generation === this.remoteIceGeneration &&
-        generation.candidates.length > 0
-      ) {
-        const entry = generation.candidates.shift();
-        if (!entry) break;
-        if (
-          entry.candidate === null &&
-          entry.usernameFragment !==
-            this.readIceUsernameFragment(generation.sdp)
-        )
-          continue;
-        try {
-          if (this.webPhone.options.webRtcSessionFactory) {
-            await this.delegatedTrickleIce?.addRemoteCandidate(entry.candidate);
-          } else {
-            await this.rtcPeerConnection.addIceCandidate(entry.candidate);
-          }
-        } catch {}
-      }
-    } finally {
-      generation.applying = false;
+  private applyRemoteIceCandidates(generation: RemoteIceGeneration) {
+    if (!generation.ready) return;
+    generation.applying = generation.applying.then(() =>
+      this.applyRemoteIceCandidate(generation),
+    );
+  }
+
+  private async applyRemoteIceCandidate(generation: RemoteIceGeneration) {
+    while (generation === this.remoteIceGeneration) {
+      const entry = generation.candidates.shift();
+      if (entry === undefined) return;
+      if (
+        entry.candidate === null &&
+        entry.usernameFragment !== this.readIceUsernameFragment(generation.sdp)
+      )
+        continue;
+      try {
+        if (this.webPhone.options.webRtcSessionFactory) {
+          await this.delegatedTrickleIce?.addRemoteCandidate(entry.candidate);
+        } else {
+          await this.rtcPeerConnection.addIceCandidate(entry.candidate);
+        }
+      } catch {}
     }
   }
 
@@ -915,15 +861,8 @@ class CallSession extends EventEmitter {
   ) {
     const reqid = this.reqid++;
     const jsonBody = JSON.stringify({ request: { reqid, command, ...args } });
-    const requestMessage = new RequestMessage(
-      `INFO sip:${this.webPhone.sipInfo.domain} SIP/2.0`,
-      {
-        "Call-Id": this.callId,
-        From: this.localPeer,
-        To: this.remotePeer,
-        Via: `SIP/2.0/WSS ${fakeDomain};branch=${branch()}`,
-        "Content-Type": "application/json;charset=utf-8",
-      },
+    const requestMessage = this.infoRequest(
+      { "Content-Type": "application/json;charset=utf-8" },
       jsonBody,
     );
     let resolveResult!: (result: T) => void;

@@ -453,6 +453,44 @@ test("exchanges delegated Trickle ICE candidates through the Call Session", asyn
   ).toEqual(["a=candidate:local", "a=end-of-candidates"]);
 });
 
+test("forwards delegated local candidates as emitted without validation", async () => {
+  const sipClient = new FakeSipClient();
+  const webRtcSession = new FakeWebRtcSession();
+  webRtcSession.localSdp = trickleSdp("local");
+  webRtcSession.enableTrickleIce();
+  const webPhone = new WebPhone({
+    sipInfo,
+    sipClient,
+    webRtcSessionFactory: () => webRtcSession,
+  });
+  const session = new InboundCallSession(
+    webPhone,
+    inboundInvite(trickleSdp("remote")),
+  );
+  webPhone.callSessions.push(session);
+
+  await session.answer();
+  webRtcSession.localCandidateHandler?.({
+    candidate: "",
+    sdpMid: "audio",
+  });
+  webRtcSession.localCandidateHandler?.(null);
+
+  await expect
+    .poll(
+      () =>
+        sipClient.requests.filter((request) =>
+          request.subject.startsWith("INFO "),
+        ).length,
+    )
+    .toBe(2);
+  expect(
+    sipClient.requests
+      .filter((request) => request.subject.startsWith("INFO "))
+      .map((request) => request.body.trim().split("\r\n").at(-1)),
+  ).toEqual(["a=", "a=end-of-candidates"]);
+});
+
 test("advertises delegated Trickle ICE on an outbound offer", async () => {
   const sipClient = new FakeSipClient();
   sipClient.requestHandler = async (message) => {

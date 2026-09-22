@@ -203,10 +203,12 @@ Don't forget to filter the phone numbers that have
 ### Trickle ICE
 
 SDK-managed WebRTC uses Trickle ICE by default for initial calls, re-INVITEs,
-and ICE restarts. The Web Phone sends the generated SDP immediately without
-removing candidates already present, then sends later candidates one at a time
-through the Call Session's SIP signaling. No option or manual candidate API is
-required.
+and ICE restarts. The Web Phone sends the generated SDP immediately, keeping
+candidates already present in it, and signals only later candidates one at a
+time through the Call Session's SIP signaling, followed by end-of-candidates.
+Incoming candidates are converted once into browser-shaped data, held until the
+remote description is ready, and applied in arrival order; browser WebRTC
+validates them. No option or manual candidate API is required.
 
 Delegated WebRTC sessions can opt in through the `WebRtcSession.trickleIce`
 capability described under [SharedWorker WebPhone with delegated
@@ -215,9 +217,9 @@ without that complete capability keep the existing complete-SDP behavior.
 
 If candidate signaling fails, the Web Phone stops sending candidates for that
 ICE generation without failing the Call Session or starting a fallback
-re-INVITE. This behavior implements the subset supported by RingCentral; it is
-not a claim of complete RFC 8840 interoperability or support for arbitrary SIP
-servers.
+re-INVITE. This behavior implements the audio calling subset supported by
+RingCentral; it is not a claim of complete RFC 8840 interoperability or support
+for arbitrary SIP servers.
 
 ## Get inbound call sessions
 
@@ -1317,10 +1319,11 @@ trickleIce: {
 Both methods exchange `RTCIceCandidateInit | null`, where `null` marks
 end-of-candidates. The application must call the registered handler for each
 local candidate and must return offer and answer SDP containing
-`a=ice-options:trickle`. The Web Phone applies incoming candidates through
-`addRemoteCandidate` in arrival order and continues to own all SIP signaling.
-Candidate failures do not fail the Call Session. This supports the RingCentral
-subset described here, not complete RFC 8840 interoperability.
+`a=ice-options:trickle`. The Web Phone forwards incoming candidates through
+`addRemoteCandidate` in arrival order for the application to validate and
+apply, and continues to own all SIP signaling. Candidate failures do not fail
+the Call Session. This supports the RingCentral audio calling subset described
+here, not complete RFC 8840 interoperability.
 
 Without the complete `trickleIce` capability, delegated sessions retain their
 existing complete-SDP behavior. Without `webRtcSessionFactory`, the SDK uses

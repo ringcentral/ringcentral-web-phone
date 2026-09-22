@@ -184,31 +184,20 @@ class InboundCallSession extends CallSession {
   public async answer() {
     await this.init();
 
-    // most INVITE message will have a body with SDP offer.
-    if (this.sipMessage.body.length > 0) {
-      const sdp = await this.createAnswer(this.sipMessage.body);
-
-      const newMessage = new ResponseMessage(this.sipMessage, {
-        responseCode: 200,
-        headers: {
-          "Content-Type": "application/sdp",
-          ...this.trickleIceHeaders,
-        },
-        body: sdp,
-      });
-      await this.webPhone.sipClient.reply(newMessage);
-      this.startLocalIceCandidateSending();
+    // most INVITE messages have a body with an SDP offer. Some INVITE messages
+    // have an empty body, for example when you answer a call queue call via the
+    // RESTful API /pickup
+    const withOffer = this.sipMessage.body.length > 0;
+    if (withOffer) {
+      await this.replySessionSdp(await this.createAnswer(this.sipMessage.body));
     } else {
-      // some INVITE message has an empty body. For example, when you invoke RESTful API /pickup to answer a call from a call queue
-      const sdp = await this.createOffer();
-
       const newMessage = new ResponseMessage(this.sipMessage, {
         responseCode: 200,
         headers: {
           "Content-Type": "application/sdp",
           ...this.trickleIceHeaders,
         },
-        body: sdp,
+        body: await this.createOffer(),
       });
       const ackMessage = await this.webPhone.sipClient.request(
         newMessage as RequestMessage,
