@@ -1323,10 +1323,10 @@ Candidate failures do not fail the Call Session. This supports the RingCentral
 subset described here, not complete RFC 8840 interoperability.
 
 Without the complete `trickleIce` capability, delegated sessions retain their
-existing complete-SDP behavior. Without `webRtcSessionFactory`, the SDK uses its
-existing in-tab WebRTC behavior. Browser-only call-session properties such as
-`rtcPeerConnection`, `mediaStream`, and `audioElement` are available in that
-default mode and remain undefined when WebRTC is delegated.
+existing complete-SDP behavior. Without `webRtcSessionFactory`, the SDK uses
+SDK-managed WebRTC. Browser-only call-session properties such as
+`rtcPeerConnection`, `mediaStream`, and `audioElement` are available with
+SDK-managed WebRTC and remain undefined when WebRTC is delegated.
 
 ## monitor/whisper/barge/coach/takeover
 

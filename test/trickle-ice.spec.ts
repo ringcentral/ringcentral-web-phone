@@ -164,7 +164,7 @@ class FakePeerConnection extends EventTarget {
   public close() {}
 }
 
-class NativeInboundCallSession extends InboundCallSession {
+class SdkManagedInboundCallSession extends InboundCallSession {
   public override async init() {}
 }
 
@@ -265,7 +265,7 @@ test("routes and queues remote candidates until the matching description is read
 test("retains inbound remote candidates received before answer", async () => {
   const sipClient = new FakeSipClient();
   const webPhone = new WebPhone({ sipInfo, sipClient });
-  const session = new NativeInboundCallSession(
+  const session = new SdkManagedInboundCallSession(
     webPhone,
     new InboundMessage(
       "INVITE sip:100@example.com SIP/2.0",
@@ -453,7 +453,7 @@ test("the default SIP client replies before remote candidate application settles
     socket.dispatchEvent(new Event("open"));
     await connecting;
 
-    const session = new NativeInboundCallSession(
+    const session = new SdkManagedInboundCallSession(
       webPhone,
       new InboundMessage(
         "INVITE sip:100@example.com SIP/2.0",
@@ -535,7 +535,7 @@ test("preserves custom Supported tokens while advertising Trickle ICE", async ()
 test("sends an SDK-managed answer immediately and advertises Trickle ICE", async () => {
   const sipClient = new FakeSipClient();
   const webPhone = new WebPhone({ sipInfo, sipClient });
-  const session = new NativeInboundCallSession(webPhone, inboundInvite());
+  const session = new SdkManagedInboundCallSession(webPhone, inboundInvite());
   const peerConnection = new FakePeerConnection();
   session.rtcPeerConnection = peerConnection as unknown as RTCPeerConnection;
 
