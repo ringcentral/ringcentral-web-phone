@@ -553,7 +553,8 @@ class CallSession extends EventEmitter {
       candidates: [],
     };
     this.localIceGeneration = generation;
-    return generation;
+    // read back so the reference matches later reads when this is a manate proxy
+    return this.localIceGeneration;
   }
 
   private enqueueLocalIceCandidate(
@@ -761,7 +762,8 @@ class CallSession extends EventEmitter {
       candidates: [],
     };
     this.remoteIceGeneration = generation;
-    return generation;
+    // read back so the reference matches later reads when this is a manate proxy
+    return this.remoteIceGeneration;
   }
 
   private stopRemoteIceGeneration(generation = this.remoteIceGeneration) {

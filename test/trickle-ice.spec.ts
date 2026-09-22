@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { manage } from "manate";
 
 import WebPhone from "../src";
 import InboundCallSession from "../src/call-session/inbound";
@@ -647,6 +648,62 @@ test("serializes local candidate INFO requests and ends the generation", async (
   expect(infoRequests()[2].body).toContain("a=end-of-candidates\r\n");
   sipClient.replyToNextInfo();
   await expect.poll(() => sipClient.pendingInfoReplies).toHaveLength(0);
+});
+
+test("sends local candidate INFO requests from a manate-managed Call Session", async () => {
+  const sipClient = new FakeSipClient();
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const managedPhone = manage(webPhone);
+  const session = new OutboundCallSession(webPhone, "101");
+  const peerConnection = new FakePeerConnection();
+  peerConnection.candidatesOnSetLocalDescription = [candidate("first"), null];
+  session.rtcPeerConnection = peerConnection as unknown as RTCPeerConnection;
+  managedPhone.callSessions.push(session);
+  const managedSession = managedPhone.callSessions[
+    managedPhone.callSessions.length - 1
+  ] as OutboundCallSession;
+  await managedSession.call();
+
+  const infoRequests = () =>
+    sipClient.requests.filter((request) => request.subject.startsWith("INFO "));
+  await expect.poll(() => infoRequests()).toHaveLength(2);
+  expect(infoRequests()[0].body).toContain("a=candidate:first\r\n");
+  expect(infoRequests()[1].body).toContain("a=end-of-candidates\r\n");
+});
+
+test("applies remote candidates on a manate-managed inbound answer", async () => {
+  const sipClient = new FakeSipClient();
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const managedPhone = manage(webPhone);
+  const session = new SdkManagedInboundCallSession(
+    webPhone,
+    new InboundMessage(
+      "INVITE sip:100@example.com SIP/2.0",
+      inboundInvite().headers,
+      REMOTE_SDP,
+    ),
+  );
+  const peerConnection = new FakePeerConnection();
+  session.rtcPeerConnection = peerConnection as unknown as RTCPeerConnection;
+  managedPhone.callSessions.push(session);
+  const managedSession = managedPhone.callSessions[
+    managedPhone.callSessions.length - 1
+  ] as SdkManagedInboundCallSession;
+
+  await managedSession.answer();
+  sipClient.emit(
+    "inboundMessage",
+    remoteCandidateInfo("inbound-call", "after-answer"),
+  );
+  await expect
+    .poll(() => peerConnection.remoteCandidates)
+    .toEqual([
+      {
+        candidate: "candidate:after-answer",
+        sdpMid: "audio",
+        usernameFragment: "remote-ufrag",
+      },
+    ]);
 });
 
 for (const failure of ["reject", "non-2xx"] as const) {
