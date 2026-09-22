@@ -747,3 +747,24 @@ test("replaces stale candidate work with a re-INVITE ICE generation", async () =
   expect(invites).toHaveLength(3);
   expect(invites[2].headers.Supported).toBe("trickle-ice");
 });
+
+test("omits candidates already present in the sent SDP from INFO requests", async () => {
+  const sipClient = new FakeSipClient();
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const session = new OutboundCallSession(webPhone, "101");
+  const peerConnection = new FakePeerConnection();
+  session.rtcPeerConnection = peerConnection as unknown as RTCPeerConnection;
+  peerConnection.candidatesOnSetLocalDescription = [candidate("present")];
+  await session.call();
+
+  const infoRequests = () =>
+    sipClient.requests.filter((request) => request.subject.startsWith("INFO "));
+  expect(infoRequests()).toHaveLength(0);
+
+  peerConnection.emitCandidate(candidate("later"));
+  peerConnection.emitCandidate(null);
+  await expect.poll(() => infoRequests()).toHaveLength(2);
+  expect(
+    infoRequests().map((request) => request.body.trim().split("\r\n").at(-1)),
+  ).toEqual(["a=candidate:later", "a=end-of-candidates"]);
+});

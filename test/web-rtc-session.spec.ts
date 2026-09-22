@@ -1159,3 +1159,44 @@ test("preserves synchronous browser media behavior without a factory", () => {
   expect(disposedWithCleanMedia).toBe(true);
   expect(session.state).toBe("disposed");
 });
+
+test("omits delegated candidates already present in the sent SDP from INFO requests", async () => {
+  const sipClient = new FakeSipClient();
+  const webRtcSession = new FakeWebRtcSession();
+  webRtcSession.localSdp = `${trickleSdp("local")}a=candidate:local 1 udp 1 [IP_ADDRESS] 5000 typ host\r\n`;
+  webRtcSession.enableTrickleIce();
+  webRtcSession.localCandidatesOnCreate = [
+    {
+      candidate: "candidate:local",
+      sdpMid: "audio",
+      sdpMLineIndex: 0,
+    },
+    null,
+  ];
+  const webPhone = new WebPhone({
+    sipInfo,
+    sipClient,
+    webRtcSessionFactory: () => webRtcSession,
+  });
+  const session = new InboundCallSession(
+    webPhone,
+    inboundInvite(trickleSdp("remote")),
+  );
+  webPhone.callSessions.push(session);
+
+  await session.answer();
+
+  await expect
+    .poll(
+      () =>
+        sipClient.requests.filter((request) =>
+          request.subject.startsWith("INFO "),
+        ).length,
+    )
+    .toBe(1);
+  expect(
+    sipClient.requests
+      .filter((request) => request.subject.startsWith("INFO "))
+      .map((request) => request.body.trim().split("\r\n").at(-1)),
+  ).toEqual(["a=end-of-candidates"]);
+});

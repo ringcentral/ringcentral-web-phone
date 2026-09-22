@@ -31,9 +31,10 @@ interface LocalIceGeneration {
   active: boolean;
   ended: boolean;
   ready: boolean;
-  sdp: string;
+  sdp?: string;
   candidates: Array<RTCIceCandidateInit | null>;
   listener?: (event: RTCPeerConnectionIceEvent) => void;
+  fragmentPrefix?: string;
 }
 
 interface RemoteIceCandidate {
@@ -608,51 +609,43 @@ class CallSession extends EventEmitter {
     void this.sendLocalIceCandidates(this.localIceGeneration);
   }
 
-  private beginLocalIceGeneration(sdp: string) {
+  private beginLocalIceGeneration() {
     this.stopLocalIceGeneration();
     const generation: LocalIceGeneration = {
       active: true,
       ended: false,
       ready: false,
-      sdp,
       candidates: [],
-      listener: (event) => {
-        if (!generation.active || generation.ended) return;
-        generation.candidates.push(event.candidate);
-        generation.ended = event.candidate === null;
-        void this.sendLocalIceCandidates(generation);
-      },
     };
     this.localIceGeneration = generation;
-    const listener = generation.listener;
-    if (listener) {
-      this.rtcPeerConnection.addEventListener("icecandidate", listener);
-    }
     return generation;
   }
 
+  private enqueueLocalIceCandidate(
+    generation: LocalIceGeneration,
+    candidate: RTCIceCandidateInit | null,
+  ) {
+    if (!generation.active || generation.ended) return;
+    generation.candidates.push(candidate);
+    generation.ended = candidate === null;
+    void this.sendLocalIceCandidates(generation);
+  }
+
   private beginDelegatedLocalIceGeneration() {
-    this.stopLocalIceGeneration();
-    const generation: LocalIceGeneration = {
-      active: true,
-      ended: false,
-      ready: false,
-      sdp: "",
-      candidates: [],
-    };
-    this.localIceGeneration = generation;
+    const generation = this.beginLocalIceGeneration();
     this.delegatedTrickleIce?.setLocalCandidateHandler((candidate) => {
-      if (
-        !generation.active ||
-        generation.ended ||
-        (candidate !== null && !candidate.candidate)
-      )
-        return;
-      generation.candidates.push(candidate);
-      generation.ended = candidate === null;
-      void this.sendLocalIceCandidates(generation);
+      if (candidate !== null && !candidate.candidate) return;
+      this.enqueueLocalIceCandidate(generation, candidate);
     });
     return generation;
+  }
+
+  private setLocalIceDescription(generation: LocalIceGeneration, sdp: string) {
+    generation.sdp = sdp;
+    generation.candidates = generation.candidates.filter(
+      (candidate) =>
+        candidate === null || !sdp.includes(`a=${candidate.candidate}`),
+    );
   }
 
   private setDelegatedLocalIceDescription(
@@ -672,25 +665,24 @@ class CallSession extends EventEmitter {
         "Delegated WebRTC SDP must advertise a=ice-options:trickle",
       );
     }
-    generation.sdp = sdp;
+    this.setLocalIceDescription(generation, sdp);
   }
 
   private async setLocalDescriptionForTrickleIce(
     description: RTCSessionDescriptionInit,
   ) {
     if (!description.sdp) throw new Error("Local description is missing SDP");
-    const generation = this.beginLocalIceGeneration(description.sdp);
+    const generation = this.beginLocalIceGeneration();
+    const listener = (event: RTCPeerConnectionIceEvent) =>
+      this.enqueueLocalIceCandidate(generation, event.candidate);
+    generation.listener = listener;
+    this.rtcPeerConnection.addEventListener("icecandidate", listener);
     try {
       await this.rtcPeerConnection.setLocalDescription(description);
       const localSdp = this.rtcPeerConnection.localDescription?.sdp;
       if (!localSdp) throw new Error("Local description is missing SDP");
-      generation.sdp = localSdp;
-      generation.candidates = generation.candidates.filter(
-        (candidate) =>
-          candidate === null ||
-          !generation.sdp.includes(`a=${candidate.candidate}`),
-      );
-      return generation.sdp;
+      this.setLocalIceDescription(generation, localSdp);
+      return localSdp;
     } catch (error) {
       this.deactivateLocalIceGeneration(generation);
       throw error;
@@ -740,7 +732,7 @@ class CallSession extends EventEmitter {
               "Content-Type": "application/trickle-ice-sdpfrag",
               "Content-Disposition": "Info-Package",
             },
-            this.createLocalIceFragment(generation.sdp, candidate),
+            this.createLocalIceFragment(generation, candidate),
           ),
         );
         if (!/^SIP\/2\.0 2\d\d /.test(response.subject)) {
@@ -758,40 +750,37 @@ class CallSession extends EventEmitter {
   }
 
   private createLocalIceFragment(
-    sdp: string,
+    generation: LocalIceGeneration,
     candidate: RTCIceCandidateInit | null,
   ) {
-    const lines = sdp.trim().split(/\r?\n/);
-    const mediaIndexes = lines.flatMap((line, index) =>
-      line.startsWith("m=") ? [index] : [],
+    generation.fragmentPrefix ??= this.readLocalIceFragmentPrefix(
+      generation.sdp,
     );
-    const mediaIndex =
-      candidate?.sdpMid === null || candidate?.sdpMid === undefined
-        ? mediaIndexes[candidate?.sdpMLineIndex ?? 0]
-        : lines.indexOf(`a=mid:${candidate.sdpMid}`);
-    const sectionStart = lines.findLastIndex(
-      (line, index) => index <= mediaIndex && line.startsWith("m="),
+    return candidate
+      ? `${generation.fragmentPrefix}\r\na=${candidate.candidate}`
+      : `${generation.fragmentPrefix}\r\na=end-of-candidates`;
+  }
+
+  private readLocalIceFragmentPrefix(sdp?: string) {
+    const lines = (sdp ?? "").trim().split(/\r?\n/);
+    const mediaIndex = lines.findIndex((line) => line.startsWith("m="));
+    const mediaEnd = lines.findIndex(
+      (line, index) => index > mediaIndex && line.startsWith("m="),
     );
-    const sectionEnd =
-      mediaIndexes.find((index) => index > sectionStart) ?? lines.length;
-    const section = lines.slice(sectionStart, sectionEnd);
-    const session = lines.slice(0, mediaIndexes[0]);
+    const section = lines.slice(
+      mediaIndex,
+      mediaEnd === -1 ? undefined : mediaEnd,
+    );
     const findAttribute = (prefix: string) =>
       section.find((line) => line.startsWith(prefix)) ??
-      session.find((line) => line.startsWith(prefix));
+      lines.slice(0, mediaIndex).find((line) => line.startsWith(prefix));
     const iceUfrag = findAttribute("a=ice-ufrag:");
     const icePwd = findAttribute("a=ice-pwd:");
     const mid = section.find((line) => line.startsWith("a=mid:"));
-    if (!iceUfrag || !icePwd || sectionStart === -1 || !mid) {
+    if (mediaIndex === -1 || !iceUfrag || !icePwd || !mid) {
       throw new Error("Local SDP is missing Trickle ICE fragment fields");
     }
-    return [
-      iceUfrag,
-      icePwd,
-      lines[sectionStart],
-      mid,
-      candidate ? `a=${candidate.candidate}` : "a=end-of-candidates",
-    ].join("\r\n");
+    return [iceUfrag, icePwd, lines[mediaIndex], mid].join("\r\n");
   }
 
   private beginRemoteIceGeneration(sdp?: string) {
