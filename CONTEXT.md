@@ -27,3 +27,7 @@ _Avoid_: custom WebRTC, remote WebRTC
 **Trickle ICE**:
 For this SDK, incremental delivery of local ICE candidates after the initial SDP so a Call Session does not wait for ICE gathering to finish. It applies by default to SDK-managed WebRTC and is available to participating delegated WebRTC, but does not mean complete RFC 8840 interoperability.
 _Avoid_: full RFC 8840 support
+
+**SIP-provided ICE servers**:
+The per-Call-Session WebRTC ICE-server configuration supplied by RingCentral through the `p-rc-ice-servers` SIP header. It may contain both STUN and TURN servers and takes precedence over registration-provided STUN servers when present.
+_Avoid_: TURN header, global ICE servers
