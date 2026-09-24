@@ -154,46 +154,37 @@ class OutboundCallSession extends CallSession {
       let settled = false;
       const stopWaiting = () => {
         settled = true;
-        this.off("inboundMessage", progressHandler);
-        this.off("inboundMessage", answerHandler);
+        this.off("inboundMessage", responseHandler);
       };
-      const progressHandler = (message: InboundMessage) => {
-        if (
-          settled ||
-          message.getHeader("CSeq") !== this.sipMessage.getHeader("CSeq") ||
-          !/^SIP\/2\.0 1\d\d /.test(message.subject) ||
-          message.subject.startsWith("SIP/2.0 100 ") ||
-          message.getHeader("p-rc-ice-servers") === undefined
-        )
-          return;
-        this.sipMessage = message;
-        this.localPeer = message.getHeader("From")!;
-        this.remotePeer = message.getHeader("To")!;
-        void setupLocalOffer(message).catch((error) => {
-          if (settled) return;
-          stopWaiting();
-          void this.cancel().catch(() => {});
-          fail(error);
-          reject(error);
-        });
-      };
-      const answerHandler = async (message: InboundMessage) => {
+      const responseHandler = (message: InboundMessage) => {
         if (
           settled ||
           message.getHeader("CSeq") !== this.sipMessage.getHeader("CSeq")
         )
           return;
-        if (/^SIP\/2\.0 1\d\d /.test(message.subject)) return;
-        stopWaiting();
-        try {
-          resolve(await handleFinalResponse(message));
-        } catch (error) {
-          reject(error);
+        if (/^SIP\/2\.0 1\d\d /.test(message.subject)) {
+          if (
+            message.subject.startsWith("SIP/2.0 100 ") ||
+            message.getHeader("p-rc-ice-servers") === undefined
+          )
+            return;
+          this.sipMessage = message;
+          this.localPeer = message.getHeader("From")!;
+          this.remotePeer = message.getHeader("To")!;
+          void setupLocalOffer(message).catch((error) => {
+            if (settled) return;
+            stopWaiting();
+            void this.cancel().catch(() => {});
+            fail(error);
+            reject(error);
+          });
+          return;
         }
+        stopWaiting();
+        void handleFinalResponse(message).then(resolve, reject);
       };
-      this.on("inboundMessage", progressHandler);
-      this.on("inboundMessage", answerHandler);
-      progressHandler(authenticatedInviteResponse);
+      this.on("inboundMessage", responseHandler);
+      responseHandler(authenticatedInviteResponse);
     });
   }
 

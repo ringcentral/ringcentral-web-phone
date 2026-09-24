@@ -660,6 +660,43 @@ test("starts outbound gathering on the first provisional ICE server list", async
   expect(session.state).toBe("answered");
 });
 
+test("uses ICE servers when the authenticated INVITE first returns 183", async () => {
+  const sipClient = new FakeSipClient();
+  const originalRequest = sipClient.request.bind(sipClient);
+  const servers = [{ urls: "turn:early.example.com" }];
+  sipClient.request = async (message) => {
+    const response = await originalRequest(message);
+    if (
+      !message.subject.startsWith("INVITE ") ||
+      !message.headers["Proxy-Authorization"]
+    )
+      return response;
+    sipClient.pendingInvite = message;
+    return new InboundMessage("SIP/2.0 183 Session Progress", {
+      Via: message.headers.Via,
+      CSeq: message.headers.CSeq,
+      From: message.headers.From,
+      To: `${message.headers.To};tag=remote`,
+      "Call-Id": message.headers["Call-Id"],
+      "p-rc-ice-servers": JSON.stringify(servers),
+    });
+  };
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const session = new OutboundCallSession(webPhone, "101");
+  const peerConnection = new FakePeerConnection();
+  session.rtcPeerConnection = peerConnection as unknown as RTCPeerConnection;
+  webPhone.callSessions.push(session);
+
+  const call = session.call();
+  await expect.poll(() => peerConnection.localDescription).not.toBeNull();
+  expect(peerConnection.configuration.iceServers).toEqual(servers);
+  expect(session.state).toBe("ringing");
+  sipClient.answerInvite();
+  await call;
+  expect(session.state).toBe("answered");
+  expect(peerConnection.configurationCalls).toHaveLength(1);
+});
+
 test("uses final-response ICE servers when no provisional response supplies them", async () => {
   const sipClient = new FakeSipClient();
   const originalRequest = sipClient.request.bind(sipClient);
