@@ -703,11 +703,31 @@ test("uses final-response ICE servers when no provisional response supplies them
 test("cancels and rejects when a provisional ICE server header is malformed", async () => {
   const sipClient = new FakeSipClient();
   sipClient.deferInviteAnswer = true;
+  const events: string[] = [];
+  const originalRequest = sipClient.request.bind(sipClient);
+  sipClient.request = async (message) => {
+    if (!message.subject.startsWith("CANCEL "))
+      return await originalRequest(message);
+    sipClient.requests.push(message);
+    events.push("CANCEL");
+    return await new Promise<InboundMessage>((resolve) => {
+      queueMicrotask(() => {
+        const response = new InboundMessage("SIP/2.0 200 OK", {
+          "Call-Id": message.headers["Call-Id"],
+          CSeq: message.headers.CSeq,
+        });
+        sipClient.emit("inboundMessage", response);
+        resolve(response);
+      });
+    });
+  };
   const webPhone = new WebPhone({ sipInfo, sipClient });
   const session = new OutboundCallSession(webPhone, "101");
   session.rtcPeerConnection =
     new FakePeerConnection() as unknown as RTCPeerConnection;
   webPhone.callSessions.push(session);
+  session.on("failed", () => events.push("failed"));
+  session.on("disposed", () => events.push("disposed"));
   const call = session.call();
   await expect.poll(() => sipClient.pendingInvite).toBeDefined();
   const invite = sipClient.pendingInvite!;
@@ -728,12 +748,81 @@ test("cancels and rejects when a provisional ICE server header is malformed", as
   expect(sipClient.requests.at(-1)?.subject).toMatch(/^CANCEL /);
   expect(session.state).toBe("disposed");
   expect(webPhone.callSessions).not.toContain(session);
+  expect(events).toEqual(["CANCEL", "failed", "disposed"]);
+});
+
+test("keeps a setup failure terminal when CANCEL triggers an INVITE final response", async () => {
+  const sipClient = new FakeSipClient();
+  sipClient.deferInviteAnswer = true;
+  const originalRequest = sipClient.request.bind(sipClient);
+  sipClient.request = async (message) => {
+    if (!message.subject.startsWith("CANCEL "))
+      return await originalRequest(message);
+    sipClient.requests.push(message);
+    sipClient.emit(
+      "inboundMessage",
+      new InboundMessage("SIP/2.0 487 Request Terminated", {
+        "Call-Id": message.headers["Call-Id"],
+        CSeq: message.headers.CSeq.replace(" CANCEL", " INVITE"),
+      }),
+    );
+    return new InboundMessage("SIP/2.0 200 OK", {
+      "Call-Id": message.headers["Call-Id"],
+      CSeq: message.headers.CSeq,
+    });
+  };
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const session = new OutboundCallSession(webPhone, "101");
+  session.rtcPeerConnection =
+    new FakePeerConnection() as unknown as RTCPeerConnection;
+  webPhone.callSessions.push(session);
+  const failed: unknown[] = [];
+  session.on("failed", (reason) => failed.push(reason));
+
+  const call = session.call();
+  await expect.poll(() => sipClient.pendingInvite).toBeDefined();
+  const invite = sipClient.pendingInvite;
+  if (!invite) throw new Error("Missing pending INVITE");
+  sipClient.emit(
+    "inboundMessage",
+    new InboundMessage("SIP/2.0 183 Session Progress", {
+      CSeq: invite.headers.CSeq,
+      "Call-Id": invite.headers["Call-Id"],
+      From: invite.headers.From,
+      To: `${invite.headers.To};tag=remote`,
+      Via: invite.headers.Via,
+      "p-rc-ice-servers": "not-json",
+    }),
+  );
+
+  await expect(call).rejects.toThrow("Invalid p-rc-ice-servers header");
+  expect(failed).toEqual([
+    "Invalid p-rc-ice-servers header: expected a JSON array of ICE servers",
+  ]);
 });
 
 test("ACKs then hangs up when deferred setup fails after 200 OK", async () => {
   const sipClient = new FakeSipClient();
+  const events: string[] = [];
+  sipClient.onReply = (message) => {
+    if (message.headers.CSeq.endsWith(" ACK")) events.push("ACK");
+  };
   const originalRequest = sipClient.request.bind(sipClient);
   sipClient.request = async (message) => {
+    if (message.subject.startsWith("BYE ")) {
+      sipClient.requests.push(message);
+      events.push("BYE");
+      return await new Promise<InboundMessage>((resolve) => {
+        queueMicrotask(() => {
+          const response = new InboundMessage("SIP/2.0 200 OK", {
+            "Call-Id": message.headers["Call-Id"],
+            CSeq: message.headers.CSeq,
+          });
+          sipClient.emit("inboundMessage", response);
+          resolve(response);
+        });
+      });
+    }
     if (
       message.subject.startsWith("INVITE ") &&
       message.headers["Proxy-Authorization"]
@@ -758,6 +847,9 @@ test("ACKs then hangs up when deferred setup fails after 200 OK", async () => {
   const peerConnection = new FakePeerConnection();
   peerConnection.failLocalDescription = true;
   session.rtcPeerConnection = peerConnection as unknown as RTCPeerConnection;
+  webPhone.callSessions.push(session);
+  session.on("failed", () => events.push("failed"));
+  session.on("disposed", () => events.push("disposed"));
 
   await expect(session.call()).rejects.toThrow("Local setup failed");
 
@@ -766,6 +858,28 @@ test("ACKs then hangs up when deferred setup fails after 200 OK", async () => {
   ]);
   expect(sipClient.requests.at(-1)?.subject).toMatch(/^BYE /);
   expect(session.state).toBe("disposed");
+  expect(events).toEqual(["ACK", "BYE", "failed", "disposed"]);
+});
+
+test("fails and clears an outbound call when ACK cannot be sent", async () => {
+  const sipClient = new FakeSipClient();
+  sipClient.onReply = (message) => {
+    if (message.headers.CSeq.endsWith(" ACK")) throw new Error("ACK failed");
+  };
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const session = new OutboundCallSession(webPhone, "101");
+  session.rtcPeerConnection =
+    new FakePeerConnection() as unknown as RTCPeerConnection;
+  webPhone.callSessions.push(session);
+  const events: string[] = [];
+  session.on("failed", () => events.push("failed"));
+  session.on("disposed", () => events.push("disposed"));
+
+  await expect(session.call()).rejects.toThrow("ACK failed");
+
+  expect(sipClient.requests.at(-1)?.subject).toMatch(/^BYE /);
+  expect(events).toEqual(["failed", "disposed"]);
+  expect(webPhone.callSessions).not.toContain(session);
 });
 
 test("preserves custom Supported tokens while advertising Trickle ICE", async () => {
