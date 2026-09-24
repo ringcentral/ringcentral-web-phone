@@ -115,10 +115,11 @@ class OutboundCallSession extends CallSession {
 
     return new Promise<boolean>((resolve) => {
       const answerHandler = async (message: InboundMessage) => {
-        if (message.getHeader("CSeq") === this.sipMessage.getHeader("CSeq")) {
-          this.off("inboundMessage", answerHandler);
-          resolve(await handleFinalResponse(message));
-        }
+        if (message.getHeader("CSeq") !== this.sipMessage.getHeader("CSeq"))
+          return;
+        if (/^SIP\/2\.0 1\d\d /.test(message.subject)) return;
+        this.off("inboundMessage", answerHandler);
+        resolve(await handleFinalResponse(message));
       };
       this.on("inboundMessage", answerHandler);
     });

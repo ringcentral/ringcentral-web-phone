@@ -1022,6 +1022,65 @@ for (const [answerAfter, expectedDelay] of [
   });
 }
 
+test("keeps an outbound call alive through multiple provisional responses", async () => {
+  const sipClient = new FakeSipClient();
+  sipClient.requestHandler = async (message) => {
+    if (!message.headers["Proxy-Authorization"]) {
+      return new InboundMessage("SIP/2.0 407 Proxy Authentication Required", {
+        "Proxy-Authenticate": 'Digest, nonce="nonce"',
+      });
+    }
+    return new InboundMessage("SIP/2.0 180 Ringing", {
+      Via: message.headers.Via,
+      CSeq: message.headers.CSeq,
+      From: message.headers.From,
+      To: `${message.headers.To};tag=remote`,
+      "Call-Id": message.headers["Call-Id"],
+    });
+  };
+  const webPhone = new WebPhone({
+    sipInfo,
+    sipClient,
+    webRtcSessionFactory: () => new FakeWebRtcSession(),
+  });
+
+  const call = webPhone.call("callee");
+  const session = webPhone.callSessions[0];
+  let failed = false;
+  session.on("failed", () => {
+    failed = true;
+  });
+  await expect.poll(() => session.state).toBe("ringing");
+
+  const inviteCSeq = session.sipMessage.getHeader("CSeq");
+  if (!inviteCSeq) throw new Error("Missing outbound INVITE CSeq");
+  const response = (subject: string, cseq = inviteCSeq) =>
+    new InboundMessage(subject, {
+      CSeq: cseq,
+      "Call-Id": session.callId,
+      From: session.localPeer,
+      To: session.remotePeer,
+    });
+  sipClient.emit("inboundMessage", response("SIP/2.0 183 Session Progress"));
+  expect(session.state).toBe("ringing");
+  expect(webPhone.callSessions).toContain(session);
+
+  sipClient.emit(
+    "inboundMessage",
+    response("SIP/2.0 486 Busy Here", inviteCSeq.replace(/^\d+/, "0")),
+  );
+  expect(session.state).toBe("ringing");
+  expect(webPhone.callSessions).toContain(session);
+  expect(failed).toBe(false);
+
+  sipClient.emit("inboundMessage", response("SIP/2.0 200 OK"));
+  await expect(call).resolves.toBe(session);
+  expect(session.state).toBe("answered");
+  expect(webPhone.callSessions).toContain(session);
+  expect(failed).toBe(false);
+  expect(sipClient.replies.at(-1)?.subject).toMatch(/^ACK /);
+});
+
 test("reports an outbound final-response failure on the Call Session", async () => {
   const sipClient = new FakeSipClient();
   sipClient.requestHandler = async (message) => {
