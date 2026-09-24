@@ -12,6 +12,7 @@ import {
   fakeDomain,
   uuid,
 } from "../utils.js";
+import { sipProvidedIceServers } from "./ice-servers.js";
 import type OutboundCallSession from "./outbound.js";
 
 interface CommandResult {
@@ -161,11 +162,18 @@ class CallSession extends EventEmitter {
       return;
     }
 
+    const sipIceServers =
+      this.direction === "inbound" && this.sipMessage
+        ? sipProvidedIceServers(this.sipMessage)
+        : undefined;
+
     this.rtcPeerConnection = new RTCPeerConnection({
       iceServers:
+        sipIceServers ??
         this.webPhone.sipInfo.stunServers?.map((url) => ({
           urls: `stun:${url}`,
-        })) ?? [],
+        })) ??
+        [],
     });
 
     // line below is to make sure that you have the permission to access the microphone

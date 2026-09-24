@@ -153,7 +153,11 @@ class FakeWebRtcSession implements WebRtcSession {
   }
 }
 
-const inboundInvite = (body = REMOTE_OFFER, callId = "call-id") =>
+const inboundInvite = (
+  body = REMOTE_OFFER,
+  callId = "call-id",
+  iceServers?: string,
+) =>
   new InboundMessage(
     "INVITE sip:100@example.com SIP/2.0",
     {
@@ -166,9 +170,70 @@ const inboundInvite = (body = REMOTE_OFFER, callId = "call-id") =>
         { SID: "sid", Req: "req", From: "101", To: "100" },
         {},
       ).toXml(),
+      ...(iceServers === undefined ? {} : { "P-Rc-Ice-Servers": iceServers }),
     },
     body,
   );
+
+const withSdkManagedPeerConnection = async (
+  callback: (configs: RTCConfiguration[]) => Promise<void>,
+) => {
+  const originalPeerConnection = globalThis.RTCPeerConnection;
+  const originalNavigator = Object.getOwnPropertyDescriptor(
+    globalThis,
+    "navigator",
+  );
+  const track = {
+    enabled: true,
+    stop() {},
+  } as unknown as MediaStreamTrack;
+  const stream = {
+    getTracks: () => [track],
+    getAudioTracks: () => [track],
+  } as unknown as MediaStream;
+  const configs: RTCConfiguration[] = [];
+  class RecordingPeerConnection {
+    public constructor(config: RTCConfiguration) {
+      configs.push(config);
+    }
+    public addTrack() {
+      return {
+        getParameters: () => ({ encodings: [{}] }),
+        setParameters() {},
+      };
+    }
+    public close() {}
+  }
+
+  Object.defineProperty(globalThis, "RTCPeerConnection", {
+    configurable: true,
+    value: RecordingPeerConnection,
+  });
+  Object.defineProperty(globalThis, "navigator", {
+    configurable: true,
+    value: {
+      mediaDevices: {
+        getUserMedia: async () => stream,
+        enumerateDevices: async () => [
+          { kind: "audioinput", deviceId: "input" },
+        ],
+      },
+    },
+  });
+  try {
+    await callback(configs);
+  } finally {
+    Object.defineProperty(globalThis, "RTCPeerConnection", {
+      configurable: true,
+      value: originalPeerConnection,
+    });
+    if (originalNavigator) {
+      Object.defineProperty(globalThis, "navigator", originalNavigator);
+    } else {
+      delete (globalThis as { navigator?: unknown }).navigator;
+    }
+  }
+};
 
 const remoteCandidateInfo = (callId: string, candidate: string | null) =>
   new InboundMessage(
@@ -380,6 +445,43 @@ test("delegates inbound offer and offerless call negotiation", async () => {
   expect(offerlessWebRtc.offers).toEqual([{ iceRestart: true }]);
   expect(offerlessWebRtc.appliedAnswers).toEqual([NORMALIZED_REMOTE_ANSWER]);
   await offerlessAnswer;
+});
+
+test("configures inbound SDK-managed ICE servers from the INVITE", async () => {
+  await withSdkManagedPeerConnection(async (configs) => {
+    const sipClient = new FakeSipClient();
+    const webPhone = new WebPhone({ sipInfo, sipClient });
+    const servers = [
+      { urls: "turn:turn.example.com", username: "user", credential: "pass" },
+    ];
+    const session = new InboundCallSession(
+      webPhone,
+      inboundInvite(REMOTE_OFFER, "sip-ice-call", JSON.stringify(servers)),
+    );
+
+    await session.init();
+    expect(configs[0].iceServers).toEqual(servers);
+    session.dispose();
+
+    const fallback = new InboundCallSession(webPhone, inboundInvite());
+    await fallback.init();
+    expect(configs[1].iceServers).toEqual([{ urls: "stun:stun.example.com" }]);
+    fallback.dispose();
+  });
+});
+
+test("rejects a malformed inbound ICE server header and leaves the call ringing", async () => {
+  const sipClient = new FakeSipClient();
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const invite = inboundInvite();
+  invite.headers["p-RC-ICE-Servers"] = "not-json";
+  const session = new InboundCallSession(webPhone, invite);
+
+  await expect(session.answer()).rejects.toThrow(
+    "Invalid p-rc-ice-servers header",
+  );
+  expect(session.state).toBe("ringing");
+  expect(sipClient.replies).toEqual([]);
 });
 
 test("exchanges delegated Trickle ICE candidates through the Call Session", async () => {

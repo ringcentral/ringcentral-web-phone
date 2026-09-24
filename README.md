@@ -210,6 +210,15 @@ Incoming candidates are converted once into browser-shaped data, held until the
 remote description is ready, and applied in arrival order; browser WebRTC
 validates them. No option or manual candidate API is required.
 
+For inbound SDK-managed calls, the Web Phone reads `p-rc-ice-servers` from the
+INVITE and configures the peer connection before gathering starts. This header
+contains per-call STUN and TURN server configuration, replacing registration
+STUN servers when present; if it is absent, registration STUN servers remain
+in use. A malformed present value makes `answer()` reject while the call stays
+ringing. The server list is configuration; WebRTC gathers candidates from it,
+and the Web Phone signals later candidates through its existing SIP INFO flow.
+This does not change delegated WebRTC.
+
 Delegated WebRTC sessions can opt in through the `WebRtcSession.trickleIce`
 capability described under [SharedWorker WebPhone with delegated
 WebRTC](#solution-3-sharedworker-webphone-with-delegated-webrtc). Sessions

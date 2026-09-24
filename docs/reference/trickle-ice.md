@@ -3,6 +3,15 @@
 SDK-managed WebRTC uses Trickle ICE by default. This applies to initial offers
 and answers, re-INVITEs, and ICE restarts; there is no enablement option.
 
+For inbound SDK-managed calls, the Web Phone reads `p-rc-ice-servers` from the
+INVITE before constructing the peer connection. A present list replaces
+registration-provided STUN servers for that Call Session; an absent header
+keeps the registration configuration. A malformed present header makes
+`answer()` reject and leaves the Call Session ringing. Delegated WebRTC is
+unchanged. The header supplies server configuration, not candidates: browser
+WebRTC gathers candidates from those servers, and later candidates continue
+through the existing SIP INFO path.
+
 ## Candidate ownership boundary
 
 The Web Phone owns SIP signaling, dialog routing, candidate ordering, and ICE
