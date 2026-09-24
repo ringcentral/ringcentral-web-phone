@@ -217,7 +217,11 @@ STUN servers when present; if it is absent, registration STUN servers remain
 in use. A malformed present value makes `answer()` reject while the call stays
 ringing. The server list is configuration; WebRTC gathers candidates from it,
 and the Web Phone signals later candidates through its existing SIP INFO flow.
-This does not change delegated WebRTC.
+For outbound SDK-managed calls, the generated offer is sent in the INVITE before
+it is applied locally. The first provisional response with this header starts
+gathering with that list; otherwise the final response starts gathering with its
+list or the registration STUN fallback. A malformed present value fails call
+setup. Delegated WebRTC keeps its existing offer and gathering contract.
 
 Delegated WebRTC sessions can opt in through the `WebRtcSession.trickleIce`
 capability described under [SharedWorker WebPhone with delegated

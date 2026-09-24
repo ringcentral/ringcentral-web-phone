@@ -45,6 +45,7 @@ class FakeSipClient extends EventEmitter implements SipClient {
   public deferInviteAnswer = false;
   public pendingInvite?: RequestMessage;
   public pendingInfoReplies: Array<(message: InboundMessage) => void> = [];
+  public onReply?: (message: ResponseMessage) => void;
 
   public async start() {}
   public async request(message: RequestMessage) {
@@ -96,6 +97,7 @@ class FakeSipClient extends EventEmitter implements SipClient {
   }
   public async reply(message: ResponseMessage) {
     this.replies.push(message);
+    this.onReply?.(message);
   }
   public async dispose() {}
 
@@ -126,6 +128,10 @@ class FakePeerConnection extends EventTarget {
   public iceGatheringState: RTCIceGatheringState = "gathering";
   public localDescription: RTCSessionDescription | null = null;
   public remoteDescription: RTCSessionDescription | null = null;
+  public configuration: RTCConfiguration = {};
+  public operations: string[] = [];
+  public configurationCalls: RTCConfiguration[] = [];
+  public failLocalDescription = false;
   public candidatesOnSetLocalDescription: Array<RTCIceCandidate | null> = [];
   public remoteCandidates: Array<RTCIceCandidateInit | null> = [];
   public deferRemoteCandidates = false;
@@ -133,12 +139,15 @@ class FakePeerConnection extends EventTarget {
   public pendingRemoteCandidates: Array<() => void> = [];
 
   public async createOffer() {
+    this.operations.push("createOffer");
     return { type: "offer", sdp: LOCAL_SDP } as RTCSessionDescriptionInit;
   }
   public async createAnswer() {
     return { type: "answer", sdp: LOCAL_SDP } as RTCSessionDescriptionInit;
   }
   public async setLocalDescription(description: RTCSessionDescriptionInit) {
+    this.operations.push("setLocalDescription");
+    if (this.failLocalDescription) throw new Error("Local setup failed");
     this.localDescription = description as RTCSessionDescription;
     for (const iceCandidate of this.candidatesOnSetLocalDescription) {
       this.emitCandidate(iceCandidate);
@@ -146,7 +155,16 @@ class FakePeerConnection extends EventTarget {
     this.candidatesOnSetLocalDescription = [];
   }
   public async setRemoteDescription(description: RTCSessionDescriptionInit) {
+    this.operations.push("setRemoteDescription");
     this.remoteDescription = description as RTCSessionDescription;
+  }
+  public getConfiguration() {
+    return this.configuration;
+  }
+  public setConfiguration(configuration: RTCConfiguration) {
+    this.operations.push("setConfiguration");
+    this.configuration = configuration;
+    this.configurationCalls.push(configuration);
   }
   public async addIceCandidate(candidate: RTCIceCandidateInit | null) {
     this.remoteCandidates.push(candidate);
@@ -572,6 +590,182 @@ test("sends an SDK-managed offer immediately and preserves its SDP", async () =>
   expect(settledPromptly).toBe(true);
   expect(sipClient.requests[0].body).toBe(LOCAL_SDP);
   expect(sipClient.requests[0].headers.Supported).toBe("trickle-ice");
+});
+
+test("starts outbound gathering on the first provisional ICE server list", async () => {
+  const sipClient = new FakeSipClient();
+  sipClient.deferInviteAnswer = true;
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const session = new OutboundCallSession(webPhone, "101");
+  const peerConnection = new FakePeerConnection();
+  peerConnection.candidatesOnSetLocalDescription = [candidate("relay"), null];
+  session.rtcPeerConnection = peerConnection as unknown as RTCPeerConnection;
+  webPhone.callSessions.push(session);
+
+  const call = session.call();
+  await expect.poll(() => session.state).toBe("ringing");
+  expect(sipClient.pendingInvite?.body).toBe(LOCAL_SDP);
+  expect(peerConnection.localDescription).toBeNull();
+
+  const progress = (subject: string, iceServers?: string) =>
+    new InboundMessage(subject, {
+      CSeq: sipClient.pendingInvite!.headers.CSeq,
+      "Call-Id": sipClient.pendingInvite!.headers["Call-Id"],
+      From: sipClient.pendingInvite!.headers.From,
+      To: `${sipClient.pendingInvite!.headers.To};tag=remote`,
+      Via: sipClient.pendingInvite!.headers.Via,
+      ...(iceServers === undefined ? {} : { "P-Rc-Ice-Servers": iceServers }),
+    });
+  sipClient.emit("inboundMessage", progress("SIP/2.0 180 Ringing"));
+  expect(peerConnection.localDescription).toBeNull();
+
+  const servers = [
+    { urls: "turn:turn.example.com", username: "user", credential: "pass" },
+  ];
+  sipClient.emit(
+    "inboundMessage",
+    progress("SIP/2.0 183 Session Progress", JSON.stringify(servers)),
+  );
+  await expect.poll(() => peerConnection.localDescription).not.toBeNull();
+  sipClient.emit(
+    "inboundMessage",
+    progress("SIP/2.0 183 Session Progress", JSON.stringify([])),
+  );
+  await expect
+    .poll(() =>
+      sipClient.requests.filter((request) =>
+        request.subject.startsWith("INFO "),
+      ),
+    )
+    .toHaveLength(2);
+
+  let answeredAtAck = false;
+  sipClient.onReply = (message) => {
+    if (message.headers.CSeq.endsWith(" ACK")) {
+      answeredAtAck = session.state === "ringing";
+      expect(peerConnection.remoteDescription?.sdp).toBe(`${REMOTE_SDP}`);
+    }
+  };
+  sipClient.answerInvite();
+  await call;
+
+  expect(peerConnection.configurationCalls).toHaveLength(1);
+  expect(peerConnection.configuration.iceServers).toEqual(servers);
+  expect(
+    peerConnection.operations.filter(
+      (operation) => operation === "setLocalDescription",
+    ),
+  ).toHaveLength(1);
+  expect(answeredAtAck).toBe(true);
+  expect(session.state).toBe("answered");
+});
+
+test("uses final-response ICE servers when no provisional response supplies them", async () => {
+  const sipClient = new FakeSipClient();
+  const originalRequest = sipClient.request.bind(sipClient);
+  sipClient.request = async (message) => {
+    if (
+      message.subject.startsWith("INVITE ") &&
+      message.headers["Proxy-Authorization"]
+    ) {
+      return new InboundMessage(
+        "SIP/2.0 200 OK",
+        {
+          Via: message.headers.Via,
+          CSeq: message.headers.CSeq,
+          From: message.headers.From,
+          To: `${message.headers.To};tag=remote`,
+          "Call-Id": message.headers["Call-Id"],
+          "p-Rc-Ice-Servers": JSON.stringify([
+            { urls: "turn:final.example.com" },
+          ]),
+        },
+        REMOTE_SDP,
+      );
+    }
+    return await originalRequest(message);
+  };
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const session = new OutboundCallSession(webPhone, "101");
+  const peerConnection = new FakePeerConnection();
+  session.rtcPeerConnection = peerConnection as unknown as RTCPeerConnection;
+
+  await session.call();
+
+  expect(peerConnection.configuration.iceServers).toEqual([
+    { urls: "turn:final.example.com" },
+  ]);
+  expect(peerConnection.operations.indexOf("setConfiguration")).toBeLessThan(
+    peerConnection.operations.indexOf("setLocalDescription"),
+  );
+});
+
+test("cancels and rejects when a provisional ICE server header is malformed", async () => {
+  const sipClient = new FakeSipClient();
+  sipClient.deferInviteAnswer = true;
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const session = new OutboundCallSession(webPhone, "101");
+  session.rtcPeerConnection =
+    new FakePeerConnection() as unknown as RTCPeerConnection;
+  webPhone.callSessions.push(session);
+  const call = session.call();
+  await expect.poll(() => sipClient.pendingInvite).toBeDefined();
+  const invite = sipClient.pendingInvite!;
+
+  sipClient.emit(
+    "inboundMessage",
+    new InboundMessage("SIP/2.0 183 Session Progress", {
+      CSeq: invite.headers.CSeq,
+      "Call-Id": invite.headers["Call-Id"],
+      From: invite.headers.From,
+      To: `${invite.headers.To};tag=remote`,
+      Via: invite.headers.Via,
+      "p-rc-ice-servers": "not-json",
+    }),
+  );
+
+  await expect(call).rejects.toThrow("Invalid p-rc-ice-servers header");
+  expect(sipClient.requests.at(-1)?.subject).toMatch(/^CANCEL /);
+  expect(session.state).toBe("disposed");
+  expect(webPhone.callSessions).not.toContain(session);
+});
+
+test("ACKs then hangs up when deferred setup fails after 200 OK", async () => {
+  const sipClient = new FakeSipClient();
+  const originalRequest = sipClient.request.bind(sipClient);
+  sipClient.request = async (message) => {
+    if (
+      message.subject.startsWith("INVITE ") &&
+      message.headers["Proxy-Authorization"]
+    ) {
+      return new InboundMessage(
+        "SIP/2.0 200 OK",
+        {
+          Via: message.headers.Via,
+          CSeq: message.headers.CSeq,
+          From: message.headers.From,
+          To: `${message.headers.To};tag=remote`,
+          "Call-Id": message.headers["Call-Id"],
+          "p-rc-ice-servers": "[]",
+        },
+        REMOTE_SDP,
+      );
+    }
+    return await originalRequest(message);
+  };
+  const webPhone = new WebPhone({ sipInfo, sipClient });
+  const session = new OutboundCallSession(webPhone, "101");
+  const peerConnection = new FakePeerConnection();
+  peerConnection.failLocalDescription = true;
+  session.rtcPeerConnection = peerConnection as unknown as RTCPeerConnection;
+
+  await expect(session.call()).rejects.toThrow("Local setup failed");
+
+  expect(sipClient.replies.map((message) => message.headers.CSeq)).toEqual([
+    expect.stringMatching(/ ACK$/),
+  ]);
+  expect(sipClient.requests.at(-1)?.subject).toMatch(/^BYE /);
+  expect(session.state).toBe("disposed");
 });
 
 test("preserves custom Supported tokens while advertising Trickle ICE", async () => {

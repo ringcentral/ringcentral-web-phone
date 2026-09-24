@@ -402,6 +402,28 @@ class CallSession extends EventEmitter {
     );
   }
 
+  protected async createDeferredOutboundOffer() {
+    this.beginRemoteIceGeneration();
+    const description = await this.rtcPeerConnection.createOffer({
+      iceRestart: true,
+    });
+    if (!description.sdp) throw new Error("Local offer is missing SDP");
+    this.baseLocalSdp = description.sdp;
+    return description.sdp;
+  }
+
+  protected async applyDeferredOutboundOffer(iceServers?: RTCIceServer[]) {
+    const sdp = this.baseLocalSdp;
+    if (!sdp) throw new Error("Local offer is not initialized");
+    if (iceServers !== undefined) {
+      this.rtcPeerConnection.setConfiguration({
+        ...this.rtcPeerConnection.getConfiguration(),
+        iceServers,
+      });
+    }
+    await this.setLocalDescriptionForTrickleIce({ type: "offer", sdp });
+  }
+
   protected async createAnswer(offer: string) {
     if (this.webPhone.options.webRtcSessionFactory) {
       if (!this.delegatedTrickleIce) {

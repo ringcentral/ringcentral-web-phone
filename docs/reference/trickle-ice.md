@@ -12,6 +12,15 @@ unchanged. The header supplies server configuration, not candidates: browser
 WebRTC gathers candidates from those servers, and later candidates continue
 through the existing SIP INFO path.
 
+For initial outbound SDK-managed calls, the INVITE carries the generated offer
+before it is applied locally. The first matching provisional response with a
+valid server list configures the peer connection and starts gathering. Provisional
+responses without the header remain nonterminal. If none supplies a list, the
+final response starts gathering with its list or the registration STUN fallback.
+The saved offer is applied once; this does not create another offer, ICE restart,
+or re-INVITE. A malformed present header fails call setup. Delegated WebRTC keeps
+its existing offer and gathering contract.
+
 ## Candidate ownership boundary
 
 The Web Phone owns SIP signaling, dialog routing, candidate ordering, and ICE

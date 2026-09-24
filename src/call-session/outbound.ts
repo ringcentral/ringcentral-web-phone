@@ -10,6 +10,7 @@ import {
   uuid,
   withoutTag,
 } from "../utils.js";
+import { sipProvidedIceServers } from "./ice-servers.js";
 import CallSession from "./index.js";
 
 class OutboundCallSession extends CallSession {
@@ -20,6 +21,7 @@ class OutboundCallSession extends CallSession {
   }
 
   private callee: string;
+  private localOfferSetup?: Promise<void>;
   public get remoteNumber(): string {
     return this.remotePeer ? super.remoteNumber : this.callee;
   }
@@ -28,7 +30,10 @@ class OutboundCallSession extends CallSession {
     callerId?: string,
     options?: { headers?: Record<string, string> },
   ) {
-    const sdp = await this.createOffer();
+    const sdkManaged = !this.webPhone.options.webRtcSessionFactory;
+    const sdp = sdkManaged
+      ? await this.createDeferredOutboundOffer()
+      : await this.createOffer();
 
     const inviteMessage = new RequestMessage(
       `INVITE sip:${this.callee}@${this.webPhone.sipInfo.domain} SIP/2.0`,
@@ -70,42 +75,71 @@ class OutboundCallSession extends CallSession {
     const authenticatedInviteResponse =
       await this.webPhone.sipClient.request(newMessage);
     this.sipMessage = authenticatedInviteResponse;
-    this.state = "ringing";
-    this.emit("ringing");
     this.localPeer = authenticatedInviteResponse.getHeader("From")!;
     this.remotePeer = authenticatedInviteResponse.getHeader("To")!;
-    if (/^SIP\/2\.0 [12]\d\d /.test(authenticatedInviteResponse.subject)) {
-      this.startLocalIceCandidateSending();
-    }
+
+    const acknowledge = async (
+      message: InboundMessage,
+      fallback: InboundMessage = this.sipMessage,
+    ) => {
+      await this.webPhone.sipClient.reply(
+        new RequestMessage(`ACK ${extractAddress(this.remotePeer)} SIP/2.0`, {
+          "Call-Id": this.callId,
+          From: this.localPeer,
+          To: this.remotePeer,
+          Via: message.getHeader("Via") ?? fallback.getHeader("Via")!,
+          CSeq: message.getHeader("CSeq")!.replace(" INVITE", " ACK"),
+        }),
+      );
+    };
+
+    const removeSession = () => {
+      const index = this.webPhone.callSessions.indexOf(this);
+      if (index !== -1) this.webPhone.callSessions.splice(index, 1);
+    };
+
+    const fail = (reason: unknown) => {
+      this.state = "failed";
+      this.emit("failed", reason instanceof Error ? reason.message : reason);
+      removeSession();
+      this.dispose();
+    };
+
+    const setupLocalOffer = (message: InboundMessage) => {
+      if (!sdkManaged) return Promise.resolve();
+      this.localOfferSetup ??= (async () => {
+        await this.applyDeferredOutboundOffer(sipProvidedIceServers(message));
+        this.startLocalIceCandidateSending();
+      })();
+      return this.localOfferSetup;
+    };
+
+    this.state = "ringing";
+    this.emit("ringing");
 
     const handleFinalResponse = async (message: InboundMessage) => {
       // outbound call failed, for example, invalid number
       // or emergency address is not configured properly
       if (message.subject !== "SIP/2.0 200 OK") {
-        this.state = "failed";
-        this.emit("failed", message.subject);
-        const index = this.webPhone.callSessions.indexOf(this);
-        if (index !== -1) {
-          this.webPhone.callSessions.splice(index, 1);
-        }
-        this.dispose();
+        fail(message.subject);
         return false;
       }
-
+      const inviteResponse = this.sipMessage;
+      this.sipMessage = message;
+      this.localPeer = message.getHeader("From") ?? this.localPeer;
+      this.remotePeer = message.getHeader("To") ?? this.remotePeer;
+      try {
+        await setupLocalOffer(message);
+        await this.applyAnswer(message.body);
+      } catch (error) {
+        await acknowledge(message, inviteResponse).catch(() => {});
+        await this.hangup().catch(() => {});
+        fail(error);
+        throw error;
+      }
+      await acknowledge(message);
       this.state = "answered";
       this.emit("answered");
-      this.applyAnswer(message.body);
-      const ackMessage = new RequestMessage(
-        `ACK ${extractAddress(this.remotePeer)} SIP/2.0`,
-        {
-          "Call-Id": this.callId,
-          From: this.localPeer,
-          To: this.remotePeer,
-          Via: this.sipMessage.getHeader("Via")!,
-          CSeq: this.sipMessage.getHeader("CSeq")!.replace(" INVITE", " ACK"),
-        },
-      );
-      await this.webPhone.sipClient.reply(ackMessage);
       return true;
     };
 
@@ -113,16 +147,59 @@ class OutboundCallSession extends CallSession {
       return await handleFinalResponse(authenticatedInviteResponse);
     }
 
-    return new Promise<boolean>((resolve) => {
+    let rejectSetup!: (error: unknown) => void;
+    const setupFailed = new Promise<never>((_resolve, reject) => {
+      rejectSetup = reject;
+    });
+    let finalReceived = false;
+    let settled = false;
+    const progressHandler = (message: InboundMessage) => {
+      if (
+        message.getHeader("CSeq") !== this.sipMessage.getHeader("CSeq") ||
+        !/^SIP\/2\.0 1\d\d /.test(message.subject) ||
+        message.subject.startsWith("SIP/2.0 100 ") ||
+        message.getHeader("p-rc-ice-servers") === undefined
+      )
+        return;
+      this.sipMessage = message;
+      this.localPeer = message.getHeader("From")!;
+      this.remotePeer = message.getHeader("To")!;
+      void setupLocalOffer(message).catch(async (error) => {
+        if (finalReceived || settled) return;
+        settled = true;
+        this.off("inboundMessage", progressHandler);
+        await this.cancel().catch(() => {});
+        fail(error);
+        rejectSetup(error);
+      });
+    };
+
+    const finalResponse = new Promise<boolean>((resolve, reject) => {
       const answerHandler = async (message: InboundMessage) => {
         if (message.getHeader("CSeq") !== this.sipMessage.getHeader("CSeq"))
           return;
         if (/^SIP\/2\.0 1\d\d /.test(message.subject)) return;
+        finalReceived = true;
+        settled = true;
+        this.off("inboundMessage", progressHandler);
         this.off("inboundMessage", answerHandler);
-        resolve(await handleFinalResponse(message));
+        try {
+          resolve(await handleFinalResponse(message));
+        } catch (error) {
+          reject(error);
+        }
       };
+      this.on("inboundMessage", progressHandler);
       this.on("inboundMessage", answerHandler);
     });
+    if (
+      /^SIP\/2\.0 1\d\d /.test(authenticatedInviteResponse.subject) &&
+      authenticatedInviteResponse.subject !== "SIP/2.0 100 Trying" &&
+      authenticatedInviteResponse.getHeader("p-rc-ice-servers") !== undefined
+    ) {
+      progressHandler(authenticatedInviteResponse);
+    }
+    return await Promise.race([finalResponse, setupFailed]);
   }
 
   public async cancel() {
